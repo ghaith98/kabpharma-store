@@ -82,6 +82,14 @@ export default function CartPage() {
         <div className="rounded-2xl bg-white p-5 text-xl font-bold shadow">
           Total: {total.toLocaleString()} SYP
         </div>
+        {cart.length > 0 && (
+  <a
+    href="/checkout"
+    className="block rounded-2xl bg-black p-4 text-center font-bold text-white"
+  >
+    تأكيد الطلب
+  </a>
+)}
       </div>
     </main>
   );
