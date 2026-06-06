@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { addToCart } from "@/lib/cart";
 
 type Product = {
@@ -10,11 +11,13 @@ type Product = {
 };
 
 export default function AddToCartButton({ product }: { product: Product }) {
+  const router = useRouter();
+
   return (
     <button
       onClick={() => {
         addToCart(product);
-        alert("Product added to cart");
+        router.push("/cart");
       }}
       className="mt-4 w-full rounded-xl bg-black py-3 text-white"
     >
