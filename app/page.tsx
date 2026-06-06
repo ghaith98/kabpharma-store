@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
@@ -14,9 +12,12 @@ export default function Home() {
         </p>
 
         <div className="flex justify-center mt-10">
-          <button className="bg-black text-white px-8 py-4 rounded-xl">
+          <a
+            href="/products"
+            className="bg-black text-white px-8 py-4 rounded-xl"
+          >
             Shop Now
-          </button>
+          </a>
         </div>
 
       </div>
