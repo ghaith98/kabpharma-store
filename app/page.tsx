@@ -2,22 +2,22 @@ import Image from "next/image";
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
-      <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-28 text-center">
+      <section className="mx-auto flex max-w-7xl flex-col items-center px-6 py-16 text-center">
         <Image
   src="/logo.png"
   alt="KAB Pharma"
-  width={550}
-  height={180}
+  width={420}
+  height={140}
   className="mb-8 h-auto w-auto max-w-full"
 />
 
         <p className="max-w-2xl text-2xl font-medium text-gray-700">
-          Trusted Medical & Skincare Solutions
+          Trusted Skincare & Personal Care Solutions
         </p>
 
         <p className="mt-6 max-w-3xl text-lg leading-8 text-gray-500">
-          High-quality pharmaceutical and skincare products designed to support
-          healthier everyday life with trusted formulations and reliable care.
+          High-quality skincare and personal care products designed to support
+  healthier, more confident everyday living.
         </p>
 
         <div className="mt-12">
