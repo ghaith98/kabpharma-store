@@ -44,15 +44,25 @@ export default function Navbar() {
 
         {!isHomePage && (
           <div className="flex items-center gap-6">
-            <a href="/products" className="text-gray-700">
-              Products
-            </a>
+  <a
+    href="/products"
+    className="font-medium text-gray-700 transition hover:text-green-700"
+  >
+    Products
+  </a>
 
-            <a
-              href="/cart"
-              className="relative rounded-xl bg-green-600 px-4 py-2 text-white"
-            >
-              Cart
+  <a
+    href="/orders"
+    className="font-medium text-gray-700 transition hover:text-green-700"
+  >
+    My Orders
+  </a>
+
+  <a
+    href="/cart"
+    className="relative rounded-xl bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700"
+  >
+    Cart
               {count > 0 && (
                 <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white">
                   {count}
