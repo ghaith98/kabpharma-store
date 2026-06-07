@@ -8,10 +8,37 @@ export default function PaymentPage() {
   const [file, setFile] = useState<File | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [qrUrl, setQrUrl] = useState("");
+  const [paymentNumber, setPaymentNumber] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setCart(getCart());
-  }, []);
+  setCart(getCart());
+
+  async function loadQr() {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "payment_qr_url")
+      .single();
+
+    if (!error && data?.value) {
+      setQrUrl(data.value);
+    }
+    const { data: numberData } = await supabase
+  .from("settings")
+  .select("value")
+  .eq("key", "payment_number")
+  .single();
+
+if (numberData?.value) {
+  setPaymentNumber(numberData.value);
+}
+  }
+
+  loadQr();
+}, []);
+
 
   const total = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -132,9 +159,52 @@ export default function PaymentPage() {
                 Scan QR Code to Pay
               </p>
 
-              <div className="mx-auto flex h-56 w-56 items-center justify-center rounded-2xl border border-gray-200 bg-white font-bold text-gray-500">
-                QR CODE
-              </div>
+              <div className="mx-auto flex h-80 w-80 items-center justify-center overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+  {qrUrl ? (
+    <img
+      src={qrUrl}
+      alt="Payment QR Code"
+      className="h-full w-full object-contain"
+    />
+  ) : (
+    <span className="font-bold text-gray-500">
+      QR Code not uploaded yet
+    </span>
+  )}
+</div>
+{paymentNumber && (
+  <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-4">
+    <p className="mb-2 text-sm font-bold text-gray-700">
+      Payment Number
+    </p>
+
+    <div className="flex items-center justify-between gap-3">
+      <span className="break-all font-bold text-gray-900">
+        {paymentNumber}
+      </span>
+
+      <button
+  type="button"
+  onClick={() => {
+    navigator.clipboard.writeText(paymentNumber);
+
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 1400);
+  }}
+  className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition ${
+    copied
+      ? "bg-green-700"
+      : "bg-green-600 hover:bg-green-700"
+  }`}
+>
+  {copied ? "✓ Copied" : "Copy"}
+</button>
+    </div>
+  </div>
+)}
 
               <p className="mt-5 text-sm leading-6 text-gray-700">
                 After completing the payment, upload a clear image or PDF of
