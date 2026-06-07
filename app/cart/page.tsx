@@ -79,19 +79,35 @@ export default function CartPage() {
                   key={item.id}
                   className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between"
                 >
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">
-                      {item.name}
-                    </h2>
+                  <div className="flex items-center gap-4">
+                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                          No image
+                        </div>
+                      )}
+                    </div>
 
-                    <p className="mt-1 font-semibold text-green-700">
-                      {item.price.toLocaleString()} SYP
-                    </p>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900">
+                        {item.name}
+                      </h2>
 
-                    <p className="mt-1 text-sm text-gray-500">
-                      Subtotal:{" "}
-                      {(item.price * item.quantity).toLocaleString()} SYP
-                    </p>
+                      <p className="mt-1 font-semibold text-green-700">
+                        {item.price.toLocaleString()} SYP
+                      </p>
+
+                      <p className="mt-1 text-sm text-gray-500">
+                        Subtotal:{" "}
+                        {(item.price * item.quantity).toLocaleString()} SYP
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { addToCart } from "@/lib/cart";
 
 type Product = {
@@ -9,20 +10,30 @@ type Product = {
   image_url: string | null;
 };
 
-export default function AddToCartButton({
-  product,
-}: {
-  product: Product;
-}) {
+export default function AddToCartButton({ product }: { product: Product }) {
+  const [added, setAdded] = useState(false);
+
+  function handleAdd() {
+    addToCart(product);
+    window.dispatchEvent(new Event("cartUpdated"));
+
+    setAdded(true);
+
+    setTimeout(() => {
+      setAdded(false);
+    }, 1400);
+  }
+
   return (
     <button
-      onClick={() => {
-        addToCart(product);
-        window.dispatchEvent(new Event("cartUpdated"));
-      }}
-      className="mt-5 w-full rounded-2xl bg-green-600 py-3 font-semibold text-white transition duration-300 hover:bg-green-700"
+      onClick={handleAdd}
+      className={`mt-5 w-full rounded-2xl py-3 font-semibold transition duration-300 ${
+        added
+          ? "bg-green-50 text-green-700 ring-1 ring-green-600"
+          : "bg-green-600 text-white hover:bg-green-700"
+      }`}
     >
-      Add to Cart
+      {added ? "✓ Added" : "Add to Cart"}
     </button>
   );
 }
