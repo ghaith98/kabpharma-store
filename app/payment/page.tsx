@@ -136,7 +136,7 @@ if (numberData?.value) {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
+    <main className="min-h-screen overflow-x-hidden bg-gradient-to-b from-white via-gray-50 to-green-50 px-3 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-5xl">
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
@@ -148,18 +148,18 @@ if (numberData?.value) {
           </p>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-          <div className="rounded-3xl bg-white p-8 shadow-sm">
+        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <div className="rounded-3xl bg-white p-4 shadow-sm sm:p-8">
             <h2 className="mb-6 text-xl font-extrabold text-gray-900">
               Payment Instructions
             </h2>
 
-            <div className="rounded-3xl bg-gray-50 p-6 text-center">
+            <div className="rounded-3xl bg-gray-50 p-4 text-center sm:p-6">
               <p className="mb-4 font-bold text-gray-900">
                 Scan QR Code to Pay
               </p>
 
-              <div className="mx-auto flex h-80 w-80 items-center justify-center overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+              <div className="mx-auto flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm sm:max-w-[320px]">
   {qrUrl ? (
     <img
       src={qrUrl}
@@ -173,35 +173,35 @@ if (numberData?.value) {
   )}
 </div>
 {paymentNumber && (
-  <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-4">
-    <p className="mb-2 text-sm font-bold text-gray-700">
+  <div className="mx-auto mt-5 w-full max-w-[280px] rounded-2xl border border-gray-200 bg-white p-3 sm:max-w-[320px]">
+    <p className="mb-2 text-center text-xs font-bold text-gray-700">
       Payment Number
     </p>
 
-    <div className="flex items-center justify-between gap-3">
-      <span className="break-all font-bold text-gray-900">
+    <div className="flex items-center justify-between gap-2">
+      <span className="min-w-0 flex-1 break-all text-center font-mono text-sm font-bold text-gray-900">
         {paymentNumber}
       </span>
 
       <button
-  type="button"
-  onClick={() => {
-    navigator.clipboard.writeText(paymentNumber);
+        type="button"
+        onClick={() => {
+          navigator.clipboard.writeText(paymentNumber);
 
-    setCopied(true);
+          setCopied(true);
 
-    setTimeout(() => {
-      setCopied(false);
-    }, 1400);
-  }}
-  className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition ${
-    copied
-      ? "bg-green-700"
-      : "bg-green-600 hover:bg-green-700"
-  }`}
->
-  {copied ? "✓ Copied" : "Copy"}
-</button>
+          setTimeout(() => {
+            setCopied(false);
+          }, 1400);
+        }}
+        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition ${
+          copied
+            ? "bg-green-700"
+            : "bg-green-600 hover:bg-green-700"
+        }`}
+      >
+        {copied ? "✓" : "Copy"}
+      </button>
     </div>
   </div>
 )}
@@ -231,7 +231,7 @@ if (numberData?.value) {
             </form>
           </div>
 
-          <aside className="h-fit rounded-3xl bg-white p-6 shadow-sm">
+          <aside className="h-fit rounded-3xl bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-xl font-extrabold text-gray-900">
               Order Summary
             </h2>
