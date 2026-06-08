@@ -10,6 +10,8 @@ export default function Navbar() {
   const [count, setCount] = useState(0);
 
   const isHomePage = pathname === "/";
+  const isProductDetailsPage =
+  pathname.startsWith("/products/") && pathname !== "/products";
 
   function updateCount() {
     const cart = getCart();
@@ -42,7 +44,7 @@ export default function Navbar() {
   />
 </a>
 
-        {!isHomePage && (
+        {!isHomePage && !isProductDetailsPage && (
           <div className="flex items-center gap-6">
   <a
     href="/products"

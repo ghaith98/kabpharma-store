@@ -136,6 +136,12 @@ export default function AdminDashboardPage() {
           >
             Products
           </a>
+          <a
+  href="/admin/categories"
+  className="rounded-xl bg-black px-5 py-3 text-white"
+>
+  Categories
+</a>
 
           <a
             href="/admin/payment-settings"

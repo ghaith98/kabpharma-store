@@ -8,6 +8,8 @@ export default function AdminProductsPage() {
   const router = useRouter();
 
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [categoryId, setCategoryId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -21,6 +23,7 @@ export default function AdminProductsPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editCategoryId, setEditCategoryId] = useState("");
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
 
   async function checkAdmin() {
@@ -31,7 +34,8 @@ export default function AdminProductsPage() {
       return;
     }
 
-    loadProducts();
+    await loadProducts();
+    await loadCategories();
   }
 
   async function loadProducts() {
@@ -46,6 +50,15 @@ export default function AdminProductsPage() {
     }
 
     setProducts(data || []);
+  }
+
+  async function loadCategories() {
+    const { data } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name");
+
+    setCategories(data || []);
   }
 
   async function addProduct(e: React.FormEvent) {
@@ -79,6 +92,7 @@ export default function AdminProductsPage() {
       description,
       price: Number(price),
       image_url: publicUrlData.publicUrl,
+      category_id: Number(categoryId),
       featured: false,
     });
 
@@ -91,6 +105,7 @@ export default function AdminProductsPage() {
     setName("");
     setDescription("");
     setPrice("");
+    setCategoryId("");
     setImageFile(null);
     setLoading(false);
 
@@ -98,6 +113,7 @@ export default function AdminProductsPage() {
   }
 
   function startEdit(product: any) {
+    setEditCategoryId(String(product.category_id || ""));
     setEditingId(product.id);
     setEditName(product.name);
     setEditDescription(product.description || "");
@@ -131,6 +147,7 @@ export default function AdminProductsPage() {
     const updateData: any = {
       name: editName,
       description: editDescription,
+      category_id: Number(editCategoryId),
       price: Number(editPrice),
     };
 
@@ -236,6 +253,21 @@ export default function AdminProductsPage() {
             className="mb-3 w-full rounded-xl border p-3 text-black"
           />
 
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            required
+            className="mb-3 w-full rounded-xl border p-3 text-black"
+          >
+            <option value="">Select Category</option>
+
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+
           <input
             type="file"
             accept="image/*"
@@ -338,6 +370,20 @@ export default function AdminProductsPage() {
               onChange={(e) => setEditPrice(e.target.value)}
               className="mb-4 w-full rounded-xl border p-3 text-black"
             />
+
+            <select
+              value={editCategoryId}
+              onChange={(e) => setEditCategoryId(e.target.value)}
+              className="mb-4 w-full rounded-xl border p-3 text-black"
+            >
+              <option value="">Select Category</option>
+
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
 
             <input
               type="file"

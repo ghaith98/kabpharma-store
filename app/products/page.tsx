@@ -4,10 +4,15 @@ import ProductsClient from "./ProductsClient";
 
 export default async function ProductsPage() {
   const { data: products, error } = await supabase
-    .from("products")
-    .select("*")
-    .order("id", { ascending: true });
-
+  .from("products")
+  .select(`
+    *,
+    categories (
+      id,
+      name
+    )
+  `)
+  .order("id", { ascending: true });
   if (error) {
     return <p className="p-8 text-red-600">Error: {error.message}</p>;
   }

@@ -2,6 +2,7 @@
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
+import Link from "next/link";
 
 export default function ProductSwiper({ products }: { products: any[] }) {
   return (
@@ -15,7 +16,10 @@ export default function ProductSwiper({ products }: { products: any[] }) {
     >
       {products.map((product) => (
         <SwiperSlide key={product.id}>
-          <div className="rounded-3xl bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md">
+          <Link
+  href={`/products/${product.id}`}
+  className="block rounded-3xl bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
+>
             <div className="mb-3 flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
               {product.image_url && (
                 <img
@@ -33,7 +37,7 @@ export default function ProductSwiper({ products }: { products: any[] }) {
             <p className="mt-2 line-clamp-2 text-sm text-gray-600">
               {product.description}
             </p>
-          </div>
+          </Link>
         </SwiperSlide>
       ))}
     </Swiper>
