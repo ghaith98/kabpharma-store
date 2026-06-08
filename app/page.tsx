@@ -4,10 +4,11 @@ import ProductSwiper from "./ProductSwiper";
 
 export default async function Home() {
   const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .order("id", { ascending: false })
-    .limit(8);
+  .from("products")
+  .select("*")
+  .eq("featured", true)
+  .order("id", { ascending: false })
+  .limit(8);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50">

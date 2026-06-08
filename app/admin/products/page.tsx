@@ -13,6 +13,9 @@ export default function AdminProductsPage() {
   const [price, setPrice] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [updatingFeaturedId, setUpdatingFeaturedId] = useState<number | null>(
+    null
+  );
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -76,6 +79,7 @@ export default function AdminProductsPage() {
       description,
       price: Number(price),
       image_url: publicUrlData.publicUrl,
+      featured: false,
     });
 
     if (error) {
@@ -101,54 +105,72 @@ export default function AdminProductsPage() {
   }
 
   async function updateProduct() {
-  if (!editingId) return;
+    if (!editingId) return;
 
-  let imageUrl: string | undefined;
+    let imageUrl: string | undefined;
 
-  if (editImageFile) {
-    const filePath = `${Date.now()}-${editImageFile.name}`;
+    if (editImageFile) {
+      const filePath = `${Date.now()}-${editImageFile.name}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("product-images")
-      .upload(filePath, editImageFile);
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, editImageFile);
 
-    if (uploadError) {
-      alert(uploadError.message);
+      if (uploadError) {
+        alert(uploadError.message);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(filePath);
+
+      imageUrl = publicUrlData.publicUrl;
+    }
+
+    const updateData: any = {
+      name: editName,
+      description: editDescription,
+      price: Number(editPrice),
+    };
+
+    if (imageUrl) {
+      updateData.image_url = imageUrl;
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .update(updateData)
+      .eq("id", editingId);
+
+    if (error) {
+      alert(error.message);
       return;
     }
 
-    const { data: publicUrlData } = supabase.storage
-      .from("product-images")
-      .getPublicUrl(filePath);
+    setEditingId(null);
+    setEditImageFile(null);
 
-    imageUrl = publicUrlData.publicUrl;
+    loadProducts();
   }
 
-  const updateData: any = {
-    name: editName,
-    description: editDescription,
-    price: Number(editPrice),
-  };
+  async function toggleFeatured(product: any) {
+    setUpdatingFeaturedId(product.id);
 
-  if (imageUrl) {
-    updateData.image_url = imageUrl;
+    const { error } = await supabase
+      .from("products")
+      .update({ featured: !product.featured })
+      .eq("id", product.id);
+
+    if (error) {
+      alert(error.message);
+      setUpdatingFeaturedId(null);
+      return;
+    }
+
+    await loadProducts();
+    setUpdatingFeaturedId(null);
   }
-
-  const { error } = await supabase
-    .from("products")
-    .update(updateData)
-    .eq("id", editingId);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  setEditingId(null);
-  setEditImageFile(null);
-
-  loadProducts();
-}
 
   async function deleteProduct(id: number) {
     const confirmDelete = confirm("Are you sure you want to delete this product?");
@@ -170,10 +192,22 @@ export default function AdminProductsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="mb-8 text-3xl font-bold">Admin Products</h1>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Products</h1>
 
-        <form onSubmit={addProduct} className="mb-8 rounded-2xl bg-white p-6 shadow">
+          <a
+            href="/admin"
+            className="rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
+            Back to Dashboard
+          </a>
+        </div>
+
+        <form
+          onSubmit={addProduct}
+          className="mb-8 rounded-2xl bg-white p-6 shadow"
+        >
           <h2 className="mb-4 text-xl font-bold">Add Product</h2>
 
           <input
@@ -182,7 +216,7 @@ export default function AdminProductsPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mb-3 w-full rounded-xl border p-3"
+            className="mb-3 w-full rounded-xl border p-3 text-black"
           />
 
           <textarea
@@ -190,7 +224,7 @@ export default function AdminProductsPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
-            className="mb-3 w-full rounded-xl border p-3"
+            className="mb-3 w-full rounded-xl border p-3 text-black"
           />
 
           <input
@@ -199,7 +233,7 @@ export default function AdminProductsPage() {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             required
-            className="mb-3 w-full rounded-xl border p-3"
+            className="mb-3 w-full rounded-xl border p-3 text-black"
           />
 
           <input
@@ -207,7 +241,7 @@ export default function AdminProductsPage() {
             accept="image/*"
             onChange={(e) => setImageFile(e.target.files?.[0] || null)}
             required
-            className="mb-4 w-full rounded-xl border p-3"
+            className="mb-4 w-full rounded-xl border p-3 text-black"
           />
 
           <button
@@ -230,18 +264,43 @@ export default function AdminProductsPage() {
                 />
               )}
 
-              <h2 className="text-xl font-bold">{product.name}</h2>
+              <div className="mb-2 flex flex-wrap items-center gap-3">
+                <h2 className="text-xl font-bold">{product.name}</h2>
+
+                {product.featured && (
+                  <span className="rounded-full bg-yellow-50 px-3 py-1 text-sm font-bold text-yellow-700">
+                    ⭐ Featured
+                  </span>
+                )}
+              </div>
+
               <p className="text-gray-600">{product.description}</p>
               <p className="font-bold">
                 {Number(product.price).toLocaleString()} SYP
               </p>
 
-              <div className="mt-4 flex gap-3">
+              <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   onClick={() => startEdit(product)}
                   className="rounded-xl bg-blue-600 px-4 py-2 text-white"
                 >
                   Edit
+                </button>
+
+                <button
+                  onClick={() => toggleFeatured(product)}
+                  disabled={updatingFeaturedId === product.id}
+                  className={`rounded-xl px-4 py-2 font-semibold transition disabled:opacity-60 ${
+                    product.featured
+                      ? "bg-yellow-500 text-white hover:bg-yellow-600"
+                      : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                  }`}
+                >
+                  {updatingFeaturedId === product.id
+                    ? "Updating..."
+                    : product.featured
+                    ? "Remove Featured"
+                    : "Make Featured"}
                 </button>
 
                 <button
@@ -264,28 +323,28 @@ export default function AdminProductsPage() {
             <input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="mb-3 w-full rounded-xl border p-3"
+              className="mb-3 w-full rounded-xl border p-3 text-black"
             />
 
             <textarea
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              className="mb-3 w-full rounded-xl border p-3"
+              className="mb-3 w-full rounded-xl border p-3 text-black"
             />
 
             <input
-  type="number"
-  value={editPrice}
-  onChange={(e) => setEditPrice(e.target.value)}
-  className="mb-4 w-full rounded-xl border p-3"
-/>
+              type="number"
+              value={editPrice}
+              onChange={(e) => setEditPrice(e.target.value)}
+              className="mb-4 w-full rounded-xl border p-3 text-black"
+            />
 
-<input
-  type="file"
-  accept="image/*"
-  onChange={(e) => setEditImageFile(e.target.files?.[0] || null)}
-  className="mb-4 w-full rounded-xl border p-3"
-/>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setEditImageFile(e.target.files?.[0] || null)}
+              className="mb-4 w-full rounded-xl border p-3 text-black"
+            />
 
             <div className="flex gap-3">
               <button

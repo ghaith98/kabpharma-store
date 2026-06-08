@@ -7,13 +7,13 @@ import { supabase } from "@/lib/supabase";
 export default function AdminDashboardPage() {
   const router = useRouter();
 
-  const [productsCount, setProductsCount] = useState(0);
-const [ordersCount, setOrdersCount] = useState(0);
-const [pendingCount, setPendingCount] = useState(0);
-const [deliveryCount, setDeliveryCount] = useState(0);
-const [deliveredCount, setDeliveredCount] = useState(0);
-const [rejectedCount, setRejectedCount] = useState(0);
-const [revenue, setRevenue] = useState(0);
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [deliveryCount, setDeliveryCount] = useState(0);
+  const [deliveredCount, setDeliveredCount] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
+  const [cancelledCount, setCancelledCount] = useState(0);
+  const [revenue, setRevenue] = useState(0);
 
   async function loadDashboard() {
     const { data: userData } = await supabase.auth.getUser();
@@ -23,13 +23,10 @@ const [revenue, setRevenue] = useState(0);
       return;
     }
 
-    const { count: products } = await supabase
-      .from("products")
-      .select("*", { count: "exact", head: true });
-
     const { count: orders } = await supabase
-      .from("orders")
-      .select("*", { count: "exact", head: true });
+  .from("orders")
+  .select("*", { count: "exact", head: true })
+  .neq("status", "cancelled_by_customer");
 
     const { count: pending } = await supabase
       .from("orders")
@@ -45,28 +42,36 @@ const [revenue, setRevenue] = useState(0);
       .from("orders")
       .select("*", { count: "exact", head: true })
       .eq("status", "delivered");
-      const { count: rejected } = await supabase
-  .from("orders")
-  .select("*", { count: "exact", head: true })
-  .eq("status", "rejected");
-  const { data: deliveredOrders } = await supabase
-  .from("orders")
-  .select("total_price")
-  .eq("status", "delivered");   
 
-    setProductsCount(products || 0);
-setOrdersCount(orders || 0);
-setPendingCount(pending || 0);
-setDeliveryCount(delivery || 0);
-setDeliveredCount(delivered || 0);
-setRejectedCount(rejected || 0);
-const totalRevenue =
-  deliveredOrders?.reduce(
-    (sum, order) => sum + Number(order.total_price || 0),
-    0
-  ) || 0;
+    const { count: rejected } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "rejected");
 
-setRevenue(totalRevenue);
+    const { count: cancelled } = await supabase
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "cancelled_by_customer");
+
+    const { data: deliveredOrders } = await supabase
+      .from("orders")
+      .select("total_price")
+      .eq("status", "delivered");
+
+    setOrdersCount(orders || 0);
+    setPendingCount(pending || 0);
+    setDeliveryCount(delivery || 0);
+    setDeliveredCount(delivered || 0);
+    setRejectedCount(rejected || 0);
+    setCancelledCount(cancelled || 0);
+
+    const totalRevenue =
+      deliveredOrders?.reduce(
+        (sum, order) => sum + Number(order.total_price || 0),
+        0
+      ) || 0;
+
+    setRevenue(totalRevenue);
   }
 
   useEffect(() => {
@@ -78,12 +83,7 @@ setRevenue(totalRevenue);
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-8 text-3xl font-bold">Admin Dashboard</h1>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-          <div className="rounded-2xl bg-white p-6 shadow">
-            <p className="text-gray-500">Products</p>
-            <h2 className="mt-2 text-4xl font-bold">{productsCount}</h2>
-          </div>
-
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6">
           <div className="rounded-2xl bg-white p-6 shadow">
             <p className="text-gray-500">Orders</p>
             <h2 className="mt-2 text-4xl font-bold">{ordersCount}</h2>
@@ -103,16 +103,23 @@ setRevenue(totalRevenue);
             <p className="text-gray-500">Delivered</p>
             <h2 className="mt-2 text-4xl font-bold">{deliveredCount}</h2>
           </div>
+
           <div className="rounded-2xl bg-white p-6 shadow">
-  <p className="text-gray-500">Rejected</p>
-  <h2 className="mt-2 text-4xl font-bold">{rejectedCount}</h2>  
-</div>
-<div className="rounded-2xl bg-white p-6 shadow">
-  <p className="text-gray-500">Revenue</p>
-  <h2 className="mt-2 text-2xl font-bold">
-    {revenue.toLocaleString()} SYP
-  </h2>
-</div>  
+            <p className="text-gray-500">Rejected</p>
+            <h2 className="mt-2 text-4xl font-bold">{rejectedCount}</h2>
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow">
+            <p className="text-gray-500">Cancelled</p>
+            <h2 className="mt-2 text-4xl font-bold">{cancelledCount}</h2>
+          </div>
+
+          <div className="rounded-2xl bg-white p-6 shadow md:col-span-2 lg:col-span-2">
+            <p className="text-gray-500">Revenue</p>
+            <h2 className="mt-2 text-2xl font-bold">
+              {revenue.toLocaleString()} SYP
+            </h2>
+          </div>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-4">
@@ -128,6 +135,13 @@ setRevenue(totalRevenue);
             className="rounded-xl bg-black px-5 py-3 text-white"
           >
             Products
+          </a>
+
+          <a
+            href="/admin/payment-settings"
+            className="rounded-xl bg-black px-5 py-3 text-white"
+          >
+            Payment Settings
           </a>
         </div>
       </div>

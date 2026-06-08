@@ -98,14 +98,24 @@ export default function PaymentSettingsPage() {
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
       <div className="mx-auto max-w-xl space-y-6">
         <div className="rounded-3xl bg-white p-8 shadow-sm">
-          <h1 className="mb-3 text-3xl font-extrabold text-gray-900">
-            Payment Settings
-          </h1>
+          <div className="mb-6 flex items-center justify-between">
+  <div>
+    <h1 className="text-3xl font-extrabold text-gray-900">
+      Payment QR Settings
+    </h1>
 
-          <p className="mb-6 text-gray-700">
-            Manage the QR code and payment number shown to customers on the
-            payment page.
-          </p>
+    <p className="mt-2 text-gray-700">
+      Upload the QR code image that customers will use on the payment page.
+    </p>
+  </div>
+
+  <a
+    href="/admin"
+    className="rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
+  >
+    Back to Dashboard
+  </a>
+</div>
 
           <form onSubmit={uploadQr} className="space-y-4">
             <h2 className="text-xl font-extrabold text-gray-900">
