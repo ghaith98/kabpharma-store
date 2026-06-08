@@ -18,6 +18,7 @@ const statusMap: Record<string, string> = {
   out_for_delivery: "قيد التوصيل",
   delivered: "تم تسليم الطلب",
   rejected: "تم رفض الطلب",
+  cancelled_by_customer: "تم إلغاء الطلب",
 };
 
 const statusClass: Record<string, string> = {
@@ -26,6 +27,7 @@ const statusClass: Record<string, string> = {
   out_for_delivery: "bg-blue-50 text-blue-700",
   delivered: "bg-green-100 text-green-800",
   rejected: "bg-red-50 text-red-700",
+  cancelled_by_customer: "bg-gray-200 text-gray-800",
 };
 
 export default function OrdersSearchClient() {

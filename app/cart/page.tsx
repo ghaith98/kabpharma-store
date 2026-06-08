@@ -43,24 +43,32 @@ export default function CartPage() {
     0
   );
 
+  const itemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
+    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-32 lg:pb-12">
       <div className="mx-auto max-w-5xl">
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
             Your Cart
           </h1>
 
-          <p className="mt-3 text-gray-600">
+          <p className="mt-3 text-gray-700">
             Review your selected products before checkout.
           </p>
         </section>
 
         {cart.length === 0 ? (
           <div className="rounded-3xl bg-white p-10 text-center shadow-sm">
-            <h2 className="text-2xl font-bold">Your cart is empty</h2>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl">
+              🛒
+            </div>
 
-            <p className="mt-3 text-gray-500">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Your cart is empty
+            </h2>
+
+            <p className="mt-3 text-gray-600">
               Add products to your cart to continue.
             </p>
 
@@ -103,7 +111,11 @@ export default function CartPage() {
                         {item.price.toLocaleString()} SYP
                       </p>
 
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-sm font-semibold text-gray-600">
+                        {item.quantity} × {item.price.toLocaleString()} SYP
+                      </p>
+
+                      <p className="mt-1 text-sm font-bold text-gray-900">
                         Subtotal:{" "}
                         {(item.price * item.quantity).toLocaleString()} SYP
                       </p>
@@ -111,17 +123,17 @@ export default function CartPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center rounded-xl border bg-white">
+                    <div className="flex items-center rounded-xl border border-gray-300 bg-white">
                       <button
                         onClick={() =>
                           updateQuantity(item.id, item.quantity - 1)
                         }
-                        className="px-4 py-2 text-lg font-bold text-gray-700"
+                        className="px-4 py-2 text-lg font-bold text-gray-800"
                       >
                         -
                       </button>
 
-                      <span className="min-w-10 text-center font-bold">
+                      <span className="min-w-10 text-center font-bold text-gray-900">
                         {item.quantity}
                       </span>
 
@@ -129,7 +141,7 @@ export default function CartPage() {
                         onClick={() =>
                           updateQuantity(item.id, item.quantity + 1)
                         }
-                        className="px-4 py-2 text-lg font-bold text-gray-700"
+                        className="px-4 py-2 text-lg font-bold text-gray-800"
                       >
                         +
                       </button>
@@ -146,17 +158,17 @@ export default function CartPage() {
               ))}
             </div>
 
-            <aside className="h-fit rounded-3xl bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-bold">Order Summary</h2>
+            <aside className="hidden h-fit rounded-3xl bg-white p-6 shadow-sm lg:block">
+              <h2 className="text-xl font-bold text-gray-900">
+                Order Summary
+              </h2>
 
-              <div className="mt-5 flex justify-between border-b pb-4 text-gray-600">
+              <div className="mt-5 flex justify-between border-b border-gray-200 pb-4 text-gray-700">
                 <span>Items</span>
-                <span>
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                </span>
+                <span>{itemsCount}</span>
               </div>
 
-              <div className="mt-4 flex justify-between text-lg font-bold">
+              <div className="mt-4 flex justify-between text-lg font-bold text-gray-900">
                 <span>Total</span>
                 <span className="text-green-700">
                   {total.toLocaleString()} SYP
@@ -180,6 +192,28 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      {cart.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white p-4 shadow-lg lg:hidden">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-600">
+                Total
+              </p>
+              <p className="font-extrabold text-green-700">
+                {total.toLocaleString()} SYP
+              </p>
+            </div>
+
+            <a
+              href="/checkout"
+              className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
+            >
+              تأكيد الطلب
+            </a>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
