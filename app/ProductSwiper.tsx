@@ -5,38 +5,72 @@ import "swiper/css";
 import Link from "next/link";
 
 export default function ProductSwiper({ products }: { products: any[] }) {
+  if (products.length === 0) {
+    return (
+      <div className="rounded-3xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100">
+        <h3 className="text-xl font-bold text-gray-900">
+          No featured products yet
+        </h3>
+
+        <p className="mt-3 text-gray-600">
+          Featured products will appear here once added.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <Swiper
-      spaceBetween={16}
-      slidesPerView={1.25}
+      spaceBetween={20}
+      slidesPerView={1.15}
       breakpoints={{
-        640: { slidesPerView: 2.2 },
-        1024: { slidesPerView: 3 },
+        640: { slidesPerView: 2.15 },
+        1024: { slidesPerView: 3.15 },
       }}
     >
       {products.map((product) => (
         <SwiperSlide key={product.id}>
           <Link
-  href={`/products/${product.id}`}
-  className="block rounded-3xl bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
->
-            <div className="mb-3 flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
-              {product.image_url && (
+            href={`/products/${product.id}`}
+            className="group block overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+          >
+            <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-b from-white to-gray-100">
+              {product.is_out_of_stock && (
+                <span className="absolute left-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                  Out of Stock
+                </span>
+              )}
+
+              {product.image_url ? (
                 <img
                   src={product.image_url}
                   alt={product.name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                 />
+              ) : (
+                <span className="text-gray-400">No image</span>
               )}
             </div>
 
-            <h3 className="text-base font-bold text-gray-900">
-              {product.name}
-            </h3>
+            <div className="p-5">
+              <h3 className="line-clamp-2 text-base font-extrabold text-gray-900">
+                {product.name}
+              </h3>
 
-            <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-              {product.description}
-            </p>
+              <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600">
+                {product.description}
+              </p>
+
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="font-extrabold text-green-700">
+                  {Number(product.price).toLocaleString()} SYP
+                </p>
+
+                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                  View
+                </span>
+              </div>
+            </div>
           </Link>
         </SwiperSlide>
       ))}
