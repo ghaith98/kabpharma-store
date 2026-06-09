@@ -1,4 +1,4 @@
-"use client";
+    "use client";
 
 import { useState } from "react";
 
@@ -9,7 +9,7 @@ export default function ProductGallery({
   images: string[];
   productName: string;
 }) {
-  const [selectedImage, setSelectedImage] = useState(images[0] || "");
+  const [selectedImage, setSelectedImage] = useState(images[0]);
 
   return (
     <div>

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ProductSwiper from "./ProductSwiper";
+import HomeBannerSwiper from "./HomeBannerSwiper";
 
 export default async function Home() {
   const { data: products } = await supabase
@@ -87,6 +88,11 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      <section className="pb-8">
+  <div className="mx-auto max-w-6xl px-6">
+    <HomeBannerSwiper />
+  </div>
+</section>
 
       <section className="py-8 sm:py-12">
         <div className="mx-auto max-w-6xl px-6">
