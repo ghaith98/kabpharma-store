@@ -12,6 +12,12 @@ export default async function Home() {
     .order("id", { ascending: false })
     .limit(8);
 
+  const { data: banners } = await supabase
+    .from("home_banners")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
   return (
     <main className="min-h-screen overflow-hidden bg-gradient-to-b from-white via-gray-50 to-green-50">
       <section className="relative mx-auto max-w-6xl px-6 py-12 sm:py-16">
@@ -90,7 +96,7 @@ export default async function Home() {
       </section>
       <section className="pb-8">
   <div className="mx-auto max-w-6xl px-6">
-    <HomeBannerSwiper />
+    <HomeBannerSwiper banners={banners || []} />
   </div>
 </section>
 

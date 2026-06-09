@@ -14,6 +14,10 @@ export default function AdminDashboardPage() {
   const [rejectedCount, setRejectedCount] = useState(0);
   const [cancelledCount, setCancelledCount] = useState(0);
   const [revenue, setRevenue] = useState(0);
+  const [categories, setCategories] = useState<any[]>([]);
+const [categoryId, setCategoryId] = useState("");
+
+const [editCategoryId, setEditCategoryId] = useState("");
 
   async function loadDashboard() {
     const { data: userData } = await supabase.auth.getUser();
@@ -129,6 +133,12 @@ export default function AdminDashboardPage() {
           >
             Orders
           </a>
+          <a
+  href="/admin/banners"
+  className="rounded-xl bg-black px-5 py-3 text-white"
+>
+  Banners
+</a>
 
           <a
             href="/admin/products"

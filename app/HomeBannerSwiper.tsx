@@ -5,30 +5,13 @@ import { Autoplay } from "swiper/modules";
 
 import "swiper/css";
 
-const slides = [
-  {
-    image: "/banner1.jpg",
-    title: "Skin Repair Solutions",
-    text: "Advanced skincare products designed for everyday care.",
-  },
-  {
-    image: "/banner2.jpg",
-    title: "Healthy Hair Starts Here",
-    text: "Discover our professional hair care collection.",
-  },
-  {
-    image: "/banner3.jpg",
-    title: "Sun Protection & Brightening",
-    text: "Daily protection for healthier and brighter skin.",
-  },
-  {
-    image: "/banner4.jpg",
-    title: "Personal Care Essentials",
-    text: "Quality products for your daily routine.",
-  },
-];
+export default function HomeBannerSwiper({
+  banners,
+}: {
+  banners: any[];
+}) {
+  if (!banners || banners.length === 0) return null;
 
-export default function HomeBannerSwiper() {
   return (
     <Swiper
       modules={[Autoplay]}
@@ -40,13 +23,13 @@ export default function HomeBannerSwiper() {
       slidesPerView={1}
       className="rounded-[2rem]"
     >
-      {slides.map((slide, index) => (
-        <SwiperSlide key={index}>
+      {banners.map((slide) => (
+        <SwiperSlide key={slide.id}>
           <div className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-gray-100">
             <div className="grid md:grid-cols-2">
               <div className="h-[280px] md:h-[420px]">
                 <img
-                  src={slide.image}
+                  src={slide.image_url}
                   alt={slide.title}
                   className="h-full w-full object-cover"
                 />
