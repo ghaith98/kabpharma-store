@@ -20,19 +20,19 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-gradient-to-b from-white via-gray-50 to-green-50">
-      <section className="relative mx-auto max-w-6xl px-6 py-12 sm:py-16">
+      <section className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-16">
         <div className="absolute inset-0 -z-10">
           <div className="absolute left-[-120px] top-10 h-72 w-72 rounded-full bg-green-100 blur-3xl" />
           <div className="absolute right-[-120px] top-40 h-72 w-72 rounded-full bg-emerald-100 blur-3xl" />
         </div>
 
-        <div className="grid items-center gap-10 rounded-[2rem] bg-white/80 p-6 shadow-sm ring-1 ring-gray-100 backdrop-blur md:grid-cols-2 md:p-10">
+        <div className="grid items-center gap-6 rounded-[1.5rem] bg-white/80 p-5 shadow-sm ring-1 ring-gray-100 backdrop-blur md:grid-cols-2 md:gap-10 md:rounded-[2rem] md:p-10">
           <div className="text-center md:text-left">
             <span className="inline-flex rounded-full bg-green-50 px-4 py-2 text-sm font-bold text-green-700 ring-1 ring-green-100">
               KAB Pharma
             </span>
 
-            <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+            <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
               Trusted Skincare &
               <span className="block text-green-700">
                 Personal Care Solutions
@@ -69,7 +69,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="relative flex min-h-[320px] items-center justify-center">
+          <div className="relative hidden min-h-[320px] items-center justify-center md:flex">
             <div className="absolute h-72 w-72 rounded-full bg-green-100 blur-2xl" />
 
             <div className="relative rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-gray-100">
