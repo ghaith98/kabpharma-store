@@ -25,6 +25,9 @@ export default function AdminProductsPage() {
   const [editPrice, setEditPrice] = useState("");
   const [editCategoryId, setEditCategoryId] = useState("");
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [productImages, setProductImages] = useState<any[]>([]);
+const [uploadingImageProductId, setUploadingImageProductId] =
+  useState<number | null>(null);
 
   async function checkAdmin() {
     const { data } = await supabase.auth.getUser();
@@ -33,6 +36,9 @@ export default function AdminProductsPage() {
       router.push("/admin/login");
       return;
     }
+    await loadProducts();
+await loadCategories();
+await loadProductImages();
 
     await loadProducts();
     await loadCategories();
@@ -51,6 +57,19 @@ export default function AdminProductsPage() {
 
     setProducts(data || []);
   }
+  async function loadProductImages() {
+  const { data, error } = await supabase
+    .from("product_images")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setProductImages(data || []);
+}
 
   async function loadCategories() {
     const { data } = await supabase
@@ -188,6 +207,19 @@ export default function AdminProductsPage() {
     await loadProducts();
     setUpdatingFeaturedId(null);
   }
+  async function toggleStockStatus(product: any) {
+  const { error } = await supabase
+    .from("products")
+    .update({ is_out_of_stock: !product.is_out_of_stock })
+    .eq("id", product.id);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  loadProducts();
+} 
 
   async function deleteProduct(id: number) {
     const confirmDelete = confirm("Are you sure you want to delete this product?");
@@ -202,9 +234,70 @@ export default function AdminProductsPage() {
 
     loadProducts();
   }
+  async function uploadExtraImage(productId: number, file: File) {
+  const currentImages = productImages.filter(
+    (img) => img.product_id === productId
+  );
+
+  if (currentImages.length >= 5) {
+    alert("Maximum 5 images per product");
+    return;
+  }
+
+  setUploadingImageProductId(productId);
+
+  const filePath = `${Date.now()}-${file.name}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("product-images")
+    .upload(filePath, file);
+
+  if (uploadError) {
+    alert(uploadError.message);
+    setUploadingImageProductId(null);
+    return;
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("product-images")
+    .getPublicUrl(filePath);
+
+  const { error } = await supabase.from("product_images").insert({
+    product_id: productId,
+    image_url: publicUrlData.publicUrl,
+    sort_order: currentImages.length,
+  });
+
+  if (error) {
+    alert(error.message);
+    setUploadingImageProductId(null);
+    return;
+  }
+
+  await loadProductImages();
+  setUploadingImageProductId(null);
+} 
+async function deleteExtraImage(imageId: number) {
+  const confirmDelete = confirm("Delete this image?");
+  if (!confirmDelete) return;
+
+  const { error } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("id", imageId);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  loadProductImages();
+}
+  
 
   useEffect(() => {
     checkAdmin();
+    
   }, []);
 
   return (
@@ -295,6 +388,48 @@ export default function AdminProductsPage() {
                   className="mb-4 h-40 w-40 rounded-xl object-cover"
                 />
               )}
+              <div className="mb-4 flex flex-wrap gap-2">
+  {productImages
+    .filter((img) => img.product_id === product.id)
+    .map((img) => (
+      <div key={img.id} className="relative">
+        <img
+          src={img.image_url}
+          alt=""
+          className="h-20 w-20 rounded-lg object-cover"
+        />
+
+        <button
+          onClick={() => deleteExtraImage(img.id)}
+          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white"
+        >
+          ×
+        </button>
+      </div>
+    ))}
+</div>
+
+<label className="mb-4 inline-block cursor-pointer rounded-xl bg-gray-100 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-200">
+  Add Extra Image
+
+  <input
+    type="file"
+    accept="image/*"
+    className="hidden"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        uploadExtraImage(product.id, file);
+      }
+    }}
+  />
+</label>
+
+{uploadingImageProductId === product.id && (
+  <p className="mb-4 text-sm font-semibold text-green-700">
+    Uploading...
+  </p>
+)}
 
               <div className="mb-2 flex flex-wrap items-center gap-3">
                 <h2 className="text-xl font-bold">{product.name}</h2>
@@ -310,6 +445,11 @@ export default function AdminProductsPage() {
               <p className="font-bold">
                 {Number(product.price).toLocaleString()} SYP
               </p>
+              {product.is_out_of_stock && (
+  <p className="mt-2 font-bold text-red-600">
+    Out of Stock
+  </p>
+)}
 
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
@@ -318,6 +458,16 @@ export default function AdminProductsPage() {
                 >
                   Edit
                 </button>
+                <button
+  onClick={() => toggleStockStatus(product)}
+  className={`rounded-xl px-4 py-2 font-semibold text-white ${
+    product.is_out_of_stock
+      ? "bg-green-600 hover:bg-green-700"
+      : "bg-orange-500 hover:bg-orange-600"
+  }`}
+>
+  {product.is_out_of_stock ? "Mark Available" : "Mark Out of Stock"}
+</button>
 
                 <button
                   onClick={() => toggleFeatured(product)}
