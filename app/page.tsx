@@ -27,7 +27,7 @@ export default async function Home() {
         </div>
 
         <div className="grid items-center gap-6 rounded-[1.5rem] bg-white/80 p-5 shadow-sm ring-1 ring-gray-100 backdrop-blur md:grid-cols-2 md:gap-10 md:rounded-[2rem] md:p-10">
-          <div className="text-center md:text-left">
+          <div className="hidden md:block md:text-left">
             <span className="inline-flex rounded-full bg-green-50 px-4 py-2 text-sm font-bold text-green-700 ring-1 ring-green-100">
               KAB Pharma
             </span>
@@ -90,6 +90,12 @@ export default async function Home() {
                   Carefully selected for everyday care.
                 </p>
               </div>
+              <Link
+  href="/products"
+  className="mt-6 block rounded-2xl bg-green-600 px-8 py-4 text-center font-bold text-white shadow-sm transition hover:bg-green-700 md:hidden"
+>
+  Shop Now
+</Link>
             </div>
           </div>
         </div>
