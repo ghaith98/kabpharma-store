@@ -69,7 +69,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="relative hidden min-h-[320px] items-center justify-center md:flex">
+          <div className="relative flex min-h-[320px] items-center justify-center">
             <div className="absolute h-72 w-72 rounded-full bg-green-100 blur-2xl" />
 
             <div className="relative rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-gray-100">
