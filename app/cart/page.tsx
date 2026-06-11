@@ -78,7 +78,7 @@ const hasFreeDelivery =
   freeShippingThreshold > 0 && total >= freeShippingThreshold;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-32 lg:pb-12">
+    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-48 lg:pb-12">
       <div className="mx-auto max-w-5xl">
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
