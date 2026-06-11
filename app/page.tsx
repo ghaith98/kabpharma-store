@@ -4,13 +4,81 @@ import { supabase } from "@/lib/supabase";
 import ProductSwiper from "./ProductSwiper";
 import HomeBannerSwiper from "./HomeBannerSwiper";
 
+function ProductSection({
+  eyebrow,
+  title,
+  products,
+}: {
+  eyebrow: string;
+  title: string;
+  products: any[];
+}) {
+  if (!products || products.length === 0) return null;
+
+  return (
+    <section className="py-8 sm:py-12">
+      <div className="mx-auto max-w-6xl px-6">
+        <div className="mb-8 text-center sm:text-left">
+          <span className="text-sm font-bold uppercase tracking-wider text-green-700">
+            {eyebrow}
+          </span>
+
+          <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
+            {title}
+          </h2>
+        </div>
+
+        <ProductSwiper products={products} />
+      </div>
+    </section>
+  );
+}
+
 export default async function Home() {
-  const { data: products } = await supabase
+  const { data: newProducts } = await supabase
+  .from("products")
+  .select("*")
+  .eq("is_new_arrival", true)
+  .order("id", { ascending: false })
+  .limit(6);
+
+  const { data: featuredProducts } = await supabase
     .from("products")
     .select("*")
     .eq("featured", true)
     .order("id", { ascending: false })
     .limit(8);
+
+  const { data: orderItems } = await supabase
+    .from("order_items")
+    .select("product_id, quantity");
+
+  const topSellerIds = Object.entries(
+    (orderItems || []).reduce((acc: Record<string, number>, item: any) => {
+      if (!item.product_id) return acc;
+
+      acc[item.product_id] =
+        (acc[item.product_id] || 0) + Number(item.quantity || 0);
+
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([productId]) => Number(productId));
+
+  let topSellerProducts: any[] = [];
+
+  if (topSellerIds.length > 0) {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .in("id", topSellerIds);
+
+    topSellerProducts = topSellerIds
+      .map((id) => data?.find((product) => product.id === id))
+      .filter(Boolean);
+  }
 
   const { data: banners } = await supabase
     .from("home_banners")
@@ -44,15 +112,14 @@ export default async function Home() {
               support healthier, more confident everyday living.
             </p>
 
-            
-  <div className="mt-8 flex justify-center md:justify-start">
-  <Link
-    href="/products"
-    className="inline-block rounded-2xl bg-green-600 px-8 py-4 font-bold text-white shadow-sm transition hover:bg-green-700 md:ml-8"
-  >
-    Shop Now
-  </Link>
-</div>
+            <div className="mt-8 flex justify-center md:justify-start">
+              <Link
+                href="/products"
+                className="inline-block rounded-2xl bg-green-600 px-8 py-4 font-bold text-white shadow-sm transition hover:bg-green-700 md:ml-8"
+              >
+                Shop Now
+              </Link>
+            </div>
 
             <div className="mt-8 grid gap-3 text-sm font-bold text-gray-700 sm:grid-cols-3">
               <div className="rounded-2xl bg-gray-50 px-4 py-3">
@@ -90,39 +157,41 @@ export default async function Home() {
                   Carefully selected for everyday care.
                 </p>
               </div>
+
               <Link
-  href="/products"
-  className="mt-6 block rounded-2xl bg-green-600 px-8 py-4 text-center font-bold text-white shadow-sm transition hover:bg-green-700 md:hidden"
->
-  Shop Now
-</Link>
+                href="/products"
+                className="mt-6 block rounded-2xl bg-green-600 px-8 py-4 text-center font-bold text-white shadow-sm transition hover:bg-green-700 md:hidden"
+              >
+                Shop Now
+              </Link>
             </div>
           </div>
         </div>
       </section>
+
       <section className="pb-8">
-  <div className="mx-auto max-w-6xl px-6">
-    <HomeBannerSwiper banners={banners || []} />
-  </div>
-</section>
-
-      <section className="py-8 sm:py-12">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-8 flex flex-col gap-3 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
-            <div>
-              <span className="text-sm font-bold uppercase tracking-wider text-green-700">
-                Featured
-              </span>
-
-              <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
-                Featured Products
-              </h2>
-            </div>
-          </div>
-
-          <ProductSwiper products={products || []} />
+          <HomeBannerSwiper banners={banners || []} />
         </div>
       </section>
+
+      <ProductSection
+        eyebrow="New"
+        title="New Arrivals"
+        products={newProducts || []}
+      />
+
+      <ProductSection
+        eyebrow="Best Selling"
+        title="Top Sellers"
+        products={topSellerProducts || []}
+      />
+
+      <ProductSection
+        eyebrow="Featured"
+        title="Featured Products"
+        products={featuredProducts || []}
+      />
 
       <section className="pb-16 pt-8">
         <div className="mx-auto max-w-6xl px-6">

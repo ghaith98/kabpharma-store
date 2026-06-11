@@ -19,6 +19,8 @@ export default function AdminProductsPage() {
   const [updatingFeaturedId, setUpdatingFeaturedId] = useState<number | null>(
     null
   );
+  const [updatingNewArrivalId, setUpdatingNewArrivalId] =
+  useState<number | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -210,6 +212,25 @@ sale_percent: Number(salePercent),
     await loadProducts();
     setUpdatingFeaturedId(null);
   }
+  async function toggleNewArrival(product: any) {
+  setUpdatingNewArrivalId(product.id);
+
+  const { error } = await supabase
+    .from("products")
+    .update({
+      is_new_arrival: !product.is_new_arrival,
+    })
+    .eq("id", product.id);
+
+  if (error) {
+    alert(error.message);
+    setUpdatingNewArrivalId(null);
+    return;
+  }
+
+  await loadProducts();
+  setUpdatingNewArrivalId(null);
+}
   async function toggleStockStatus(product: any) {
   const { error } = await supabase
     .from("products")
@@ -453,6 +474,11 @@ async function deleteExtraImage(imageId: number) {
                     ⭐ Featured
                   </span>
                 )}
+                {product.is_new_arrival && (
+  <span className="rounded-full bg-green-50 px-3 py-1 text-sm font-bold text-green-700">
+    🆕 New Arrival
+  </span>
+)}
               </div>
 
               <p className="text-gray-600">{product.description}</p>
@@ -498,6 +524,21 @@ async function deleteExtraImage(imageId: number) {
                     ? "Remove Featured"
                     : "Make Featured"}
                 </button>
+                <button
+  onClick={() => toggleNewArrival(product)}
+  disabled={updatingNewArrivalId === product.id}
+  className={`rounded-xl px-4 py-2 font-semibold transition ${
+    product.is_new_arrival
+      ? "bg-green-600 text-white"
+      : "bg-gray-200 text-gray-800"
+  }`}
+>
+  {updatingNewArrivalId === product.id
+    ? "Updating..."
+    : product.is_new_arrival
+    ? "Remove New Arrival"
+    : "Make New Arrival"}
+</button>
 
                 <button
                   onClick={() => deleteProduct(product.id)}
