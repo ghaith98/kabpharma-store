@@ -82,7 +82,7 @@ const finalPrice =
   </p>
 </div>
 
-                <div className="mt-8">
+                <div className="mt-8 hidden md:block">
                   {product.is_out_of_stock ? (
   <button
     disabled
