@@ -1,22 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { CartItem, getCart } from "@/lib/cart";
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [deliveryFees, setDeliveryFees] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [governorate, setGovernorate] = useState("");
   const [address, setAddress] = useState("");
 
   useEffect(() => {
     setCart(getCart());
+    loadDeliveryFees();
   }, []);
 
-  const total = cart.reduce(
+  async function loadDeliveryFees() {
+    const { data, error } = await supabase
+      .from("delivery_fees")
+      .select("*")
+      .eq("is_active", true)
+      .order("id", { ascending: true });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setDeliveryFees(data || []);
+  }
+
+  const productsTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const selectedDelivery = deliveryFees.find(
+    (item) => item.governorate === governorate
+  );
+
+  const deliveryFee = Number(selectedDelivery?.fee || 0);
+  const total = productsTotal + deliveryFee;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,12 +52,19 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!governorate) {
+      alert("Please select governorate");
+      return;
+    }
+
     localStorage.setItem(
       "checkout",
       JSON.stringify({
         name,
         phone,
+        governorate,
         address,
+        delivery_fee: deliveryFee,
       })
     );
 
@@ -42,9 +75,7 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
       <div className="mx-auto max-w-5xl">
         <section className="mb-10 text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900">
-            Checkout
-          </h1>
+          <h1 className="text-4xl font-extrabold text-gray-900">Checkout</h1>
 
           <p className="mt-3 text-gray-700">
             Add your delivery details to continue to payment.
@@ -79,6 +110,21 @@ export default function CheckoutPage() {
                 className="w-full rounded-2xl border border-gray-300 p-4 text-black placeholder:text-gray-500 outline-none transition focus:border-green-600"
               />
 
+              <select
+                value={governorate}
+                onChange={(e) => setGovernorate(e.target.value)}
+                required
+                className="w-full rounded-2xl border border-gray-300 p-4 text-black outline-none transition focus:border-green-600"
+              >
+                <option value="">Select Governorate</option>
+
+                {deliveryFees.map((item) => (
+                  <option key={item.id} value={item.governorate}>
+                    {item.governorate}
+                  </option>
+                ))}
+              </select>
+
               <textarea
                 placeholder="Delivery Address"
                 value={address}
@@ -112,13 +158,8 @@ export default function CheckoutPage() {
                     className="flex justify-between gap-4 text-sm"
                   >
                     <div>
-                      <p className="font-bold text-gray-900">
-                        {item.name}
-                      </p>
-
-                      <p className="mt-1 text-gray-700">
-                        Qty: {item.quantity}
-                      </p>
+                      <p className="font-bold text-gray-900">{item.name}</p>
+                      <p className="mt-1 text-gray-700">Qty: {item.quantity}</p>
                     </div>
 
                     <p className="font-bold text-green-700">
@@ -129,9 +170,20 @@ export default function CheckoutPage() {
               )}
             </div>
 
+            <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
+              <div className="flex justify-between font-bold text-gray-800">
+                <span>Products</span>
+                <span>{productsTotal.toLocaleString()} SYP</span>
+              </div>
+
+              <div className="flex justify-between font-bold text-gray-800">
+                <span>Delivery</span>
+                <span>{deliveryFee.toLocaleString()} SYP</span>
+              </div>
+            </div>
+
             <div className="mt-4 flex justify-between text-lg font-extrabold text-gray-900">
               <span>Total</span>
-
               <span className="text-green-700">
                 {total.toLocaleString()} SYP
               </span>

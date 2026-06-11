@@ -13,10 +13,23 @@ const statusMap: Record<string, string> = {
   cancelled_by_customer: "ألغاه الزبون",
 };
 
+const governorates = [
+  "All",
+  "Damascus",
+  "Homs",
+  "Hama",
+  "Aleppo",
+  "Latakia",
+  "Tartus",
+  "Suwayda",
+  "Al Hasakah",
+];
+
 export default function AdminOrdersPage() {
   const router = useRouter();
 
   const [orders, setOrders] = useState<any[]>([]);
+  const [selectedGovernorate, setSelectedGovernorate] = useState("All");
   const [checking, setChecking] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [updatedOrderId, setUpdatedOrderId] = useState<number | null>(null);
@@ -26,14 +39,14 @@ export default function AdminOrdersPage() {
     const { data, error } = await supabase
       .from("orders")
       .select(`
-  *,
-  order_items (
-    id,
-    product_name,
-    quantity,
-    unit_price
-  )
-`)
+        *,
+        order_items (
+          id,
+          product_name,
+          quantity,
+          unit_price
+        )
+      `)
       .order("id", { ascending: false });
 
     if (error) {
@@ -92,6 +105,11 @@ export default function AdminOrdersPage() {
     checkAdmin();
   }, [router]);
 
+  const filteredOrders =
+    selectedGovernorate === "All"
+      ? orders
+      : orders.filter((order) => order.governorate === selectedGovernorate);
+
   if (checking) {
     return (
       <main className="min-h-screen bg-gray-50 px-6 py-10">
@@ -103,27 +121,60 @@ export default function AdminOrdersPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
-  <h1 className="text-3xl font-bold text-gray-900">Admin Orders</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Admin Orders</h1>
 
-  <div className="flex gap-3">
-    <a
-      href="/admin"
-      className="rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
-    >
-      Back to Dashboard
-    </a>
+        <div className="flex gap-3">
+          <a
+            href="/admin"
+            className="rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
+            Back to Dashboard
+          </a>
 
-    <button
-      onClick={logout}
-      className="rounded-xl bg-black px-4 py-2 font-semibold text-white"
-    >
-      Logout
-    </button>
-  </div>
-</div>
+          <button
+            onClick={logout}
+            className="rounded-xl bg-black px-4 py-2 font-semibold text-white"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <div className="mx-auto mb-8 max-w-5xl overflow-x-auto rounded-2xl bg-white p-3 shadow-sm">
+        <div className="flex min-w-max gap-3">
+          {governorates.map((gov) => {
+            const count =
+              gov === "All"
+                ? orders.length
+                : orders.filter((order) => order.governorate === gov).length;
+
+            return (
+              <button
+                key={gov}
+                onClick={() => setSelectedGovernorate(gov)}
+                className={`rounded-full px-5 py-2 text-sm font-bold transition ${
+                  selectedGovernorate === gov
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                {gov} ({count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="mx-auto max-w-5xl space-y-4">
-        {orders.map((order) => {
+        {filteredOrders.length === 0 && (
+          <div className="rounded-2xl bg-white p-8 text-center shadow">
+            <h2 className="text-xl font-bold text-gray-900">
+              No orders found
+            </h2>
+          </div>
+        )}
+
+        {filteredOrders.map((order) => {
           const isCancelled = order.status === "cancelled_by_customer";
 
           const isFinal =
@@ -150,7 +201,15 @@ export default function AdminOrdersPage() {
                   <strong>Phone:</strong> {order.phone}
                 </p>
                 <p>
+                  <strong>Governorate:</strong>{" "}
+                  {order.governorate || "Not selected"}
+                </p>
+                <p>
                   <strong>Address:</strong> {order.address}
+                </p>
+                <p>
+                  <strong>Delivery Fee:</strong>{" "}
+                  {Number(order.delivery_fee || 0).toLocaleString()} SYP
                 </p>
                 <p>
                   <strong>Total:</strong>{" "}
@@ -171,34 +230,40 @@ export default function AdminOrdersPage() {
                   className="mt-3 block font-semibold text-blue-700 underline"
                 >
                   View Payment Proof
-                  {order.order_items && order.order_items.length > 0 && (
-  <div className="mt-5 rounded-2xl bg-gray-50 p-4">
-    <h3 className="mb-3 font-bold text-gray-900">Order Items</h3>
-
-    <div className="space-y-3">
-      {order.order_items.map((item: any) => (
-        <div
-          key={item.id}
-          className="flex items-center justify-between border-b border-gray-200 pb-2 last:border-b-0"
-        >
-          <div>
-            <p className="font-bold text-gray-900">
-              {item.product_name}
-            </p>
-            <p className="text-sm text-gray-600">
-              Quantity: {item.quantity}
-            </p>
-          </div>
-
-          <p className="font-bold text-green-700">
-            {(Number(item.unit_price) * Number(item.quantity)).toLocaleString()} SYP
-          </p>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
                 </a>
+              )}
+
+              {order.order_items && order.order_items.length > 0 && (
+                <div className="mt-5 rounded-2xl bg-gray-50 p-4">
+                  <h3 className="mb-3 font-bold text-gray-900">
+                    Order Items
+                  </h3>
+
+                  <div className="space-y-3">
+                    {order.order_items.map((item: any) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between border-b border-gray-200 pb-2 last:border-b-0"
+                      >
+                        <div>
+                          <p className="font-bold text-gray-900">
+                            {item.product_name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Quantity: {item.quantity}
+                          </p>
+                        </div>
+
+                        <p className="font-bold text-green-700">
+                          {(
+                            Number(item.unit_price) * Number(item.quantity)
+                          ).toLocaleString()}{" "}
+                          SYP
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {isCancelled ? (

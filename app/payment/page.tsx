@@ -40,10 +40,19 @@ if (numberData?.value) {
 }, []);
 
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+ const checkout =
+  typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem("checkout") || "{}")
+    : {};
+
+const deliveryFee = Number(checkout.delivery_fee || 0);
+
+const productsTotal = cart.reduce(
+  (sum, item) => sum + item.price * item.quantity,
+  0
+);
+
+const total = productsTotal + deliveryFee;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,8 +64,14 @@ if (numberData?.value) {
 
     const checkout = JSON.parse(localStorage.getItem("checkout") || "{}");
     const currentCart = getCart();
+    const deliveryFee = Number(checkout.delivery_fee || 0); 
 
-    if (!checkout.name || !checkout.phone || !checkout.address) {
+    if (
+  !checkout.name ||
+  !checkout.phone ||
+  !checkout.governorate ||
+  !checkout.address
+) {
       alert("Missing checkout information");
       window.location.href = "/checkout";
       return;
@@ -70,10 +85,12 @@ if (numberData?.value) {
 
     setLoading(true);
 
-    const orderTotal = currentCart.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    const productsTotal = currentCart.reduce(
+  (sum, item) => sum + item.price * item.quantity,
+  0
+);
+
+const orderTotal = productsTotal + deliveryFee;
 
     const filePath = `${Date.now()}-${file.name}`;
 
@@ -94,13 +111,15 @@ if (numberData?.value) {
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
-        customer_name: checkout.name,
-        phone: checkout.phone,
-        address: checkout.address,
-        total_price: orderTotal,
-        status: "pending",
-        payment_proof_url: publicUrlData.publicUrl,
-      })
+  customer_name: checkout.name,
+  phone: checkout.phone,
+  governorate: checkout.governorate,
+  address: checkout.address,
+  delivery_fee: deliveryFee,
+  total_price: orderTotal,
+  status: "pending",
+  payment_proof_url: publicUrlData.publicUrl,
+})  
       .select()
       .single();
 
@@ -263,13 +282,25 @@ if (numberData?.value) {
               )}
             </div>
 
-            <div className="mt-4 flex justify-between text-lg font-extrabold text-gray-900">
-              <span>Total</span>
+           <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
+  <div className="flex justify-between font-bold text-gray-800">
+    <span>Products</span>
+    <span>{productsTotal.toLocaleString()} SYP</span>
+  </div>
 
-              <span className="text-green-700">
-                {total.toLocaleString()} SYP
-              </span>
-            </div>
+  <div className="flex justify-between font-bold text-gray-800">
+    <span>Delivery</span>
+    <span>{deliveryFee.toLocaleString()} SYP</span>
+  </div>
+</div>
+
+<div className="mt-4 flex justify-between text-lg font-extrabold text-gray-900">
+  <span>Total</span>
+
+  <span className="text-green-700">
+    {total.toLocaleString()} SYP
+  </span>
+</div>
 
             <a
               href="/checkout"

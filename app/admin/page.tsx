@@ -140,6 +140,7 @@ const [editCategoryId, setEditCategoryId] = useState("");
   Banners
 </a>
 
+
           <a
             href="/admin/products"
             className="rounded-xl bg-black px-5 py-3 text-white"
@@ -151,6 +152,12 @@ const [editCategoryId, setEditCategoryId] = useState("");
   className="rounded-xl bg-black px-5 py-3 text-white"
 >
   Categories
+</a>
+<a
+  href="/admin/delivery"
+  className="rounded-xl bg-black px-5 py-3 text-white"
+>
+  Delivery Fees
 </a>
 
           <a
