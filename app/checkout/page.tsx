@@ -6,30 +6,55 @@ import { CartItem, getCart } from "@/lib/cart";
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [deliveryFees, setDeliveryFees] = useState<any[]>([]);
+  const [governorates, setGovernorates] = useState<any[]>([]);
+  const [deliveryAreas, setDeliveryAreas] = useState<any[]>([]);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [governorate, setGovernorate] = useState("");
+  const [deliveryArea, setDeliveryArea] = useState("");
   const [address, setAddress] = useState("");
 
   useEffect(() => {
     setCart(getCart());
-    loadDeliveryFees();
+    loadDeliveryData();
   }, []);
 
-  async function loadDeliveryFees() {
-    const { data, error } = await supabase
+  async function loadDeliveryData() {
+    const { data: govData, error: govError } = await supabase
       .from("delivery_fees")
       .select("*")
       .eq("is_active", true)
       .order("id", { ascending: true });
 
-    if (error) {
-      alert(error.message);
+    if (govError) {
+      alert(govError.message);
       return;
     }
 
-    setDeliveryFees(data || []);
+    const { data: areaData, error: areaError } = await supabase
+      .from("delivery_areas")
+      .select("*")
+      .eq("is_active", true)
+      .order("area_name", { ascending: true });
+
+    if (areaError) {
+      alert(areaError.message);
+      return;
+    }
+
+    
+
+    const { data: settingData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "free_shipping_threshold")
+      .single();
+
+    setGovernorates(govData || []);
+    setDeliveryAreas(areaData || []);
+    setFreeShippingThreshold(Number(settingData?.value || 0));
   }
 
   const productsTotal = cart.reduce(
@@ -37,11 +62,21 @@ export default function CheckoutPage() {
     0
   );
 
-  const selectedDelivery = deliveryFees.find(
-    (item) => item.governorate === governorate
+  const areasForGovernorate = deliveryAreas.filter(
+    (area) => area.governorate === governorate
   );
 
-  const deliveryFee = Number(selectedDelivery?.fee || 0);
+  const selectedArea = deliveryAreas.find(
+    (area) => String(area.id) === deliveryArea
+  );
+
+  const rawDeliveryFee = Number(selectedArea?.delivery_fee || 0);
+
+  const hasFreeShipping =
+    freeShippingThreshold > 0 && productsTotal >= freeShippingThreshold;
+
+  const deliveryFee = hasFreeShipping ? 0 : rawDeliveryFee;
+
   const total = productsTotal + deliveryFee;
 
   function handleSubmit(e: React.FormEvent) {
@@ -57,12 +92,18 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!deliveryArea) {
+      alert("Please select delivery area");
+      return;
+    }
+
     localStorage.setItem(
       "checkout",
       JSON.stringify({
         name,
         phone,
         governorate,
+        delivery_area: selectedArea?.area_name || "",
         address,
         delivery_fee: deliveryFee,
       })
@@ -112,21 +153,42 @@ export default function CheckoutPage() {
 
               <select
                 value={governorate}
-                onChange={(e) => setGovernorate(e.target.value)}
+                onChange={(e) => {
+                  setGovernorate(e.target.value);
+                  setDeliveryArea("");
+                }}
                 required
                 className="w-full rounded-2xl border border-gray-300 p-4 text-black outline-none transition focus:border-green-600"
               >
                 <option value="">Select Governorate</option>
 
-                {deliveryFees.map((item) => (
+                {governorates.map((item) => (
                   <option key={item.id} value={item.governorate}>
                     {item.governorate}
                   </option>
                 ))}
               </select>
 
+              <select
+                value={deliveryArea}
+                onChange={(e) => setDeliveryArea(e.target.value)}
+                required
+                disabled={!governorate}
+                className="w-full rounded-2xl border border-gray-300 p-4 text-black outline-none transition focus:border-green-600 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <option value="">
+                  {governorate ? "Select Area" : "Select governorate first"}
+                </option>
+
+                {areasForGovernorate.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.area_name}
+                  </option>
+                ))}
+              </select>
+
               <textarea
-                placeholder="Delivery Address"
+                placeholder="Delivery Address Details"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 required
@@ -170,6 +232,13 @@ export default function CheckoutPage() {
               )}
             </div>
 
+            {freeShippingThreshold > 0 && (
+              <div className="mt-4 rounded-2xl bg-green-50 p-4 text-sm font-semibold text-green-800">
+                Free delivery for orders above{" "}
+                {freeShippingThreshold.toLocaleString()} SYP
+              </div>
+            )}
+
             <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
               <div className="flex justify-between font-bold text-gray-800">
                 <span>Products</span>
@@ -178,7 +247,11 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between font-bold text-gray-800">
                 <span>Delivery</span>
-                <span>{deliveryFee.toLocaleString()} SYP</span>
+                <span>
+                  {hasFreeShipping
+                    ? "Free"
+                    : `${deliveryFee.toLocaleString()} SYP`}
+                </span>
               </div>
             </div>
 

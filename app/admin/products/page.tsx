@@ -13,6 +13,7 @@ export default function AdminProductsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [salePercent, setSalePercent] = useState("0");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [updatingFeaturedId, setUpdatingFeaturedId] = useState<number | null>(
@@ -23,6 +24,7 @@ export default function AdminProductsPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editSalePercent, setEditSalePercent] = useState("0");
   const [editCategoryId, setEditCategoryId] = useState("");
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [productImages, setProductImages] = useState<any[]>([]);
@@ -39,9 +41,6 @@ const [uploadingImageProductId, setUploadingImageProductId] =
     await loadProducts();
 await loadCategories();
 await loadProductImages();
-
-    await loadProducts();
-    await loadCategories();
   }
 
   async function loadProducts() {
@@ -110,6 +109,7 @@ await loadProductImages();
       name,
       description,
       price: Number(price),
+sale_percent: Number(salePercent),
       image_url: publicUrlData.publicUrl,
       category_id: Number(categoryId),
       featured: false,
@@ -124,6 +124,7 @@ await loadProductImages();
     setName("");
     setDescription("");
     setPrice("");
+    setSalePercent("0");
     setCategoryId("");
     setImageFile(null);
     setLoading(false);
@@ -137,6 +138,7 @@ await loadProductImages();
     setEditName(product.name);
     setEditDescription(product.description || "");
     setEditPrice(String(product.price));
+    setEditSalePercent(String(product.sale_percent || 0));
   }
 
   async function updateProduct() {
@@ -168,6 +170,7 @@ await loadProductImages();
       description: editDescription,
       category_id: Number(editCategoryId),
       price: Number(editPrice),
+      sale_percent: Number(editSalePercent),
     };
 
     if (imageUrl) {
@@ -319,6 +322,7 @@ async function deleteExtraImage(imageId: number) {
           className="mb-8 rounded-2xl bg-white p-6 shadow"
         >
           <h2 className="mb-4 text-xl font-bold">Add Product</h2>
+          
 
           <input
             type="text"
@@ -328,6 +332,7 @@ async function deleteExtraImage(imageId: number) {
             required
             className="mb-3 w-full rounded-xl border p-3 text-black"
           />
+          
 
           <textarea
             placeholder="Description"
@@ -345,6 +350,15 @@ async function deleteExtraImage(imageId: number) {
             required
             className="mb-3 w-full rounded-xl border p-3 text-black"
           />
+          <input
+  type="number"
+  placeholder="Sale %"
+  value={salePercent}
+  onChange={(e) => setSalePercent(e.target.value)}
+  min="0"
+  max="100"
+  className="mb-3 w-full rounded-xl border p-3 text-black"
+/>
 
           <select
             value={categoryId}
@@ -507,6 +521,7 @@ async function deleteExtraImage(imageId: number) {
               onChange={(e) => setEditName(e.target.value)}
               className="mb-3 w-full rounded-xl border p-3 text-black"
             />
+            
 
             <textarea
               value={editDescription}
@@ -514,12 +529,22 @@ async function deleteExtraImage(imageId: number) {
               className="mb-3 w-full rounded-xl border p-3 text-black"
             />
 
-            <input
-              type="number"
-              value={editPrice}
-              onChange={(e) => setEditPrice(e.target.value)}
-              className="mb-4 w-full rounded-xl border p-3 text-black"
-            />
+           <input
+  type="number"
+  value={editPrice}
+  onChange={(e) => setEditPrice(e.target.value)}
+  className="mb-4 w-full rounded-xl border p-3 text-black"
+/>
+
+<input
+  type="number"
+  placeholder="Sale %"
+  value={editSalePercent}
+  onChange={(e) => setEditSalePercent(e.target.value)}
+  min="0"
+  max="100"
+  className="mb-4 w-full rounded-xl border p-3 text-black"
+/>
 
             <select
               value={editCategoryId}

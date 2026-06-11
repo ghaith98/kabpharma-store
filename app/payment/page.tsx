@@ -66,12 +66,13 @@ const total = productsTotal + deliveryFee;
     const currentCart = getCart();
     const deliveryFee = Number(checkout.delivery_fee || 0); 
 
-    if (
+   if (
   !checkout.name ||
   !checkout.phone ||
   !checkout.governorate ||
+  !checkout.delivery_area ||
   !checkout.address
-) {
+)  {
       alert("Missing checkout information");
       window.location.href = "/checkout";
       return;
@@ -114,12 +115,13 @@ const orderTotal = productsTotal + deliveryFee;
   customer_name: checkout.name,
   phone: checkout.phone,
   governorate: checkout.governorate,
+  delivery_area: checkout.delivery_area,
   address: checkout.address,
   delivery_fee: deliveryFee,
   total_price: orderTotal,
   status: "pending",
   payment_proof_url: publicUrlData.publicUrl,
-})  
+})
       .select()
       .single();
 

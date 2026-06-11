@@ -11,13 +11,17 @@ export default function ProductSwiper({ products }: { products: any[] }) {
         <h3 className="text-xl font-bold text-gray-900">
           No featured products yet
         </h3>
+        
 
         <p className="mt-3 text-gray-600">
           Featured products will appear here once added.
         </p>
       </div>
+      
     );
   }
+  
+
 
   return (
     <Swiper
@@ -27,19 +31,37 @@ export default function ProductSwiper({ products }: { products: any[] }) {
         640: { slidesPerView: 2.15 },
         1024: { slidesPerView: 3.15 },
       }}
+      
     >
-      {products.map((product) => (
+      {products.map((product) => {
+  const salePercent = Number(product.sale_percent || 0);
+  const originalPrice = Number(product.price);
+  const finalPrice =
+    salePercent > 0
+      ? originalPrice - originalPrice * (salePercent / 100)
+      : originalPrice;
+
+  return (
         <SwiperSlide key={product.id}>
           <Link
             href={`/products/${product.id}`}
             className="group block overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
           >
-            <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-b from-white to-gray-100">
-              {product.is_out_of_stock && (
-                <span className="absolute left-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                  Out of Stock
-                </span>
-              )}
+            
+            
+              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-b from-white to-gray-100">
+                {product.is_out_of_stock && (
+                  <span className="absolute left-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                    Out of Stock
+                  </span>
+                )}
+                {salePercent > 0 && (
+    <span className="absolute right-4 top-4 z-10 rounded-full bg-pink-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+      -{salePercent}%
+    </span>
+  )}
+              
+              
 
               {product.image_url ? (
                 <img
@@ -50,6 +72,7 @@ export default function ProductSwiper({ products }: { products: any[] }) {
               ) : (
                 <span className="text-gray-400">No image</span>
               )}
+              
             </div>
 
             <div className="p-5">
@@ -62,9 +85,18 @@ export default function ProductSwiper({ products }: { products: any[] }) {
               </p>
 
               <div className="mt-4 flex items-center justify-between gap-3">
-                <p className="font-extrabold text-green-700">
-                  {Number(product.price).toLocaleString()} SYP
-                </p>
+                
+                <div>
+  {salePercent > 0 && (
+    <p className="text-xs font-bold text-gray-400 line-through">
+      {originalPrice.toLocaleString()} SYP
+    </p>
+  )}
+
+  <p className="font-extrabold text-green-700">
+    {Math.round(finalPrice).toLocaleString()} SYP
+  </p>
+</div>
 
                 <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
                   View
@@ -72,8 +104,9 @@ export default function ProductSwiper({ products }: { products: any[] }) {
               </div>
             </div>
           </Link>
-        </SwiperSlide>
-      ))}
+        </SwiperSlide>  
+  );
+})}
     </Swiper>
   );
 }

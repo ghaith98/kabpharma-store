@@ -2,6 +2,8 @@ export type CartItem = {
   id: number;
   name: string;
   price: number;
+  original_price?: number;
+  sale_percent?: number;
   image_url: string | null;
   quantity: number;
 };
@@ -32,4 +34,4 @@ export function addToCart(item: Omit<CartItem, "quantity">) {
   }
 
   saveCart(cart);
-}   
+}

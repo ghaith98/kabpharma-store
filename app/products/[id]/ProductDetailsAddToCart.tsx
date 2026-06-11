@@ -4,11 +4,13 @@
         import { addToCart } from "@/lib/cart";
         
         type Product = {
-        id: number;
-        name: string;
-        price: number;
-        image_url: string | null;
-        };
+  id: number;
+  name: string;
+  price: number;
+  original_price?: number;
+  sale_percent?: number;
+  image_url: string | null;
+};
         
         export default function ProductDetailsAddToCart ({ product }: { product: Product }) {
         const [showModal, setShowModal] = useState(false);

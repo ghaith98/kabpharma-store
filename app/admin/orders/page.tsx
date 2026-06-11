@@ -205,6 +205,10 @@ export default function AdminOrdersPage() {
                   {order.governorate || "Not selected"}
                 </p>
                 <p>
+  <strong>Area:</strong>{" "}
+  {order.delivery_area || "Not selected"}
+</p>
+                <p>
                   <strong>Address:</strong> {order.address}
                 </p>
                 <p>
