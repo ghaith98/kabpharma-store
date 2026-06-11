@@ -44,7 +44,7 @@ const finalPrice =
     : originalPrice;
 
       return (
-        <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
+        <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12">
           <div className="mx-auto max-w-4xl rounded-3xl bg-white p-8 shadow-sm">
             <div className="mb-8">
               <BackButton />
@@ -116,6 +116,36 @@ const finalPrice =
             <RelatedProductsSwiper products={relatedProducts} />
             </section>
           )}
+          {!product.is_out_of_stock && (
+  <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white p-4 shadow-lg md:hidden">
+    <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
+      <div>
+        {salePercent > 0 && (
+          <p className="text-xs font-bold text-gray-400 line-through">
+            {originalPrice.toLocaleString()} SYP
+          </p>
+        )}
+
+        <p className="font-extrabold text-green-700">
+          {Math.round(finalPrice).toLocaleString()} SYP
+        </p>
+      </div>
+
+      <div className="min-w-[160px]">
+        <ProductDetailsAddToCart
+          product={{
+            id: product.id,
+            name: product.name,
+            price: Math.round(finalPrice),
+            original_price: originalPrice,
+            sale_percent: salePercent,
+            image_url: product.image_url,
+          }}
+        />
+      </div>
+    </div>
+  </div>
+)}
         </main>
       );
     } 
