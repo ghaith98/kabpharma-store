@@ -43,7 +43,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <a
             href="/search"
-            aria-label="Search products"
+            aria-label="Search page test"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700"
           >
             <FaSearch size={17} />

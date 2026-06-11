@@ -279,26 +279,24 @@ const hasFreeDelivery =
       </div>
 
       {cart.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white p-4 shadow-lg lg:hidden">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-gray-600">
-                Total
-              </p>  
-              <p className="font-extrabold text-green-700">
-                {total.toLocaleString()} SYP
-              </p>
-            </div>
+  <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white p-4 shadow-lg lg:hidden">
+    <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+      <div>
+        <p className="text-sm font-semibold text-gray-600">Total</p>
+        <p className="font-extrabold text-green-700">
+          {total.toLocaleString()} SYP
+        </p>
+      </div>
 
-            <a
-              href="/checkout"
-              className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
-            >
-              تأكيد الطلب
-            </a>
-          </div>
-        </div>
-      )}
+      <a
+        href="/checkout"
+        className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
+      >
+        تأكيد الطلب
+      </a>
+    </div>
+  </div>
+)}
     </main>
   );
 }
