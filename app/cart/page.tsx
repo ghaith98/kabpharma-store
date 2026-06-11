@@ -279,7 +279,7 @@ const hasFreeDelivery =
       </div>
 
       {cart.length > 0 && (
-  <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white p-4 shadow-lg lg:hidden">
+  <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white p-4 shadow-lg md:hidden">
     <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
       <div>
         <p className="text-sm font-semibold text-gray-600">Total</p>
