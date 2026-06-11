@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { getCart } from "@/lib/cart";
 import Image from "next/image";
+import { FaSearch, FaUser, FaShoppingCart } from "react-icons/fa";
 
 export default function Navbar() {
-  const pathname = usePathname();
   const [count, setCount] = useState(0);
 
   function updateCount() {
@@ -29,52 +28,49 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 sm:py-3">
         <a href="/">
           <Image
             src="/logo.png"
             alt="KAB Pharma"
-            width={180}
-            height={60}
-            className="h-auto"
+            width={140}
+            height={50}
+            className="h-auto sm:w-[160px]"
+            priority
           />
         </a>
 
-        <div className="hidden items-center gap-6 md:flex">
+        <div className="flex items-center gap-3">
           <a
-            href="/products"
-            className="font-medium text-gray-700 transition hover:text-green-700"
+            href="/search"
+            aria-label="Search products"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700"
           >
-            Products
+            <FaSearch size={17} />
           </a>
 
           <a
-            href="/orders"
-            className="font-medium text-gray-700 transition hover:text-green-700"
+            href="/profile"
+            aria-label="Profile"
+            className="hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700 md:flex"
           >
-            My Orders
+            <FaUser size={17} />
           </a>
 
           <a
             href="/cart"
-            className="relative rounded-xl bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700"
+            aria-label="Cart"
+            className="relative hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700 md:flex"
           >
-            Cart
+            <FaShoppingCart size={17} />
+
             {count > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white">
+              <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
                 {count}
               </span>
             )}
           </a>
         </div>
-
-        <a
-          href="/products"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-xl text-gray-700 md:hidden"
-          aria-label="Search"
-        >
-          🔍
-        </a>
       </div>
     </nav>
   );
