@@ -89,7 +89,7 @@
               </p>
             </div>
           ) : (
-            <div className="relative z-10 mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {filteredProducts.map((product) => {
       const salePercent = Number(product.sale_percent || 0);
       const originalPrice = Number(product.price);
@@ -101,86 +101,76 @@
       return (
       
                 <div
-                  key={product.id}
-                  className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <Link href={`/products/${product.id}`}>
-                    <div className="relative flex h-56 items-center justify-center overflow-hidden bg-gradient-to-b from-white to-gray-100">
-                      {product.is_out_of_stock && (
-                        <span className="absolute left-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                          Out of Stock
-                        </span>
-                      )}
-                      {salePercent > 0 && (
-      <span className="absolute right-4 top-4 z-10 rounded-full bg-pink-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
-        -{salePercent}%
+  key={product.id}
+  className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+>
+  <Link href={`/products/${product.id}`}>
+    <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-white p-4">
+      {product.is_out_of_stock && (
+        <span className="absolute left-3 top-3 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+          Out of Stock
+        </span>
+      )}
+
+      {salePercent > 0 && (
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-pink-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+          -{salePercent}%
+        </span>
+      )}
+
+      {product.image_url ? (
+        <img
+          src={product.image_url}
+          alt={product.name}
+          className="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+        />
+      ) : (
+        <span className="text-gray-400">No image</span>
+      )}
+    </div>
+  </Link>
+
+  <div className="flex flex-1 flex-col p-4 text-center">
+    <Link href={`/products/${product.id}`}>
+      <h2 className="line-clamp-2 min-h-[48px] text-base font-bold text-gray-900 transition hover:text-green-700">
+        {product.name}
+      </h2>
+    </Link>
+
+    <div className="mt-3 flex items-center justify-center gap-2">
+      {salePercent > 0 && (
+        <span className="text-sm font-bold text-gray-400 line-through">
+          {originalPrice.toLocaleString()} SYP
+        </span>
+      )}
+
+      <span className="text-lg font-extrabold text-green-700">
+        {Math.round(finalPrice).toLocaleString()} SYP
       </span>
+    </div>
+
+    {product.is_out_of_stock ? (
+      <button
+        disabled
+        className="mt-4 w-full rounded-none bg-gray-200 py-3 text-sm font-bold text-gray-500"
+      >
+        Out of Stock
+      </button>
+    ) : (
+      <AddToCartButton
+        product={{
+          id: product.id,
+          name: product.name,
+          price: Math.round(finalPrice),
+          original_price: originalPrice,
+          sale_percent: salePercent,
+          image_url: product.image_url,
+        }}
+      />
     )}
-
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <span className="text-gray-400">No image</span>
-                      )}
-                    </div>
-                  </Link>
-
-                  <div className="flex flex-1 flex-col p-6">
-                    <Link href={`/products/${product.id}`}>
-                      <h2 className="line-clamp-2 text-xl font-bold text-gray-900 transition hover:text-green-700">
-                        {product.name}
-                      </h2>
-                    </Link>
-
-                    {product.categories?.name && (
-                      <p className="mt-2 w-fit rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
-                        {product.categories.name}
-                      </p>
-                    )}
-
-                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">
-                      {product.description}
-                    </p>
-
-                   <div className="mt-auto pt-5">
-  <div>
-    {salePercent > 0 && (
-      <p className="text-sm font-bold text-gray-400 line-through">
-        {originalPrice.toLocaleString()} SYP
-      </p>
-    )}
-
-    <p className="text-xl font-extrabold text-green-700">
-      {Math.round(finalPrice).toLocaleString()} SYP
-    </p>
   </div>
-
-  {product.is_out_of_stock ? (
-                        <button
-                          disabled
-                          className="mt-5 w-full rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
-                        >
-                          Out of Stock
-                        </button>
-                      ) : (
-                       <AddToCartButton
-  product={{
-    id: product.id,
-    name: product.name,
-    price: Math.round(finalPrice),
-    original_price: originalPrice,
-    sale_percent: salePercent,
-    image_url: product.image_url,
-  }}
-/>
-                      )}  
-                    </div>
-                  </div>  
-                </div>
+</div>  
+              
       );
     })}
             </div>

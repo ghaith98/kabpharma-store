@@ -232,13 +232,6 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {freeShippingThreshold > 0 && (
-              <div className="mt-4 rounded-2xl bg-green-50 p-4 text-sm font-semibold text-green-800">
-                Free delivery for orders above{" "}
-                {freeShippingThreshold.toLocaleString()} SYP
-              </div>
-            )}
-
             <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
               <div className="flex justify-between font-bold text-gray-800">
                 <span>Products</span>

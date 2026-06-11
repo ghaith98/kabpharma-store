@@ -25,6 +25,11 @@ export default function ProductSwiper({ products }: { products: any[] }) {
 
   return (
     <Swiper
+    initialSlide={
+  typeof window !== "undefined"
+    ? Number(sessionStorage.getItem("homeProductSwiperIndex") || 0)
+    : 0
+}
       spaceBetween={20}
       slidesPerView={1.15}
       breakpoints={{
@@ -33,7 +38,7 @@ export default function ProductSwiper({ products }: { products: any[] }) {
       }}
       
     >
-      {products.map((product) => {
+      {products.map((product, index) => {
   const salePercent = Number(product.sale_percent || 0);
   const originalPrice = Number(product.price);
   const finalPrice =
@@ -44,7 +49,10 @@ export default function ProductSwiper({ products }: { products: any[] }) {
   return (
         <SwiperSlide key={product.id}>
           <Link
-            href={`/products/${product.id}`}
+  href={`/products/${product.id}`}
+  onClick={() => {
+    sessionStorage.setItem("homeProductSwiperIndex", String(index));
+  }}
             className="group block overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
           >
             
