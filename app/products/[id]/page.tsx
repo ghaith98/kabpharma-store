@@ -26,12 +26,35 @@
   .eq("product_id", product.id)
   .order("sort_order", { ascending: true });
 
-      const { data: relatedProducts } = await supabase
-        .from("products")
-        .select("*")
-        .eq("category_id", product.category_id)
-        .neq("id", product.id)
-        .limit(5);
+      const { data: sameCategoryProducts } = await supabase
+  .from("products")
+  .select("*")
+  .eq("category_id", product.category_id)
+  .neq("id", product.id)
+  .eq("is_out_of_stock", false);
+
+const { data: allOrderItems } = await supabase
+  .from("order_items")
+  .select("product_id, quantity");
+
+const salesCount = (allOrderItems || []).reduce(
+  (acc: Record<number, number>, item: any) => {
+    if (!item.product_id) return acc;
+
+    acc[item.product_id] =
+      (acc[item.product_id] || 0) + Number(item.quantity || 0);
+
+    return acc;
+  },
+  {}
+);
+
+const relatedProducts = (sameCategoryProducts || [])
+  .sort(
+    (a, b) =>
+      (salesCount[b.id] || 0) - (salesCount[a.id] || 0)
+  )
+  .slice(0, 6);
         const galleryImages = [
   product.image_url,
   ...(extraImages?.map((img) => img.image_url) || []),
