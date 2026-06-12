@@ -14,8 +14,10 @@ type Product = {
 
 export default function ProductDetailsAddToCart({
   product,
+  compact = false,
 }: {
   product: Product;
+  compact?: boolean;
 }) {
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -23,46 +25,63 @@ export default function ProductDetailsAddToCart({
   function handleAdd() {
     addToCart(product, quantity);
     window.dispatchEvent(new Event("cartUpdated"));
-
     setShowModal(true);
   }
 
+  const quantityControl = (
+    <div className="flex h-10 items-center rounded-full border border-gray-300 bg-white shadow-sm">
+      <button
+        type="button"
+        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+        className="flex h-10 w-10 items-center justify-center text-base font-extrabold text-gray-700"
+      >
+        -
+      </button>
+
+      <span className="min-w-8 text-center text-sm font-extrabold text-gray-900">
+        {quantity}
+      </span>
+
+      <button
+        type="button"
+        onClick={() => setQuantity(quantity + 1)}
+        className="flex h-10 w-10 items-center justify-center text-base font-extrabold text-gray-700"
+      >
+        +
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <div className="mt-5 rounded-3xl bg-gray-50 p-4 ring-1 ring-gray-100">
-        <div className="mb-4 flex items-center justify-between">
-          <span className="font-bold text-gray-900">Quantity</span>
-
-          <div className="flex items-center rounded-2xl border border-gray-300 bg-white">
-            <button
-              type="button"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="px-4 py-2 text-lg font-bold text-gray-800"
-            >
-              -
-            </button>
-
-            <span className="min-w-12 text-center font-extrabold text-gray-900">
-              {quantity}
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setQuantity(quantity + 1)}
-              className="px-4 py-2 text-lg font-bold text-gray-800"
-            >
-              +
-            </button>
+      {compact ? (
+        <div className="w-full">
+          <div className="mb-2 flex justify-end">
+            {quantityControl}
           </div>
-        </div>
 
-        <button
-          onClick={handleAdd}
-          className="w-full rounded-2xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
-        >
-          Add to Cart
-        </button>
-      </div>
+          <button
+            onClick={handleAdd}
+            className="w-full rounded-2xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700"
+          >
+            Add to Cart
+          </button>
+        </div>
+      ) : (
+        <div className="mt-5 rounded-3xl bg-gray-50 p-4 ring-1 ring-gray-100">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="font-bold text-gray-900">Quantity</span>
+            {quantityControl}
+          </div>
+
+          <button
+            onClick={handleAdd}
+            className="w-full rounded-2xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
+          >
+            Add to Cart
+          </button>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-6">

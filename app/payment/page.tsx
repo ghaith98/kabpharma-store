@@ -11,9 +11,15 @@ export default function PaymentPage() {
   const [qrUrl, setQrUrl] = useState("");
   const [paymentNumber, setPaymentNumber] = useState("");
   const [copied, setCopied] = useState(false);
+  const [checkout, setCheckout] = useState<any>({});
 
   useEffect(() => {
     setCart(getCart());
+    const savedCheckout = localStorage.getItem("checkout");
+if (savedCheckout) {
+    setCheckout(JSON.parse(savedCheckout));
+  }
+
 
     async function loadQr() {
       const { data, error } = await supabase
@@ -40,10 +46,7 @@ export default function PaymentPage() {
     loadQr();
   }, []);
 
-  const checkout =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("checkout") || "{}")
-      : {};
+  
 
   const deliveryFee = Number(checkout.delivery_fee || 0);
 

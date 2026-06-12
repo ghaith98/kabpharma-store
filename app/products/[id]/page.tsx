@@ -182,6 +182,7 @@ const finalPrice =
 
       <div className="min-w-[160px]">
         <ProductDetailsAddToCart
+        compact
           product={{
             id: product.id,
             name: product.name,
