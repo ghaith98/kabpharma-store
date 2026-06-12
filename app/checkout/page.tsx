@@ -19,7 +19,39 @@ export default function CheckoutPage() {
   useEffect(() => {
     setCart(getCart());
     loadDeliveryData();
+
+    const savedUser = localStorage.getItem("kab_user");
+    const savedCheckout = localStorage.getItem("checkout");
+
+    if (savedCheckout) {
+      const checkout = JSON.parse(savedCheckout);
+      setName(checkout.name || "");
+      setPhone(checkout.phone || "");
+      setGovernorate(checkout.governorate || "");
+      setAddress(checkout.address || "");
+    } else if (savedUser) {
+      const user = JSON.parse(savedUser);
+      setName(user.full_name || "");
+      setPhone(user.phone || "");
+    }
   }, []);
+
+  useEffect(() => {
+    const savedCheckout = localStorage.getItem("checkout");
+
+    if (savedCheckout && deliveryAreas.length > 0) {
+      const checkout = JSON.parse(savedCheckout);
+      const matchedArea = deliveryAreas.find(
+        (area) =>
+          area.area_name === checkout.delivery_area &&
+          area.governorate === checkout.governorate
+      );
+
+      if (matchedArea) {
+        setDeliveryArea(String(matchedArea.id));
+      }
+    }
+  }, [deliveryAreas]);
 
   async function loadDeliveryData() {
     const { data: govData, error: govError } = await supabase
@@ -43,8 +75,6 @@ export default function CheckoutPage() {
       alert(areaError.message);
       return;
     }
-
-    
 
     const { data: settingData } = await supabase
       .from("settings")
@@ -115,6 +145,25 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
       <div className="mx-auto max-w-5xl">
+        <div className="mx-auto mb-10 max-w-xl">
+          <div className="flex items-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-extrabold text-white">
+              1
+            </div>
+
+            <div className="h-1 flex-1 bg-gray-200" />
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-sm font-extrabold text-gray-500">
+              2
+            </div>
+          </div>
+
+          <div className="mt-3 flex justify-between text-sm font-bold">
+            <span className="text-green-700">Checkout</span>
+            <span className="text-gray-500">Payment</span>
+          </div>
+        </div>
+
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">Checkout</h1>
 

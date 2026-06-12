@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type Order = {
@@ -31,26 +31,34 @@ const statusClass: Record<string, string> = {
 };
 
 export default function OrdersSearchClient() {
-  const [phone, setPhone] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
-  async function searchOrders() {
-    if (!phone.trim()) return;
+  useEffect(() => {
+    async function loadOrders() {
+      const savedUser = localStorage.getItem("kab_user");
 
-    setLoading(true);
-    setSearched(true);
+      if (!savedUser) {
+        setLoading(false);
+        return;
+      }
 
-    const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("phone", phone.trim())
-      .order("id", { ascending: false });
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
 
-    setOrders(data || []);
-    setLoading(false);
-  }
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("phone", parsedUser.phone)
+        .order("id", { ascending: false });
+
+      setOrders(data || []);
+      setLoading(false);
+    }
+
+    loadOrders();
+  }, []);
 
   return (
     <main
@@ -64,28 +72,30 @@ export default function OrdersSearchClient() {
           </h1>
 
           <p className="mt-3 text-gray-600">
-            أدخل رقم الهاتف المستخدم في الطلب لعرض طلباتك وحالتها.
+            جميع طلباتك المرتبطة بحسابك.
           </p>
         </section>
 
-        <div className="rounded-3xl bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="أدخل رقم الهاتف"
-              className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-green-600"
-            />
+        {!user && !loading && (
+          <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
+            <h2 className="text-xl font-extrabold text-gray-900">
+              Please sign in first
+            </h2>
 
-            <button
-              onClick={searchOrders}
-              disabled={loading}
-              className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
+            <a
+              href="/login"
+              className="mt-4 inline-block rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
             >
-              {loading ? "جاري البحث..." : "عرض الطلبات"}
-            </button>
+              Sign In
+            </a>
           </div>
-        </div>
+        )}
+
+        {loading && (
+          <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
+            Loading...
+          </div>
+        )}
 
         <div className="mt-8 space-y-4">
           {orders.map((order) => (
@@ -135,13 +145,13 @@ export default function OrdersSearchClient() {
             </a>
           ))}
 
-          {searched && !loading && orders.length === 0 && (
+          {user && !loading && orders.length === 0 && (
             <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
               <h2 className="text-xl font-extrabold text-gray-900">
                 لا توجد طلبات
               </h2>
               <p className="mt-2 text-gray-600">
-                لم يتم العثور على طلبات مرتبطة بهذا الرقم.
+                لا توجد طلبات مرتبطة بحسابك حالياً.
               </p>
             </div>
           )}

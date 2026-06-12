@@ -13,46 +13,46 @@ export default function PaymentPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-  setCart(getCart());
+    setCart(getCart());
 
-  async function loadQr() {
-    const { data, error } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "payment_qr_url")
-      .single();
+    async function loadQr() {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "payment_qr_url")
+        .single();
 
-    if (!error && data?.value) {
-      setQrUrl(data.value);
+      if (!error && data?.value) {
+        setQrUrl(data.value);
+      }
+
+      const { data: numberData } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "payment_number")
+        .single();
+
+      if (numberData?.value) {
+        setPaymentNumber(numberData.value);
+      }
     }
-    const { data: numberData } = await supabase
-  .from("settings")
-  .select("value")
-  .eq("key", "payment_number")
-  .single();
 
-if (numberData?.value) {
-  setPaymentNumber(numberData.value);
-}
-  }
+    loadQr();
+  }, []);
 
-  loadQr();
-}, []);
+  const checkout =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("checkout") || "{}")
+      : {};
 
+  const deliveryFee = Number(checkout.delivery_fee || 0);
 
- const checkout =
-  typeof window !== "undefined"
-    ? JSON.parse(localStorage.getItem("checkout") || "{}")
-    : {};
+  const productsTotal = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
-const deliveryFee = Number(checkout.delivery_fee || 0);
-
-const productsTotal = cart.reduce(
-  (sum, item) => sum + item.price * item.quantity,
-  0
-);
-
-const total = productsTotal + deliveryFee;
+  const total = productsTotal + deliveryFee;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,15 +64,15 @@ const total = productsTotal + deliveryFee;
 
     const checkout = JSON.parse(localStorage.getItem("checkout") || "{}");
     const currentCart = getCart();
-    const deliveryFee = Number(checkout.delivery_fee || 0); 
+    const deliveryFee = Number(checkout.delivery_fee || 0);
 
-   if (
-  !checkout.name ||
-  !checkout.phone ||
-  !checkout.governorate ||
-  !checkout.delivery_area ||
-  !checkout.address
-)  {
+    if (
+      !checkout.name ||
+      !checkout.phone ||
+      !checkout.governorate ||
+      !checkout.delivery_area ||
+      !checkout.address
+    ) {
       alert("Missing checkout information");
       window.location.href = "/checkout";
       return;
@@ -87,11 +87,11 @@ const total = productsTotal + deliveryFee;
     setLoading(true);
 
     const productsTotal = currentCart.reduce(
-  (sum, item) => sum + item.price * item.quantity,
-  0
-);
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
 
-const orderTotal = productsTotal + deliveryFee;
+    const orderTotal = productsTotal + deliveryFee;
 
     const filePath = `${Date.now()}-${file.name}`;
 
@@ -112,16 +112,16 @@ const orderTotal = productsTotal + deliveryFee;
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
-  customer_name: checkout.name,
-  phone: checkout.phone,
-  governorate: checkout.governorate,
-  delivery_area: checkout.delivery_area,
-  address: checkout.address,
-  delivery_fee: deliveryFee,
-  total_price: orderTotal,
-  status: "pending",
-  payment_proof_url: publicUrlData.publicUrl,
-})
+        customer_name: checkout.name,
+        phone: checkout.phone,
+        governorate: checkout.governorate,
+        delivery_area: checkout.delivery_area,
+        address: checkout.address,
+        delivery_fee: deliveryFee,
+        total_price: orderTotal,
+        status: "pending",
+        payment_proof_url: publicUrlData.publicUrl,
+      })
       .select()
       .single();
 
@@ -159,6 +159,30 @@ const orderTotal = productsTotal + deliveryFee;
   return (
     <main className="min-h-screen overflow-x-hidden bg-gradient-to-b from-white via-gray-50 to-green-50 px-3 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-5xl">
+        <div className="mx-auto mb-10 max-w-xl">
+          <div className="flex items-center">
+            <a
+              href="/checkout"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-extrabold text-white transition hover:bg-green-700"
+            >
+              ✓
+            </a>
+
+            <div className="h-1 flex-1 bg-green-600" />
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-extrabold text-white">
+              2
+            </div>
+          </div>
+
+          <div className="mt-3 flex justify-between text-sm font-bold">
+            <a href="/checkout" className="text-green-700">
+              Checkout
+            </a>
+            <span className="text-green-700">Payment</span>
+          </div>
+        </div>
+
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
             Payment
@@ -181,51 +205,52 @@ const orderTotal = productsTotal + deliveryFee;
               </p>
 
               <div className="mx-auto flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm sm:max-w-[320px]">
-  {qrUrl ? (
-    <img
-      src={qrUrl}
-      alt="Payment QR Code"
-      className="h-full w-full object-contain"
-    />
-  ) : (
-    <span className="font-bold text-gray-500">
-      QR Code not uploaded yet
-    </span>
-  )}
-</div>
-{paymentNumber && (
-  <div className="mx-auto mt-5 w-full max-w-[280px] rounded-2xl border border-gray-200 bg-white p-3 sm:max-w-[320px]">
-    <p className="mb-2 text-center text-xs font-bold text-gray-700">
-      Payment Number
-    </p>
+                {qrUrl ? (
+                  <img
+                    src={qrUrl}
+                    alt="Payment QR Code"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="font-bold text-gray-500">
+                    QR Code not uploaded yet
+                  </span>
+                )}
+              </div>
 
-    <div className="flex items-center justify-between gap-2">
-      <span className="min-w-0 flex-1 break-all text-center font-mono text-sm font-bold text-gray-900">
-        {paymentNumber}
-      </span>
+              {paymentNumber && (
+                <div className="mx-auto mt-5 w-full max-w-[280px] rounded-2xl border border-gray-200 bg-white p-3 sm:max-w-[320px]">
+                  <p className="mb-2 text-center text-xs font-bold text-gray-700">
+                    Payment Number
+                  </p>
 
-      <button
-        type="button"
-        onClick={() => {
-          navigator.clipboard.writeText(paymentNumber);
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1 break-all text-center font-mono text-sm font-bold text-gray-900">
+                      {paymentNumber}
+                    </span>
 
-          setCopied(true);
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(paymentNumber);
 
-          setTimeout(() => {
-            setCopied(false);
-          }, 1400);
-        }}
-        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition ${
-          copied
-            ? "bg-green-700"
-            : "bg-green-600 hover:bg-green-700"
-        }`}
-      >
-        {copied ? "✓" : "Copy"}
-      </button>
-    </div>
-  </div>
-)}
+                        setCopied(true);
+
+                        setTimeout(() => {
+                          setCopied(false);
+                        }, 1400);
+                      }}
+                      className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition ${
+                        copied
+                          ? "bg-green-700"
+                          : "bg-green-600 hover:bg-green-700"
+                      }`}
+                    >
+                      {copied ? "✓" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <p className="mt-5 text-sm leading-6 text-gray-700">
                 After completing the payment, upload a clear image or PDF of
@@ -284,25 +309,25 @@ const orderTotal = productsTotal + deliveryFee;
               )}
             </div>
 
-           <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
-  <div className="flex justify-between font-bold text-gray-800">
-    <span>Products</span>
-    <span>{productsTotal.toLocaleString()} SYP</span>
-  </div>
+            <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
+              <div className="flex justify-between font-bold text-gray-800">
+                <span>Products</span>
+                <span>{productsTotal.toLocaleString()} SYP</span>
+              </div>
 
-  <div className="flex justify-between font-bold text-gray-800">
-    <span>Delivery</span>
-    <span>{deliveryFee.toLocaleString()} SYP</span>
-  </div>
-</div>
+              <div className="flex justify-between font-bold text-gray-800">
+                <span>Delivery</span>
+                <span>{deliveryFee.toLocaleString()} SYP</span>
+              </div>
+            </div>
 
-<div className="mt-4 flex justify-between text-lg font-extrabold text-gray-900">
-  <span>Total</span>
+            <div className="mt-4 flex justify-between text-lg font-extrabold text-gray-900">
+              <span>Total</span>
 
-  <span className="text-green-700">
-    {total.toLocaleString()} SYP
-  </span>
-</div>
+              <span className="text-green-700">
+                {total.toLocaleString()} SYP
+              </span>
+            </div>
 
             <a
               href="/checkout"
