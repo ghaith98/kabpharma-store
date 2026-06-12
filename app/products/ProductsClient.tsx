@@ -305,7 +305,7 @@ const [priceRange, setPriceRange] = useState([
             return (
               <div
                 key={product.id}
-                className="group flex min-h-[360px] flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:min-h-[390px]"
+                className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 <Link href={`/products/${product.id}`}>
                   <div className="relative flex h-40 items-center justify-center overflow-hidden bg-white p-3 sm:h-48">
@@ -335,7 +335,7 @@ const [priceRange, setPriceRange] = useState([
 
                 <div className="flex flex-1 flex-col px-4 pb-4 pt-3 text-center">
                   <Link href={`/products/${product.id}`}>
-                    <h2 className="line-clamp-2 min-h-[42px] text-sm font-extrabold text-gray-900 transition hover:text-green-700 sm:text-base">
+                    <h2 className="line-clamp-2 text-sm font-extrabold text-gray-900 transition hover:text-green-700 sm:text-base">
                       {product.name}
                     </h2>
                   </Link>
@@ -356,14 +356,14 @@ const [priceRange, setPriceRange] = useState([
                     </span>
                   </div>
 
-                  <div className="mt-auto pt-4">
+                  <div className="mt-4">
   {product.is_out_of_stock ? (
     <button
-      disabled
-      className="w-full rounded-2xl bg-gray-200 py-3 text-sm font-bold text-gray-500"
-    >
-      Out of Stock
-    </button>
+  disabled
+  className="w-full rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
+>
+  Out of Stock
+</button>
   ) : (
     <AddToCartButton
       product={{

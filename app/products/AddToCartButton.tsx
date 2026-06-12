@@ -29,7 +29,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
   return (
     <button
       onClick={handleAdd}
-      className={`mt-5 w-full rounded-2xl py-3 font-semibold transition duration-300 ${
+      className={`w-full rounded-2xl py-3 font-semibold transition duration-300 ${
         added
           ? "bg-green-50 text-green-700 ring-1 ring-green-600"
           : "bg-green-600 text-white hover:bg-green-700"
