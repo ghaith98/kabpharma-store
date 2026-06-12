@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import ProductsClient from "../products/ProductsClient";
 import { FaSearch } from "react-icons/fa";
@@ -35,7 +36,9 @@ export default async function SearchPage() {
           </div>
         </div>
 
-        <ProductsClient products={products || []} showCategories={false} />
+        <Suspense fallback={<p className="text-center text-gray-600">Loading products...</p>}>
+          <ProductsClient products={products || []} showCategories={false} />
+        </Suspense>
       </div>
     </main>
   );
