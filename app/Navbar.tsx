@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { getCart } from "@/lib/cart";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FaSearch, FaUser, FaShoppingCart, FaTimes } from "react-icons/fa";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [count, setCount] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -48,6 +49,17 @@ export default function Navbar() {
       window.removeEventListener("storage", updateCount);
     };
   }, []);
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+
+  if (pathname === "/products" && params.get("openSearch") === "1") {
+    setSearchOpen(true);
+
+    params.delete("openSearch");
+    const newUrl = params.toString() ? `/products?${params.toString()}` : "/products";
+    router.replace(newUrl);
+  }
+}, [pathname, router]);
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-white">
@@ -91,7 +103,13 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setSearchOpen(true)}
+              onClick={() => {
+  if (pathname !== "/products") {
+    router.push("/products?openSearch=1");
+  } else {
+    setSearchOpen(true);
+  }
+}}
               aria-label="Search products"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700"
             >
