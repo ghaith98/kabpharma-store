@@ -305,10 +305,10 @@ const [priceRange, setPriceRange] = useState([
             return (
               <div
                 key={product.id}
-                className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="group flex min-h-[360px] flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg sm:min-h-[390px]"
               >
                 <Link href={`/products/${product.id}`}>
-                  <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-white p-4">
+                  <div className="relative flex h-40 items-center justify-center overflow-hidden bg-white p-3 sm:h-48">
                     {product.is_out_of_stock && (
                       <span className="absolute left-3 top-3 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
                         Out of Stock
@@ -333,14 +333,14 @@ const [priceRange, setPriceRange] = useState([
                   </div>
                 </Link>
 
-                <div className="flex flex-1 flex-col p-4 text-center">
+                <div className="flex flex-1 flex-col px-4 pb-4 pt-3 text-center">
                   <Link href={`/products/${product.id}`}>
-                    <h2 className="line-clamp-2 min-h-[48px] text-base font-bold text-gray-900 transition hover:text-green-700">
+                    <h2 className="line-clamp-2 min-h-[42px] text-sm font-extrabold text-gray-900 transition hover:text-green-700 sm:text-base">
                       {product.name}
                     </h2>
                   </Link>
 
-                  <div className="mt-3 flex items-center justify-center gap-2">
+                  <div className="mt-2 flex items-center justify-center gap-2">
                     {salePercent > 0 && (
                       <span className="text-sm font-bold text-gray-400 line-through">
                         {originalPrice.toLocaleString()} SYP
