@@ -14,10 +14,14 @@ type Product = {
 
 export default function ProductDetailsAddToCart({
   product,
-  compact = false,
+  finalPrice,
+  originalPrice,
+  salePercent,
 }: {
   product: Product;
-  compact?: boolean;
+  finalPrice: number;
+  originalPrice: number;
+  salePercent: number;
 }) {
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -28,60 +32,67 @@ export default function ProductDetailsAddToCart({
     setShowModal(true);
   }
 
-  const quantityControl = (
-    <div className="flex h-10 items-center rounded-full border border-gray-300 bg-white shadow-sm">
-      <button
-        type="button"
-        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-        className="flex h-10 w-10 items-center justify-center text-base font-extrabold text-gray-700"
-      >
-        -
-      </button>
-
-      <span className="min-w-8 text-center text-sm font-extrabold text-gray-900">
-        {quantity}
-      </span>
-
-      <button
-        type="button"
-        onClick={() => setQuantity(quantity + 1)}
-        className="flex h-10 w-10 items-center justify-center text-base font-extrabold text-gray-700"
-      >
-        +
-      </button>
-    </div>
-  );
-
   return (
     <>
-      {compact ? (
-        <div className="w-full">
-          <div className="mb-2 flex justify-end">
-            {quantityControl}
-          </div>
+      <div className="mt-6 flex items-end justify-between gap-4">
+        <div>
+          {salePercent > 0 && (
+            <div className="mb-2 flex items-center gap-3">
+              <span className="rounded-full bg-pink-600 px-3 py-1 text-sm font-bold text-white">
+                -{salePercent}%
+              </span>
+
+              <span className="text-lg font-bold text-gray-400 line-through">
+                {originalPrice.toLocaleString()} SYP
+              </span>
+            </div>
+          )}
+
+          <p className="text-3xl font-extrabold text-green-700">
+            {Math.round(finalPrice).toLocaleString()} SYP
+          </p>
+        </div>
+
+        <div className="flex h-9 items-center rounded-full border border-gray-300 bg-white shadow-sm">
+          <button
+            type="button"
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            className="flex h-9 w-9 items-center justify-center text-base font-extrabold text-gray-700"
+          >
+            -
+          </button>
+
+          <span className="min-w-7 text-center text-sm font-extrabold text-gray-900">
+            {quantity}
+          </span>
 
           <button
-            onClick={handleAdd}
-            className="w-full rounded-2xl bg-green-600 py-3 text-sm font-bold text-white transition hover:bg-green-700"
+            type="button"
+            onClick={() => setQuantity(quantity + 1)}
+            className="flex h-9 w-9 items-center justify-center text-base font-extrabold text-gray-700"
           >
-            Add to Cart
+            +
           </button>
         </div>
-      ) : (
-        <div className="mt-5 rounded-3xl bg-gray-50 p-4 ring-1 ring-gray-100">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="font-bold text-gray-900">Quantity</span>
-            {quantityControl}
-          </div>
+      </div>
 
-          <button
-            onClick={handleAdd}
-            className="w-full rounded-2xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
-          >
-            Add to Cart
-          </button>
-        </div>
-      )}
+      <div className="mt-8 hidden md:block">
+        <button
+          onClick={handleAdd}
+          className="w-full rounded-2xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
+        >
+          Add to Cart
+        </button>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-white p-4 pb-24 shadow-lg md:hidden">
+        <button
+          onClick={handleAdd}
+          className="w-full rounded-2xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
+        >
+          Add to Cart
+        </button>
+      </div>
 
       {showModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-6">
