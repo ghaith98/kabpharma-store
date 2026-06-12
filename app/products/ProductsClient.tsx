@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { FaFilter, FaTimes } from "react-icons/fa";
 import AddToCartButton from "./AddToCartButton";
+import Slider from "rc-slider";
+import "rc-slider/assets/index.css";
+
 
 export default function ProductsClient({
   products,
@@ -15,10 +19,22 @@ export default function ProductsClient({
   showCategories?: boolean;
 }) {
   const searchParams = useSearchParams();
+
   const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null
   );
+  const [sortBy, setSortBy] = useState("default");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [onSaleOnly, setOnSaleOnly] = useState(false);
+
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+  }, [searchParams]);
 
   const categories = Array.from(
     new Map(
@@ -34,69 +50,240 @@ export default function ProductsClient({
     ).values()
   );
 
-  const filteredProducts = products.filter((product) => {
-    const text = `${product.name} ${product.description} ${
-      product.categories?.name || ""
-    }`.toLowerCase();
+  function getFinalPrice(product: any) {
+    const salePercent = Number(product.sale_percent || 0);
+    const originalPrice = Number(product.price);
 
-    const matchesSearch = text.includes(search.toLowerCase());
+    return salePercent > 0
+      ? originalPrice - originalPrice * (salePercent / 100)
+      : originalPrice;
+  }
 
-    const matchesCategory =
-      selectedCategoryId === null || product.category_id === selectedCategoryId;
+  function clearFilters() {
+    setSelectedCategoryId(null);
+    setSortBy("default");
+    setPriceRange([0, maxProductPrice]);
+    setMinPrice("");
+    setMaxPrice("");
+    setInStockOnly(false);
+    setOnSaleOnly(false);
+  }
+  const maxProductPrice = Math.max(
+  ...products.map((p) => Number(p.price))
+);
 
-    return matchesSearch && matchesCategory;
-  });
-  useEffect(() => {
-  setSearch(searchParams.get("search") || "");
-}, [searchParams]);
+const [priceRange, setPriceRange] = useState([
+  0,
+  maxProductPrice,
+]);
+
+  const filteredProducts = products
+    .filter((product) => {
+      const text = `${product.name} ${product.description} ${
+        product.categories?.name || ""
+      }`.toLowerCase();
+
+      const finalPrice = getFinalPrice(product);
+
+      const matchesSearch = text.includes(search.toLowerCase());
+
+      const matchesCategory =
+        selectedCategoryId === null ||
+        product.category_id === selectedCategoryId;
+
+      const matchesPrice =
+  finalPrice >= priceRange[0] &&
+  finalPrice <= priceRange[1];  
+      const matchesStock = !inStockOnly || product.is_out_of_stock === false;
+
+      const matchesSale = !onSaleOnly || Number(product.sale_percent || 0) > 0;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesPrice &&
+        matchesStock &&
+        matchesSale
+      );
+    })
+    .sort((a, b) => {
+      if (sortBy === "price_low") return getFinalPrice(a) - getFinalPrice(b);
+      if (sortBy === "price_high") return getFinalPrice(b) - getFinalPrice(a);
+      if (sortBy === "newest") return Number(b.id) - Number(a.id);
+      return 0;
+    });
 
   return (
     <>
-      
       {showSearch && (
-  <div className="relative z-10 mx-auto mb-6 max-w-xl">
-    <div className="rounded-3xl bg-white p-2 shadow-sm ring-1 ring-gray-100">
-      <input
-        type="text"
-        placeholder="Search products..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-black placeholder:text-gray-500 outline-none transition focus:border-green-600 focus:bg-white"
-      />
-    </div>
-  </div>
-)}
+        <div className="relative z-10 mx-auto mb-6 max-w-xl">
+          <div className="rounded-3xl bg-white p-2 shadow-sm ring-1 ring-gray-100">
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-black placeholder:text-gray-500 outline-none transition focus:border-green-600 focus:bg-white"
+            />
+          </div>
+        </div>
+      )}
 
-      {showCategories && (
-  <div className="relative z-10 mx-auto mb-8 max-w-5xl overflow-x-auto rounded-3xl bg-white/90 p-3 shadow-sm ring-1 ring-gray-100 backdrop-blur">
-    <div className="flex min-w-max gap-3">
-      <button
-        onClick={() => setSelectedCategoryId(null)}
-        className={`rounded-full px-5 py-2.5 text-sm font-bold transition ${
-          selectedCategoryId === null
-            ? "bg-green-600 text-white shadow-sm"
-            : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-        }`}
-      >
-        All
-      </button>
+      <div className="relative z-10 mx-auto mb-6 flex max-w-6xl items-center justify-between gap-4">
+        <p className="text-sm font-bold text-gray-600">
+          {filteredProducts.length} products found
+        </p>
 
-      {categories.map((category: any) => (
         <button
-          key={category.id}
-          onClick={() => setSelectedCategoryId(category.id)}
-          className={`rounded-full px-5 py-2.5 text-sm font-bold transition ${
-            selectedCategoryId === category.id
-              ? "bg-green-600 text-white shadow-sm"
-              : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-          }`}
+          onClick={() => setFiltersOpen(true)}
+          className="flex items-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-gray-800 shadow-sm ring-1 ring-gray-100 transition hover:bg-green-50 hover:text-green-700"
         >
-          {category.name}
+          <FaFilter size={14} />
+          Filter
         </button>
-      ))}
-    </div>
+      </div>
+
+      {filtersOpen && (
+        <div className="fixed inset-0 z-[999] bg-black/40">
+          <div className="h-full w-[85%] max-w-sm overflow-y-auto bg-white p-6 shadow-2xl">
+            <div className="mb-8 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FaFilter size={16} />
+                <h2 className="text-lg font-extrabold text-gray-900">
+                  Filter
+                </h2>
+              </div>
+
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition hover:bg-gray-200"
+              >
+                <FaTimes size={16} />
+              </button>
+            </div>
+
+            {showCategories && (
+              <div className="border-b border-gray-200 pb-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                  Product categories
+                </h3>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setSelectedCategoryId(null)}
+                    className={`block w-full text-left text-sm font-bold ${
+                      selectedCategoryId === null
+                        ? "text-green-700"
+                        : "text-gray-800"
+                    }`}
+                  >
+                    All
+                  </button>
+
+                  {categories.map((category: any) => (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategoryId(category.id)}
+                      className={`block w-full text-left text-sm font-bold ${
+                        selectedCategoryId === category.id
+                          ? "text-green-700"
+                          : "text-gray-800"
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="border-b border-gray-200 py-6">
+              <h3 className="mb-4 text-xl font-bold text-gray-900">
+                Availability
+              </h3>
+
+              <div className="space-y-3">
+                <label className="flex cursor-pointer items-center gap-3 text-sm font-bold text-gray-800">
+                  <input
+                    type="checkbox"
+                    checked={inStockOnly}
+                    onChange={() => setInStockOnly(!inStockOnly)}
+                    className="h-4 w-4"
+                  />
+                  In stock
+                </label>
+
+                <label className="flex cursor-pointer items-center gap-3 text-sm font-bold text-gray-800">
+                  <input
+                    type="checkbox"
+                    checked={onSaleOnly}
+                    onChange={() => setOnSaleOnly(!onSaleOnly)}
+                    className="h-4 w-4"
+                  />
+                  On sale
+                </label>
+              </div>
+            </div>
+
+            <div className="border-b border-gray-200 py-6">
+              <h3 className="mb-4 text-xl font-bold text-gray-900">Price</h3>
+
+              <div className="px-2">
+  <Slider
+    range
+    min={0}
+    max={maxProductPrice}
+    value={priceRange}
+    onChange={(value) =>
+      setPriceRange(value as number[])
+    }
+  />
+
+  <div className="mt-4 flex justify-between text-sm font-bold text-gray-700">
+    <span>
+      {priceRange[0].toLocaleString()} SYP
+    </span>
+
+    <span>
+      {priceRange[1].toLocaleString()} SYP
+    </span>
   </div>
-)}
+    </div>
+
+</div> 
+            <div className="py-6">
+              <h3 className="mb-4 text-xl font-bold text-gray-900">Sort by</h3>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full rounded-2xl border border-gray-200 p-3 text-black outline-none focus:border-green-600"
+              >
+                <option value="default">Default</option>
+                <option value="newest">Newest</option>
+                <option value="price_low">Price: Low to High</option>
+                <option value="price_high">Price: High to Low</option>
+              </select>
+            </div>
+
+            <div className="sticky bottom-0 -mx-6 mt-4 flex gap-3 border-t bg-white p-6">
+              <button 
+                onClick={clearFilters}
+                className="flex-1 rounded-2xl border border-gray-300 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+              >
+                Clear
+              </button>
+
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="flex-1 rounded-2xl bg-green-600 py-3 font-bold text-white transition hover:bg-green-700"
+              > 
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {filteredProducts.length === 0 ? (
         <div className="relative z-10 mx-auto max-w-xl rounded-2xl bg-white p-10 text-center shadow-sm">
@@ -105,7 +292,7 @@ export default function ProductsClient({
           </h2>
 
           <p className="mt-3 text-gray-600">
-            Try searching with another product name or category.
+            Try changing the filters or searching another product.
           </p>
         </div>
       ) : (
@@ -113,10 +300,7 @@ export default function ProductsClient({
           {filteredProducts.map((product) => {
             const salePercent = Number(product.sale_percent || 0);
             const originalPrice = Number(product.price);
-            const finalPrice =
-              salePercent > 0
-                ? originalPrice - originalPrice * (salePercent / 100)
-                : originalPrice;
+            const finalPrice = getFinalPrice(product);
 
             return (
               <div

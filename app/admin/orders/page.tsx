@@ -30,6 +30,8 @@ export default function AdminOrdersPage() {
 
   const [orders, setOrders] = useState<any[]>([]);
   const [selectedGovernorate, setSelectedGovernorate] = useState("All");
+  const [search, setSearch] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [checking, setChecking] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [updatedOrderId, setUpdatedOrderId] = useState<number | null>(null);
@@ -105,10 +107,26 @@ export default function AdminOrdersPage() {
     checkAdmin();
   }, [router]);
 
-  const filteredOrders =
-    selectedGovernorate === "All"
-      ? orders
-      : orders.filter((order) => order.governorate === selectedGovernorate);
+    const filteredOrders = orders.filter((order) => {
+  const matchesGovernorate =
+    selectedGovernorate === "All" ||
+    order.governorate === selectedGovernorate;
+
+  const matchesStatus =
+    selectedStatus === "All" || order.status === selectedStatus;
+
+  const searchText = `
+    ${order.id}
+    ${order.customer_name || ""}
+    ${order.phone || ""}
+    ${order.governorate || ""}
+    ${order.delivery_area || ""}
+  `.toLowerCase();
+
+  const matchesSearch = searchText.includes(search.toLowerCase());
+
+  return matchesGovernorate && matchesStatus && matchesSearch;
+});
 
   if (checking) {
     return (
@@ -164,6 +182,40 @@ export default function AdminOrdersPage() {
           })}
         </div>
       </div>
+      <div className="mx-auto mb-8 max-w-5xl">
+  <input
+    type="text"
+    placeholder="Search by Order ID, Name, Phone, Governorate or Area..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+  />
+</div>
+<div className="mx-auto mb-8 max-w-5xl overflow-x-auto rounded-2xl bg-white p-3 shadow-sm">
+  <div className="flex min-w-max gap-3">
+    {[
+      { value: "All", label: "All Statuses" },
+      { value: "pending", label: "Pending" },
+      { value: "accepted", label: "Accepted" },
+      { value: "out_for_delivery", label: "Out for Delivery" },
+      { value: "delivered", label: "Delivered" },
+      { value: "rejected", label: "Rejected" },
+      { value: "cancelled_by_customer", label: "Cancelled" },
+    ].map((status) => (
+      <button
+        key={status.value}
+        onClick={() => setSelectedStatus(status.value)}
+        className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+          selectedStatus === status.value
+            ? "bg-green-600 text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`}
+      >
+        {status.label}
+      </button>
+    ))}
+  </div>
+</div>
 
       <div className="mx-auto max-w-5xl space-y-4">
         {filteredOrders.length === 0 && (
