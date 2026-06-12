@@ -100,9 +100,13 @@ const finalPrice =
     </div>
   )}
 
-  <p className="text-3xl font-extrabold text-green-700">
-    {Math.round(finalPrice).toLocaleString()} SYP
-  </p>
+  <p
+  className={`text-3xl font-extrabold ${
+    salePercent > 0 ? "text-red-600" : "text-green-700"
+  }`}
+>
+  {Math.round(finalPrice).toLocaleString()} SYP
+</p>
 </div>
 
                 <div className="mt-8 hidden md:block">

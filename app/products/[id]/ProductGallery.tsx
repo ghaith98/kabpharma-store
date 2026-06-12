@@ -1,6 +1,7 @@
-    "use client";
+"use client";
 
 import { useState } from "react";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 export default function ProductGallery({
   images,
@@ -9,11 +10,25 @@ export default function ProductGallery({
   images: string[];
   productName: string;
 }) {
-  const [selectedImage, setSelectedImage] = useState(images[0]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const selectedImage = images[selectedIndex];
+
+  function goPrevious() {
+    setSelectedIndex((prev) =>
+      prev === 0 ? images.length - 1 : prev - 1
+    );
+  }
+
+  function goNext() {
+    setSelectedIndex((prev) =>
+      prev === images.length - 1 ? 0 : prev + 1
+    );
+  }
 
   return (
     <div>
-      <div className="overflow-hidden rounded-3xl bg-gray-100">
+      <div className="relative overflow-hidden rounded-3xl bg-gray-100">
         {selectedImage ? (
           <img
             src={selectedImage}
@@ -25,6 +40,26 @@ export default function ProductGallery({
             No image
           </div>
         )}
+
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={goPrevious}
+              className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md transition hover:bg-white hover:text-green-700"
+              aria-label="Previous image"
+            >
+              <FaChevronLeft size={18} />
+            </button>
+
+            <button
+              onClick={goNext}
+              className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md transition hover:bg-white hover:text-green-700"
+              aria-label="Next image"
+            >
+              <FaChevronRight size={18} />
+            </button>
+          </>
+        )}
       </div>
 
       {images.length > 1 && (
@@ -32,9 +67,9 @@ export default function ProductGallery({
           {images.map((image, index) => (
             <button
               key={`${image}-${index}`}
-              onClick={() => setSelectedImage(image)}
+              onClick={() => setSelectedIndex(index)}
               className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${
-                selectedImage === image
+                selectedIndex === index
                   ? "border-green-600"
                   : "border-gray-200"
               }`}

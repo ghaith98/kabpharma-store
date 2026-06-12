@@ -347,30 +347,36 @@ const [priceRange, setPriceRange] = useState([
                       </span>
                     )}
 
-                    <span className="text-lg font-extrabold text-green-700">
+                    <span
+  className={`text-lg font-extrabold ${
+    salePercent > 0 ? "text-red-600" : "text-green-700"
+  }`}
+>
                       {Math.round(finalPrice).toLocaleString()} SYP
                     </span>
                   </div>
 
-                  {product.is_out_of_stock ? (
-                    <button
-                      disabled
-                      className="mt-4 w-full rounded-none bg-gray-200 py-3 text-sm font-bold text-gray-500"
-                    >
-                      Out of Stock
-                    </button>
-                  ) : (
-                    <AddToCartButton
-                      product={{
-                        id: product.id,
-                        name: product.name,
-                        price: Math.round(finalPrice),
-                        original_price: originalPrice,
-                        sale_percent: salePercent,
-                        image_url: product.image_url,
-                      }}
-                    />
-                  )}
+                  <div className="mt-auto pt-4">
+  {product.is_out_of_stock ? (
+    <button
+      disabled
+      className="w-full rounded-2xl bg-gray-200 py-3 text-sm font-bold text-gray-500"
+    >
+      Out of Stock
+    </button>
+  ) : (
+    <AddToCartButton
+      product={{
+        id: product.id,
+        name: product.name,
+        price: Math.round(finalPrice),
+        original_price: originalPrice,
+        sale_percent: salePercent,
+        image_url: product.image_url,
+      }}
+    />
+  )}
+</div>
                 </div>
               </div>
             );
