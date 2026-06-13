@@ -1,5 +1,5 @@
 "use client";
-
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +13,8 @@ export default function AdminBannersPage() {
   const [linkUrl, setLinkUrl] = useState("/products");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+const isMobileAdmin = searchParams.get("mobile") === "1";
 
   async function checkAdmin() {
     const { data } = await supabase.auth.getUser();
@@ -127,12 +129,21 @@ export default function AdminBannersPage() {
   <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-10">
     <div className="mx-auto max-w-5xl">
       <section className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100">
-        <a
-          href="/admin"
-          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-extrabold text-gray-800 shadow-sm transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
-        >
-          ← Dashboard
-        </a>
+        <div className="mb-6 flex gap-2">
+  <a
+  href={isMobileAdmin ? "/admin-mobile" : "/admin"}
+  className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+>
+  ← Dashboard
+</a>
+
+  <a
+    href="/admin-mobile"
+    className="inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:hidden"
+  >
+    ← Dashboard
+  </a>
+</div>
 
         <h1 className="mt-5 text-4xl font-extrabold text-gray-900">
           Homepage Banners

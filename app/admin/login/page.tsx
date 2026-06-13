@@ -32,7 +32,11 @@ export default function AdminLoginPage() {
       return;
     }
 
-    window.location.href = "/admin";
+    if (window.innerWidth < 768) {
+  window.location.href = "/admin-mobile";
+} else {
+  window.location.href = "/admin";
+}
   }
 
   return (

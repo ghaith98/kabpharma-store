@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useSearchParams } from "next/navigation";
 
 const statusMap: Record<string, string> = {
   pending: "قيد مراجعة الدفع",
@@ -36,6 +37,8 @@ export default function AdminOrdersPage() {
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [updatedOrderId, setUpdatedOrderId] = useState<number | null>(null);
   const [updatedStatus, setUpdatedStatus] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+const isMobileAdmin = searchParams.get("mobile") === "1";
 
   async function loadOrders() {
     const { data, error } = await supabase
@@ -137,12 +140,23 @@ export default function AdminOrdersPage() {
           <h1 className="text-3xl font-bold text-gray-900">Admin Orders</h1>
 
           <div className="flex gap-3">
-          <a
-  href="/admin"
-  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 font-extrabold text-gray-800 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+         <div className="mb-6 flex gap-2">
+  {/* Desktop */}
+  <a
+  href={isMobileAdmin ? "/admin-mobile" : "/admin"}
+  className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
 >
   ← Dashboard
 </a>
+
+  {/* Mobile */}
+  <a
+    href="/admin-mobile"
+    className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+  >
+    ← Dashboard
+  </a>
+</div>
         </div>
       </div>
 

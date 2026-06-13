@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useSearchParams } from "next/navigation";
 
 export default function AdminDeliveryOrdersPage() {
   const [customerName, setCustomerName] = useState("");
@@ -10,6 +11,8 @@ export default function AdminDeliveryOrdersPage() {
   const [toAddress, setToAddress] = useState("");
   const [price, setPrice] = useState("");
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+const isMobileAdmin = searchParams.get("mobile") === "1";
 
   async function addOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -43,9 +46,23 @@ export default function AdminDeliveryOrdersPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-3xl">
-        <a href="/admin" className="mb-6 inline-block font-bold text-green-700">
-          ← Back to Dashboard
-        </a>
+        <div className="mb-6 flex gap-2">
+  {/* Desktop */}
+  <a
+  href={isMobileAdmin ? "/admin-mobile" : "/admin"}
+  className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+>
+  ← Dashboard
+</a>
+
+  {/* Mobile */}
+  <a
+    href="/admin-mobile"
+    className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+  >
+    ← Dashboard
+  </a>
+</div>
 
         <h1 className="mb-8 text-3xl font-bold text-gray-900">
           Add Delivery Order

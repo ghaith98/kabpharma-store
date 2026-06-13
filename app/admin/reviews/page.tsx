@@ -1,5 +1,5 @@
 "use client";
-
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { FaStar, FaTrash } from "react-icons/fa";
@@ -7,6 +7,8 @@ import { FaStar, FaTrash } from "react-icons/fa";
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+const isMobileAdmin = searchParams.get("mobile") === "1";
 
   async function loadReviews() {
     const { data, error } = await supabase
@@ -50,12 +52,23 @@ export default function AdminReviewsPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-6xl mb-6">
+  <div className="mb-6 flex gap-2">
+  {/* Desktop */}
+ <a
+  href={isMobileAdmin ? "/admin-mobile" : "/admin"}
+  className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+>
+  ← Dashboard
+</a>  
+
+  {/* Mobile */}
   <a
-    href="/admin"
-    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-800 shadow-sm transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+    href="/admin-mobile"
+    className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
   >
-    ← Back to Dashboard
+    ← Dashboard
   </a>
+</div>
 </div>
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-8 text-3xl font-bold text-gray-900">
