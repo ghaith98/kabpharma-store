@@ -8,15 +8,26 @@ export type CartItem = {
   quantity: number;
 };
 
+function getCartKey() {
+  if (typeof window === "undefined") return "cart_guest";
+
+  const savedUser = localStorage.getItem("kab_user");
+
+  if (!savedUser) return "cart_guest";
+
+  const user = JSON.parse(savedUser);
+  return `cart_${user.phone}`;
+}
+
 export function getCart(): CartItem[] {
   if (typeof window === "undefined") return [];
 
-  const cart = localStorage.getItem("cart");
+  const cart = localStorage.getItem(getCartKey());
   return cart ? JSON.parse(cart) : [];
 }
 
 export function saveCart(cart: CartItem[]) {
-  localStorage.setItem("cart", JSON.stringify(cart));
+  localStorage.setItem(getCartKey(), JSON.stringify(cart));
 }
 
 export function addToCart(

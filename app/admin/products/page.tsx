@@ -12,6 +12,7 @@ export default function AdminProductsPage() {
   const [categoryId, setCategoryId] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [ingredients, setIngredients] = useState("");
   const [price, setPrice] = useState("");
   const [salePercent, setSalePercent] = useState("0");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -25,6 +26,7 @@ export default function AdminProductsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editIngredients, setEditIngredients] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editSalePercent, setEditSalePercent] = useState("0");
   const [editCategoryId, setEditCategoryId] = useState("");
@@ -108,9 +110,10 @@ await loadProductImages();
       .getPublicUrl(filePath);
 
     const { error } = await supabase.from("products").insert({
-      name,
-      description,
-      price: Number(price),
+  name,
+  description,
+  ingredients,
+  price: Number(price),
 sale_percent: Number(salePercent),
       image_url: publicUrlData.publicUrl,
       category_id: Number(categoryId),
@@ -125,6 +128,7 @@ sale_percent: Number(salePercent),
 
     setName("");
     setDescription("");
+    setIngredients("");
     setPrice("");
     setSalePercent("0");
     setCategoryId("");
@@ -135,6 +139,7 @@ sale_percent: Number(salePercent),
   }
 
   function startEdit(product: any) {
+    setEditIngredients(product.ingredients || "");
     setEditCategoryId(String(product.category_id || ""));
     setEditingId(product.id);
     setEditName(product.name);
@@ -168,8 +173,9 @@ sale_percent: Number(salePercent),
     }
 
     const updateData: any = {
-      name: editName,
-      description: editDescription,
+  name: editName,
+  description: editDescription,
+  ingredients: editIngredients,
       category_id: Number(editCategoryId),
       price: Number(editPrice),
       sale_percent: Number(editSalePercent),
@@ -362,6 +368,12 @@ async function deleteExtraImage(imageId: number) {
             required
             className="mb-3 w-full rounded-xl border p-3 text-black"
           />
+          <textarea
+  placeholder="Ingredients"
+  value={ingredients}
+  onChange={(e) => setIngredients(e.target.value)}
+  className="mb-3 w-full rounded-xl border p-3 text-black"
+/>
 
           <input
             type="number"
@@ -576,6 +588,12 @@ async function deleteExtraImage(imageId: number) {
   onChange={(e) => setEditPrice(e.target.value)}
   className="mb-4 w-full rounded-xl border p-3 text-black"
 />
+<textarea
+  value={editIngredients}
+  onChange={(e) => setEditIngredients(e.target.value)}
+  className="mb-3 w-full rounded-xl border p-3 text-black"
+/>
+
 
 <input
   type="number"

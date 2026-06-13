@@ -94,15 +94,21 @@ export default function ProductSwiper({ products }: { products: any[] }) {
 
               <div className="mt-4 flex items-center justify-between gap-3">
                 
-                <div>
-  {salePercent > 0 && (
-    <p className="text-xs font-bold text-gray-400 line-through">
-      {originalPrice.toLocaleString()} SYP
-    </p>
-  )}
-
-  <p className="font-extrabold text-green-700">
+                <div className="min-h-[44px]">
+  <p
+    className={`font-extrabold ${
+      salePercent > 0 ? "text-red-600" : "text-green-700"
+    }`}
+  >
     {Math.round(finalPrice).toLocaleString()} SYP
+  </p>
+
+  <p
+    className={`mt-1 text-xs font-bold ${
+      salePercent > 0 ? "text-gray-400 line-through" : "invisible"
+    }`}
+  >
+    {originalPrice.toLocaleString()} SYP
   </p>
 </div>
 

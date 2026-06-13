@@ -340,21 +340,25 @@ const [priceRange, setPriceRange] = useState([
                     </h2>
                   </Link>
 
-                  <div className="mt-2 flex items-center justify-center gap-2">
-                    {salePercent > 0 && (
-                      <span className="text-sm font-bold text-gray-400 line-through">
-                        {originalPrice.toLocaleString()} SYP
-                      </span>
-                    )}
+                 <div className="mt-2 flex min-h-[52px] flex-col items-center justify-start">
+  <span
+    className={`text-lg font-extrabold ${
+      salePercent > 0 ? "text-red-600" : "text-green-700"
+    }`}
+  >
+    {Math.round(finalPrice).toLocaleString()} SYP
+  </span>
 
-                    <span
-  className={`text-lg font-extrabold ${
-    salePercent > 0 ? "text-red-600" : "text-green-700"
-  }`}
->
-                      {Math.round(finalPrice).toLocaleString()} SYP
-                    </span>
-                  </div>
+  <span
+    className={`mt-1 text-sm font-bold ${
+      salePercent > 0
+        ? "text-gray-400 line-through"
+        : "invisible"
+    }`}
+  >
+    {originalPrice.toLocaleString()} SYP
+  </span>
+</div>
 
                   <div className="mt-4">
   {product.is_out_of_stock ? (

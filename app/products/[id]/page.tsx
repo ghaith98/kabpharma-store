@@ -3,6 +3,7 @@ import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import RelatedProductsSwiper from "./RelatedProductsSwiper";
 import ProductGallery from "./ProductGallery";
 import BackButton from "./BackButton";
+import ReviewsSection from "./ReviewsSection";
 
 export default async function ProductPage({
   params,
@@ -20,6 +21,11 @@ export default async function ProductPage({
   if (!product) {
     return <main className="p-10 text-center">Product not found</main>;
   }
+  const { data: reviews } = await supabase
+  .from("product_reviews")
+  .select("*")
+  .eq("product_id", product.id)
+  .order("created_at", { ascending: false });
 
   const { data: extraImages } = await supabase
     .from("product_images")
@@ -133,6 +139,24 @@ export default async function ProductPage({
           </div>
         </div>
       </div>
+      {product.ingredients && (
+  <section className="mx-auto mt-10 max-w-4xl rounded-3xl bg-white p-8 shadow-sm">
+    <h2 className="mb-4 text-2xl font-extrabold text-gray-900">
+      Ingredients
+    </h2>
+
+    <p className="whitespace-pre-line leading-8 text-gray-700">
+      {product.ingredients}
+    </p>
+  </section>
+)}
+
+<section className="mx-auto max-w-4xl">
+  <ReviewsSection
+    productId={product.id}
+    initialReviews={reviews || []}
+  />
+</section>
 
       {relatedProducts && relatedProducts.length > 0 && (
         <section className="mx-auto mt-10 max-w-4xl">

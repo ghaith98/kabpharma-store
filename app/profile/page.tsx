@@ -31,9 +31,10 @@ export default function ProfilePage() {
   }, []);
 
   function handleLogout() {
-    localStorage.removeItem("kab_user");
-    setUser(null);
-  }
+  localStorage.removeItem("kab_user");
+  setUser(null);
+  window.dispatchEvent(new Event("cartUpdated"));
+}
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12">
