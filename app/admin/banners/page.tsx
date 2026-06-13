@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -12,15 +13,6 @@ export default function AdminBannersPage() {
   const [linkUrl, setLinkUrl] = useState("/products");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-
-const [isMobileAdmin, setIsMobileAdmin] = useState(false);
-
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  setIsMobileAdmin(params.get("mobile") === "1");
-
-  checkAdmin();
-}, []);
 
   async function checkAdmin() {
     const { data } = await supabase.auth.getUser();
@@ -137,11 +129,11 @@ useEffect(() => {
       <section className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100">
         <div className="mb-6 flex gap-2">
   <a
-  href={isMobileAdmin ? "/admin-mobile" : "/admin"}
-  className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
->
-  ← Dashboard
-</a>
+    href="/admin"
+    className="hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:inline-flex"
+  >
+    ← Desktop Dashboard
+  </a>
 
   <a
     href="/admin-mobile"

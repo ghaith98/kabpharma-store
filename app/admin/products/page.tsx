@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useSearchParams } from "next/navigation";
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -23,8 +22,6 @@ export default function AdminProductsPage() {
   );
   const [updatingNewArrivalId, setUpdatingNewArrivalId] =
   useState<number | null>(null);
-  const searchParams = useSearchParams();
-const isMobileAdmin = searchParams.get("mobile") === "1";
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -340,11 +337,11 @@ async function deleteExtraImage(imageId: number) {
         <div className="mb-6 flex gap-2">
   {/* Desktop */}
   <a
-  href={isMobileAdmin ? "/admin-mobile" : "/admin"}
-  className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
->
-  ← Dashboard
-</a>
+    href="/admin"
+    className="hidden lg:inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+  >
+    ← Desktop Dashboard
+  </a>
 
   {/* Mobile */}
   <a

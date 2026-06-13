@@ -1,13 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminDriversPage() {
-  const searchParams = useSearchParams();
-  const isMobileAdmin = searchParams.get("mobile") === "1";
-
   const [drivers, setDrivers] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -87,12 +83,23 @@ export default function AdminDriversPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-5xl">
-        <a
-          href={isMobileAdmin ? "/admin-mobile" : "/admin"}
-          className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-        >
-          ← Dashboard
-        </a>
+        <div className="mb-6 flex gap-2">
+  {/* Desktop */}
+  <a
+    href="/admin"
+    className="hidden lg:inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+  >
+    ← Desktop Dashboard
+  </a>
+
+  {/* Mobile */}
+  <a
+    href="/admin-mobile"
+    className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+  >
+    ← Dashboard
+  </a>
+</div>
 
         <h1 className="mb-8 text-3xl font-bold text-gray-900">
           Delivery Drivers
@@ -102,9 +109,7 @@ export default function AdminDriversPage() {
           onSubmit={addDriver}
           className="mb-8 rounded-2xl bg-white p-6 shadow"
         >
-          <h2 className="mb-5 text-xl font-bold text-gray-900">
-            Add Driver
-          </h2>
+          <h2 className="mb-5 text-xl font-bold">Add Driver</h2>
 
           <input
             type="text"
@@ -114,6 +119,8 @@ export default function AdminDriversPage() {
             required
             className="mb-3 w-full rounded-xl border p-3 text-black"
           />
+
+        
 
           <input
             type="text"
@@ -134,14 +141,17 @@ export default function AdminDriversPage() {
 
         <div className="space-y-4">
           {drivers.map((driver) => (
-            <div key={driver.id} className="rounded-2xl bg-white p-5 shadow">
+            <div
+              key={driver.id}
+              className="rounded-2xl bg-white p-5 shadow"
+            >
               <h3 className="text-xl font-bold text-gray-900">
                 {driver.name}
               </h3>
 
               <p className="text-gray-600">
-                Password: {driver.password}
-              </p>
+  Password: {driver.password}
+</p>
 
               <p
                 className={`mt-2 inline-block rounded-full px-3 py-1 text-sm font-bold ${

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useSearchParams } from "next/navigation";
 
 export default function AdminDeliveryOrdersPage() {
   const [customerName, setCustomerName] = useState("");
@@ -11,8 +10,6 @@ export default function AdminDeliveryOrdersPage() {
   const [toAddress, setToAddress] = useState("");
   const [price, setPrice] = useState("");
   const [loading, setLoading] = useState(false);
-  const searchParams = useSearchParams();
-const isMobileAdmin = searchParams.get("mobile") === "1";
 
   async function addOrder(e: React.FormEvent) {
     e.preventDefault();
@@ -49,11 +46,11 @@ const isMobileAdmin = searchParams.get("mobile") === "1";
         <div className="mb-6 flex gap-2">
   {/* Desktop */}
   <a
-  href={isMobileAdmin ? "/admin-mobile" : "/admin"}
-  className="mb-6 inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
->
-  ← Dashboard
-</a>
+    href="/admin"
+    className="hidden lg:inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+  >
+    ← Desktop Dashboard
+  </a>
 
   {/* Mobile */}
   <a
