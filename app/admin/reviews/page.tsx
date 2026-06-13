@@ -49,6 +49,14 @@ export default function AdminReviewsPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
+      <div className="mx-auto max-w-6xl mb-6">
+  <a
+    href="/admin"
+    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-gray-800 shadow-sm transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+  >
+    ← Back to Dashboard
+  </a>
+</div>
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-8 text-3xl font-bold text-gray-900">
           Product Reviews

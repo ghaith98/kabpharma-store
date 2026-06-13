@@ -86,11 +86,6 @@ export default function AdminOrdersPage() {
     }, 1200);
   }
 
-  async function logout() {
-    await supabase.auth.signOut();
-    router.replace("/admin/login");
-  }
-
   useEffect(() => {
     async function checkAdmin() {
       const { data } = await supabase.auth.getUser();
@@ -134,27 +129,18 @@ export default function AdminOrdersPage() {
         <p className="text-center font-semibold text-gray-700">Loading...</p>
       </main>
     );
-  }
+  } 
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Orders</h1>
-
-        <div className="flex gap-3">
-          <a
-            href="/admin"
-            className="rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
-          >
-            Back to Dashboard
-          </a>
-
-          <button
-            onClick={logout}
-            className="rounded-xl bg-black px-4 py-2 font-semibold text-white"
-          >
-            Logout
-          </button>
+       <div className="mx-auto mb-8 max-w-5xl rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100">
+  <div className="flex items-center justify-between">
+    <a
+      href="/admin"
+      className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 font-extrabold text-gray-800 shadow-sm transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+    >
+  ← Dashboard
+</a>
         </div>
       </div>
 
@@ -240,7 +226,22 @@ export default function AdminOrdersPage() {
             updatedOrderId === order.id ? updatedStatus : order.status;
 
           return (
-            <div key={order.id} className="rounded-2xl bg-white p-6 shadow">
+            <div
+  key={order.id}
+  className={`rounded-2xl p-6 shadow border transition-all ${
+    order.status === "accepted"
+      ? "bg-green-50 border-green-200"
+      : order.status === "out_for_delivery"
+      ? "bg-blue-50 border-blue-200"
+      : order.status === "delivered"
+      ? "bg-purple-50 border-purple-200"
+      : order.status === "rejected"
+      ? "bg-red-50 border-red-200"
+      : order.status === "cancelled_by_customer"
+      ? "bg-gray-50 border-gray-200"
+      : "bg-white border-gray-100"
+  }`}
+> 
               <h2 className="mb-3 text-xl font-bold text-gray-900">
                 Order #{order.id}
               </h2>
@@ -273,9 +274,23 @@ export default function AdminOrdersPage() {
                 </p>
                 <p>
                   <strong>Status:</strong>{" "}
-                  <span className="font-bold text-gray-900">
-                    {statusMap[order.status] || order.status}
-                  </span>
+                  <span
+  className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${
+    order.status === "accepted"
+      ? "bg-green-100 text-green-800"
+      : order.status === "out_for_delivery"
+      ? "bg-blue-100 text-blue-800"
+      : order.status === "delivered"
+      ? "bg-purple-100 text-purple-800"
+      : order.status === "rejected"
+      ? "bg-red-100 text-red-800"
+      : order.status === "cancelled_by_customer"
+      ? "bg-gray-200 text-gray-800"
+      : "bg-yellow-100 text-yellow-800"
+  }`}
+>
+  {statusMap[order.status] || order.status}
+</span>
                 </p>
               </div>
 

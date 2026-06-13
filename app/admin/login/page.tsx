@@ -1,69 +1,73 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-export default function LoginPage() {
-  const [phone, setPhone] = useState("");
-  const [error, setError] = useState("");
+export default function AdminLoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    setErrorMessage("");
 
-    setError("");
-
-    if (!phone) {
-      setError("Please enter your phone number.");
+    if (!email || !password) {
+      setErrorMessage("Please enter email and password.");
       return;
     }
 
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("phone", phone)
-      .single();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     setLoading(false);
 
-    if (error || !data) {
-      setError("No account found with this phone number.");
+    if (error) {
+      setErrorMessage(error.message);
       return;
     }
 
-    localStorage.setItem(
-      "kab_user",
-      JSON.stringify({
-        full_name: data.full_name,
-        phone: data.phone,
-      })
-    );
-
-    window.location.href = "/profile";
+    window.location.href = "/admin";
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12">
+    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
       <div className="mx-auto max-w-md rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-gray-100">
         <h1 className="text-3xl font-extrabold text-gray-900">
-          Sign In
+          Admin Login
         </h1>
 
         <p className="mt-2 text-gray-600">
-          Enter your phone number to access your account.
+          Sign in to access the admin dashboard.
         </p>
 
         <form onSubmit={handleLogin} className="mt-8 space-y-4">
           <input
-            type="tel"
-            placeholder="Phone number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            type="email"
+            placeholder="Admin email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-black outline-none focus:border-green-600"
           />
+
+          <input
+            type="password"
+            placeholder="Admin password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-black outline-none focus:border-green-600"
+          />
+
+          {errorMessage && (
+            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+              {errorMessage}
+            </p>
+          )}
 
           <button
             disabled={loading}
@@ -71,20 +75,7 @@ export default function LoginPage() {
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
-
-          {error && (
-            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-              {error}
-            </p>
-          )}
         </form>
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-bold text-green-700">
-            Create account
-          </Link>
-        </p>
       </div>
     </main>
   );

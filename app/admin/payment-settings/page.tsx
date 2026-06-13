@@ -96,77 +96,101 @@ export default function PaymentSettingsPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
-      <div className="mx-auto max-w-xl space-y-6">
-        <div className="rounded-3xl bg-white p-8 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-  <div>
-    <h1 className="text-3xl font-extrabold text-gray-900">
-      Payment QR Settings
-    </h1>
+      <div className="mx-auto max-w-4xl">
+        <section className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100 md:p-8">
+          <a
+            href="/admin"
+            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-extrabold text-gray-800 shadow-sm transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+          >
+            ← Dashboard
+          </a>
 
-    <p className="mt-2 text-gray-700">
-      Upload the QR code image that customers will use on the payment page.
-    </p>
-  </div>
-
-  <a
-    href="/admin"
-    className="rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
-  >
-    Back to Dashboard
-  </a>
-</div>
-
-          <form onSubmit={uploadQr} className="space-y-4">
-            <h2 className="text-xl font-extrabold text-gray-900">
-              Payment QR Code
-            </h2>
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              required
-              className="w-full rounded-2xl border border-gray-300 p-4 text-black file:mr-4 file:rounded-xl file:border-0 file:bg-green-600 file:px-4 file:py-2 file:font-semibold file:text-white"
-            />
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white transition hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {loading ? "Uploading..." : "Update Payment QR"}
-            </button>
-          </form>
-        </div>
-
-        <div className="rounded-3xl bg-white p-8 shadow-sm">
-          <form onSubmit={savePaymentNumber} className="space-y-4">
-            <h2 className="text-xl font-extrabold text-gray-900">
-              Payment Number
-            </h2>
-
-            <p className="text-gray-700">
-              Customers can copy this number if the QR code does not work.
+          <div className="mt-6">
+            <p className="text-sm font-extrabold uppercase tracking-wider text-green-700">
+              Payment Settings
             </p>
 
-            <input
-              type="text"
-              placeholder="Enter payment number"
-              value={paymentNumber}
-              onChange={(e) => setPaymentNumber(e.target.value)}
-              required
-              className="w-full rounded-2xl border border-gray-300 p-4 text-black placeholder:text-gray-500 outline-none transition focus:border-green-600"
-            />
+            <h1 className="mt-2 text-4xl font-extrabold text-gray-900">
+              Payment QR & Number
+            </h1>
 
-            <button
-              type="submit"
-              disabled={numberLoading}
-              className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white transition hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {numberLoading ? "Saving..." : "Save Payment Number"}
-            </button>
-          </form>
+            <p className="mt-3 max-w-2xl leading-7 text-gray-600">
+              Manage the QR code and payment number shown to customers during
+              checkout.
+            </p>
+          </div>
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100 md:p-8">
+            <div className="mb-6">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+                ▣
+              </div>
+
+              <h2 className="text-2xl font-extrabold text-gray-900">
+                Payment QR Code
+              </h2>
+
+              <p className="mt-2 leading-7 text-gray-600">
+                Upload the QR code image customers will scan on the payment
+                page.
+              </p>
+            </div>
+
+            <form onSubmit={uploadQr} className="space-y-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                required
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black file:mr-4 file:rounded-xl file:border-0 file:bg-green-600 file:px-4 file:py-2 file:font-bold file:text-white focus:border-green-600"
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-2xl bg-green-600 py-4 font-extrabold text-white shadow-sm transition hover:bg-green-700 disabled:bg-gray-400"
+              >
+                {loading ? "Uploading..." : "Update Payment QR"}
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100 md:p-8">
+            <div className="mb-6">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+                #
+              </div>
+
+              <h2 className="text-2xl font-extrabold text-gray-900">
+                Payment Number
+              </h2>
+
+              <p className="mt-2 leading-7 text-gray-600">
+                Customers can copy this number if the QR code does not work.
+              </p>
+            </div>
+
+            <form onSubmit={savePaymentNumber} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Enter payment number"
+                value={paymentNumber}
+                onChange={(e) => setPaymentNumber(e.target.value)}
+                required
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black placeholder:text-gray-500 outline-none transition focus:border-green-600 focus:bg-white"
+              />
+
+              <button
+                type="submit"
+                disabled={numberLoading}
+                className="w-full rounded-2xl bg-green-600 py-4 font-extrabold text-white shadow-sm transition hover:bg-green-700 disabled:bg-gray-400"
+              >
+                {numberLoading ? "Saving..." : "Save Payment Number"}
+              </button>
+            </form>
+          </section>
         </div>
       </div>
     </main>

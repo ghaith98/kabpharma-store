@@ -7,25 +7,25 @@ import { FaFilter, FaTimes } from "react-icons/fa";
 import AddToCartButton from "./AddToCartButton";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
-
+import WishlistButton from "./WishlistButton";
 
 export default function ProductsClient({
   products,
   showSearch = false,
   showCategories = true,
+  bestSellerIds = [],
 }: {
   products: any[];
   showSearch?: boolean;
   showCategories?: boolean;
+  bestSellerIds?: number[];
 }) {
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-    null
-  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState("default");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -42,10 +42,7 @@ export default function ProductsClient({
         .filter((product) => product.categories)
         .map((product) => [
           product.categories.id,
-          {
-            id: product.categories.id,
-            name: product.categories.name,
-          },
+          { id: product.categories.id, name: product.categories.name },
         ])
     ).values()
   );
@@ -59,6 +56,10 @@ export default function ProductsClient({
       : originalPrice;
   }
 
+  const maxProductPrice = Math.max(...products.map((p) => Number(p.price)));
+
+  const [priceRange, setPriceRange] = useState([0, maxProductPrice]);
+
   function clearFilters() {
     setSelectedCategoryId(null);
     setSortBy("default");
@@ -68,14 +69,6 @@ export default function ProductsClient({
     setInStockOnly(false);
     setOnSaleOnly(false);
   }
-  const maxProductPrice = Math.max(
-  ...products.map((p) => Number(p.price))
-);
-
-const [priceRange, setPriceRange] = useState([
-  0,
-  maxProductPrice,
-]);
 
   const filteredProducts = products
     .filter((product) => {
@@ -86,16 +79,11 @@ const [priceRange, setPriceRange] = useState([
       const finalPrice = getFinalPrice(product);
 
       const matchesSearch = text.includes(search.toLowerCase());
-
       const matchesCategory =
-        selectedCategoryId === null ||
-        product.category_id === selectedCategoryId;
-
+        selectedCategoryId === null || product.category_id === selectedCategoryId;
       const matchesPrice =
-  finalPrice >= priceRange[0] &&
-  finalPrice <= priceRange[1];  
+        finalPrice >= priceRange[0] && finalPrice <= priceRange[1];
       const matchesStock = !inStockOnly || product.is_out_of_stock === false;
-
       const matchesSale = !onSaleOnly || Number(product.sale_percent || 0) > 0;
 
       return (
@@ -149,9 +137,7 @@ const [priceRange, setPriceRange] = useState([
             <div className="mb-8 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <FaFilter size={16} />
-                <h2 className="text-lg font-extrabold text-gray-900">
-                  Filter
-                </h2>
+                <h2 className="text-lg font-extrabold text-gray-900">Filter</h2>
               </div>
 
               <button
@@ -172,9 +158,7 @@ const [priceRange, setPriceRange] = useState([
                   <button
                     onClick={() => setSelectedCategoryId(null)}
                     className={`block w-full text-left text-sm font-bold ${
-                      selectedCategoryId === null
-                        ? "text-green-700"
-                        : "text-gray-800"
+                      selectedCategoryId === null ? "text-green-700" : "text-gray-800"
                     }`}
                   >
                     All
@@ -229,28 +213,21 @@ const [priceRange, setPriceRange] = useState([
               <h3 className="mb-4 text-xl font-bold text-gray-900">Price</h3>
 
               <div className="px-2">
-  <Slider
-    range
-    min={0}
-    max={maxProductPrice}
-    value={priceRange}
-    onChange={(value) =>
-      setPriceRange(value as number[])
-    }
-  />
+                <Slider
+                  range
+                  min={0}
+                  max={maxProductPrice}
+                  value={priceRange}
+                  onChange={(value) => setPriceRange(value as number[])}
+                />
 
-  <div className="mt-4 flex justify-between text-sm font-bold text-gray-700">
-    <span>
-      {priceRange[0].toLocaleString()} SYP
-    </span>
+                <div className="mt-4 flex justify-between text-sm font-bold text-gray-700">
+                  <span>{priceRange[0].toLocaleString()} SYP</span>
+                  <span>{priceRange[1].toLocaleString()} SYP</span>
+                </div>
+              </div>
+            </div>
 
-    <span>
-      {priceRange[1].toLocaleString()} SYP
-    </span>
-  </div>
-    </div>
-
-</div> 
             <div className="py-6">
               <h3 className="mb-4 text-xl font-bold text-gray-900">Sort by</h3>
 
@@ -267,7 +244,7 @@ const [priceRange, setPriceRange] = useState([
             </div>
 
             <div className="sticky bottom-0 -mx-6 mt-4 flex gap-3 border-t bg-white p-6">
-              <button 
+              <button
                 onClick={clearFilters}
                 className="flex-1 rounded-2xl border border-gray-300 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
               >
@@ -277,7 +254,7 @@ const [priceRange, setPriceRange] = useState([
               <button
                 onClick={() => setFiltersOpen(false)}
                 className="flex-1 rounded-2xl bg-green-600 py-3 font-bold text-white transition hover:bg-green-700"
-              > 
+              >
                 Apply
               </button>
             </div>
@@ -287,10 +264,7 @@ const [priceRange, setPriceRange] = useState([
 
       {filteredProducts.length === 0 ? (
         <div className="relative z-10 mx-auto max-w-xl rounded-2xl bg-white p-10 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">
-            No products found
-          </h2>
-
+          <h2 className="text-2xl font-bold text-gray-900">No products found</h2>
           <p className="mt-3 text-gray-600">
             Try changing the filters or searching another product.
           </p>
@@ -309,16 +283,29 @@ const [priceRange, setPriceRange] = useState([
               >
                 <Link href={`/products/${product.id}`}>
                   <div className="relative flex h-40 items-center justify-center overflow-hidden bg-white p-3 sm:h-48">
-                    {product.is_out_of_stock && (
-                      <span className="absolute left-3 top-3 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                    <div className="absolute right-3 top-3 z-20">
+                      <WishlistButton
+                        product={{
+                          id: product.id,
+                          name: product.name,
+                          price: Math.round(finalPrice),
+                          original_price: originalPrice,
+                          sale_percent: salePercent,
+                          image_url: product.image_url,
+                        }}
+                      />
+                    </div>
+
+                    {product.is_out_of_stock ? (
+                      <span className="absolute left-3 top-3 z-20 rounded-full bg-gray-900 px-3 py-1 text-xs font-extrabold text-white shadow-sm">
                         Out of Stock
                       </span>
-                    )}
-
-                    {salePercent > 0 && (
-                      <span className="absolute right-3 top-3 z-10 rounded-full bg-pink-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
-                        -{salePercent}%
-                      </span>
+                    ) : (
+                      salePercent > 0 && (
+                        <span className="absolute left-3 top-3 z-20 rounded-full bg-green-700 px-3 py-1 text-xs font-extrabold text-white shadow-sm">
+                          -{salePercent}%
+                        </span>
+                      )
                     )}
 
                     {product.image_url ? (
@@ -340,47 +327,43 @@ const [priceRange, setPriceRange] = useState([
                     </h2>
                   </Link>
 
-                 <div className="mt-2 flex min-h-[52px] flex-col items-center justify-start">
-  <span
-    className={`text-lg font-extrabold ${
-      salePercent > 0 ? "text-red-600" : "text-green-700"
-    }`}
-  >
-    {Math.round(finalPrice).toLocaleString()} SYP
-  </span>
+                  <div className="mt-2 flex items-center justify-center gap-2">
+                    {salePercent > 0 && (
+                      <span className="text-sm font-bold text-gray-400 line-through">
+                        {originalPrice.toLocaleString()} SYP
+                      </span>
+                    )}
 
-  <span
-    className={`mt-1 text-sm font-bold ${
-      salePercent > 0
-        ? "text-gray-400 line-through"
-        : "invisible"
-    }`}
-  >
-    {originalPrice.toLocaleString()} SYP
-  </span>
-</div>
+                    <span
+                      className={`text-lg font-extrabold ${
+                        salePercent > 0 ? "text-red-600" : "text-green-700"
+                      }`}
+                    >
+                      {Math.round(finalPrice).toLocaleString()} SYP
+                    </span>
+                  </div>
 
                   <div className="mt-4">
-  {product.is_out_of_stock ? (
-    <button
-  disabled
-  className="w-full rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
->
-  Out of Stock
-</button>
-  ) : (
-    <AddToCartButton
-      product={{
-        id: product.id,
-        name: product.name,
-        price: Math.round(finalPrice),
-        original_price: originalPrice,
-        sale_percent: salePercent,
-        image_url: product.image_url,
-      }}
-    />
-  )}
-</div>
+                    {product.is_out_of_stock ? (
+                      <button
+                        disabled
+                        className="w-full rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
+                      >
+                        Out of Stock
+                      </button>
+                    ) : (
+                      <AddToCartButton
+                        product={{
+                          id: product.id,
+                          name: product.name,
+                          price: Math.round(finalPrice),
+                          original_price: originalPrice,
+                          sale_percent: salePercent,
+                          image_url: product.image_url,
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             );

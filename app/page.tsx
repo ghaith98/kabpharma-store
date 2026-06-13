@@ -8,10 +8,12 @@ function ProductSection({
   eyebrow,
   title,
   products,
+  bestSellerIds = [],
 }: {
   eyebrow: string;
   title: string;
   products: any[];
+  bestSellerIds?: number[];
 }) {
   if (!products || products.length === 0) return null;
 
@@ -28,7 +30,7 @@ function ProductSection({
           </h2>
         </div>
 
-        <ProductSwiper products={products} />
+        <ProductSwiper products={products} bestSellerIds={bestSellerIds} />
       </div>
     </section>
   );
@@ -52,20 +54,29 @@ export default async function Home() {
   const { data: orderItems } = await supabase
     .from("order_items")
     .select("product_id, quantity");
+    const { data: availableProductsForRanking } = await supabase
+  .from("products")
+  .select("id")
+  .eq("is_out_of_stock", false);
 
-  const topSellerIds = Object.entries(
-    (orderItems || []).reduce((acc: Record<string, number>, item: any) => {
-      if (!item.product_id) return acc;
+const availableProductIds = new Set(
+  (availableProductsForRanking || []).map((product) => product.id)
+);
 
-      acc[item.product_id] =
-        (acc[item.product_id] || 0) + Number(item.quantity || 0);
+ const topSellerIds = Object.entries(
+  (orderItems || []).reduce((acc: Record<string, number>, item: any) => {
+    if (!item.product_id) return acc;
 
-      return acc;
-    }, {})
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([productId]) => Number(productId));
+    acc[item.product_id] =
+      (acc[item.product_id] || 0) + Number(item.quantity || 0);
+
+    return acc;
+  }, {})
+)
+  .filter(([productId]) => availableProductIds.has(Number(productId)))
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 5)
+  .map(([productId]) => Number(productId));
 
   let topSellerProducts: any[] = [];
 
@@ -182,10 +193,11 @@ export default async function Home() {
       />
 
       <ProductSection
-        eyebrow="Best Selling"
-        title="Top Sellers"
-        products={topSellerProducts || []}
-      />
+  eyebrow="Best Selling"
+  title="Top Sellers"
+  products={topSellerProducts || []}
+  bestSellerIds={topSellerIds}
+/>
 
       <ProductSection
         eyebrow="Featured"

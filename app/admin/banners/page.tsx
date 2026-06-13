@@ -123,100 +123,116 @@ export default function AdminBannersPage() {
     checkAdmin();
   }, []);
 
-  return (
-    <main className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Homepage Banners
-          </h1>
-
-          <a
-            href="/admin"
-            className="rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
-          >
-            Back to Dashboard
-          </a>
-        </div>
-
-        <form
-          onSubmit={addBanner}
-          className="mb-8 rounded-2xl bg-white p-6 shadow"
+ return (
+  <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-10">
+    <div className="mx-auto max-w-5xl">
+      <section className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100">
+        <a
+          href="/admin"
+          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-extrabold text-gray-800 shadow-sm transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
         >
-          <h2 className="mb-4 text-xl font-bold">Add Banner</h2>
+          ← Dashboard
+        </a>
 
-          <input
-            type="text"
-            placeholder="Banner Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="mb-3 w-full rounded-xl border p-3 text-black"
-          />
+        <h1 className="mt-5 text-4xl font-extrabold text-gray-900">
+          Homepage Banners
+        </h1>
 
-          <textarea
-            placeholder="Banner Text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="mb-3 w-full rounded-xl border p-3 text-black"
-          />
+        <p className="mt-2 text-gray-600">
+          Manage homepage banners and promotional slides.
+        </p>
+      </section>
 
-          <input
-            type="text"
-            placeholder="Link URL, example: /products"
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            className="mb-3 w-full rounded-xl border p-3 text-black"
-          />
+      <form
+        onSubmit={addBanner}
+        className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100"
+      >
+        <h2 className="mb-5 text-2xl font-extrabold text-gray-900">
+          Add Banner
+        </h2>
 
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-            required
-            className="mb-4 w-full rounded-xl border p-3 text-black"
-          />
+        <input
+          type="text"
+          placeholder="Banner Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+          className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-black outline-none transition focus:border-green-600 focus:bg-white"
+        />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-black px-5 py-3 text-white disabled:bg-gray-400"
+        <textarea
+          placeholder="Banner Text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-black outline-none transition focus:border-green-600 focus:bg-white"
+        />
+
+        <input
+          type="text"
+          placeholder="Link URL, example: /products"
+          value={linkUrl}
+          onChange={(e) => setLinkUrl(e.target.value)}
+          className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-black outline-none transition focus:border-green-600 focus:bg-white"
+        />
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+          required
+          className="mb-4 w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-black file:mr-4 file:rounded-xl file:border-0 file:bg-green-600 file:px-4 file:py-2 file:font-bold file:text-white"
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-2xl bg-green-600 px-6 py-4 font-extrabold text-white shadow-sm transition hover:bg-green-700 disabled:bg-gray-400"
+        >
+          {loading ? "Uploading..." : "Add Banner"}
+        </button>
+      </form>
+
+      <div className="space-y-5">
+        {banners.map((banner) => (
+          <div
+            key={banner.id}
+            className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-gray-100"
           >
-            {loading ? "Uploading..." : "Add Banner"}
-          </button>
-        </form>
+            <img
+              src={banner.image_url}
+              alt={banner.title}
+              className="h-64 w-full object-cover"
+            />
 
-        <div className="space-y-4">
-          {banners.map((banner) => (
-            <div key={banner.id} className="rounded-2xl bg-white p-6 shadow">
-              <img
-                src={banner.image_url}
-                alt={banner.title}
-                className="mb-4 h-48 w-full rounded-2xl object-cover"
-              />
+            <div className="p-6">
+              <div className="mb-3 flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-extrabold text-gray-900">
+                  {banner.title}
+                </h2>
 
-              <h2 className="text-xl font-bold text-gray-900">
-                {banner.title}
-              </h2>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-extrabold ${
+                    banner.is_active
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
+                  }`}
+                >
+                  {banner.is_active ? "Active" : "Inactive"}
+                </span>
+              </div>
 
-              <p className="mt-2 text-gray-600">{banner.text}</p>
+              <p className="leading-7 text-gray-600">
+                {banner.text}
+              </p>
 
-              <p className="mt-2 text-sm font-semibold text-gray-500">
+              <p className="mt-3 text-sm font-bold text-gray-500">
                 Link: {banner.link_url}
               </p>
 
-              <p
-                className={`mt-2 font-bold ${
-                  banner.is_active ? "text-green-700" : "text-red-600"
-                }`}
-              >
-                {banner.is_active ? "Active" : "Inactive"}
-              </p>
-
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="mt-5 flex flex-wrap gap-3">
                 <button
                   onClick={() => toggleActive(banner)}
-                  className={`rounded-xl px-4 py-2 font-semibold text-white ${
+                  className={`rounded-2xl px-5 py-3 font-extrabold text-white transition ${
                     banner.is_active
                       ? "bg-orange-500 hover:bg-orange-600"
                       : "bg-green-600 hover:bg-green-700"
@@ -227,15 +243,16 @@ export default function AdminBannersPage() {
 
                 <button
                   onClick={() => deleteBanner(banner.id)}
-                  className="rounded-xl bg-red-600 px-4 py-2 text-white"
+                  className="rounded-2xl bg-red-600 px-5 py-3 font-extrabold text-white transition hover:bg-red-700"
                 >
                   Delete
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </main>
-  );
+    </div>
+  </main>
+);
 }

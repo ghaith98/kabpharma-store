@@ -156,16 +156,16 @@ export default async function ProductPage({
     productId={product.id}
     initialReviews={reviews || []}
   />
-</section>
+  </section>
 
-      {relatedProducts && relatedProducts.length > 0 && (
-        <section className="mx-auto mt-10 max-w-4xl">
-          <h2 className="mb-6 text-2xl font-extrabold text-gray-900">
-            You may also like
-          </h2>
+        {relatedProducts && relatedProducts.length > 0 && (
+          <section className="mx-auto mt-10 max-w-4xl">
+            <h2 className="mb-6 text-2xl font-extrabold text-gray-900">
+              You may also like
+            </h2>
 
-          <RelatedProductsSwiper products={relatedProducts} />
-        </section>
+            <RelatedProductsSwiper products={relatedProducts} />
+          </section>
       )}
     </main>
   );
