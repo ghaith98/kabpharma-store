@@ -1,5 +1,4 @@
 "use client";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -13,8 +12,15 @@ export default function AdminBannersPage() {
   const [linkUrl, setLinkUrl] = useState("/products");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const searchParams = useSearchParams();
-const isMobileAdmin = searchParams.get("mobile") === "1";
+
+const [isMobileAdmin, setIsMobileAdmin] = useState(false);
+
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  setIsMobileAdmin(params.get("mobile") === "1");
+
+  checkAdmin();
+}, []);
 
   async function checkAdmin() {
     const { data } = await supabase.auth.getUser();
