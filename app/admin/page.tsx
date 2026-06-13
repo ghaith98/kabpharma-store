@@ -154,6 +154,12 @@ const [editCategoryId, setEditCategoryId] = useState("");
   Categories
 </a>
 <a
+  href="/admin/reviews"
+  className="rounded-xl bg-black px-5 py-3 text-white"
+>
+  Reviews
+</a>
+<a
   href="/admin/delivery"
   className="rounded-xl bg-black px-5 py-3 text-white"
 >
