@@ -1,11 +1,14 @@
+import DriverPullToRefresh from "./DriverPullToRefresh";
+
 export default function DriverLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <>
+      <DriverPullToRefresh />
       {children}
-    </div>
+    </>
   );
 }
