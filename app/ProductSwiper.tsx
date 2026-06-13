@@ -72,14 +72,14 @@ export default function ProductSwiper({
                 </div>
 
                 {product.is_out_of_stock ? (
-                  <span className="absolute left-4 top-4 z-20 rounded-full bg-gray-900 px-3 py-1 text-xs font-extrabold text-white shadow-sm">
-                    Out of Stock
-                  </span>
+                  <span className="absolute left-4 top-4 z-20 rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-extrabold text-gray-700 shadow-sm">
+  Out of Stock
+</span>
                 ) : (
                   salePercent > 0 && (
-                    <span className="absolute left-4 top-4 z-20 rounded-full bg-green-700 px-3 py-1 text-xs font-extrabold text-white shadow-sm">
-                      -{salePercent}%
-                    </span>
+                    <span className="absolute left-4 top-4 z-20 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-extrabold text-red-600 shadow-sm">
+  -{salePercent}%
+</span>
                   )
                 )}
 

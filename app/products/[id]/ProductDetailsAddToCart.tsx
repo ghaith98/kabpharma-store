@@ -39,9 +39,9 @@ export default function ProductDetailsAddToCart({
         <div>
           {salePercent > 0 && (
             <div className="mb-2 flex items-center gap-2">
-              <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-extrabold text-red-600">
-                -{salePercent}%
-              </span>
+             <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-extrabold text-red-600">
+  -{salePercent}%
+</span>
 
               <span className="text-sm font-bold text-gray-400 line-through">
                 {originalPrice.toLocaleString()} SYP
@@ -49,7 +49,11 @@ export default function ProductDetailsAddToCart({
             </div>
           )}
 
-          <p className="text-2xl font-extrabold tracking-tight text-green-700">
+          <p
+  className={`text-2xl font-extrabold tracking-tight ${
+    salePercent > 0 ? "text-red-600" : "text-green-700"
+  }`}
+>
             {Math.round(finalPrice).toLocaleString()} SYP
           </p>
         </div>

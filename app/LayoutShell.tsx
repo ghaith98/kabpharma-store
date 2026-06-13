@@ -13,20 +13,18 @@ export default function LayoutShell({
   const pathname = usePathname();
 
   const isDriverPage = pathname.startsWith("/driver");
+  const isAdminPage = pathname.startsWith("/admin");
 
-  if (isDriverPage) {
+  if (isDriverPage || isAdminPage) {
     return <>{children}</>;
   }
 
   return (
     <>
       <Navbar />
-
       <main className="flex-1">{children}</main>
-
       <Footer />
-
       <MobileBottomNav />
     </>
   );
-}   
+}

@@ -17,15 +17,18 @@
     if (error) {
       return <p className="p-8 text-red-600">Error: {error.message}</p>;
     }
-    const { data: orderItems } = await supabase
-  .from("order_items")
-  .select("product_id, quantity");
+      const { data: orderItems } = await supabase
+    .from("order_items")
+    .select("product_id, quantity");
+    const { data: availableProductsForRanking } = await supabase
+    .from("products")
+    .select("id")
+    .eq("is_out_of_stock", false);
 
-const availableProductIds = new Set(
-  (products || [])
-    .filter((product) => !product.is_out_of_stock)
-    .map((product) => product.id)
-);
+  const availableProductIds = new Set(
+    (availableProductsForRanking || []).map((product) => product.id)
+  );
+
 
 const bestSellerIds = Object.entries(
   (orderItems || []).reduce((acc: Record<string, number>, item: any) => {

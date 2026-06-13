@@ -302,9 +302,9 @@ export default function ProductsClient({
                       </span>
                     ) : (
                       salePercent > 0 && (
-                        <span className="absolute left-3 top-3 z-20 rounded-full bg-green-700 px-3 py-1 text-xs font-extrabold text-white shadow-sm">
-                          -{salePercent}%
-                        </span>
+                        <span className="absolute left-3 top-3 z-20 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-extrabold text-red-600 shadow-sm">
+  -{salePercent}%
+</span>
                       )
                     )}
 

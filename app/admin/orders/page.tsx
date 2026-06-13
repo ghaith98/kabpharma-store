@@ -133,12 +133,14 @@ export default function AdminOrdersPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
-       <div className="mx-auto mb-8 max-w-5xl rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100">
-  <div className="flex items-center justify-between">
-    <a
-      href="/admin"
-      className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 font-extrabold text-gray-800 shadow-sm transition hover:border-green-200 hover:bg-green-50 hover:text-green-700"
-    >
+        <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Orders</h1>
+
+          <div className="flex gap-3">
+          <a
+  href="/admin"
+  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 font-extrabold text-gray-800 shadow-sm transition hover:-translate-y-0.5 hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+>
   ← Dashboard
 </a>
         </div>
