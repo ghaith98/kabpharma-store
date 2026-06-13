@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 export default function DriverMyOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [driverName, setDriverName] = useState("");
+  const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
 
   async function loadMyOrders(name: string) {
     const { data, error } = await supabase
@@ -24,6 +25,8 @@ export default function DriverMyOrdersPage() {
   }
 
   async function updateStatus(id: string, status: string) {
+    setLoadingOrderId(id);
+
     const updateData: any = { status };
 
     if (status === "delivered") {
@@ -34,6 +37,8 @@ export default function DriverMyOrdersPage() {
       .from("delivery_orders")
       .update(updateData)
       .eq("id", id);
+
+    setLoadingOrderId(null);
 
     if (error) {
       alert(error.message);
@@ -48,6 +53,12 @@ export default function DriverMyOrdersPage() {
     localStorage.removeItem("driver_name");
     localStorage.removeItem("driver_username");
     window.location.href = "/driver/login";
+  }
+
+  function getStatusText(status: string) {
+    if (status === "accepted") return "تم استلام الطلب";
+    if (status === "out_for_delivery") return "قيد التوصيل";
+    return status;
   }
 
   useEffect(() => {
@@ -82,88 +93,123 @@ export default function DriverMyOrdersPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-
-            <p className="mt-1 text-sm font-bold text-gray-600">
-              Driver: {driverName}
-            </p>
-          </div>
-
-          <button
-            onClick={logout}
-            className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white"
-          >
-            Logout
-          </button>
+    <main
+      dir="rtl"
+      className="min-h-screen bg-gradient-to-b from-gray-50 to-green-50 p-4"
+    >
+      <div className="mx-auto max-w-md">
+        <div className="mb-5 rounded-2xl bg-green-700 p-5 text-white shadow">
+          <h1 className="text-xl font-extrabold">طلباتي الحالية</h1>
+          <p className="mt-1 text-sm text-green-100">السائق: {driverName}</p>
         </div>
 
-        <a
-          href="/driver"
-          className="mb-6 inline-block rounded-xl bg-gray-900 px-5 py-3 font-bold text-white"
-        >
-          ← Available Orders
-        </a>
+        <div className="mb-5 flex gap-2">
+          <a
+            href="/driver"
+            className="flex-1 rounded-xl bg-gray-900 py-3 text-center text-sm font-bold text-white"
+          >
+            الطلبات المتاحة
+          </a>
+
+          
+        </div>
 
         <div className="space-y-4">
           {orders.length === 0 ? (
-            <p className="text-gray-600">No active orders.</p>
+            <div className="rounded-2xl bg-white p-6 text-center shadow">
+              <p className="text-gray-500">لا يوجد طلبات قيد التوصيل حالياً</p>
+
+              <a
+                href="/driver"
+                className="mt-4 inline-block rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white"
+              >
+                عرض الطلبات المتاحة
+              </a>
+            </div>
           ) : (
             orders.map((order) => (
-              <div key={order.id} className="rounded-2xl bg-white p-5 shadow">
-                <p>
-                  <strong>Customer:</strong> {order.customer_name || "-"}
-                </p>
+              <div key={order.id} className="rounded-2xl bg-white p-4 shadow">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                    {getStatusText(order.status)}
+                  </span>
 
-               <p>
-  <strong>Phone:</strong>{" "}
-  {order.customer_phone ? (
-    <a
-      href={`tel:${order.customer_phone}`}
-      className="font-bold text-green-700 underline"
-    >
-      {order.customer_phone}
-    </a>
-  ) : (
-    "-"
-  )}
-</p>
+                  <span className="text-xs font-bold text-gray-400">
+                    طلب توصيل
+                  </span>
+                </div>
 
-                <p>
-                  <strong>From:</strong> {order.from_address}
-                </p>
+                <div className="mb-2 text-sm text-gray-500">
+                  👤 العميل:{" "}
+                  <span className="font-bold text-gray-900">
+                    {order.customer_name || "-"}
+                  </span>
+                </div>
 
-                <p>
-                  <strong>To:</strong> {order.to_address}
-                </p>
+                <div className="mb-2 text-sm text-gray-500">
+                  📞 الهاتف:{" "}
+                  {order.customer_phone ? (
+                    <a
+                      href={`tel:${order.customer_phone}`}
+                      className="font-bold text-green-700 underline"
+                    >
+                      {order.customer_phone}
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </div>
 
-                <p>
-                  <strong>Price:</strong>{" "}
-                  {Number(order.price).toLocaleString()} SYP
-                </p>
+                <div className="mb-2 text-sm text-gray-500">
+                  📍 من:{" "}
+                  <span className="font-bold text-gray-900">
+                    {order.from_address}
+                  </span>
+                </div>
 
-                <p>
-                  <strong>Status:</strong> {order.status}
-                </p>
+                <div className="mb-2 text-sm text-gray-500">
+                  🏠 إلى:{" "}
+                  <span className="font-bold text-gray-900">
+                    {order.to_address}
+                  </span>
+                </div>
+
+                <div className="mb-4 text-sm text-gray-500">
+                  💰 السعر:{" "}
+                  <span className="font-bold text-green-700">
+                    {Number(order.price).toLocaleString()} ل.س
+                  </span>
+                </div>
 
                 {order.status === "accepted" && (
                   <button
                     onClick={() => updateStatus(order.id, "out_for_delivery")}
-                    className="mt-4 w-full rounded-xl bg-blue-600 px-5 py-3 font-bold text-white"
+                    disabled={loadingOrderId === order.id}
+                    className={`w-full rounded-xl py-3 font-bold text-white transition ${
+                      loadingOrderId === order.id
+                        ? "bg-blue-400"
+                        : "bg-blue-600 active:scale-95"
+                    }`}
                   >
-                    Out For Delivery
+                    {loadingOrderId === order.id
+                      ? "جارٍ تحديث الحالة..."
+                      : "بدء التوصيل"}
                   </button>
                 )}
 
                 {order.status === "out_for_delivery" && (
                   <button
                     onClick={() => updateStatus(order.id, "delivered")}
-                    className="mt-4 w-full rounded-xl bg-green-600 px-5 py-3 font-bold text-white"
+                    disabled={loadingOrderId === order.id}
+                    className={`w-full rounded-xl py-3 font-bold text-white transition ${
+                      loadingOrderId === order.id
+                        ? "bg-green-400"
+                        : "bg-green-600 active:scale-95"
+                    }`}
                   >
-                    Delivered
+                    {loadingOrderId === order.id
+                      ? "جارٍ تأكيد التسليم..."
+                      : "تم التسليم"}
                   </button>
                 )}
               </div>
