@@ -93,7 +93,7 @@ const links = [
   { href: "/admin/banners", label: "Banners" },
   { href: "/admin/reviews", label: "Reviews" },
 
-  { href: "/admin/delivery-orders", label: "Add Delivery Order" },
+  
   { href: "/admin/delivery-orders/manage", label: "Manage Delivery Orders" },
   { href: "/admin/delivery", label: "Delivery Fees" },
 

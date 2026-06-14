@@ -291,199 +291,199 @@ export default function AdminOrdersPage() {
           const activeStatus =
             updatedOrderId === order.id ? updatedStatus : order.status;
 
-          return (
-            <div
-              key={order.id}
-              className={`rounded-2xl p-6 shadow border transition-all ${
-                order.status === "accepted"
-                  ? "bg-green-50 border-green-200"
-                  : order.status === "out_for_delivery"
-                  ? "bg-blue-50 border-blue-200"
-                  : order.status === "delivered"
-                  ? "bg-purple-50 border-purple-200"
-                  : order.status === "rejected"
-                  ? "bg-red-50 border-red-200"
-                  : order.status === "cancelled_by_customer"
-                  ? "bg-gray-50 border-gray-200"
-                  : "bg-white border-gray-100"
-              }`}
-            >
-              <h2 className="mb-3 text-xl font-bold text-gray-900">
-                Order #{order.id}
-              </h2>
-
-              <div className="space-y-1 text-gray-800">
-                <p>
-                  <strong>Name:</strong> {order.customer_name}
-                </p>
-                <p>
-                  <strong>Phone:</strong> {order.phone}
-                </p>
-                <p>
-                  <strong>Governorate:</strong>{" "}
-                  {order.governorate || "Not selected"}
-                </p>
-                <p>
-                  <strong>Area:</strong>{" "}
-                  {order.delivery_area || "Not selected"}
-                </p>
-                <p>
-                  <strong>Address:</strong> {order.address}
-                </p>
-                <p>
-                  <strong>Delivery Fee:</strong>{" "}
-                  {Number(order.delivery_fee || 0).toLocaleString()} SYP
-                </p>
-                <p>
-                  <strong>Total:</strong>{" "}
-                  {Number(order.total_price).toLocaleString()} SYP
-                </p>
-                <p>
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${
-                      order.status === "accepted"
-                        ? "bg-green-100 text-green-800"
-                        : order.status === "out_for_delivery"
-                        ? "bg-blue-100 text-blue-800"
-                        : order.status === "delivered"
-                        ? "bg-purple-100 text-purple-800"
-                        : order.status === "rejected"
-                        ? "bg-red-100 text-red-800"
-                        : order.status === "cancelled_by_customer"
-                        ? "bg-gray-200 text-gray-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {statusMap[order.status] || order.status}
-                  </span>
-                </p>
-              </div>
-
-              {order.payment_proof_url && (
-                <a
-                  href={order.payment_proof_url}
-                  target="_blank"
-                  className="mt-3 block font-semibold text-blue-700 underline"
+              return (
+                <div
+                  key={order.id}
+                  className={`rounded-2xl p-6 shadow border transition-all ${
+                    order.status === "accepted"
+                      ? "bg-green-50 border-green-200"
+                      : order.status === "out_for_delivery"
+                      ? "bg-blue-50 border-blue-200"
+                      : order.status === "delivered"
+                      ? "bg-purple-50 border-purple-200"
+                      : order.status === "rejected"
+                      ? "bg-red-50 border-red-200"
+                      : order.status === "cancelled_by_customer"
+                      ? "bg-gray-50 border-gray-200"
+                      : "bg-white border-gray-100"
+                  }`}
                 >
-                  View Payment Proof
-                </a>
-              )}
+                  <h2 className="mb-3 text-xl font-bold text-gray-900">
+                    Order #{order.id}
+                  </h2>
 
-              {order.order_items && order.order_items.length > 0 && (
-                <div className="mt-5 rounded-2xl bg-gray-50 p-4">
-                  <h3 className="mb-3 font-bold text-gray-900">
-                    Order Items
-                  </h3>
-
-                  <div className="space-y-3">
-                    {order.order_items.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between border-b border-gray-200 pb-2 last:border-b-0"
+                  <div className="space-y-1 text-gray-800">
+                    <p>
+                      <strong>Name:</strong> {order.customer_name}
+                    </p>
+                    <p>
+                      <strong>Phone:</strong> {order.phone}
+                    </p>
+                    <p>
+                      <strong>Governorate:</strong>{" "}
+                      {order.governorate || "Not selected"}
+                    </p>
+                    <p>
+                      <strong>Area:</strong>{" "}
+                      {order.delivery_area || "Not selected"}
+                    </p>
+                    <p>
+                      <strong>Address:</strong> {order.address}
+                    </p>
+                    <p>
+                      <strong>Delivery Fee:</strong>{" "}
+                      {Number(order.delivery_fee || 0).toLocaleString()} SYP
+                    </p>
+                    <p>
+                      <strong>Total:</strong>{" "}
+                      {Number(order.total_price).toLocaleString()} SYP
+                    </p>
+                    <p>
+                      <strong>Status:</strong>{" "}
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${
+                          order.status === "accepted"
+                            ? "bg-green-100 text-green-800"
+                            : order.status === "out_for_delivery"
+                            ? "bg-blue-100 text-blue-800"
+                            : order.status === "delivered"
+                            ? "bg-purple-100 text-purple-800"
+                            : order.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : order.status === "cancelled_by_customer"
+                            ? "bg-gray-200 text-gray-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
                       >
-                        <div>
-                          <p className="font-bold text-gray-900">
-                            {item.product_name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Quantity: {item.quantity}
-                          </p>
-                        </div>
-
-                        <p className="font-bold text-green-700">
-                          {(
-                            Number(item.unit_price) * Number(item.quantity)
-                          ).toLocaleString()}{" "}
-                          SYP
-                        </p>
-                      </div>
-                    ))}
+                        {statusMap[order.status] || order.status}
+                      </span>
+                    </p>
                   </div>
-                </div>
-              )}
 
-              {isCancelled ? (
-                <div className="mt-4 rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-700">
-                  ألغاه الزبون — لا يمكن تعديل حالة هذا الطلب
-                </div>
-              ) : isFinal ? (
-                <div className="mt-4 rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-700">
-                  حالة نهائية — لا حاجة لتعديل إضافي
-                </div>
-              ) : (
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    onClick={() => updateOrderStatus(order.id, "accepted")}
-                    disabled={isUpdating}
-                    className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
-                      activeStatus === "accepted"
-                        ? "scale-95 bg-green-800 shadow-inner ring-2 ring-green-300"
-                        : "bg-green-600 hover:bg-green-700"
-                    }`}
-                  >
-                    {isUpdating && activeStatus === "accepted"
-                      ? "جاري التحديث..."
-                      : isUpdated && activeStatus === "accepted"
-                      ? "✓ تم التحديث"
-                      : "قبول الطلب"}
-                  </button>
+                  {order.payment_proof_url && (
+                    <a
+                      href={order.payment_proof_url}
+                      target="_blank"
+                      className="mt-3 block font-semibold text-blue-700 underline"
+                    >
+                      View Payment Proof
+                    </a>
+                  )}
 
-                  <button
-                    onClick={() =>
-                      updateOrderStatus(order.id, "out_for_delivery")
-                    }
-                    disabled={isUpdating}
-                    className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
-                      activeStatus === "out_for_delivery"
-                        ? "scale-95 bg-blue-800 shadow-inner ring-2 ring-blue-300"
-                        : "bg-blue-600 hover:bg-blue-700"
-                    }`}
-                  >
-                    {isUpdating && activeStatus === "out_for_delivery"
-                      ? "جاري التحديث..."
-                      : isUpdated && activeStatus === "out_for_delivery"
-                      ? "✓ تم التحديث"
-                      : "قيد التوصيل"}
-                  </button>
+                  {order.order_items && order.order_items.length > 0 && (
+                    <div className="mt-5 rounded-2xl bg-gray-50 p-4">
+                      <h3 className="mb-3 font-bold text-gray-900">
+                        Order Items
+                      </h3>
 
-                  <button
-                    onClick={() => updateOrderStatus(order.id, "delivered")}
-                    disabled={isUpdating}
-                    className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
-                      activeStatus === "delivered"
-                        ? "scale-95 bg-purple-800 shadow-inner ring-2 ring-purple-300"
-                        : "bg-purple-600 hover:bg-purple-700"
-                    }`}
-                  >
-                    {isUpdating && activeStatus === "delivered"
-                      ? "جاري التحديث..."
-                      : isUpdated && activeStatus === "delivered"
-                      ? "✓ تم التحديث"
-                      : "تم التسليم"}
-                  </button>
+                      <div className="space-y-3">
+                        {order.order_items.map((item: any) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between border-b border-gray-200 pb-2 last:border-b-0"
+                          >
+                            <div>
+                              <p className="font-bold text-gray-900">
+                                {item.product_name}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Quantity: {item.quantity}
+                              </p>
+                            </div>
 
-                  <button
-                    onClick={() => updateOrderStatus(order.id, "rejected")}
-                    disabled={isUpdating}
-                    className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
-                      activeStatus === "rejected"
-                        ? "scale-95 bg-red-800 shadow-inner ring-2 ring-red-300"
-                        : "bg-red-600 hover:bg-red-700"
-                    }`}
-                  >
-                    {isUpdating && activeStatus === "rejected"
-                      ? "جاري التحديث..."
-                      : isUpdated && activeStatus === "rejected"
-                      ? "✓ تم التحديث"
-                      : "رفض الطلب"}
-                  </button>
+                            <p className="font-bold text-green-700">
+                              {(
+                                Number(item.unit_price) * Number(item.quantity)
+                              ).toLocaleString()}{" "}
+                              SYP
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {isCancelled ? (
+                    <div className="mt-4 rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-700">
+                      ألغاه الزبون — لا يمكن تعديل حالة هذا الطلب
+                    </div>
+                  ) : isFinal ? (
+                    <div className="mt-4 rounded-xl bg-gray-100 px-4 py-3 font-bold text-gray-700">
+                      حالة نهائية — لا حاجة لتعديل إضافي
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <button
+                        onClick={() => updateOrderStatus(order.id, "accepted")}
+                        disabled={isUpdating}
+                        className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
+                          activeStatus === "accepted"
+                            ? "scale-95 bg-green-800 shadow-inner ring-2 ring-green-300"
+                            : "bg-green-600 hover:bg-green-700"
+                        }`}
+                      >
+                        {isUpdating && activeStatus === "accepted"
+                          ? "جاري التحديث..."
+                          : isUpdated && activeStatus === "accepted"
+                          ? "✓ تم التحديث"
+                          : "قبول الطلب"}
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          updateOrderStatus(order.id, "out_for_delivery")
+                        }
+                        disabled={isUpdating}
+                        className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
+                          activeStatus === "out_for_delivery"
+                            ? "scale-95 bg-blue-800 shadow-inner ring-2 ring-blue-300"
+                            : "bg-blue-600 hover:bg-blue-700"
+                        }`}
+                      >
+                        {isUpdating && activeStatus === "out_for_delivery"
+                          ? "جاري التحديث..."
+                          : isUpdated && activeStatus === "out_for_delivery"
+                          ? "✓ تم التحديث"
+                          : "قيد التوصيل"}
+                      </button>
+
+                      <button
+                        onClick={() => updateOrderStatus(order.id, "delivered")}
+                        disabled={isUpdating}
+                        className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
+                          activeStatus === "delivered"
+                            ? "scale-95 bg-purple-800 shadow-inner ring-2 ring-purple-300"
+                            : "bg-purple-600 hover:bg-purple-700"
+                        }`}
+                      >
+                        {isUpdating && activeStatus === "delivered"
+                          ? "جاري التحديث..."
+                          : isUpdated && activeStatus === "delivered"
+                          ? "✓ تم التحديث"
+                          : "تم التسليم"}
+                      </button>
+
+                      <button
+                        onClick={() => updateOrderStatus(order.id, "rejected")}
+                        disabled={isUpdating}
+                        className={`rounded-xl px-4 py-2 font-bold text-white transition disabled:opacity-60 ${
+                          activeStatus === "rejected"
+                            ? "scale-95 bg-red-800 shadow-inner ring-2 ring-red-300"
+                            : "bg-red-600 hover:bg-red-700"
+                        }`}
+                      >
+                        {isUpdating && activeStatus === "rejected"
+                          ? "جاري التحديث..."
+                          : isUpdated && activeStatus === "rejected"
+                          ? "✓ تم التحديث"
+                          : "رفض الطلب"}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </main>
-  );
+              );
+            })}
+          </div>
+        </main>
+      );
 }
