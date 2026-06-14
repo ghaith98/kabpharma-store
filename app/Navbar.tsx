@@ -132,6 +132,19 @@ window.removeEventListener("storage", updateWishlistCount);
             >
               <FaSearch size={17} />
             </button>
+            <Link
+  href="/cart"
+  aria-label="Cart"
+  className="relative hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700 md:flex"
+>
+  <FaShoppingCart size={17} />
+
+  {count > 0 && (
+    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1 text-[11px] font-bold text-white">
+      {count}
+    </span>
+  )}
+</Link>
            <Link
   href="/wishlist"
   aria-label="Wishlist"

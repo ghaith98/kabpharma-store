@@ -1,9 +1,10 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function DriverPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [driverName, setDriverName] = useState("");
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
@@ -46,7 +47,7 @@ export default function DriverPage() {
     }
 
     if (data && data.length > 0) {
-      window.location.href = "/driver/my-orders";
+      router.push("/driver/my-orders");
     }
   }
 
@@ -76,7 +77,7 @@ export default function DriverPage() {
     if (activeOrders && activeOrders.length > 0) {
       setLoadingOrderId(null);
       alert("لديك طلب قيد التوصيل بالفعل");
-      window.location.href = "/driver/my-orders";
+      router.push("/driver/my-orders");
       return;
     }
 
@@ -98,7 +99,7 @@ export default function DriverPage() {
       return;
     }
 
-    window.location.href = "/driver/my-orders";
+    router.push("/driver/my-orders"); 
   }
 
   function logout() {
@@ -146,9 +147,7 @@ export default function DriverPage() {
         </div>
 
         <div className="mb-5 flex gap-2">
-          <a href="/driver/my-orders" className="flex-1 rounded-xl bg-gray-900 py-3 text-center text-sm font-bold text-white">
-            طلباتي
-          </a>
+          
 
           <button onClick={logout} className="rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white">
             خروج
