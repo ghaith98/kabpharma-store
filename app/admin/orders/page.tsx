@@ -25,6 +25,16 @@ const governorates = [
   "Al Hasakah",
 ];
 
+const timeFilters = [
+  { value: "All", label: "All Time" },
+  { value: "24h", label: "Last 24 Hours" },
+  { value: "7d", label: "Last 7 Days" },
+  { value: "1m", label: "Last 1 Month" },
+  { value: "3m", label: "Last 3 Months" },
+  { value: "6m", label: "Last 6 Months" },
+  { value: "older", label: "Older" },
+];
+
 export default function AdminOrdersPage() {
   const router = useRouter();
 
@@ -32,6 +42,7 @@ export default function AdminOrdersPage() {
   const [selectedGovernorate, setSelectedGovernorate] = useState("All");
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState("All");
   const [checking, setChecking] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [updatedOrderId, setUpdatedOrderId] = useState<number | null>(null);
@@ -57,6 +68,27 @@ export default function AdminOrdersPage() {
     }
 
     setOrders(data || []);
+  }
+
+  function matchesTimeFilter(order: any) {
+    if (selectedTimeFilter === "All") return true;
+
+    if (!order.created_at) return false;
+
+    const orderDate = new Date(order.created_at);
+    const now = new Date();
+
+    const diffInMs = now.getTime() - orderDate.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+    if (selectedTimeFilter === "24h") return diffInDays <= 1;
+    if (selectedTimeFilter === "7d") return diffInDays <= 7;
+    if (selectedTimeFilter === "1m") return diffInDays <= 30;
+    if (selectedTimeFilter === "3m") return diffInDays <= 90;
+    if (selectedTimeFilter === "6m") return diffInDays <= 180;
+    if (selectedTimeFilter === "older") return diffInDays > 180;
+
+    return true;
   }
 
   async function updateOrderStatus(orderId: number, status: string) {
@@ -102,26 +134,31 @@ export default function AdminOrdersPage() {
     checkAdmin();
   }, [router]);
 
-    const filteredOrders = orders.filter((order) => {
-  const matchesGovernorate =
-    selectedGovernorate === "All" ||
-    order.governorate === selectedGovernorate;
+  const filteredOrders = orders.filter((order) => {
+    const matchesGovernorate =
+      selectedGovernorate === "All" ||
+      order.governorate === selectedGovernorate;
 
-  const matchesStatus =
-    selectedStatus === "All" || order.status === selectedStatus;
+    const matchesStatus =
+      selectedStatus === "All" || order.status === selectedStatus;
 
-  const searchText = `
-    ${order.id}
-    ${order.customer_name || ""}
-    ${order.phone || ""}
-    ${order.governorate || ""}
-    ${order.delivery_area || ""}
-  `.toLowerCase();
+    const searchText = `
+      ${order.id}
+      ${order.customer_name || ""}
+      ${order.phone || ""}
+      ${order.governorate || ""}
+      ${order.delivery_area || ""}
+    `.toLowerCase();
 
-  const matchesSearch = searchText.includes(search.toLowerCase());
+    const matchesSearch = searchText.includes(search.toLowerCase());
 
-  return matchesGovernorate && matchesStatus && matchesSearch;
-});
+    return (
+      matchesGovernorate &&
+      matchesStatus &&
+      matchesSearch &&
+      matchesTimeFilter(order)
+    );
+  });
 
   if (checking) {
     return (
@@ -129,33 +166,47 @@ export default function AdminOrdersPage() {
         <p className="text-center font-semibold text-gray-700">Loading...</p>
       </main>
     );
-  } 
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
-        <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Orders</h1>
+      <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Admin Orders</h1>
 
-          <div className="flex gap-3">
-         <div className="mb-6 flex gap-2">
-  {/* Desktop */}
-  <a
-    href="/admin"
-    className="hidden lg:inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-  >
-    ← Desktop Dashboard
-  </a>
+        <div className="flex gap-3">
+          <div className="mb-6 flex gap-2">
+            <a
+              href="/admin"
+              className="hidden lg:inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              ← Desktop Dashboard
+            </a>
 
-  {/* Mobile */}
-  <a
-    href="/admin-mobile"
-    className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-  >
-    ← Dashboard
-  </a>
-</div>
+            <a
+              href="/admin-mobile"
+              className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              ← Dashboard
+            </a>
+          </div>
         </div>
       </div>
+
+     <div className="mx-auto mb-6 max-w-5xl">
+  <select
+    value={selectedTimeFilter}
+    onChange={(e) => setSelectedTimeFilter(e.target.value)}
+    className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700 shadow-sm outline-none transition focus:border-green-600"
+  >
+    <option value="All">All Time</option>
+    <option value="24h">Last 24 Hours</option>
+    <option value="7d">Last 7 Days</option>
+    <option value="1m">Last 1 Month</option>
+    <option value="3m">Last 3 Months</option>
+    <option value="6m">Last 6 Months</option>
+    <option value="older">Older</option>
+  </select>
+</div>
 
       <div className="mx-auto mb-8 max-w-5xl overflow-x-auto rounded-2xl bg-white p-3 shadow-sm">
         <div className="flex min-w-max gap-3">
@@ -181,40 +232,42 @@ export default function AdminOrdersPage() {
           })}
         </div>
       </div>
+
       <div className="mx-auto mb-8 max-w-5xl">
-  <input
-    type="text"
-    placeholder="Search by Order ID, Name, Phone, Governorate or Area..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    className="w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
-  />
-</div>
-<div className="mx-auto mb-8 max-w-5xl overflow-x-auto rounded-2xl bg-white p-3 shadow-sm">
-  <div className="flex min-w-max gap-3">
-    {[
-      { value: "All", label: "All Statuses" },
-      { value: "pending", label: "Pending" },
-      { value: "accepted", label: "Accepted" },
-      { value: "out_for_delivery", label: "Out for Delivery" },
-      { value: "delivered", label: "Delivered" },
-      { value: "rejected", label: "Rejected" },
-      { value: "cancelled_by_customer", label: "Cancelled" },
-    ].map((status) => (
-      <button
-        key={status.value}
-        onClick={() => setSelectedStatus(status.value)}
-        className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-          selectedStatus === status.value
-            ? "bg-green-600 text-white"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-        }`}
-      >
-        {status.label}
-      </button>
-    ))}
-  </div>
-</div>
+        <input
+          type="text"
+          placeholder="Search by Order ID, Name, Phone, Governorate or Area..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+        />
+      </div>
+
+      <div className="mx-auto mb-8 max-w-5xl overflow-x-auto rounded-2xl bg-white p-3 shadow-sm">
+        <div className="flex min-w-max gap-3">
+          {[
+            { value: "All", label: "All Statuses" },
+            { value: "pending", label: "Pending" },
+            { value: "accepted", label: "Accepted" },
+            { value: "out_for_delivery", label: "Out for Delivery" },
+            { value: "delivered", label: "Delivered" },
+            { value: "rejected", label: "Rejected" },
+            { value: "cancelled_by_customer", label: "Cancelled" },
+          ].map((status) => (
+            <button
+              key={status.value}
+              onClick={() => setSelectedStatus(status.value)}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                selectedStatus === status.value
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {status.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="mx-auto max-w-5xl space-y-4">
         {filteredOrders.length === 0 && (
@@ -240,21 +293,21 @@ export default function AdminOrdersPage() {
 
           return (
             <div
-  key={order.id}
-  className={`rounded-2xl p-6 shadow border transition-all ${
-    order.status === "accepted"
-      ? "bg-green-50 border-green-200"
-      : order.status === "out_for_delivery"
-      ? "bg-blue-50 border-blue-200"
-      : order.status === "delivered"
-      ? "bg-purple-50 border-purple-200"
-      : order.status === "rejected"
-      ? "bg-red-50 border-red-200"
-      : order.status === "cancelled_by_customer"
-      ? "bg-gray-50 border-gray-200"
-      : "bg-white border-gray-100"
-  }`}
-> 
+              key={order.id}
+              className={`rounded-2xl p-6 shadow border transition-all ${
+                order.status === "accepted"
+                  ? "bg-green-50 border-green-200"
+                  : order.status === "out_for_delivery"
+                  ? "bg-blue-50 border-blue-200"
+                  : order.status === "delivered"
+                  ? "bg-purple-50 border-purple-200"
+                  : order.status === "rejected"
+                  ? "bg-red-50 border-red-200"
+                  : order.status === "cancelled_by_customer"
+                  ? "bg-gray-50 border-gray-200"
+                  : "bg-white border-gray-100"
+              }`}
+            >
               <h2 className="mb-3 text-xl font-bold text-gray-900">
                 Order #{order.id}
               </h2>
@@ -271,9 +324,9 @@ export default function AdminOrdersPage() {
                   {order.governorate || "Not selected"}
                 </p>
                 <p>
-  <strong>Area:</strong>{" "}
-  {order.delivery_area || "Not selected"}
-</p>
+                  <strong>Area:</strong>{" "}
+                  {order.delivery_area || "Not selected"}
+                </p>
                 <p>
                   <strong>Address:</strong> {order.address}
                 </p>
@@ -288,22 +341,22 @@ export default function AdminOrdersPage() {
                 <p>
                   <strong>Status:</strong>{" "}
                   <span
-  className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${
-    order.status === "accepted"
-      ? "bg-green-100 text-green-800"
-      : order.status === "out_for_delivery"
-      ? "bg-blue-100 text-blue-800"
-      : order.status === "delivered"
-      ? "bg-purple-100 text-purple-800"
-      : order.status === "rejected"
-      ? "bg-red-100 text-red-800"
-      : order.status === "cancelled_by_customer"
-      ? "bg-gray-200 text-gray-800"
-      : "bg-yellow-100 text-yellow-800"
-  }`}
->
-  {statusMap[order.status] || order.status}
-</span>
+                    className={`inline-flex rounded-full px-3 py-1 text-sm font-bold ${
+                      order.status === "accepted"
+                        ? "bg-green-100 text-green-800"
+                        : order.status === "out_for_delivery"
+                        ? "bg-blue-100 text-blue-800"
+                        : order.status === "delivered"
+                        ? "bg-purple-100 text-purple-800"
+                        : order.status === "rejected"
+                        ? "bg-red-100 text-red-800"
+                        : order.status === "cancelled_by_customer"
+                        ? "bg-gray-200 text-gray-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {statusMap[order.status] || order.status}
+                  </span>
                 </p>
               </div>
 
