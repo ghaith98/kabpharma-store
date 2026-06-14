@@ -6,14 +6,23 @@ import { supabase } from "@/lib/supabase";
 export default function DriverPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [driverName, setDriverName] = useState("");
-  const [loadingOrderId, setLoadingOrderId] = useState<string | null>(null);
+  const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
 
   async function loadOrders() {
     const { data, error } = await supabase
-      .from("delivery_orders")
-      .select("*")
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
+      .from("orders")
+      .select(`
+        *,
+        order_items (
+          id,
+          product_name,
+          quantity,
+          unit_price
+        )
+      `)
+      .eq("status", "accepted")
+      .is("driver_name", null)
+      .order("id", { ascending: false });
 
     if (error) {
       alert(error.message);
@@ -25,7 +34,7 @@ export default function DriverPage() {
 
   async function checkActiveOrder(name: string) {
     const { data, error } = await supabase
-      .from("delivery_orders")
+      .from("orders")
       .select("id")
       .eq("driver_name", name)
       .eq("status", "out_for_delivery")
@@ -41,7 +50,7 @@ export default function DriverPage() {
     }
   }
 
-  async function acceptOrder(id: string) {
+  async function acceptOrder(id: number) {
     const savedName = localStorage.getItem("driver_name");
 
     if (!savedName) {
@@ -52,7 +61,7 @@ export default function DriverPage() {
     setLoadingOrderId(id);
 
     const { data: activeOrders, error: activeError } = await supabase
-      .from("delivery_orders")
+      .from("orders")
       .select("id")
       .eq("driver_name", savedName)
       .eq("status", "out_for_delivery")
@@ -72,17 +81,19 @@ export default function DriverPage() {
     }
 
     const { error } = await supabase
-      .from("delivery_orders")
+      .from("orders")
       .update({
         status: "out_for_delivery",
         driver_name: savedName,
         accepted_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("status", "pending");
+      .eq("status", "accepted")
+      .is("driver_name", null);
+
+    setLoadingOrderId(null);
 
     if (error) {
-      setLoadingOrderId(null);
       alert(error.message);
       return;
     }
@@ -110,10 +121,10 @@ export default function DriverPage() {
     loadOrders();
 
     const channel = supabase
-      .channel("delivery-orders-realtime")
+      .channel("orders-driver-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "delivery_orders" },
+        { event: "*", schema: "public", table: "orders" },
         () => {
           checkActiveOrder(savedName);
           loadOrders();
@@ -130,73 +141,51 @@ export default function DriverPage() {
     <main dir="rtl" className="min-h-screen bg-gradient-to-b from-gray-50 to-green-50 p-4">
       <div className="mx-auto max-w-md">
         <div className="mb-5 rounded-2xl bg-green-700 p-5 text-white shadow">
-          <h1 className="text-xl font-extrabold">طلبات التوصيل</h1>
+          <h1 className="text-xl font-extrabold">طلبات جاهزة للتوصيل</h1>
           <p className="mt-1 text-sm text-green-100">السائق: {driverName}</p>
         </div>
 
         <div className="mb-5 flex gap-2">
-          <a
-            href="/driver/my-orders"
-            className="flex-1 rounded-xl bg-gray-900 py-3 text-center text-sm font-bold text-white"
-          >
+          <a href="/driver/my-orders" className="flex-1 rounded-xl bg-gray-900 py-3 text-center text-sm font-bold text-white">
             طلباتي
           </a>
 
-          <button
-            onClick={logout}
-            className="rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white"
-          >
+          <button onClick={logout} className="rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white">
             خروج
           </button>
         </div>
 
         <div className="space-y-4">
           {orders.length === 0 ? (
-            <p className="text-center text-gray-500">
-              لا يوجد طلبات متاحة حالياً
-            </p>
+            <p className="text-center text-gray-500">لا يوجد طلبات متاحة حالياً</p>
           ) : (
             orders.map((order) => (
               <div key={order.id} className="rounded-2xl bg-white p-4 shadow">
                 <div className="mb-2 text-sm text-gray-500">
-                  👤 العميل:{" "}
-                  <span className="font-bold text-gray-900">
-                    {order.customer_name || "-"}
-                  </span>
+                  👤 العميل: <span className="font-bold text-gray-900">{order.customer_name || "-"}</span>
                 </div>
 
                 <div className="mb-2 text-sm text-gray-500">
                   📞 الهاتف:{" "}
-                  {order.customer_phone ? (
-                    <a
-                      href={`tel:${order.customer_phone}`}
-                      className="font-bold text-green-700 underline"
-                    >
-                      {order.customer_phone}
+                  {order.phone ? (
+                    <a href={`tel:${order.phone}`} className="font-bold text-green-700 underline">
+                      {order.phone}
                     </a>
-                  ) : (
-                    "-"
-                  )}
+                  ) : "-"}
                 </div>
 
                 <div className="mb-2 text-sm text-gray-500">
-                  📍 من:{" "}
-                  <span className="font-bold text-gray-900">
-                    {order.from_address}
-                  </span>
+                  📍 المنطقة: <span className="font-bold text-gray-900">{order.delivery_area || "-"}</span>
                 </div>
 
                 <div className="mb-2 text-sm text-gray-500">
-                  🏠 إلى:{" "}
-                  <span className="font-bold text-gray-900">
-                    {order.to_address}
-                  </span>
+                  🏠 العنوان: <span className="font-bold text-gray-900">{order.address || "-"}</span>
                 </div>
 
                 <div className="mb-4 text-sm text-gray-500">
-                  💰 السعر:{" "}
+                  💰 الإجمالي:{" "}
                   <span className="font-bold text-green-700">
-                    {Number(order.price).toLocaleString()} ل.س
+                    {Number(order.total_price || 0).toLocaleString()} ل.س
                   </span>
                 </div>
 
@@ -204,14 +193,10 @@ export default function DriverPage() {
                   onClick={() => acceptOrder(order.id)}
                   disabled={loadingOrderId === order.id}
                   className={`w-full rounded-xl py-3 font-bold text-white transition ${
-                    loadingOrderId === order.id
-                      ? "bg-green-400"
-                      : "bg-green-600 active:scale-95"
+                    loadingOrderId === order.id ? "bg-green-400" : "bg-green-600 active:scale-95"
                   }`}
                 >
-                  {loadingOrderId === order.id
-                    ? "جارٍ استلام الطلب..."
-                    : "استلام الطلب"}
+                  {loadingOrderId === order.id ? "جارٍ استلام الطلب..." : "استلام الطلب"}
                 </button>
               </div>
             ))

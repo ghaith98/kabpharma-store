@@ -105,7 +105,7 @@ const availableProductIds = new Set(
           <div className="absolute right-[-120px] top-40 h-72 w-72 rounded-full bg-emerald-100 blur-3xl" />
         </div>
 
-        <div className="grid items-center gap-6 rounded-[1.5rem] bg-white/80 p-5 shadow-sm ring-1 ring-gray-100 backdrop-blur md:grid-cols-2 md:gap-10 md:rounded-[2rem] md:p-10">
+        <div className="grid items-center gap-6 rounded-[1.5rem] bg-gradient-to-b from-[#fbfefc] to-white p-5 shadow-sm ring-1 ring-gray-100 backdrop-blur md:grid-cols-2 md:gap-10 md:rounded-[2rem] md:p-10">
           <div className="hidden md:block md:text-left">
             <span className="inline-flex rounded-full bg-green-50 px-4 py-2 text-sm font-bold text-green-700 ring-1 ring-green-100">
               KAB Pharma
