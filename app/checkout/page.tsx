@@ -181,7 +181,7 @@ export default function CheckoutPage() {
 
           <p className="mt-3 text-gray-700">
             {lang === "ar"
-              ? "أضيفي تفاصيل التوصيل للمتابعة إلى الدفع."
+              ? "أضيف تفاصيل التوصيل للمتابعة إلى الدفع."
               : "Add your delivery details to continue to payment."}
           </p>
         </section>
@@ -224,7 +224,7 @@ export default function CheckoutPage() {
                 className="w-full rounded-2xl border border-gray-300 p-4 text-[16px] text-black outline-none transition focus:border-green-600"
               >
                 <option value="">
-                  {lang === "ar" ? "اختاري المحافظة" : "Select Governorate"}
+                  {lang === "ar" ? "اختر المحافظة" : "Select Governorate"}
                 </option>
 
                 {governorates.map((item) => (
@@ -246,10 +246,10 @@ export default function CheckoutPage() {
                 <option value="">
                   {governorate
                     ? lang === "ar"
-                      ? "اختاري المنطقة"
+                      ? "اختر المنطقة"
                       : "Select Area"
                     : lang === "ar"
-                      ? "اختاري المحافظة أولاً"
+                      ? "اختر المحافظة أولاً"
                       : "Select governorate first"}
                 </option>
 

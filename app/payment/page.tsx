@@ -203,7 +203,7 @@ export default function PaymentPage() {
 
           <p className="mt-3 text-gray-700">
             {lang === "ar"
-              ? "أكملي الدفع ثم ارفعي الإيصال لإرسال الطلب."
+              ? "أكمل الدفع ثم ارفع الإيصال لإرسال الطلب."
               : "Complete your payment, then upload the receipt to submit your order."}
           </p>
         </section>
@@ -216,7 +216,7 @@ export default function PaymentPage() {
 
             <div className="rounded-3xl bg-gray-50 p-4 text-center sm:p-6">
               <p className="mb-4 font-bold text-gray-900">
-                {lang === "ar" ? "امسحي رمز QR للدفع" : "Scan QR Code to Pay"}
+                {lang === "ar" ? "امسح رمز QR للدفع" : "Scan QR Code to Pay"}
               </p>
 
               <div className="mx-auto flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm sm:max-w-[320px]">
@@ -267,7 +267,7 @@ export default function PaymentPage() {
 
               <p className="mt-5 text-sm leading-6 text-gray-700">
                 {lang === "ar"
-                  ? "بعد إتمام الدفع، ارفعي صورة واضحة أو ملف PDF لإيصال الدفع."
+                  ? "بعد إتمام الدفع، ارفع صورة واضحة أو ملف PDF لإيصال الدفع."
                   : "After completing the payment, upload a clear image or PDF of the payment receipt."}
               </p>
             </div>

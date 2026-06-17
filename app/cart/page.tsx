@@ -99,7 +99,7 @@ export default function CartPage() {
 
           <p className="mt-3 text-gray-700">
             {lang === "ar"
-              ? "راجعي المنتجات المختارة قبل إتمام الطلب."
+              ? "راجع المنتجات المختارة قبل إتمام الطلب."
               : "Review your selected products before checkout."}
           </p>
         </section>
@@ -116,7 +116,7 @@ export default function CartPage() {
 
             <p className="mt-3 text-gray-600">
               {lang === "ar"
-                ? "أضيفي منتجات إلى السلة للمتابعة."
+                ? "أضيف منتجات إلى السلة للمتابعة."
                 : "Add products to your cart to continue."}
             </p>
 
@@ -124,7 +124,7 @@ export default function CartPage() {
               href="/products"
               className="mt-6 inline-block rounded-2xl bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
             >
-              {lang === "ar" ? "تسوّقي الآن" : "Shop Now"}
+              {lang === "ar" ? "تسوّق الآن" : "Shop Now"}
             </a>
           </div>
         ) : (
@@ -140,7 +140,7 @@ export default function CartPage() {
                             ? "🎉 تم تفعيل التوصيل المجاني"
                             : "🎉 Free delivery unlocked"
                           : lang === "ar"
-                            ? "احصلي على توصيل مجاني"
+                            ? "احصل على توصيل مجاني"
                             : "Unlock free delivery"}
                       </p>
 
@@ -150,7 +150,7 @@ export default function CartPage() {
                             ? "طلبك مؤهل للتوصيل المجاني."
                             : "Your order qualifies for free delivery."
                           : lang === "ar"
-                            ? `أضيفي ${remainingForFreeDelivery.toLocaleString()} SYP للحصول على توصيل مجاني.`
+                            ? `أضيف ${remainingForFreeDelivery.toLocaleString()} SYP للحصول على توصيل مجاني.`
                             : `Add ${remainingForFreeDelivery.toLocaleString()} SYP more to get free delivery.`}
                       </p>
                     </div>

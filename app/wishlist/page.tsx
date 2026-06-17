@@ -61,7 +61,7 @@ export default function WishlistPage() {
 
             <p className="mt-3 text-gray-600">
               {lang === "ar"
-                ? "احفظي المنتجات بالضغط على أيقونة القلب."
+                ? "احفظ المنتجات بالضغط على أيقونة القلب."
                 : "Save products by clicking the heart icon."}
             </p>
 

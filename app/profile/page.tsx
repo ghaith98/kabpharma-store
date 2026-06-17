@@ -109,7 +109,7 @@ export default function ProfilePage() {
               </h2>
               <p className="mt-1 text-sm text-gray-600">
                 {lang === "ar"
-                  ? "اختاري لغة عرض الموقع."
+                  ? "اختر لغة عرض الموقع."
                   : "Choose your website language."}
               </p>
             </div>
@@ -156,7 +156,7 @@ export default function ProfilePage() {
                 </h2>
                 <p className="mt-1 text-sm text-gray-600">
                   {lang === "ar"
-                    ? "تابعي حالة طلباتك."
+                    ? "تابع حالة طلباتك."
                     : "Track your order status."}
                 </p>
               </div>
@@ -185,7 +185,7 @@ export default function ProfilePage() {
 
                 <p className="mt-1 text-sm text-gray-600">
                   {lang === "ar"
-                    ? "تواصلي مع KAB Pharma."
+                    ? "تواصل مع KAB Pharma."
                     : "Get in touch with KAB Pharma."}
                 </p>
               </div>

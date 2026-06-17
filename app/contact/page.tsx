@@ -23,7 +23,7 @@ export default function ContactPage() {
 
           <p className="mt-3 text-gray-600">
             {lang === "ar"
-              ? "نحن هنا للمساعدة. لا تترددي في التواصل مع KAB Pharma في أي وقت."
+              ? "نحن هنا للمساعدة. لا تتردد في التواصل مع KAB Pharma في أي وقت."
               : "We're here to help. Feel free to contact KAB Pharma anytime."}
           </p>
         </section>
@@ -47,7 +47,7 @@ export default function ContactPage() {
 
               <p className="text-sm text-gray-600">
                 {lang === "ar"
-                  ? "تابعينا وأرسلي لنا رسالة."
+                  ? "تابعنا وأرسل لنا رسالة."
                   : "Follow us and send us a message."}
               </p>
             </div>

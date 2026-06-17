@@ -131,7 +131,7 @@ const text = `${productName} ${productDescription} ${
 
     <p className="mt-4 text-lg text-gray-600">
       {lang === "ar"
-        ? "اكتشفي منتجات KAB Pharma للعناية بالبشرة والجسم."
+        ? "اكتشف منتجات KAB Pharma للعناية بالبشرة والجسم."
         : "Explore KAB Pharma skincare and personal care products."}
     </p>
   </section>
