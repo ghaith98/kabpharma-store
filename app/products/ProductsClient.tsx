@@ -368,56 +368,56 @@ const text = `${productName} ${productDescription} ${
                     </div>
                   </Link>
 
-                  <div className="flex flex-1 flex-col px-4 pb-4 pt-3 text-center">
-                    <Link href={`/products/${product.id}`}>
-                      <h2 className="h-12 line-clamp-2 text-sm font-extrabold text-gray-900 transition hover:text-green-700 sm:text-base">
-                        {lang === "ar"
-  ? product.name_ar || product.name
-  : product.name_en || product.name}
-                      </h2>
-                    </Link>
+                 <div className="flex h-full flex-1 flex-col px-4 pb-4 pt-3 text-center">
+  <Link href={`/products/${product.id}`}>
+    <h2 className="min-h-[48px] line-clamp-2 text-sm font-extrabold text-gray-900 transition hover:text-green-700 sm:text-base">
+      {lang === "ar"
+        ? product.name_ar || product.name
+        : product.name_en || product.name}
+    </h2>
+  </Link>
 
-                    <div className="mt-2 flex items-center justify-center gap-2">
-                      {salePercent > 0 && (
-                        <span className="text-sm font-bold text-gray-400 line-through">
-                          {originalPrice.toLocaleString()} SYP
-                        </span>
-                      )}
+  <div className="mt-2 flex min-h-[52px] items-center justify-center gap-2">
+    {salePercent > 0 && (
+      <span className="text-sm font-bold text-gray-400 line-through">
+        {originalPrice.toLocaleString()} SYP
+      </span>
+    )}
 
-                      <span
-                        className={`text-lg font-extrabold ${
-                          salePercent > 0 ? "text-red-600" : "text-green-700"
-                        }`}
-                      >
-                        {Math.round(finalPrice).toLocaleString()} SYP
-                      </span>
-                    </div>
+    <span
+      className={`text-lg font-extrabold ${
+        salePercent > 0 ? "text-red-600" : "text-green-700"
+      }`}
+    >
+      {Math.round(finalPrice).toLocaleString()} SYP
+    </span>
+  </div>
 
-                    <div className="mt-4">
-                      {product.is_out_of_stock ? (
-                        <button
-                          disabled
-                          className="w-full rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
-                        >
-                          {lang === "ar" ? "غير متوفر" : "Out of Stock"}  
-                        </button>
-                      ) : (
-                        <AddToCartButton
-                          product={{
-                            id: product.id,
-                            name:
-  lang === "ar"
-    ? product.name_ar || product.name
-    : product.name_en || product.name,
-                            price: Math.round(finalPrice),
-                            original_price: originalPrice,
-                            sale_percent: salePercent,
-                            image_url: product.image_url,
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
+  <div className="mt-auto pt-4">
+    {product.is_out_of_stock ? (
+      <button
+        disabled
+        className="w-full rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
+      >
+        {lang === "ar" ? "غير متوفر" : "Out of Stock"}
+      </button>
+    ) : (
+      <AddToCartButton
+        product={{
+          id: product.id,
+          name:
+            lang === "ar"
+              ? product.name_ar || product.name
+              : product.name_en || product.name,
+          price: Math.round(finalPrice),
+          original_price: originalPrice,
+          sale_percent: salePercent,
+          image_url: product.image_url,
+        }}
+      />
+    )}
+  </div>
+</div>
                 </div>
               );
             })}
