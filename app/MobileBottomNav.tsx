@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Home, ShoppingBag, ShoppingCart, User } from "lucide-react";
 import { getCart } from "@/lib/cart";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const { lang } = useLanguage();
   const [count, setCount] = useState(0);
 
   function updateCount() {
@@ -29,14 +31,33 @@ export default function MobileBottomNav() {
   }, []);
 
   const items = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/products", label: "Shop", icon: ShoppingBag },
-    { href: "/cart", label: "Cart", icon: ShoppingCart },
-    { href: "/profile", label: "Profile", icon: User },
+    {
+      href: "/",
+      label: lang === "ar" ? "الرئيسية" : "Home",
+      icon: Home,
+    },
+    {
+      href: "/products",
+      label: lang === "ar" ? "المتجر" : "Shop",
+      icon: ShoppingBag,
+    },
+    {
+      href: "/cart",
+      label: lang === "ar" ? "السلة" : "Cart",
+      icon: ShoppingCart,
+    },
+    {
+      href: "/profile",
+      label: lang === "ar" ? "الحساب" : "Profile",
+      icon: User,
+    },
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t bg-white shadow-lg md:hidden">
+    <nav
+      dir="ltr"
+      className="fixed inset-x-0 bottom-0 z-50 border-t bg-white shadow-lg md:hidden"
+    >
       <div className="grid grid-cols-4">
         {items.map((item) => {
           const Icon = item.icon;

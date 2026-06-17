@@ -14,6 +14,8 @@ export default function AdminDeliveryPage() {
   const [selectedGovernorate, setSelectedGovernorate] = useState("Damascus");
   const [areaName, setAreaName] = useState("");
   const [areaFee, setAreaFee] = useState("");
+  const [areaNameAr, setAreaNameAr] = useState("");
+const [areaNameEn, setAreaNameEn] = useState("");
 
   const [freeShippingThreshold, setFreeShippingThreshold] = useState("");
 
@@ -108,19 +110,21 @@ export default function AdminDeliveryPage() {
   async function addArea(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!selectedGovernorate || !areaName.trim()) {
-      alert("Please choose governorate and enter area name");
-      return;
-    }
+  if (!selectedGovernorate || (!areaNameAr.trim() && !areaNameEn.trim())) {
+  alert("Please choose governorate and enter area name");
+  return;
+}
 
     setLoadingArea(true);
 
-    const { error } = await supabase.from("delivery_areas").insert({
-      governorate: selectedGovernorate,
-      area_name: areaName.trim(),
-      delivery_fee: Number(areaFee || 0),
-      is_active: true,
-    });
+   const { error } = await supabase.from("delivery_areas").insert({
+  governorate: selectedGovernorate,
+  area_name: areaNameEn.trim() || areaNameAr.trim(),
+  area_name_ar: areaNameAr.trim(),
+  area_name_en: areaNameEn.trim(),
+  delivery_fee: Number(areaFee || 0),
+  is_active: true,
+});
 
     if (error) {
       alert(error.message);
@@ -128,8 +132,10 @@ export default function AdminDeliveryPage() {
       return;
     }
 
-    setAreaName("");
-    setAreaFee("");
+   setAreaName("");
+setAreaNameAr("");
+setAreaNameEn("");
+setAreaFee("");
     await loadAreas();
     setLoadingArea(false);
   }
@@ -322,7 +328,7 @@ export default function AdminDeliveryPage() {
           Add Delivery Area
         </h2>
 
-        <form onSubmit={addArea} className="grid gap-3 sm:grid-cols-4">
+        <form onSubmit={addArea} className="grid gap-3 sm:grid-cols-5">
           <select
             value={selectedGovernorate}
             onChange={(e) => setSelectedGovernorate(e.target.value)}
@@ -335,14 +341,25 @@ export default function AdminDeliveryPage() {
             ))}
           </select>
 
-          <input
-            type="text"
-            value={areaName}
-            onChange={(e) => setAreaName(e.target.value)}
-            placeholder="Area name"
-            required
-            className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600"
-          />
+         <input
+  type="text"
+  value={areaNameAr}
+  onChange={(e) => setAreaNameAr(e.target.value)}
+  placeholder="Area name Arabic"
+  dir="rtl"
+  required
+  className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600"
+/>
+
+<input
+  type="text"
+  value={areaNameEn}
+  onChange={(e) => setAreaNameEn(e.target.value)}
+  placeholder="Area name English"
+  dir="ltr"
+  required
+  className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600"
+/>
 
           <input
             type="number"
@@ -380,8 +397,15 @@ export default function AdminDeliveryPage() {
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <h3 className="text-lg font-extrabold text-gray-900">
-                      {area.governorate} — {area.area_name}
+                      {area.governorate} — {area.area_name_en || area.area_name_ar || area.area_name}
                     </h3>
+                    <p className="mt-1 text-sm text-gray-600" dir="rtl">
+  Arabic: {area.area_name_ar || "-"}
+</p>
+
+<p className="mt-1 text-sm text-gray-600">
+  English: {area.area_name_en || "-"}
+</p>
 
                     <p className="mt-2 text-sm font-bold text-gray-600">
                       Fee: {Number(area.delivery_fee).toLocaleString()} SYP

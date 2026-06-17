@@ -144,7 +144,7 @@ const text = `${productName} ${productDescription} ${
                 placeholder="Search products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-black placeholder:text-gray-500 outline-none transition focus:border-green-600 focus:bg-white"
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-[16px] text-black placeholder:text-gray-500 outline-none transition focus:border-green-600 focus:bg-white"
               />
             </div>
           </div>
@@ -172,7 +172,7 @@ const text = `${productName} ${productDescription} ${
               <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <FaFilter size={16} />
-                  <h2 className="text-lg font-extrabold text-gray-900">Filter</h2>
+                  <h2 className="text-lg font-extrabold text-gray-900">{lang === "ar" ? "الفلترة" : "Filter"}</h2>
                 </div>
 
                 <button

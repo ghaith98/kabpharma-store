@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "../../context/LanguageContext";
 
 type Order = {
   id: string;
@@ -12,13 +13,23 @@ type Order = {
   status: string;
 };
 
-const statusMap: Record<string, string> = {
-  pending: "قيد مراجعة الدفع",
-  accepted: "تم قبول الطلب",
-  out_for_delivery: "قيد التوصيل",
-  delivered: "تم تسليم الطلب",
-  rejected: "تم رفض الطلب",
-  cancelled_by_customer: "تم إلغاء الطلب",
+const statusMap = {
+  en: {
+    pending: "Payment under review",
+    accepted: "Order accepted",
+    out_for_delivery: "Out for delivery",
+    delivered: "Delivered",
+    rejected: "Rejected",
+    cancelled_by_customer: "Cancelled",
+  },
+  ar: {
+    pending: "قيد مراجعة الدفع",
+    accepted: "تم قبول الطلب",
+    out_for_delivery: "قيد التوصيل",
+    delivered: "تم تسليم الطلب",
+    rejected: "تم رفض الطلب",
+    cancelled_by_customer: "تم إلغاء الطلب",
+  },
 };
 
 const statusClass: Record<string, string> = {
@@ -31,6 +42,7 @@ const statusClass: Record<string, string> = {
 };
 
 export default function OrdersSearchClient() {
+  const { lang } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -60,40 +72,44 @@ export default function OrdersSearchClient() {
     loadOrders();
   }, []);
 
+  const currentStatusMap = statusMap[lang as "en" | "ar"];
+
   return (
     <main
-      dir="rtl"
+      dir={lang === "ar" ? "rtl" : "ltr"}
       className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12"
     >
       <div className="mx-auto max-w-3xl">
         <section className="mb-8 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
-            طلباتي
+            {lang === "ar" ? "طلباتي" : "My Orders"}
           </h1>
 
           <p className="mt-3 text-gray-600">
-            جميع طلباتك المرتبطة بحسابك.
+            {lang === "ar"
+              ? "جميع طلباتك المرتبطة بحسابك."
+              : "All orders linked to your account."}
           </p>
         </section>
 
         {!user && !loading && (
           <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
             <h2 className="text-xl font-extrabold text-gray-900">
-              Please sign in first
+              {lang === "ar" ? "يرجى تسجيل الدخول أولاً" : "Please sign in first"}
             </h2>
 
             <a
               href="/login"
               className="mt-4 inline-block rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
             >
-              Sign In
+              {lang === "ar" ? "تسجيل الدخول" : "Sign In"}
             </a>
           </div>
         )}
 
         {loading && (
           <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
-            Loading...
+            {lang === "ar" ? "جاري التحميل..." : "Loading..."}
           </div>
         )}
 
@@ -107,7 +123,7 @@ export default function OrdersSearchClient() {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-500">
-                    رقم الطلب
+                    {lang === "ar" ? "رقم الطلب" : "Order Number"}
                   </p>
                   <h2 className="mt-1 text-xl font-extrabold text-gray-900">
                     #{order.id}
@@ -119,20 +135,21 @@ export default function OrdersSearchClient() {
                     statusClass[order.status] || "bg-gray-100 text-gray-700"
                   }`}
                 >
-                  {statusMap[order.status] || order.status}
+                  {currentStatusMap[order.status as keyof typeof currentStatusMap] ||
+                    order.status}
                 </span>
               </div>
 
               <div className="grid gap-3 text-sm sm:grid-cols-2">
                 <p className="text-gray-600">
-                  الاسم:{" "}
+                  {lang === "ar" ? "الاسم" : "Name"}:{" "}
                   <span className="font-bold text-gray-900">
                     {order.customer_name}
                   </span>
                 </p>
 
                 <p className="text-gray-600">
-                  المبلغ:{" "}
+                  {lang === "ar" ? "المبلغ" : "Amount"}:{" "}
                   <span className="font-bold text-green-700">
                     {Number(order.total_price).toLocaleString()} SYP
                   </span>
@@ -140,7 +157,9 @@ export default function OrdersSearchClient() {
               </div>
 
               <p className="mt-4 text-sm font-semibold text-green-700">
-                اضغط لعرض تفاصيل الطلب
+                {lang === "ar"
+                  ? "اضغط لعرض تفاصيل الطلب"
+                  : "Click to view order details"}
               </p>
             </a>
           ))}
@@ -148,10 +167,12 @@ export default function OrdersSearchClient() {
           {user && !loading && orders.length === 0 && (
             <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
               <h2 className="text-xl font-extrabold text-gray-900">
-                لا توجد طلبات
+                {lang === "ar" ? "لا توجد طلبات" : "No orders found"}
               </h2>
               <p className="mt-2 text-gray-600">
-                لا توجد طلبات مرتبطة بحسابك حالياً.
+                {lang === "ar"
+                  ? "لا توجد طلبات مرتبطة بحسابك حالياً."
+                  : "There are no orders linked to your account yet."}
               </p>
             </div>
           )}

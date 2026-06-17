@@ -112,7 +112,7 @@ export default function Navbar() {
                 }
                 value={query}
                 onChange={(e) => updateSearch(e.target.value)}
-                className="w-full bg-transparent text-sm font-semibold text-gray-900 placeholder:text-gray-500 outline-none"
+                className="w-full bg-transparent text-[16px] font-semibold text-gray-900 placeholder:text-gray-500 outline-none"
               />
             </div>
 

@@ -1,20 +1,30 @@
+"use client";
+
 import {
   FaFacebookF,
   FaInstagram,
   FaEnvelope,
 } from "react-icons/fa";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function ContactPage() {
+  const { lang } = useLanguage();
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12">
+    <main
+      dir={lang === "ar" ? "rtl" : "ltr"}
+      className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12"
+    >
       <div className="mx-auto max-w-4xl">
         <section className="rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
           <h1 className="text-4xl font-extrabold text-gray-900">
-            Contact Us
+            {lang === "ar" ? "تواصل معنا" : "Contact Us"}
           </h1>
 
           <p className="mt-3 text-gray-600">
-            We're here to help. Feel free to contact KAB Pharma anytime.
+            {lang === "ar"
+              ? "نحن هنا للمساعدة. لا تترددي في التواصل مع KAB Pharma في أي وقت."
+              : "We're here to help. Feel free to contact KAB Pharma anytime."}
           </p>
         </section>
 
@@ -36,7 +46,9 @@ export default function ContactPage() {
               </h2>
 
               <p className="text-sm text-gray-600">
-                Follow us and send us a message.
+                {lang === "ar"
+                  ? "تابعينا وأرسلي لنا رسالة."
+                  : "Follow us and send us a message."}
               </p>
             </div>
           </a>
@@ -58,7 +70,9 @@ export default function ContactPage() {
               </h2>
 
               <p className="text-sm text-gray-600">
-                Connect with us on Facebook.
+                {lang === "ar"
+                  ? "تواصل معنا عبر فيسبوك."
+                  : "Connect with us on Facebook."}
               </p>
             </div>
           </a>
@@ -74,7 +88,7 @@ export default function ContactPage() {
 
             <div>
               <h2 className="font-bold text-gray-900">
-                Email
+                {lang === "ar" ? "البريد الإلكتروني" : "Email"}
               </h2>
 
               <p className="text-sm text-gray-600">
