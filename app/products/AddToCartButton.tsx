@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { addToCart } from "@/lib/cart";
+import { useLanguage } from "../../context/LanguageContext";
 
 type Product = {
   id: number;
@@ -13,6 +14,7 @@ type Product = {
 };
 
 export default function AddToCartButton({ product }: { product: Product }) {
+  const { lang } = useLanguage();
   const [added, setAdded] = useState(false);
 
   function handleAdd() {
@@ -35,7 +37,13 @@ export default function AddToCartButton({ product }: { product: Product }) {
           : "bg-green-600 text-white hover:bg-green-700"
       }`}
     >
-      {added ? "✓ Added" : "Add to Cart"}
+      {added
+        ? lang === "ar"
+          ? "✓ تمت الإضافة"
+          : "✓ Added"
+        : lang === "ar"
+          ? "أضف إلى السلة"
+          : "Add to Cart"}
     </button>
   );
 }

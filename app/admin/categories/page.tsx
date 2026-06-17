@@ -7,15 +7,21 @@ import { supabase } from "@/lib/supabase";
 type Category = {
   id: number;
   name: string;
+  name_ar?: string | null;
+  name_en?: string | null;
 };
 
 export default function AdminCategoriesPage() {
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [name, setName] = useState("");
+  const [nameAr, setNameAr] = useState("");
+  const [nameEn, setNameEn] = useState("");
+
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState("");
+  const [editNameAr, setEditNameAr] = useState("");
+  const [editNameEn, setEditNameEn] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   async function loadCategories() {
@@ -46,12 +52,14 @@ export default function AdminCategoriesPage() {
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!name.trim()) return;
+    if (!nameAr.trim() && !nameEn.trim()) return;
 
     setLoading(true);
 
     const { error } = await supabase.from("categories").insert({
-      name: name.trim(),
+      name: nameEn.trim() || nameAr.trim(),
+      name_ar: nameAr.trim(),
+      name_en: nameEn.trim(),
     });
 
     if (error) {
@@ -60,22 +68,29 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    setName("");
+    setNameAr("");
+    setNameEn("");
     setLoading(false);
     loadCategories();
   }
 
   function startEdit(category: Category) {
     setEditingId(category.id);
-    setEditName(category.name);
+    setEditNameAr(category.name_ar || "");
+    setEditNameEn(category.name_en || category.name || "");
   }
 
   async function updateCategory() {
-    if (!editingId || !editName.trim()) return;
+    if (!editingId) return;
+    if (!editNameAr.trim() && !editNameEn.trim()) return;
 
     const { error } = await supabase
       .from("categories")
-      .update({ name: editName.trim() })
+      .update({
+        name: editNameEn.trim() || editNameAr.trim(),
+        name_ar: editNameAr.trim(),
+        name_en: editNameEn.trim(),
+      })
       .eq("id", editingId);
 
     if (error) {
@@ -84,7 +99,8 @@ export default function AdminCategoriesPage() {
     }
 
     setEditingId(null);
-    setEditName("");
+    setEditNameAr("");
+    setEditNameEn("");
     loadCategories();
   }
 
@@ -95,10 +111,7 @@ export default function AdminCategoriesPage() {
 
     if (!confirmDelete) return;
 
-    const { error } = await supabase
-      .from("categories")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("categories").delete().eq("id", id);
 
     if (error) {
       alert(error.message);
@@ -113,121 +126,147 @@ export default function AdminCategoriesPage() {
   }, []);
 
   return (
-  <main className="min-h-screen bg-gray-50 px-6 py-10">
-    <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
-      <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
+    <main className="min-h-screen bg-gray-50 px-6 py-10">
+      <div className="mx-auto mb-8 flex max-w-5xl items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
 
-      <div className="flex gap-3">
-       <div className="mb-6 flex gap-2">
-  {/* Desktop */}
-  <a
-    href="/admin"
-    className="hidden lg:inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-  >
-    ← Desktop Dashboard
-  </a>
+        <div className="mb-6 flex gap-2">
+          <a
+            href="/admin"
+            className="hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:inline-flex"
+          >
+            ← Desktop Dashboard
+          </a>
 
-  {/* Mobile */}
-  <a
-    href="/admin-mobile"
-    className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-  >
-    ← Dashboard
-  </a>
-</div>
+          <a
+            href="/admin-mobile"
+            className="inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:hidden"
+          >
+            ← Dashboard
+          </a>
+        </div>
       </div>
-    </div>
 
-    <form
-      onSubmit={addCategory}
-      className="mx-auto mb-8 max-w-5xl rounded-2xl bg-white p-6 shadow-sm"
-    >
-      <h2 className="mb-5 text-xl font-bold text-gray-900">Add Category</h2>
-
-      <input
-        type="text"
-        placeholder="Category name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
-      />
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700 disabled:bg-gray-400"
+      <form
+        onSubmit={addCategory}
+        className="mx-auto mb-8 max-w-5xl rounded-2xl bg-white p-6 shadow-sm"
       >
-        {loading ? "Adding..." : "Add Category"}
-      </button>
-    </form>
+        <h2 className="mb-5 text-xl font-bold text-gray-900">Add Category</h2>
 
-    <div className="mx-auto max-w-5xl space-y-4">
-      {categories.map((category) => (
-        <div
-          key={category.id}
-          className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+        <input
+          type="text"
+          placeholder="Category name Arabic"
+          value={nameAr}
+          onChange={(e) => setNameAr(e.target.value)}
+          dir="rtl"
+          required
+          className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+        />
+
+        <input
+          type="text"
+          placeholder="Category name English"
+          value={nameEn}
+          onChange={(e) => setNameEn(e.target.value)}
+          dir="ltr"
+          required
+          className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700 disabled:bg-gray-400"
         >
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-              Category
-            </p>
+          {loading ? "Adding..." : "Add Category"}
+        </button>
+      </form>
 
-            <h2 className="mt-1 text-xl font-bold text-gray-900">
-              {category.name}
-            </h2>
+      <div className="mx-auto max-w-5xl space-y-4">
+        {categories.map((category) => (
+          <div
+            key={category.id}
+            className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                Category
+              </p>
+
+              <h2 className="mt-1 text-xl font-bold text-gray-900">
+                {category.name_en || category.name_ar || category.name}
+              </h2>
+
+              <div className="mt-3 grid gap-2 text-sm text-gray-600 sm:grid-cols-2">
+                <p dir="rtl">
+                  Arabic: {category.name_ar || "-"}
+                </p>
+                <p>
+                  English: {category.name_en || "-"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => startEdit(category)}
+                className="rounded-xl bg-blue-600 px-4 py-2 font-bold text-white transition hover:bg-blue-700"
+              >
+                Edit
+              </button>
+
+              <button
+                onClick={() => deleteCategory(category.id)}
+                className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white transition hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => startEdit(category)}
-              className="rounded-xl bg-blue-600 px-4 py-2 font-bold text-white transition hover:bg-blue-700"
-            >
-              Edit
-            </button>
-
-            <button
-              onClick={() => deleteCategory(category.id)}
-              className="rounded-xl bg-red-600 px-4 py-2 font-bold text-white transition hover:bg-red-700"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-
-    {editingId && (
-      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 px-6">
-        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-          <h2 className="mb-4 text-xl font-bold text-gray-900">
-            Edit Category
-          </h2>
-
-          <input
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
-          />
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={updateCategory}
-              className="rounded-xl bg-green-600 px-4 py-2 font-bold text-white transition hover:bg-green-700"
-            >
-              Save
-            </button>
-
-            <button
-              onClick={() => setEditingId(null)}
-              className="rounded-xl bg-gray-400 px-4 py-2 font-bold text-white transition hover:bg-gray-500"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        ))}
       </div>
-    )}
-  </main>
-);
+
+      {editingId && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 px-6">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="mb-4 text-xl font-bold text-gray-900">
+              Edit Category
+            </h2>
+
+            <input
+              value={editNameAr}
+              onChange={(e) => setEditNameAr(e.target.value)}
+              placeholder="Category name Arabic"
+              dir="rtl"
+              className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+            />
+
+            <input
+              value={editNameEn}
+              onChange={(e) => setEditNameEn(e.target.value)}
+              placeholder="Category name English"
+              dir="ltr"
+              className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+            />
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={updateCategory}
+                className="rounded-xl bg-green-600 px-4 py-2 font-bold text-white transition hover:bg-green-700"
+              >
+                Save
+              </button>
+
+              <button
+                onClick={() => setEditingId(null)}
+                className="rounded-xl bg-gray-400 px-4 py-2 font-bold text-white transition hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
 }

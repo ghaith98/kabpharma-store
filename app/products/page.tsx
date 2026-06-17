@@ -9,9 +9,11 @@
     .select(`
       *,
       categories (
-        id,
-        name
-      )
+  id,
+  name,
+  name_ar,
+  name_en
+)
     `)
     .order("id", { ascending: true });
     if (error) {
@@ -44,8 +46,10 @@ const bestSellerIds = Object.entries(
   .sort((a, b) => b[1] - a[1])
   .slice(0, 5)
   .map(([productId]) => Number(productId));
+  
 
     return (
+      
       <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12">
         <Image
           src="/logo.png"
@@ -54,16 +58,6 @@ const bestSellerIds = Object.entries(
           height={1600}
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04] select-none"
         />
-
-        <section className="relative z-10 mx-auto mb-10 max-w-4xl text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">
-            Our Products
-          </h1>
-
-          <p className="mt-4 text-lg text-gray-600">
-            Explore KAB Pharma skincare and personal care products.
-          </p>
-        </section>
 
         {!products || products.length === 0 ? (
           <div className="relative z-10 mx-auto max-w-xl rounded-2xl bg-white p-10 text-center shadow-sm">

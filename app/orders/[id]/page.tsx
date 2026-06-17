@@ -88,6 +88,36 @@ export default async function OrderPage({
     label: order.status,
     description: "حالة الطلب الحالية غير معروفة.",
     badgeClass: "bg-gray-100 text-gray-700",
+    pending: {
+  label: "قيد مراجعة الدفع",
+  description: "وصلنا طلبك، وسيتم التحقق من الدفع قريباً.",
+  badgeClass: "bg-yellow-50 text-yellow-700",
+},
+accepted: {
+  label: "تم قبول الطلب",
+  description: "تم قبول طلبك وسيتم تجهيزه للتوصيل.",
+  badgeClass: "bg-green-50 text-green-700",
+},
+out_for_delivery: {
+  label: "قيد التوصيل",
+  description: "طلبك خرج للتوصيل وسيصل إليك قريباً.",
+  badgeClass: "bg-blue-50 text-blue-700",
+},
+delivered: {
+  label: "تم تسليم الطلب",
+  description: "تم تسليم طلبك بنجاح. شكراً لاختيارك KAB Pharma.",
+  badgeClass: "bg-purple-50 text-purple-700",
+},
+rejected: {
+  label: "تم رفض الطلب",
+  description: "لم نتمكن من قبول الطلب. يمكنك التواصل معنا للمزيد من التفاصيل.",
+  badgeClass: "bg-red-50 text-red-700",
+},
+cancelled_by_customer: {
+  label: "تم إلغاء الطلب",
+  description: "تم إلغاء الطلب من قبل الزبون قبل قبوله.",
+  badgeClass: "bg-gray-100 text-gray-700",
+},
   };
 
   const currentStepIndex = timelineSteps.findIndex(
@@ -137,6 +167,17 @@ export default async function OrderPage({
 
             <p className="mt-2 text-gray-600">{status.description}</p>
           </div>
+          {["pending", "accepted", "out_for_delivery"].includes(order.status) && (
+  <div className="mb-8 rounded-3xl border border-green-100 bg-green-50 p-5">
+    <h3 className="font-extrabold text-green-800">
+      مدة التوصيل المتوقعة
+    </h3>
+
+    <p className="mt-2 text-sm leading-7 text-green-700">
+      عادةً يتم تجهيز وتوصيل الطلب خلال 1–3 أيام عمل بعد تأكيد الدفع.
+    </p>
+  </div>
+)}
 
           {!isRejected ? (
             <div className="mb-8">
@@ -237,6 +278,17 @@ export default async function OrderPage({
           </div>
 {order.status === "pending" && (
   <CancelOrderClient orderId={order.id} />
+)}
+{order.status === "cancelled_by_customer" && (
+  <div className="mt-5 rounded-3xl border border-gray-200 bg-gray-50 p-5">
+    <h3 className="font-extrabold text-gray-900">
+      استرداد المبلغ
+    </h3>
+
+    <p className="mt-2 text-sm leading-7 text-gray-700">
+      سيتم إرجاع المبلغ المدفوع خلال 24 ساعة بعد إلغاء الطلب.
+    </p>
+  </div>
 )}
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <a

@@ -3,25 +3,28 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function CartPage() {
+  const { lang } = useLanguage();
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
 
- useEffect(() => {
-  setCart(getCart());
-  loadFreeShippingThreshold();
-}, []);
+  useEffect(() => {
+    setCart(getCart());
+    loadFreeShippingThreshold();
+  }, []);
 
-async function loadFreeShippingThreshold() {
-  const { data } = await supabase
-    .from("settings")
-    .select("value")
-    .eq("key", "free_shipping_threshold")
-    .single();
+  async function loadFreeShippingThreshold() {
+    const { data } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "free_shipping_threshold")
+      .single();
 
-  setFreeShippingThreshold(Number(data?.value || 0));
-}
+    setFreeShippingThreshold(Number(data?.value || 0));
+  }
 
   function syncCart(updatedCart: CartItem[]) {
     setCart(updatedCart);
@@ -45,18 +48,23 @@ async function loadFreeShippingThreshold() {
   }
 
   function clearCart() {
-    const confirmClear = confirm("Are you sure you want to clear the cart?");
+    const confirmClear = confirm(
+      lang === "ar"
+        ? "هل أنت متأكدة من تفريغ السلة؟"
+        : "Are you sure you want to clear the cart?"
+    );
+
     if (!confirmClear) return;
 
     syncCart([]);
   }
+
   const totalSaved = cart.reduce(
-  (sum, item) =>
-    sum +
-    ((item.original_price || item.price) - item.price) *
-      item.quantity,
-  0
-);
+    (sum, item) =>
+      sum +
+      ((item.original_price || item.price) - item.price) * item.quantity,
+    0
+  );
 
   const total = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -64,29 +72,35 @@ async function loadFreeShippingThreshold() {
   );
 
   const itemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   const remainingForFreeDelivery = Math.max(
-  freeShippingThreshold - total,
-  0
-);
+    freeShippingThreshold - total,
+    0
+  );
 
-const freeDeliveryProgress =
-  freeShippingThreshold > 0
-    ? Math.min((total / freeShippingThreshold) * 100, 100)
-    : 0;
+  const freeDeliveryProgress =
+    freeShippingThreshold > 0
+      ? Math.min((total / freeShippingThreshold) * 100, 100)
+      : 0;
 
-const hasFreeDelivery =
-  freeShippingThreshold > 0 && total >= freeShippingThreshold;
+  const hasFreeDelivery =
+    freeShippingThreshold > 0 && total >= freeShippingThreshold;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-48 lg:pb-12">
+    <main
+      dir={lang === "ar" ? "rtl" : "ltr"}
+      className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-48 lg:pb-12"
+    >
       <div className="mx-auto max-w-5xl">
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
-            Your Cart
+            {lang === "ar" ? "سلة التسوق" : "Your Cart"}
           </h1>
 
           <p className="mt-3 text-gray-700">
-            Review your selected products before checkout.
+            {lang === "ar"
+              ? "راجعي المنتجات المختارة قبل إتمام الطلب."
+              : "Review your selected products before checkout."}
           </p>
         </section>
 
@@ -97,60 +111,71 @@ const hasFreeDelivery =
             </div>
 
             <h2 className="text-2xl font-bold text-gray-900">
-              Your cart is empty
+              {lang === "ar" ? "السلة فارغة" : "Your cart is empty"}
             </h2>
 
             <p className="mt-3 text-gray-600">
-              Add products to your cart to continue.
+              {lang === "ar"
+                ? "أضيفي منتجات إلى السلة للمتابعة."
+                : "Add products to your cart to continue."}
             </p>
 
             <a
               href="/products"
               className="mt-6 inline-block rounded-2xl bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
             >
-              Shop Now
+              {lang === "ar" ? "تسوّقي الآن" : "Shop Now"}
             </a>
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="space-y-4">
               {freeShippingThreshold > 0 && (
-  <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-    <div className="mb-3 flex items-center justify-between gap-4">
-      <div>
-        <p className="text-sm font-extrabold text-gray-900">
-          {hasFreeDelivery
-            ? "🎉 Free delivery unlocked"
-            : "Unlock free delivery"}
-        </p>
+                <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+                  <div className="mb-3 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-extrabold text-gray-900">
+                        {hasFreeDelivery
+                          ? lang === "ar"
+                            ? "🎉 تم تفعيل التوصيل المجاني"
+                            : "🎉 Free delivery unlocked"
+                          : lang === "ar"
+                            ? "احصلي على توصيل مجاني"
+                            : "Unlock free delivery"}
+                      </p>
 
-        <p className="mt-1 text-sm font-semibold text-gray-600">
-          {hasFreeDelivery
-            ? "Your order qualifies for free delivery."
-            : `Add ${remainingForFreeDelivery.toLocaleString()} SYP more to get free delivery.`}
-        </p>
-      </div>
+                      <p className="mt-1 text-sm font-semibold text-gray-600">
+                        {hasFreeDelivery
+                          ? lang === "ar"
+                            ? "طلبك مؤهل للتوصيل المجاني."
+                            : "Your order qualifies for free delivery."
+                          : lang === "ar"
+                            ? `أضيفي ${remainingForFreeDelivery.toLocaleString()} SYP للحصول على توصيل مجاني.`
+                            : `Add ${remainingForFreeDelivery.toLocaleString()} SYP more to get free delivery.`}
+                      </p>
+                    </div>
 
-      <span className="shrink-0 rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
-        {Math.round(freeDeliveryProgress)}%
-      </span>
-    </div>
+                    <span className="shrink-0 rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                      {Math.round(freeDeliveryProgress)}%
+                    </span>
+                  </div>
 
-    <div className="h-3 overflow-hidden rounded-full bg-gray-100">
-      <div
-        className={`h-full rounded-full transition-all duration-500 ${
-          hasFreeDelivery ? "bg-green-600" : "bg-green-400"
-        }`}
-        style={{ width: `${freeDeliveryProgress}%` }}
-      />
-    </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        hasFreeDelivery ? "bg-green-600" : "bg-green-400"
+                      }`}
+                      style={{ width: `${freeDeliveryProgress}%` }}
+                    />
+                  </div>
 
-    <div className="mt-2 flex justify-between text-xs font-bold text-gray-500">
-      <span>{total.toLocaleString()} SYP</span>
-      <span>{freeShippingThreshold.toLocaleString()} SYP</span>
-    </div>
-  </div>
-)}
+                  <div className="mt-2 flex justify-between text-xs font-bold text-gray-500">
+                    <span>{total.toLocaleString()} SYP</span>
+                    <span>{freeShippingThreshold.toLocaleString()} SYP</span>
+                  </div>
+                </div>
+              )}
+
               {cart.map((item) => (
                 <div
                   key={item.id}
@@ -166,7 +191,7 @@ const hasFreeDelivery =
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
-                          No image
+                          {lang === "ar" ? "لا توجد صورة" : "No image"}
                         </div>
                       )}
                     </div>
@@ -175,27 +200,28 @@ const hasFreeDelivery =
                       <h2 className="text-lg font-bold text-gray-900">
                         {item.name}
                       </h2>
-                      
 
-                     <div className="mt-1">
-  {Number(item.sale_percent || 0) > 0 && item.original_price && (
-  <p className="mt-1 text-sm font-bold text-gray-400 line-through">
-    {item.original_price.toLocaleString()} SYP
-  </p>
-)}  
+                      <div className="mt-1">
+                        {Number(item.sale_percent || 0) > 0 &&
+                          item.original_price && (
+                            <p className="mt-1 text-sm font-bold text-gray-400 line-through">
+                              {item.original_price.toLocaleString()} SYP
+                            </p>
+                          )}
 
-  <p className="font-semibold text-green-700">
-    {item.price.toLocaleString()} SYP
-  </p>
-</div>
+                        <p className="font-semibold text-green-700">
+                          {item.price.toLocaleString()} SYP
+                        </p>
+                      </div>
 
                       <p className="mt-1 text-sm font-semibold text-gray-600">
                         {item.quantity} × {item.price.toLocaleString()} SYP
                       </p>
 
-                     <p className="mt-1 text-sm font-bold text-gray-900">
-  Subtotal: {(item.price * item.quantity).toLocaleString()} SYP
-</p>
+                      <p className="mt-1 text-sm font-bold text-gray-900">
+                        {lang === "ar" ? "المجموع الفرعي" : "Subtotal"}:{" "}
+                        {(item.price * item.quantity).toLocaleString()} SYP
+                      </p>
                     </div>
                   </div>
 
@@ -228,33 +254,32 @@ const hasFreeDelivery =
                       onClick={() => removeItem(item.id)}
                       className="rounded-xl bg-red-50 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-100"
                     >
-                      Remove
+                      {lang === "ar" ? "إزالة" : "Remove"}
                     </button>
                   </div>
                 </div>
               ))}
             </div>
 
-            <aside 
-            className="hidden h-fit rounded-3xl bg-white p-6 shadow-sm lg:block">
+            <aside className="hidden h-fit rounded-3xl bg-white p-6 shadow-sm lg:block">
               <h2 className="text-xl font-bold text-gray-900">
-                Order Summary
+                {lang === "ar" ? "ملخص الطلب" : "Order Summary"}
               </h2>
 
               <div className="mt-5 flex justify-between border-b border-gray-200 pb-4 text-gray-700">
-                <span>Items</span>
+                <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
                 <span>{itemsCount}</span>
               </div>
+
               {totalSaved > 0 && (
-  <div className="mt-4 flex justify-between font-bold text-green-700">
-    <span>You Saved</span>
-    <span>{totalSaved.toLocaleString()} SYP</span>
-  </div>
-)}
-              
+                <div className="mt-4 flex justify-between font-bold text-green-700">
+                  <span>{lang === "ar" ? "وفّرتِ" : "You Saved"}</span>
+                  <span>{totalSaved.toLocaleString()} SYP</span>
+                </div>
+              )}
 
               <div className="mt-4 flex justify-between text-lg font-bold text-gray-900">
-                <span>Total</span>
+                <span>{lang === "ar" ? "الإجمالي" : "Total"}</span>
                 <span className="text-green-700">
                   {total.toLocaleString()} SYP
                 </span>
@@ -264,14 +289,14 @@ const hasFreeDelivery =
                 href="/checkout"
                 className="mt-6 block rounded-2xl bg-green-600 p-4 text-center font-bold text-white transition hover:bg-green-700"
               >
-                تأكيد الطلب
+                {lang === "ar" ? "تأكيد الطلب" : "Checkout"}
               </a>
 
               <button
                 onClick={clearCart}
                 className="mt-3 w-full rounded-2xl border border-gray-300 p-3 font-semibold text-gray-700 transition hover:bg-gray-50"
               >
-                Clear Cart
+                {lang === "ar" ? "تفريغ السلة" : "Clear Cart"}
               </button>
             </aside>
           </div>
@@ -279,24 +304,26 @@ const hasFreeDelivery =
       </div>
 
       {cart.length > 0 && (
-  <div className="fixed inset-x-0 bottom-16 z-50 border-t bg-white p-4 shadow-lg md:hidden">
-    <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-      <div>
-        <p className="text-sm font-semibold text-gray-600">Total</p>
-        <p className="font-extrabold text-green-700">
-          {total.toLocaleString()} SYP
-        </p>
-      </div>
+        <div className="fixed inset-x-0 bottom-16 z-50 border-t bg-white p-4 shadow-lg md:hidden">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-600">
+                {lang === "ar" ? "الإجمالي" : "Total"}
+              </p>
+              <p className="font-extrabold text-green-700">
+                {total.toLocaleString()} SYP
+              </p>
+            </div>
 
-      <a
-        href="/checkout"
-        className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
-      >
-        تأكيد الطلب
-      </a>
-    </div>
-  </div>
-)}
+            <a
+              href="/checkout"
+              className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
+            >
+              {lang === "ar" ? "تأكيد الطلب" : "Checkout"}
+            </a>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

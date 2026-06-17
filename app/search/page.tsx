@@ -9,9 +9,11 @@ export default async function SearchPage() {
     .select(`
       *,
       categories (
-        id,
-        name
-      )
+  id,
+  name,
+  name_ar,
+  name_en
+)
     `)
     .order("id", { ascending: false });
 
@@ -37,7 +39,11 @@ export default async function SearchPage() {
         </div>
 
         <Suspense fallback={<p className="text-center text-gray-600">Loading products...</p>}>
-          <ProductsClient products={products || []} showCategories={false} />
+         <ProductsClient
+  products={products || []}
+  showCategories={false}
+  showHeader={false}
+/>
         </Suspense>
       </div>
     </main>

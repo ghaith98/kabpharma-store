@@ -6,6 +6,7 @@ import { getWishlist } from "@/lib/wishlist";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useLanguage } from "../context/LanguageContext";
 import {
   FaSearch,
   FaUser,
@@ -15,6 +16,7 @@ import {
 } from "react-icons/fa";
 
 export default function Navbar() {
+  const { lang } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -28,10 +30,11 @@ export default function Navbar() {
     const total = cart.reduce((sum, item) => sum + item.quantity, 0);
     setCount(total);
   }
+
   function updateWishlistCount() {
-  const wishlist = getWishlist();
-  setWishlistCount(wishlist.length);
-}
+    const wishlist = getWishlist();
+    setWishlistCount(wishlist.length);
+  }
 
   function updateSearch(value: string) {
     setQuery(value);
@@ -41,7 +44,7 @@ export default function Navbar() {
     if (cleanValue) {
       router.replace(`/products?search=${encodeURIComponent(cleanValue)}`);
     } else {
-      router.replace("/products");  
+      router.replace("/products");
     }
   }
 
@@ -57,26 +60,30 @@ export default function Navbar() {
     window.addEventListener("cartUpdated", updateCount);
     window.addEventListener("storage", updateCount);
     window.addEventListener("wishlistUpdated", updateWishlistCount);
-window.addEventListener("storage", updateWishlistCount);
+    window.addEventListener("storage", updateWishlistCount);
 
     return () => {
       window.removeEventListener("cartUpdated", updateCount);
       window.removeEventListener("storage", updateCount);
       window.removeEventListener("wishlistUpdated", updateWishlistCount);
-window.removeEventListener("storage", updateWishlistCount);
+      window.removeEventListener("storage", updateWishlistCount);
     };
   }, []);
+
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
 
-  if (pathname === "/products" && params.get("openSearch") === "1") {
-    setSearchOpen(true);
+    if (pathname === "/products" && params.get("openSearch") === "1") {
+      setSearchOpen(true);
 
-    params.delete("openSearch");
-    const newUrl = params.toString() ? `/products?${params.toString()}` : "/products";
-    router.replace(newUrl);
-  }
-}, [pathname, router]);
+      params.delete("openSearch");
+      const newUrl = params.toString()
+        ? `/products?${params.toString()}`
+        : "/products";
+
+      router.replace(newUrl);
+    }
+  }, [pathname, router]);
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-white">
@@ -100,12 +107,16 @@ window.removeEventListener("storage", updateWishlistCount);
               <input
                 autoFocus
                 type="text"
-                placeholder="Search products..."
+                placeholder={
+                  lang === "ar" ? "ابحثي عن منتج..." : "Search products..."
+                }
                 value={query}
                 onChange={(e) => updateSearch(e.target.value)}
                 className="w-full bg-transparent text-sm font-semibold text-gray-900 placeholder:text-gray-500 outline-none"
               />
             </div>
+
+           
 
             <button
               type="button"
@@ -118,40 +129,50 @@ window.removeEventListener("storage", updateWishlistCount);
           </div>
         ) : (
           <div className="flex items-center gap-3">
+            
+
             <button
               type="button"
               onClick={() => {
-  if (pathname !== "/products") {
-    router.push("/products?openSearch=1");
-  } else {
-    setSearchOpen(true);
-  }
-}}
+                if (pathname !== "/products") {
+                  router.push("/products?openSearch=1");
+                } else {
+                  setSearchOpen(true);
+                }
+              }}
               aria-label="Search products"
               className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700"
             >
               <FaSearch size={17} />
             </button>
-            <Link
-  href="/cart"
-  aria-label="Cart"
-  className="relative hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700 md:flex"
->
-  <FaShoppingCart size={17} />
 
-  {count > 0 && (
-    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1 text-[11px] font-bold text-white">
-      {count}
-    </span>
-  )}
-</Link>
-           <Link
-  href="/wishlist"
-  aria-label="Wishlist"
-  className="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700"
->
-  <FaHeart size={17} />
-</Link>
+            <Link
+              href="/cart"
+              aria-label="Cart"
+              className="relative hidden h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700 md:flex"
+            >
+              <FaShoppingCart size={17} />
+
+              {count > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1 text-[11px] font-bold text-white">
+                  {count}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/wishlist"
+              aria-label="Wishlist"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-700 transition hover:border-green-600 hover:text-green-700"
+            >
+              <FaHeart size={17} />
+
+              {wishlistCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1 text-[11px] font-bold text-white">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
 
             <Link
               href="/profile"
@@ -160,7 +181,6 @@ window.removeEventListener("storage", updateWishlistCount);
             >
               <FaUser size={17} />
             </Link>
-
           </div>
         )}
       </div>

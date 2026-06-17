@@ -10,9 +10,12 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [categoryId, setCategoryId] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [ingredients, setIngredients] = useState("");
+  const [nameAr, setNameAr] = useState("");
+const [nameEn, setNameEn] = useState("");
+const [descriptionAr, setDescriptionAr] = useState("");
+const [descriptionEn, setDescriptionEn] = useState("");
+const [ingredientsAr, setIngredientsAr] = useState("");
+const [ingredientsEn, setIngredientsEn] = useState("");
   const [price, setPrice] = useState("");
   const [salePercent, setSalePercent] = useState("0");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -24,9 +27,12 @@ export default function AdminProductsPage() {
   useState<number | null>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editIngredients, setEditIngredients] = useState("");
+ const [editNameAr, setEditNameAr] = useState("");
+const [editNameEn, setEditNameEn] = useState("");
+const [editDescriptionAr, setEditDescriptionAr] = useState("");
+const [editDescriptionEn, setEditDescriptionEn] = useState("");
+const [editIngredientsAr, setEditIngredientsAr] = useState("");
+const [editIngredientsEn, setEditIngredientsEn] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editSalePercent, setEditSalePercent] = useState("0");
   const [editCategoryId, setEditCategoryId] = useState("");
@@ -109,16 +115,24 @@ await loadProductImages();
       .from("product-images")
       .getPublicUrl(filePath);
 
-    const { error } = await supabase.from("products").insert({
-  name,
-  description,
-  ingredients,
+   const { error } = await supabase.from("products").insert({
+  name: nameEn || nameAr,
+  description: descriptionEn || descriptionAr,
+  ingredients: ingredientsEn || ingredientsAr,
+
+  name_ar: nameAr,
+  name_en: nameEn,
+  description_ar: descriptionAr,
+  description_en: descriptionEn,
+  ingredients_ar: ingredientsAr,
+  ingredients_en: ingredientsEn,
+
   price: Number(price),
-sale_percent: Number(salePercent),
-      image_url: publicUrlData.publicUrl,
-      category_id: Number(categoryId),
-      featured: false,
-    });
+  sale_percent: Number(salePercent),
+  image_url: publicUrlData.publicUrl,
+  category_id: Number(categoryId),
+  featured: false,
+});
 
     if (error) {
       alert(error.message);
@@ -126,9 +140,12 @@ sale_percent: Number(salePercent),
       return;
     }
 
-    setName("");
-    setDescription("");
-    setIngredients("");
+    setNameAr("");
+setNameEn("");
+setDescriptionAr("");
+setDescriptionEn("");
+setIngredientsAr("");
+setIngredientsEn("");
     setPrice("");
     setSalePercent("0");
     setCategoryId("");
@@ -138,15 +155,22 @@ sale_percent: Number(salePercent),
     loadProducts();
   }
 
-  function startEdit(product: any) {
-    setEditIngredients(product.ingredients || "");
-    setEditCategoryId(String(product.category_id || ""));
-    setEditingId(product.id);
-    setEditName(product.name);
-    setEditDescription(product.description || "");
-    setEditPrice(String(product.price));
-    setEditSalePercent(String(product.sale_percent || 0));
-  }
+    function startEdit(product: any) {
+  setEditingId(product.id);
+
+  setEditNameAr(product.name_ar || "");
+  setEditNameEn(product.name_en || product.name || "");
+
+  setEditDescriptionAr(product.description_ar || "");
+  setEditDescriptionEn(product.description_en || product.description || "");
+
+  setEditIngredientsAr(product.ingredients_ar || "");
+  setEditIngredientsEn(product.ingredients_en || product.ingredients || "");
+
+  setEditCategoryId(String(product.category_id || ""));
+  setEditPrice(String(product.price));
+  setEditSalePercent(String(product.sale_percent || 0));
+}
 
   async function updateProduct() {
     if (!editingId) return;
@@ -173,13 +197,21 @@ sale_percent: Number(salePercent),
     }
 
     const updateData: any = {
-  name: editName,
-  description: editDescription,
-  ingredients: editIngredients,
-      category_id: Number(editCategoryId),
-      price: Number(editPrice),
-      sale_percent: Number(editSalePercent),
-    };
+  name: editNameEn || editNameAr,
+  description: editDescriptionEn || editDescriptionAr,
+  ingredients: editIngredientsEn || editIngredientsAr,
+
+  name_ar: editNameAr,
+  name_en: editNameEn,
+  description_ar: editDescriptionAr,
+  description_en: editDescriptionEn,
+  ingredients_ar: editIngredientsAr,
+  ingredients_en: editIngredientsEn,
+
+  category_id: Number(editCategoryId),
+  price: Number(editPrice),
+  sale_percent: Number(editSalePercent),
+};
 
     if (imageUrl) {
       updateData.image_url = imageUrl;
@@ -371,13 +403,24 @@ async function deleteExtraImage(imageId: number) {
 
         <div className="grid gap-3 md:grid-cols-2">
           <input
-            type="text"
-            placeholder="Product Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
-          />
+  type="text"
+  placeholder="Product Name Arabic"
+  value={nameAr}
+  onChange={(e) => setNameAr(e.target.value)}
+  dir="rtl"
+  required
+  className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
+
+<input
+  type="text"
+  placeholder="Product Name English"
+  value={nameEn}
+  onChange={(e) => setNameEn(e.target.value)}
+  dir="ltr"
+  required
+  className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>  
 
           <input
             type="number"
@@ -414,20 +457,39 @@ async function deleteExtraImage(imageId: number) {
           </select>
         </div>
 
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-          className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
-        />
+       <textarea
+  placeholder="Description Arabic"
+  value={descriptionAr}
+  onChange={(e) => setDescriptionAr(e.target.value)}
+  dir="rtl"
+  required
+  className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
 
-        <textarea
-          placeholder="Ingredients"
-          value={ingredients}
-          onChange={(e) => setIngredients(e.target.value)}
-          className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
-        />
+<textarea
+  placeholder="Description English"
+  value={descriptionEn}
+  onChange={(e) => setDescriptionEn(e.target.value)}
+  dir="ltr"
+  required
+  className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
+
+<textarea
+  placeholder="Ingredients Arabic"
+  value={ingredientsAr}
+  onChange={(e) => setIngredientsAr(e.target.value)}
+  dir="rtl"
+  className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
+
+<textarea
+  placeholder="Ingredients English"
+  value={ingredientsEn}
+  onChange={(e) => setIngredientsEn(e.target.value)}
+  dir="ltr"
+  className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
 
         <input
           type="file"
@@ -509,7 +571,7 @@ async function deleteExtraImage(imageId: number) {
               <div>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <h2 className="text-2xl font-extrabold text-gray-900">
-                    {product.name}
+                    {product.name_en || product.name_ar || product.name}
                   </h2>
 
                   {product.featured && (
@@ -532,7 +594,7 @@ async function deleteExtraImage(imageId: number) {
                 </div>
 
                 <p className="leading-7 text-gray-600">
-                  {product.description}
+                  {product.description_en || product.description_ar || product.description}
                 </p>
 
                 <p className="mt-3 text-xl font-extrabold text-green-700">
@@ -613,23 +675,53 @@ async function deleteExtraImage(imageId: number) {
             Edit Product
           </h2>
 
-          <input
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
-          />
+        <input
+  value={editNameAr}
+  onChange={(e) => setEditNameAr(e.target.value)}
+  placeholder="Product Name Arabic"
+  dir="rtl"
+  className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
 
-          <textarea
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
-          />
+<input
+  value={editNameEn}
+  onChange={(e) => setEditNameEn(e.target.value)}
+  placeholder="Product Name English"
+  dir="ltr"
+  className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
 
-          <textarea
-            value={editIngredients}
-            onChange={(e) => setEditIngredients(e.target.value)}
-            className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
-          />
+<textarea
+  value={editDescriptionAr}
+  onChange={(e) => setEditDescriptionAr(e.target.value)}
+  placeholder="Description Arabic"
+  dir="rtl"
+  className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
+
+<textarea
+  value={editDescriptionEn}
+  onChange={(e) => setEditDescriptionEn(e.target.value)}
+  placeholder="Description English"
+  dir="ltr"
+  className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
+
+<textarea
+  value={editIngredientsAr}
+  onChange={(e) => setEditIngredientsAr(e.target.value)}
+  placeholder="Ingredients Arabic"
+  dir="rtl"
+  className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
+
+<textarea
+  value={editIngredientsEn}
+  onChange={(e) => setEditIngredientsEn(e.target.value)}
+  placeholder="Ingredients English"
+  dir="ltr"
+  className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+/>
 
           <input
             type="number"
