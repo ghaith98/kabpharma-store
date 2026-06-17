@@ -35,7 +35,7 @@ export default function ProductSwiper({
     <Swiper
       dir="ltr"
       spaceBetween={20}
-      slidesPerView={1.05}
+      slidesPerView={1.22}
       watchOverflow
       breakpoints={{
         640: { slidesPerView: 2 },

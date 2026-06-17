@@ -370,7 +370,7 @@ const text = `${productName} ${productDescription} ${
 
                   <div className="flex flex-1 flex-col px-4 pb-4 pt-3 text-center">
                     <Link href={`/products/${product.id}`}>
-                      <h2 className="line-clamp-2 text-sm font-extrabold text-gray-900 transition hover:text-green-700 sm:text-base">
+                      <h2 className="h-12 line-clamp-2 text-sm font-extrabold text-gray-900 transition hover:text-green-700 sm:text-base">
                         {lang === "ar"
   ? product.name_ar || product.name
   : product.name_en || product.name}
