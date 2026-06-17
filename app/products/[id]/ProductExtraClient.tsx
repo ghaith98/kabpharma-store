@@ -1,14 +1,17 @@
 "use client";
 
 import RelatedProductsSwiper from "./RelatedProductsSwiper";
+import ReviewsSection from "./ReviewsSection";
 import { useLanguage } from "../../../context/LanguageContext";
 
 export default function ProductExtraClient({
   product,
   relatedProducts,
+  reviews = [],
 }: {
   product: any;
   relatedProducts: any[];
+  reviews?: any[];
 }) {
   const { lang } = useLanguage();
 
@@ -35,6 +38,13 @@ export default function ProductExtraClient({
           </p>
         </section>
       )}
+
+      <section className="mx-auto max-w-4xl">
+        <ReviewsSection
+          productId={product.id}
+          initialReviews={reviews || []}
+        />
+      </section>
 
       {relatedProducts && relatedProducts.length > 0 && (
         <section className="mx-auto mt-10 max-w-4xl">
