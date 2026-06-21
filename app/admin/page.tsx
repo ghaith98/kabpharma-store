@@ -93,9 +93,9 @@ const links = [
   { href: "/admin/banners", label: "Banners" },
   { href: "/admin/reviews", label: "Reviews" },
 
-  
   { href: "/admin/delivery-orders/manage", label: "Manage Delivery Orders" },
   { href: "/admin/delivery", label: "Delivery Fees" },
+  { href: "/admin/delivery-companies", label: "Delivery Companies" },
 
   { href: "/admin/payment-settings", label: "Payment Settings" },
   { href: "/admin/drivers", label: "Drivers" },

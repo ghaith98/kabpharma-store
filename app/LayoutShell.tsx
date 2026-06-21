@@ -14,8 +14,14 @@ export default function LayoutShell({
 
   const isDriverPage = pathname.startsWith("/driver");
   const isAdminPage = pathname.startsWith("/admin");
+  const isDeliveryCompanyPage =
+    pathname.startsWith("/delivery-company");
 
-  if (isDriverPage || isAdminPage) {
+  if (
+    isDriverPage ||
+    isAdminPage ||
+    isDeliveryCompanyPage
+  ) {
     return <>{children}</>;
   }
 
