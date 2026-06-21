@@ -16,38 +16,49 @@ export default function PaymentPage() {
   const [copied, setCopied] = useState(false);
   const [checkout, setCheckout] = useState<any>({});
 
-  useEffect(() => {
-    setCart(getCart());
+    useEffect(() => {
 
-    const savedCheckout = localStorage.getItem("checkout");
-    if (savedCheckout) {
-      setCheckout(JSON.parse(savedCheckout));
-    }
+  const savedUser = localStorage.getItem("kab_user");
 
-    async function loadQr() {
-      const { data, error } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "payment_qr_url")
-        .single();
+  if (!savedUser) {
+    localStorage.setItem("redirect_after_login", "/payment");
+    window.location.href = "/profile?account_required=1";
+    return;
+  }
 
-      if (!error && data?.value) {
-        setQrUrl(data.value);
+  const savedCheckout = localStorage.getItem("checkout");
+
+  if (!savedCheckout) {
+    window.location.href = "/checkout";
+    return;
+  }
+
+  setCart(getCart());
+  setCheckout(JSON.parse(savedCheckout));
+      async function loadQr() {
+        const { data, error } = await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", "payment_qr_url")
+          .single();
+
+        if (!error && data?.value) {
+          setQrUrl(data.value);
+        }
+
+        const { data: numberData } = await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", "payment_number")
+          .single();
+
+        if (numberData?.value) {
+          setPaymentNumber(numberData.value);
+        }
       }
 
-      const { data: numberData } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "payment_number")
-        .single();
-
-      if (numberData?.value) {
-        setPaymentNumber(numberData.value);
-      }
-    }
-
-    loadQr();
-  }, []);
+      loadQr();
+    }, []);
 
   const deliveryFee = Number(checkout.delivery_fee || 0);
 

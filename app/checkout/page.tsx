@@ -24,6 +24,11 @@ export default function CheckoutPage() {
     loadDeliveryData();
 
     const savedUser = localStorage.getItem("kab_user");
+    if (!savedUser) {
+  localStorage.setItem("redirect_after_login", "/checkout");
+  window.location.href = "/profile?account_required=1";
+  return;
+}
     const savedCheckout = localStorage.getItem("checkout");
 
     if (savedCheckout) {
