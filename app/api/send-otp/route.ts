@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server";
 
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    route: "send-otp exists",
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const { phone } = await req.json();
 
     if (!process.env.NABDA_API_URL || !process.env.NABDA_API_KEY) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Missing NABDA env variables",
-          hasUrl: !!process.env.NABDA_API_URL,
-          hasKey: !!process.env.NABDA_API_KEY,
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: "Missing NABDA env variables",
+        hasUrl: !!process.env.NABDA_API_URL,
+        hasKey: !!process.env.NABDA_API_KEY,
+      });
     }
 
     const response = await fetch(
@@ -30,21 +34,16 @@ export async function POST(req: Request) {
 
     const text = await response.text();
 
-    return NextResponse.json(
-      {
-        success: response.ok,
-        status: response.status,
-        response: text,
-      },
-      { status: response.ok ? 200 : response.status }
-    );
+    return NextResponse.json({
+      success: response.ok,
+      nabdaStatus: response.status,
+      sentPhone: phone,
+      nabdaResponse: text,
+    });
   } catch (error: any) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: error?.message || "Unknown server error",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: error?.message || "Unknown server error",
+    });
   }
 }
