@@ -65,7 +65,7 @@ export default function SignupPage() {
     setLoading(true);
     setErrorMessage("");
 
-    const res = await fetch("/api/send-otp", {
+    const res = await fetch(`${window.location.origin}/api/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone: fullPhone }),
