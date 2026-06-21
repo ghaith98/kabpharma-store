@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: process.env.NABDA_API_KEY,
+          Authorization: `Bearer ${process.env.NABDA_API_KEY}`,
         },
         body: JSON.stringify({ phone }),
       }
