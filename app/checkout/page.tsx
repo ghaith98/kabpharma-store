@@ -114,6 +114,7 @@ export default function CheckoutPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
 
     if (cart.length === 0) {
       alert(lang === "ar" ? "السلة فارغة" : "Your cart is empty");

@@ -10,6 +10,7 @@ export default function CartPage() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
+  const [showAccountModal, setShowAccountModal] = useState(false);
 
   useEffect(() => {
     setCart(getCart());
@@ -85,6 +86,15 @@ export default function CartPage() {
 
   const hasFreeDelivery =
     freeShippingThreshold > 0 && total >= freeShippingThreshold;
+    function goToCheckout(e: React.MouseEvent<HTMLAnchorElement>) {
+  const savedUser = localStorage.getItem("kab_user");
+
+  if (!savedUser) {
+    e.preventDefault();
+    setShowAccountModal(true);
+    return;
+  }
+}
 
   return (
     <main
@@ -286,7 +296,8 @@ export default function CartPage() {
               </div>
 
               <a
-                href="/checkout"
+  href="/checkout"
+  onClick={goToCheckout}
                 className="mt-6 block rounded-2xl bg-green-600 p-4 text-center font-bold text-white transition hover:bg-green-700"
               >
                 {lang === "ar" ? "تأكيد الطلب" : "Checkout"}
@@ -315,8 +326,9 @@ export default function CartPage() {
               </p>
             </div>
 
-            <a
-              href="/checkout"
+           <a
+  href="/checkout"
+  onClick={goToCheckout}
               className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
             >
               {lang === "ar" ? "تأكيد الطلب" : "Checkout"}
@@ -324,6 +336,42 @@ export default function CartPage() {
           </div>
         </div>
       )}
+      {showAccountModal && (
+  <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4">
+    <div className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-2xl">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl">
+        👤
+      </div>
+
+      <h2 className="text-2xl font-extrabold text-gray-900">
+        {lang === "ar" ? "يرجى إنشاء حساب أولاً" : "Create an account first"}
+      </h2>
+
+      <p className="mt-3 leading-7 text-gray-600">
+        {lang === "ar"
+          ? "لإتمام الطلب وتتبع حالته، يرجى إنشاء حساب أو تسجيل الدخول قبل المتابعة."
+          : "To complete your order and track its status, please create an account or sign in before continuing."}
+      </p>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => setShowAccountModal(false)}
+          className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+        >
+          {lang === "ar" ? "العودة للسلة" : "Back to Cart"}
+        </button>
+
+        <a
+          href="/profile"
+          className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
+        >
+          {lang === "ar" ? "إنشاء حساب / تسجيل الدخول" : "Create Account / Sign In"}
+        </a>
+      </div>
+    </div>
+  </div>
+)}
     </main>
   );
 }
