@@ -15,11 +15,6 @@ export default function CheckoutPage() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-const [otpSent, setOtpSent] = useState(false);
-const [otpVerified, setOtpVerified] = useState(false);
-const [phoneVerifiedFor, setPhoneVerifiedFor] = useState("");
-const [otpLoading, setOtpLoading] = useState(false);
   const [governorate, setGovernorate] = useState("");
   const [deliveryArea, setDeliveryArea] = useState("");
   const [address, setAddress] = useState("");
@@ -116,71 +111,14 @@ const [otpLoading, setOtpLoading] = useState(false);
   const deliveryFee = hasFreeShipping ? 0 : rawDeliveryFee;
 
   const total = productsTotal + deliveryFee;
-  async function sendOtp() {
-  if (!phone.trim()) {
-    alert(lang === "ar" ? "يرجى إدخال رقم الهاتف" : "Please enter phone number");
-    return;
-  }
-
-  setOtpLoading(true);
-
-  const res = await fetch("/api/send-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone: phone.trim() }),
-  });
-
-  setOtpLoading(false);
-
-  if (!res.ok) {
-    alert(lang === "ar" ? "تعذر إرسال الرمز" : "Could not send OTP");
-    return;
-  }
-
-  setOtpSent(true);
-  alert(lang === "ar" ? "تم إرسال رمز التحقق" : "OTP sent successfully");
-}
-
-async function verifyOtp() {
-  if (!otpCode.trim()) {
-    alert(lang === "ar" ? "يرجى إدخال رمز التحقق" : "Please enter OTP code");
-    return;
-  }
-
-  setOtpLoading(true);
-
-  const res = await fetch("/api/verify-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      phone: phone.trim(),
-      code: otpCode.trim(),
-    }),
-  });
-
-  setOtpLoading(false);
-
-  if (!res.ok) {
-    alert(lang === "ar" ? "رمز التحقق غير صحيح أو منتهي" : "Invalid or expired OTP");
-    return;
-  }
-
-  setOtpVerified(true);
-  setPhoneVerifiedFor(phone.trim());
-}
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
 
     if (cart.length === 0) {
       alert(lang === "ar" ? "السلة فارغة" : "Your cart is empty");
       return;
     }
-    if (!otpVerified || phoneVerifiedFor !== phone.trim()) {
-  alert(lang === "ar" ? "يرجى تأكيد رقم الهاتف أولاً" : "Please verify your phone number first");
-  return;
-}
 
     if (!governorate) {
       alert(lang === "ar" ? "يرجى اختيار المحافظة" : "Please select governorate");
@@ -268,63 +206,13 @@ async function verifyOtp() {
               />
 
               <input
-  type="tel"
-  placeholder={lang === "ar" ? "رقم الهاتف مثال: +9639xxxxxxxx" : "Phone Number e.g. +9639xxxxxxxx"}
-  value={phone}
-  onChange={(e) => {
-    setPhone(e.target.value);
-    setOtpVerified(false);
-    setPhoneVerifiedFor("");
-    setOtpSent(false);
-    setOtpCode("");
-  }}
-  required
-  className="w-full rounded-2xl border border-gray-300 p-4 text-[16px] text-black placeholder:text-gray-500 outline-none transition focus:border-green-600"
-/>
-
-<div className="rounded-2xl border border-green-100 bg-green-50 p-4">
-  {!otpVerified ? (
-    <>
-      <button
-        type="button"
-        onClick={sendOtp}
-        disabled={otpLoading || !phone.trim()}
-        className="w-full rounded-2xl bg-green-600 py-3 font-bold text-white transition hover:bg-green-700 disabled:bg-gray-400"
-      >
-        {otpLoading
-          ? lang === "ar" ? "جاري الإرسال..." : "Sending..."
-          : lang === "ar" ? "إرسال رمز التحقق" : "Send Verification Code"}
-      </button>
-
-      {otpSent && (
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={6}
-            placeholder={lang === "ar" ? "أدخل الرمز" : "Enter code"}
-            value={otpCode}
-            onChange={(e) => setOtpCode(e.target.value)}
-            className="flex-1 rounded-2xl border border-gray-300 p-4 text-[16px] text-black outline-none focus:border-green-600"
-          />
-
-          <button
-            type="button"
-            onClick={verifyOtp}
-            disabled={otpLoading}
-            className="rounded-2xl bg-gray-900 px-6 py-3 font-bold text-white transition hover:bg-black disabled:bg-gray-400"
-          >
-            {lang === "ar" ? "تأكيد" : "Verify"}
-          </button>
-        </div>
-      )}
-    </>
-  ) : (
-    <p className="text-center font-extrabold text-green-700">
-      {lang === "ar" ? "✓ تم تأكيد رقم الهاتف" : "✓ Phone number verified"}
-    </p>
-  )}
-</div>
+                type="tel"
+                placeholder={lang === "ar" ? "رقم الهاتف" : "Phone Number"}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className="w-full rounded-2xl border border-gray-300 p-4 text-[16px] text-black placeholder:text-gray-500 outline-none transition focus:border-green-600"
+              />
 
               <select
                 value={governorate}
