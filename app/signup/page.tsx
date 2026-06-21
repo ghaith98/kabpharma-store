@@ -18,7 +18,7 @@ export default function SignupPage() {
 
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const fullPhone = phone.trim() ? `+963${phone.trim()}` : "";
+  const fullPhone = phone.trim() ? `963${phone.trim()}` : "";
   const otpCode = otpDigits.join("");
 
   function t(en: string, ar: string) {
