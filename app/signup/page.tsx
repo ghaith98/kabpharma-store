@@ -61,6 +61,31 @@ export default function SignupPage() {
       );
       return;
     }
+    const { data: existingUser, error: checkError } = await supabase
+  .from("profiles")
+  .select("id")
+  .eq("phone", fullPhone)
+  .maybeSingle();
+
+if (checkError) {
+  setErrorMessage(
+    t(
+      "Could not check this phone number. Please try again.",
+      "تعذر التحقق من رقم الهاتف. يرجى المحاولة مرة أخرى."
+    )
+  );
+  return;
+}
+
+if (existingUser) {
+  setErrorMessage(
+    t(
+      "This phone number is already registered. Please sign in instead.",
+      "رقم الهاتف هذا مسجل مسبقاً. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد."
+    )
+  );
+  return;
+}
 
     setLoading(true);
     setErrorMessage("");
