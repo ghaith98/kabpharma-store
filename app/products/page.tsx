@@ -3,6 +3,8 @@
   import ProductsClient from "./ProductsClient";
   import { Suspense } from "react";
 
+  export const dynamic = "force-dynamic";
+
   export default async function ProductsPage() {
     const { data: products, error } = await supabase
     .from("products")
