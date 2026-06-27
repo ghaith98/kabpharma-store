@@ -64,7 +64,7 @@ export default function ProductSwiper({
           <SwiperSlide key={product.id}>
             <Link
               href={`/products/${product.id}`}
-              className="group block overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="group flex h-[372px] flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-b from-white to-gray-100">
                 <div className="absolute right-4 top-4 z-20">
@@ -107,17 +107,19 @@ export default function ProductSwiper({
 
               <div
                 dir={lang === "ar" ? "rtl" : "ltr"}
-                className={lang === "ar" ? "p-5 text-right" : "p-5 text-left"}
+                className={`flex flex-1 flex-col p-5 ${
+  lang === "ar" ? "text-right" : "text-left"
+}`}
               >
                 <h3 className="line-clamp-2 text-base font-extrabold text-gray-900">
                   {productName}
                 </h3>
 
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600">
+                <p className="mt-2 line-clamp-2 min-h-[48px] text-sm leading-6 text-gray-600">
                   {productDescription}
                 </p>
 
-                <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="mt-auto flex items-center justify-between gap-3 pt-4">
                   <div className="min-h-[44px]">
                     <p
                       className={`font-extrabold ${
