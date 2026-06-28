@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "../../context/LanguageContext";
@@ -9,17 +9,43 @@ export default function LoginPage() {
   const { lang } = useLanguage();
 
   const [phone, setPhone] = useState("");
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpSent, setOtpSent] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+
   const fullPhone = phone.trim() ? `963${phone.trim()}` : "";
+  const otpCode = otpDigits.join("");
 
   function t(en: string, ar: string) {
     return lang === "ar" ? ar : en;
   }
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  function handleOtpChange(index: number, value: string) {
+    const digit = value.replace(/\D/g, "").slice(0, 1);
+    const updated = [...otpDigits];
+    updated[index] = digit;
+    setOtpDigits(updated);
+
+    if (digit && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleOtpKeyDown(
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  }
+
+  async function sendLoginOtp() {
     setErrorMessage("");
 
     if (!/^9\d{8}$/.test(phone.trim())) {
@@ -38,11 +64,10 @@ export default function LoginPage() {
       .from("profiles")
       .select("*")
       .eq("phone", fullPhone)
-      .single();
-
-    setLoading(false);
+      .maybeSingle();
 
     if (error || !data) {
+      setLoading(false);
       setErrorMessage(
         t(
           "Phone number not found. Please create an account first.",
@@ -52,11 +77,67 @@ export default function LoginPage() {
       return;
     }
 
+    const res = await fetch(`${window.location.origin}/api/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: fullPhone }),
+    });
+
+    setLoading(false);
+
+    if (!res.ok) {
+      setErrorMessage(
+        t(
+          "Could not send the verification code. Please try again.",
+          "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
+        )
+      );
+      return;
+    }
+
+    setProfileData(data);
+    setOtpSent(true);
+    setTimeout(() => inputRefs.current[0]?.focus(), 100);
+  }
+
+  async function verifyAndLogin() {
+    setErrorMessage("");
+
+    if (otpCode.length !== 6) {
+      setErrorMessage(
+        t("Please enter your verification code.", "يرجى إدخال رمز التحقق.")
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    const verifyRes = await fetch(`${window.location.origin}/api/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: fullPhone,
+        code: otpCode,
+      }),
+    });
+
+    setLoading(false);
+
+    if (!verifyRes.ok) {
+      setErrorMessage(
+        t(
+          "Invalid or expired verification code.",
+          "رمز التحقق غير صحيح أو منتهي الصلاحية."
+        )
+      );
+      return;
+    }
+
     localStorage.setItem(
       "kab_user",
       JSON.stringify({
-        full_name: data.full_name,
-        phone: data.phone,
+        full_name: profileData.full_name,
+        phone: profileData.phone,
       })
     );
 
@@ -71,6 +152,17 @@ export default function LoginPage() {
     window.location.href = "/profile";
   }
 
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!otpSent) {
+      await sendLoginOtp();
+      return;
+    }
+
+    await verifyAndLogin();
+  }
+
   return (
     <main
       dir="ltr"
@@ -82,10 +174,7 @@ export default function LoginPage() {
         </h1>
 
         <p className="mt-2 text-gray-600">
-          {t(
-            "Enter your Syrian mobile number.",
-            "أدخل رقم الموبايل السوري."
-          )}
+          {t("Enter your Syrian mobile number.", "أدخل رقم الموبايل السوري.")}
         </p>
 
         <form onSubmit={handleLogin} className="mt-8 space-y-4">
@@ -99,14 +188,44 @@ export default function LoginPage() {
               type="tel"
               placeholder="9xxxxxxxx"
               value={phone}
+              disabled={otpSent}
               onChange={(e) => {
                 setPhone(e.target.value.replace(/\D/g, ""));
                 setErrorMessage("");
               }}
               maxLength={9}
-              className="min-w-0 flex-1 px-4 py-3 text-black outline-none"
+              className="min-w-0 flex-1 px-4 py-3 text-black outline-none disabled:bg-gray-100"
             />
           </div>
+
+          {otpSent && (
+            <div className="rounded-2xl bg-green-50 p-4 text-center">
+              <p className="mb-4 text-sm font-bold text-green-800">
+                {t(
+                  `Enter the 6-digit code sent to WhatsApp ${fullPhone}`,
+                  `أدخل رمز التحقق المرسل إلى واتساب ${fullPhone}`
+                )}
+              </p>
+
+              <div className="flex justify-center gap-2" dir="ltr">
+                {otpDigits.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => {
+                      inputRefs.current[index] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    className="h-12 w-11 rounded-xl border border-gray-300 text-center text-xl font-extrabold text-gray-900 outline-none focus:border-green-600"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {errorMessage && (
             <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
@@ -119,8 +238,10 @@ export default function LoginPage() {
             className="w-full rounded-2xl bg-green-600 py-3 font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
           >
             {loading
-              ? t("Signing in...", "جاري تسجيل الدخول...")
-              : t("Sign In", "تسجيل الدخول")}
+              ? t("Please wait...", "يرجى الانتظار...")
+              : otpSent
+                ? t("Verify & Sign In", "تأكيد وتسجيل الدخول")
+                : t("Sign In", "تسجيل الدخول")}
           </button>
         </form>
 
