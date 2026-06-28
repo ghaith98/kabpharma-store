@@ -12,10 +12,20 @@ export default function CartPage() {
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
-  useEffect(() => {
-    setCart(getCart());
+ useEffect(() => {
+  const savedUser = localStorage.getItem("kab_user");
+
+  if (!savedUser) {
+    setCart([]);
+    saveCart([]);
+    window.dispatchEvent(new Event("cartUpdated"));
     loadFreeShippingThreshold();
-  }, []);
+    return;
+  }
+
+  setCart(getCart());
+  loadFreeShippingThreshold();
+}, []);
 
   async function loadFreeShippingThreshold() {
     const { data } = await supabase
@@ -363,7 +373,7 @@ export default function CartPage() {
         </button>
 
         <a
-          href="/profile"
+          href="/login"
           className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
         >
           {lang === "ar" ? "إنشاء حساب / تسجيل الدخول" : "Create Account / Sign In"}
