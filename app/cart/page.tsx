@@ -5,27 +5,35 @@ import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "../../context/LanguageContext";
 
+type CartItemWithVariant = CartItem & {
+  cart_key?: string;
+  product_name?: string;
+  variant_id?: number | null;
+  variant_label_ar?: string | null;
+  variant_label_en?: string | null;
+};
+
 export default function CartPage() {
   const { lang } = useLanguage();
 
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItemWithVariant[]>([]);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
- useEffect(() => {
-  const savedUser = localStorage.getItem("kab_user");
+  useEffect(() => {
+    const savedUser = localStorage.getItem("kab_user");
 
-  if (!savedUser) {
-    setCart([]);
-    saveCart([]);
-    window.dispatchEvent(new Event("cartUpdated"));
+    if (!savedUser) {
+      setCart([]);
+      saveCart([]);
+      window.dispatchEvent(new Event("cartUpdated"));
+      loadFreeShippingThreshold();
+      return;
+    }
+
+    setCart(getCart() as CartItemWithVariant[]);
     loadFreeShippingThreshold();
-    return;
-  }
-
-  setCart(getCart());
-  loadFreeShippingThreshold();
-}, []);
+  }, []);
 
   async function loadFreeShippingThreshold() {
     const { data } = await supabase
@@ -37,24 +45,28 @@ export default function CartPage() {
     setFreeShippingThreshold(Number(data?.value || 0));
   }
 
-  function syncCart(updatedCart: CartItem[]) {
+  function getCartItemKey(item: CartItemWithVariant) {
+    return item.cart_key || `${item.id}-${item.variant_id || "base"}`;
+  }
+
+  function syncCart(updatedCart: CartItemWithVariant[]) {
     setCart(updatedCart);
-    saveCart(updatedCart);
+    saveCart(updatedCart as CartItem[]);
     window.dispatchEvent(new Event("cartUpdated"));
   }
 
-  function updateQuantity(id: number, quantity: number) {
+  function updateQuantity(itemKey: string, quantity: number) {
     if (quantity < 1) return;
 
     const updatedCart = cart.map((item) =>
-      item.id === id ? { ...item, quantity } : item
+      getCartItemKey(item) === itemKey ? { ...item, quantity } : item
     );
 
     syncCart(updatedCart);
   }
 
-  function removeItem(id: number) {
-    const updatedCart = cart.filter((item) => item.id !== id);
+  function removeItem(itemKey: string) {
+    const updatedCart = cart.filter((item) => getCartItemKey(item) !== itemKey);
     syncCart(updatedCart);
   }
 
@@ -96,15 +108,16 @@ export default function CartPage() {
 
   const hasFreeDelivery =
     freeShippingThreshold > 0 && total >= freeShippingThreshold;
-    function goToCheckout(e: React.MouseEvent<HTMLAnchorElement>) {
-  const savedUser = localStorage.getItem("kab_user");
 
-  if (!savedUser) {
-    e.preventDefault();
-    setShowAccountModal(true);
-    return;
+  function goToCheckout(e: React.MouseEvent<HTMLAnchorElement>) {
+    const savedUser = localStorage.getItem("kab_user");
+
+    if (!savedUser) {
+      e.preventDefault();
+      setShowAccountModal(true);
+      return;
+    }
   }
-}
 
   return (
     <main
@@ -160,8 +173,8 @@ export default function CartPage() {
                             ? "🎉 تم تفعيل التوصيل المجاني"
                             : "🎉 Free delivery unlocked"
                           : lang === "ar"
-                            ? "احصل على توصيل مجاني"
-                            : "Unlock free delivery"}
+                          ? "احصل على توصيل مجاني"
+                          : "Unlock free delivery"}
                       </p>
 
                       <p className="mt-1 text-sm font-semibold text-gray-600">
@@ -170,8 +183,8 @@ export default function CartPage() {
                             ? "طلبك مؤهل للتوصيل المجاني."
                             : "Your order qualifies for free delivery."
                           : lang === "ar"
-                            ? `أضيف ${remainingForFreeDelivery.toLocaleString()} SYP للحصول على توصيل مجاني.`
-                            : `Add ${remainingForFreeDelivery.toLocaleString()} SYP more to get free delivery.`}
+                          ? `أضيف ${remainingForFreeDelivery.toLocaleString()} SYP للحصول على توصيل مجاني.`
+                          : `Add ${remainingForFreeDelivery.toLocaleString()} SYP more to get free delivery.`}
                       </p>
                     </div>
 
@@ -196,89 +209,114 @@ export default function CartPage() {
                 </div>
               )}
 
-              {cart.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100">
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
-                          {lang === "ar" ? "لا توجد صورة" : "No image"}
-                        </div>
-                      )}
-                    </div>
+              {cart.map((item) => {
+                const itemKey = getCartItemKey(item);
 
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900">
-                        {item.name}
-                      </h2>
+                const variantLabel =
+                  lang === "ar"
+                    ? item.variant_label_ar || item.variant_label_en
+                    : item.variant_label_en || item.variant_label_ar;
 
-                      <div className="mt-1">
-                        {Number(item.sale_percent || 0) > 0 &&
-                          item.original_price && (
-                            <p className="mt-1 text-sm font-bold text-gray-400 line-through">
-                              {item.original_price.toLocaleString()} SYP
-                            </p>
-                          )}
+                const displayName =
+                  item.product_name ||
+                  (variantLabel && item.name.includes(" - ")
+                    ? item.name.split(" - ")[0]
+                    : item.name);
 
-                        <p className="font-semibold text-green-700">
-                          {item.price.toLocaleString()} SYP
-                        </p>
+                return (
+                  <div
+                    key={itemKey}
+                    className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                            {lang === "ar" ? "لا توجد صورة" : "No image"}
+                          </div>
+                        )}
                       </div>
 
-                      <p className="mt-1 text-sm font-semibold text-gray-600">
-                        {item.quantity} × {item.price.toLocaleString()} SYP
-                      </p>
+                      <div>
+                        <h2 className="text-lg font-bold text-gray-900">
+                          {displayName}
+                        </h2>
 
-                      <p className="mt-1 text-sm font-bold text-gray-900">
-                        {lang === "ar" ? "المجموع الفرعي" : "Subtotal"}:{" "}
-                        {(item.price * item.quantity).toLocaleString()} SYP
-                      </p>
+                        {variantLabel && (
+                          <p className="mt-1 inline-flex rounded-full bg-green-50 px-3 py-1 text-sm font-extrabold text-green-700">
+                            {lang === "ar" ? "الخيار: " : "Option: "}
+                            {variantLabel}
+                          </p>
+                        )}
+
+                        <div className="mt-2">
+                          {Number(item.sale_percent || 0) > 0 &&
+                            item.original_price && (
+                              <p className="mt-1 text-sm font-bold text-gray-400 line-through">
+                                {item.original_price.toLocaleString()} SYP
+                              </p>
+                            )}
+
+                          <p className="font-semibold text-green-700">
+                            {item.price.toLocaleString()} SYP
+                          </p>
+                        </div>
+
+                        <p className="mt-1 text-sm font-semibold text-gray-600">
+                          {item.quantity} × {item.price.toLocaleString()} SYP
+                        </p>
+
+                        <p className="mt-1 text-sm font-bold text-gray-900">
+                          {lang === "ar" ? "المجموع الفرعي" : "Subtotal"}:{" "}
+                          {(item.price * item.quantity).toLocaleString()} SYP
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center rounded-xl border border-gray-300 bg-white">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(itemKey, item.quantity - 1)
+                          }
+                          className="px-4 py-2 text-lg font-bold text-gray-800"
+                        >
+                          -
+                        </button>
+
+                        <span className="min-w-10 text-center font-bold text-gray-900">
+                          {item.quantity}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(itemKey, item.quantity + 1)
+                          }
+                          className="px-4 py-2 text-lg font-bold text-gray-800"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeItem(itemKey)}
+                        className="rounded-xl bg-red-50 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-100"
+                      >
+                        {lang === "ar" ? "إزالة" : "Remove"}
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center rounded-xl border border-gray-300 bg-white">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity - 1)
-                        }
-                        className="px-4 py-2 text-lg font-bold text-gray-800"
-                      >
-                        -
-                      </button>
-
-                      <span className="min-w-10 text-center font-bold text-gray-900">
-                        {item.quantity}
-                      </span>
-
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity + 1)
-                        }
-                        className="px-4 py-2 text-lg font-bold text-gray-800"
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="rounded-xl bg-red-50 px-4 py-2 font-semibold text-red-600 transition hover:bg-red-100"
-                    >
-                      {lang === "ar" ? "إزالة" : "Remove"}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <aside className="hidden h-fit rounded-3xl bg-white p-6 shadow-sm lg:block">
@@ -306,14 +344,15 @@ export default function CartPage() {
               </div>
 
               <a
-  href="/checkout"
-  onClick={goToCheckout}
+                href="/checkout"
+                onClick={goToCheckout}
                 className="mt-6 block rounded-2xl bg-green-600 p-4 text-center font-bold text-white transition hover:bg-green-700"
               >
                 {lang === "ar" ? "تأكيد الطلب" : "Checkout"}
               </a>
 
               <button
+                type="button"
                 onClick={clearCart}
                 className="mt-3 w-full rounded-2xl border border-gray-300 p-3 font-semibold text-gray-700 transition hover:bg-gray-50"
               >
@@ -336,9 +375,9 @@ export default function CartPage() {
               </p>
             </div>
 
-           <a
-  href="/checkout"
-  onClick={goToCheckout}
+            <a
+              href="/checkout"
+              onClick={goToCheckout}
               className="rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
             >
               {lang === "ar" ? "تأكيد الطلب" : "Checkout"}
@@ -346,42 +385,45 @@ export default function CartPage() {
           </div>
         </div>
       )}
+
       {showAccountModal && (
-  <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4">
-    <div className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-2xl">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl">
-        👤
-      </div>
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl">
+              👤
+            </div>
 
-      <h2 className="text-2xl font-extrabold text-gray-900">
-        {lang === "ar" ? "يرجى إنشاء حساب أولاً" : "Create an account first"}
-      </h2>
+            <h2 className="text-2xl font-extrabold text-gray-900">
+              {lang === "ar" ? "يرجى إنشاء حساب أولاً" : "Create an account first"}
+            </h2>
 
-      <p className="mt-3 leading-7 text-gray-600">
-        {lang === "ar"
-          ? "لإتمام الطلب وتتبع حالته، يرجى إنشاء حساب أو تسجيل الدخول قبل المتابعة."
-          : "To complete your order and track its status, please create an account or sign in before continuing."}
-      </p>
+            <p className="mt-3 leading-7 text-gray-600">
+              {lang === "ar"
+                ? "لإتمام الطلب وتتبع حالته، يرجى إنشاء حساب أو تسجيل الدخول قبل المتابعة."
+                : "To complete your order and track its status, please create an account or sign in before continuing."}
+            </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={() => setShowAccountModal(false)}
-          className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
-        >
-          {lang === "ar" ? "العودة للسلة" : "Back to Cart"}
-        </button>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setShowAccountModal(false)}
+                className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+              >
+                {lang === "ar" ? "العودة للسلة" : "Back to Cart"}
+              </button>
 
-        <a
-          href="/login"
-          className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
-        >
-          {lang === "ar" ? "إنشاء حساب / تسجيل الدخول" : "Create Account / Sign In"}
-        </a>
-      </div>
-    </div>
-  </div>
-)}
+              <a
+                href="/login"
+                className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
+              >
+                {lang === "ar"
+                  ? "إنشاء حساب / تسجيل الدخول"
+                  : "Create Account / Sign In"}
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

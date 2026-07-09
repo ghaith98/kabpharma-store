@@ -5,10 +5,18 @@ import { supabase } from "@/lib/supabase";
 import { CartItem, getCart } from "@/lib/cart";
 import { useLanguage } from "../../context/LanguageContext";
 
+type CartItemWithVariant = CartItem & {
+  cart_key?: string;
+  product_name?: string;
+  variant_id?: number | null;
+  variant_label_ar?: string | null;
+  variant_label_en?: string | null;
+};
+
 export default function CheckoutPage() {
   const { lang } = useLanguage();
 
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItemWithVariant[]>([]);
   const [governorates, setGovernorates] = useState<any[]>([]);
   const [deliveryAreas, setDeliveryAreas] = useState<any[]>([]);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
@@ -20,15 +28,17 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
 
   useEffect(() => {
-    setCart(getCart());
+    setCart(getCart() as CartItemWithVariant[]);
     loadDeliveryData();
 
     const savedUser = localStorage.getItem("kab_user");
+
     if (!savedUser) {
-  localStorage.setItem("redirect_after_login", "/checkout");
-  window.location.href = "/profile?account_required=1";
-  return;
-}
+      localStorage.setItem("redirect_after_login", "/checkout");
+      window.location.href = "/profile?account_required=1";
+      return;
+    }
+
     const savedCheckout = localStorage.getItem("checkout");
 
     if (savedCheckout) {
@@ -37,7 +47,7 @@ export default function CheckoutPage() {
       setPhone(checkout.phone || "");
       setGovernorate(checkout.governorate || "");
       setAddress(checkout.address || "");
-    } else if (savedUser) {
+    } else {
       const user = JSON.parse(savedUser);
       setName(user.full_name || "");
       setPhone(user.phone || "");
@@ -49,6 +59,7 @@ export default function CheckoutPage() {
 
     if (savedCheckout && deliveryAreas.length > 0) {
       const checkout = JSON.parse(savedCheckout);
+
       const matchedArea = deliveryAreas.find(
         (area) =>
           area.area_name === checkout.delivery_area &&
@@ -95,6 +106,28 @@ export default function CheckoutPage() {
     setFreeShippingThreshold(Number(settingData?.value || 0));
   }
 
+  function getCartItemKey(item: CartItemWithVariant) {
+    return item.cart_key || `${item.id}-${item.variant_id || "base"}`;
+  }
+
+  function getVariantLabel(item: CartItemWithVariant) {
+    return lang === "ar"
+      ? item.variant_label_ar || item.variant_label_en
+      : item.variant_label_en || item.variant_label_ar;
+  }
+
+  function getDisplayName(item: CartItemWithVariant) {
+    const variantLabel = getVariantLabel(item);
+
+    if (item.product_name) return item.product_name;
+
+    if (variantLabel && item.name.includes(" - ")) {
+      return item.name.split(" - ")[0];
+    }
+
+    return item.name;
+  }
+
   const productsTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -119,7 +152,6 @@ export default function CheckoutPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
 
     if (cart.length === 0) {
       alert(lang === "ar" ? "السلة فارغة" : "Your cart is empty");
@@ -127,12 +159,16 @@ export default function CheckoutPage() {
     }
 
     if (!governorate) {
-      alert(lang === "ar" ? "يرجى اختيار المحافظة" : "Please select governorate");
+      alert(
+        lang === "ar" ? "يرجى اختيار المحافظة" : "Please select governorate"
+      );
       return;
     }
 
     if (!deliveryArea) {
-      alert(lang === "ar" ? "يرجى اختيار منطقة التوصيل" : "Please select delivery area");
+      alert(
+        lang === "ar" ? "يرجى اختيار منطقة التوصيل" : "Please select delivery area"
+      );
       return;
     }
 
@@ -143,6 +179,8 @@ export default function CheckoutPage() {
         phone,
         governorate,
         delivery_area: selectedArea?.area_name || "",
+        delivery_area_ar: selectedArea?.area_name_ar || "",
+        delivery_area_en: selectedArea?.area_name_en || "",
         address,
         delivery_fee: deliveryFee,
       })
@@ -236,8 +274,8 @@ export default function CheckoutPage() {
                 {governorates.map((item) => (
                   <option key={item.id} value={item.governorate}>
                     {lang === "ar"
-  ? item.governorate_ar || item.governorate
-  : item.governorate_en || item.governorate}
+                      ? item.governorate_ar || item.governorate
+                      : item.governorate_en || item.governorate}
                   </option>
                 ))}
               </select>
@@ -255,16 +293,16 @@ export default function CheckoutPage() {
                       ? "اختر المنطقة"
                       : "Select Area"
                     : lang === "ar"
-                      ? "اختر المحافظة أولاً"
-                      : "Select governorate first"}
+                    ? "اختر المحافظة أولاً"
+                    : "Select governorate first"}
                 </option>
 
                 {areasForGovernorate.map((area) => (
                   <option key={area.id} value={area.id}>
-  {lang === "ar"
-    ? area.area_name_ar || area.area_name
-    : area.area_name_en || area.area_name}
-</option>
+                    {lang === "ar"
+                      ? area.area_name_ar || area.area_name
+                      : area.area_name_en || area.area_name}
+                  </option>
                 ))}
               </select>
 
@@ -301,23 +339,59 @@ export default function CheckoutPage() {
                   {lang === "ar" ? "السلة فارغة" : "Your cart is empty"}
                 </p>
               ) : (
-                cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between gap-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-bold text-gray-900">{item.name}</p>
-                      <p className="mt-1 text-gray-700">
-                        {lang === "ar" ? "الكمية" : "Qty"}: {item.quantity}
+                cart.map((item) => {
+                  const itemKey = getCartItemKey(item);
+                  const variantLabel = getVariantLabel(item);
+                  const displayName = getDisplayName(item);
+
+                  return (
+                    <div
+                      key={itemKey}
+                      className="flex justify-between gap-4 text-sm"
+                    >
+                      <div className="flex gap-3">
+                        <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[10px] text-gray-400">
+                              No image
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <p className="font-bold text-gray-900">
+                            {displayName}
+                          </p>
+
+                          {variantLabel && (
+                            <p className="mt-1 text-xs font-extrabold text-green-700">
+                              {lang === "ar" ? "الخيار: " : "Option: "}
+                              {variantLabel}
+                            </p>
+                          )}
+
+                          <p className="mt-1 text-gray-700">
+                            {lang === "ar" ? "الكمية" : "Qty"}: {item.quantity}
+                          </p>
+
+                          <p className="mt-1 text-xs font-semibold text-gray-500">
+                            {item.price.toLocaleString()} SYP
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="font-bold text-green-700">
+                        {(item.price * item.quantity).toLocaleString()} SYP
                       </p>
                     </div>
-
-                    <p className="font-bold text-green-700">
-                      {(item.price * item.quantity).toLocaleString()} SYP
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 

@@ -1,40 +1,118 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductGallery from "./ProductGallery";
 import { useLanguage } from "../../../context/LanguageContext";
 
 export default function ProductDetailsClient({
   product,
-  galleryImages,
-  finalPrice,
-  originalPrice,
+  normalGalleryImages,
+  productVariants,
   salePercent,
 }: {
   product: any;
-  galleryImages: string[];
-  finalPrice: number;
-  originalPrice: number;
+  normalGalleryImages: string[];
+  productVariants: any[];
   salePercent: number;
 }) {
   const { lang } = useLanguage();
 
+  const sortedVariants = useMemo(() => {
+    return [...(productVariants || [])].sort(
+      (a, b) => Number(a.price) - Number(b.price)
+    );
+  }, [productVariants]);
+
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+
+  useEffect(() => {
+    if (sortedVariants.length > 0) {
+      setSelectedVariant(sortedVariants[0]);
+    } else {
+      setSelectedVariant(null);
+    }
+  }, [sortedVariants]);
+
   const productName =
-    lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
+    lang === "ar"
+      ? product.name_ar || product.name
+      : product.name_en || product.name;
 
   const productDescription =
     lang === "ar"
       ? product.description_ar || product.description
       : product.description_en || product.description;
 
+  const selectedVariantLabel =
+    selectedVariant &&
+    (lang === "ar"
+      ? selectedVariant.label_ar || selectedVariant.label_en
+      : selectedVariant.label_en || selectedVariant.label_ar);
+
+  const galleryImages =
+    selectedVariant?.images?.length > 0
+      ? selectedVariant.images
+      : normalGalleryImages;
+
+  const originalPrice = selectedVariant
+    ? Number(selectedVariant.price)
+    : Number(product.price);
+
+  const finalPrice =
+    salePercent > 0
+      ? originalPrice - originalPrice * (salePercent / 100)
+      : originalPrice;
+
+  const finalImage = galleryImages[0] || product.image_url;
+
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <ProductGallery images={galleryImages} productName={productName} />
 
-      <div dir={lang === "ar" ? "rtl" : "ltr"} className={lang === "ar" ? "text-right" : "text-left"}>
-        <h1 className="text-4xl font-extrabold text-gray-900">{productName}</h1>
+      <div
+        dir={lang === "ar" ? "rtl" : "ltr"}
+        className={lang === "ar" ? "text-right" : "text-left"}
+      >
+        <h1 className="text-4xl font-extrabold text-gray-900">
+          {productName}
+        </h1>
 
         <p className="mt-6 leading-8 text-gray-700">{productDescription}</p>
+
+        {sortedVariants.length > 0 && (
+          <div className="mt-6">
+            <h3 className="mb-3 font-extrabold text-gray-900">
+              {lang === "ar" ? "اختاري الحجم" : "Choose Size"}
+            </h3>
+
+            <div className="flex flex-wrap gap-3">
+              {sortedVariants.map((variant: any) => {
+                const variantLabel =
+                  lang === "ar"
+                    ? variant.label_ar || variant.label_en
+                    : variant.label_en || variant.label_ar;
+
+                const isSelected = selectedVariant?.id === variant.id;
+
+                return (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    onClick={() => setSelectedVariant(variant)}
+                    className={`rounded-2xl border px-4 py-3 font-extrabold transition ${
+                      isSelected
+                        ? "border-green-600 bg-green-50 text-green-700"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-green-300"
+                    }`}
+                  >
+                    {variantLabel}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {product.is_out_of_stock ? (
           <>
@@ -67,18 +145,26 @@ export default function ProductDetailsClient({
           <ProductDetailsAddToCart
             product={{
               id: product.id,
-              name: productName,
+              name: selectedVariantLabel
+                ? `${productName} - ${selectedVariantLabel}`
+                : productName,
+              product_name: productName,
               price: Math.round(finalPrice),
               original_price: originalPrice,
               sale_percent: salePercent,
-              image_url: product.image_url,
+              image_url: finalImage,
+
+              variant_id: selectedVariant?.id || null,
+              variant_label_ar: selectedVariant?.label_ar || null,
+              variant_label_en: selectedVariant?.label_en || null,
             }}
             finalPrice={finalPrice}
             originalPrice={originalPrice}
             salePercent={salePercent}
+            selectedVariant={selectedVariant}
           />
         )}
       </div>
     </div>
   );
-}
+} 

@@ -108,7 +108,7 @@ export default function Navbar() {
                 autoFocus
                 type="text"
                 placeholder={
-                  lang === "ar" ? "ابحثي عن منتج..." : "Search products..."
+                  lang === "ar" ? "ابحث عن منتج..." : "Search products..."
                 }
                 value={query}
                 onChange={(e) => updateSearch(e.target.value)}

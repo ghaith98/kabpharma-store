@@ -7,10 +7,15 @@ import { useLanguage } from "../../../context/LanguageContext";
 type Product = {
   id: number;
   name: string;
+  product_name?: string;
   price: number;
   original_price?: number;
   sale_percent?: number;
   image_url: string | null;
+
+  variant_id?: number | null;
+  variant_label_ar?: string | null;
+  variant_label_en?: string | null;
 };
 
 export default function ProductDetailsAddToCart({
@@ -18,15 +23,23 @@ export default function ProductDetailsAddToCart({
   finalPrice,
   originalPrice,
   salePercent,
+  selectedVariant,
 }: {
   product: Product;
   finalPrice: number;
   originalPrice: number;
   salePercent: number;
+  selectedVariant?: any;
 }) {
   const { lang } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
+
+  const selectedVariantLabel =
+    selectedVariant &&
+    (lang === "ar"
+      ? selectedVariant.label_ar || selectedVariant.label_en
+      : selectedVariant.label_en || selectedVariant.label_ar);
 
   function handleAdd() {
     addToCart(product, quantity);
@@ -37,6 +50,13 @@ export default function ProductDetailsAddToCart({
   return (
     <>
       <div className="mt-8 rounded-[1.75rem] border border-gray-100 bg-white p-4 shadow-sm">
+        {selectedVariantLabel && (
+          <div className="mb-3 rounded-2xl bg-green-50 px-4 py-3 text-sm font-extrabold text-green-700">
+            {lang === "ar" ? "الخيار المحدد: " : "Selected option: "}
+            {selectedVariantLabel}
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-4">
           <div>
             {salePercent > 0 && (
@@ -86,6 +106,7 @@ export default function ProductDetailsAddToCart({
 
       <div className="mt-6 hidden md:block">
         <button
+          type="button"
           onClick={handleAdd}
           className="w-full rounded-2xl bg-green-600 py-3.5 font-extrabold text-white shadow-sm transition hover:bg-green-700 hover:shadow-md"
         >
@@ -95,6 +116,7 @@ export default function ProductDetailsAddToCart({
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-100 bg-white/95 p-4 pb-24 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
         <button
+          type="button"
           onClick={handleAdd}
           className="w-full rounded-2xl bg-green-600 py-3.5 font-extrabold text-white shadow-sm transition active:scale-[0.98]"
         >
@@ -129,6 +151,7 @@ export default function ProductDetailsAddToCart({
               </a>
 
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
                 className="rounded-2xl border border-gray-300 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
               >
@@ -140,4 +163,4 @@ export default function ProductDetailsAddToCart({
       )}
     </>
   );
-}
+} 

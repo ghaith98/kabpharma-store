@@ -5,60 +5,90 @@ import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "../../context/LanguageContext";
 
+type CartItemWithVariant = CartItem & {
+  cart_key?: string;
+  product_name?: string;
+  variant_id?: number | null;
+  variant_label_ar?: string | null;
+  variant_label_en?: string | null;
+};
+
 export default function PaymentPage() {
   const { lang } = useLanguage();
 
   const [file, setFile] = useState<File | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItemWithVariant[]>([]);
   const [loading, setLoading] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
   const [paymentNumber, setPaymentNumber] = useState("");
   const [copied, setCopied] = useState(false);
   const [checkout, setCheckout] = useState<any>({});
 
-    useEffect(() => {
+  useEffect(() => {
+    const savedUser = localStorage.getItem("kab_user");
 
-  const savedUser = localStorage.getItem("kab_user");
+    if (!savedUser) {
+      localStorage.setItem("redirect_after_login", "/payment");
+      window.location.href = "/profile?account_required=1";
+      return;
+    }
 
-  if (!savedUser) {
-    localStorage.setItem("redirect_after_login", "/payment");
-    window.location.href = "/profile?account_required=1";
-    return;
-  }
+    const savedCheckout = localStorage.getItem("checkout");
 
-  const savedCheckout = localStorage.getItem("checkout");
+    if (!savedCheckout) {
+      window.location.href = "/checkout";
+      return;
+    }
 
-  if (!savedCheckout) {
-    window.location.href = "/checkout";
-    return;
-  }
+    setCart(getCart() as CartItemWithVariant[]);
+    setCheckout(JSON.parse(savedCheckout));
 
-  setCart(getCart());
-  setCheckout(JSON.parse(savedCheckout));
-      async function loadQr() {
-        const { data, error } = await supabase
-          .from("settings")
-          .select("value")
-          .eq("key", "payment_qr_url")
-          .single();
+    async function loadQr() {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "payment_qr_url")
+        .single();
 
-        if (!error && data?.value) {
-          setQrUrl(data.value);
-        }
-
-        const { data: numberData } = await supabase
-          .from("settings")
-          .select("value")
-          .eq("key", "payment_number")
-          .single();
-
-        if (numberData?.value) {
-          setPaymentNumber(numberData.value);
-        }
+      if (!error && data?.value) {
+        setQrUrl(data.value);
       }
 
-      loadQr();
-    }, []);
+      const { data: numberData } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "payment_number")
+        .single();
+
+      if (numberData?.value) {
+        setPaymentNumber(numberData.value);
+      }
+    }
+
+    loadQr();
+  }, []);
+
+  function getCartItemKey(item: CartItemWithVariant) {
+    return item.cart_key || `${item.id}-${item.variant_id || "base"}`;
+  }
+
+  function getVariantLabel(item: CartItemWithVariant) {
+    return lang === "ar"
+      ? item.variant_label_ar || item.variant_label_en
+      : item.variant_label_en || item.variant_label_ar;
+  }
+
+  function getDisplayName(item: CartItemWithVariant) {
+    const variantLabel = getVariantLabel(item);
+
+    if (item.product_name) return item.product_name;
+
+    if (variantLabel && item.name.includes(" - ")) {
+      return item.name.split(" - ")[0];
+    }
+
+    return item.name;
+  }
 
   const deliveryFee = Number(checkout.delivery_fee || 0);
 
@@ -73,12 +103,16 @@ export default function PaymentPage() {
     e.preventDefault();
 
     if (!file) {
-      alert(lang === "ar" ? "يرجى رفع إثبات الدفع" : "Please upload payment proof");
+      alert(
+        lang === "ar"
+          ? "يرجى رفع إثبات الدفع"
+          : "Please upload payment proof"
+      );
       return;
     }
 
     const checkout = JSON.parse(localStorage.getItem("checkout") || "{}");
-    const currentCart = getCart();
+    const currentCart = getCart() as CartItemWithVariant[];
     const deliveryFee = Number(checkout.delivery_fee || 0);
 
     if (
@@ -105,74 +139,89 @@ export default function PaymentPage() {
 
     setLoading(true);
 
-    const productsTotal = currentCart.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    try {
+      const productsTotal = currentCart.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
 
-    const orderTotal = productsTotal + deliveryFee;
+      const orderTotal = productsTotal + deliveryFee;
 
-    const filePath = `${Date.now()}-${file.name}`;
+      const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const filePath = `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}-${safeFileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("payment-proofs")
-      .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from("payment-proofs")
+        .upload(filePath, file);
 
-    if (uploadError) {
-      alert(uploadError.message);
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("payment-proofs")
+        .getPublicUrl(filePath);
+
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          customer_name: checkout.name,
+          phone: checkout.phone,
+          governorate: checkout.governorate,
+          delivery_area: checkout.delivery_area,
+          address: checkout.address,
+          delivery_fee: deliveryFee,
+          total_price: orderTotal,
+          status: "pending",
+          payment_proof_url: publicUrlData.publicUrl,
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        throw new Error(orderError.message);
+      }
+
+      const orderItems = currentCart.map((item) => {
+        const variantLabel =
+          item.variant_label_en || item.variant_label_ar || null;
+
+        return {
+          order_id: order.id,
+          product_id: item.id,
+
+          product_name: item.product_name || item.name,
+
+          variant_id: item.variant_id || null,
+          variant_label_ar: item.variant_label_ar || null,
+          variant_label_en: item.variant_label_en || null,
+
+          image_url: item.image_url || null,
+
+          quantity: item.quantity,
+          unit_price: item.price,
+        };
+      });
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) {
+        throw new Error(itemsError.message);
+      }
+
+      saveCart([]);
+      window.dispatchEvent(new Event("cartUpdated"));
+      localStorage.removeItem("checkout");
+
+      window.location.href = `/orders/${order.id}`;
+    } catch (err: any) {
+      alert(err.message || "Something went wrong");
       setLoading(false);
-      return;
     }
-
-    const { data: publicUrlData } = supabase.storage
-      .from("payment-proofs")
-      .getPublicUrl(filePath);
-
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        customer_name: checkout.name,
-        phone: checkout.phone,
-        governorate: checkout.governorate,
-        delivery_area: checkout.delivery_area,
-        address: checkout.address,
-        delivery_fee: deliveryFee,
-        total_price: orderTotal,
-        status: "pending",
-        payment_proof_url: publicUrlData.publicUrl,
-      })
-      .select()
-      .single();
-
-    if (orderError) {
-      alert(orderError.message);
-      setLoading(false);
-      return;
-    }
-
-    const orderItems = currentCart.map((item) => ({
-      order_id: order.id,
-      product_id: item.id,
-      product_name: item.name,
-      quantity: item.quantity,
-      unit_price: item.price,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems);
-
-    if (itemsError) {
-      alert(itemsError.message);
-      setLoading(false);
-      return;
-    }
-
-    saveCart([]);
-    window.dispatchEvent(new Event("cartUpdated"));
-    localStorage.removeItem("checkout");
-
-    window.location.href = `/orders/${order.id}`;
   }
 
   return (
@@ -201,6 +250,7 @@ export default function PaymentPage() {
             <a href="/checkout" className="text-green-700">
               {lang === "ar" ? "معلومات الطلب" : "Checkout"}
             </a>
+
             <span className="text-green-700">
               {lang === "ar" ? "الدفع" : "Payment"}
             </span>
@@ -285,28 +335,28 @@ export default function PaymentPage() {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <label className="block cursor-pointer">
-  <div className="flex items-center overflow-hidden rounded-2xl border border-gray-300 bg-white">
-    <span className="bg-green-600 px-4 py-4 font-semibold text-white">
-      {lang === "ar" ? "اختر ملف" : "Choose File"}
-    </span>
+                <div className="flex items-center overflow-hidden rounded-2xl border border-gray-300 bg-white">
+                  <span className="bg-green-600 px-4 py-4 font-semibold text-white">
+                    {lang === "ar" ? "اختر ملف" : "Choose File"}
+                  </span>
 
-    <span className="flex-1 truncate px-4 text-gray-600">
-      {file
-        ? file.name
-        : lang === "ar"
-        ? "لم يتم اختيار ملف"
-        : "No file chosen"}
-    </span>
-  </div>
+                  <span className="flex-1 truncate px-4 text-gray-600">
+                    {file
+                      ? file.name
+                      : lang === "ar"
+                      ? "لم يتم اختيار ملف"
+                      : "No file chosen"}
+                  </span>
+                </div>
 
-  <input
-    type="file"
-    accept="image/*,.pdf"
-    onChange={(e) => setFile(e.target.files?.[0] || null)}
-    required
-    className="hidden"
-  />
-</label>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  required
+                  className="hidden"
+                />
+              </label>
 
               <button
                 type="submit"
@@ -318,8 +368,8 @@ export default function PaymentPage() {
                     ? "جاري الإرسال..."
                     : "Submitting..."
                   : lang === "ar"
-                    ? "تأكيد الدفع"
-                    : "Confirm Payment"}
+                  ? "تأكيد الدفع"
+                  : "Confirm Payment"}
               </button>
             </form>
           </div>
@@ -335,24 +385,59 @@ export default function PaymentPage() {
                   {lang === "ar" ? "السلة فارغة" : "Your cart is empty"}
                 </p>
               ) : (
-                cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between gap-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-bold text-gray-900">{item.name}</p>
+                cart.map((item) => {
+                  const itemKey = getCartItemKey(item);
+                  const variantLabel = getVariantLabel(item);
+                  const displayName = getDisplayName(item);
 
-                      <p className="mt-1 text-gray-700">
-                        {lang === "ar" ? "الكمية" : "Qty"}: {item.quantity}
+                  return (
+                    <div
+                      key={itemKey}
+                      className="flex justify-between gap-4 text-sm"
+                    >
+                      <div className="flex gap-3">
+                        <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[10px] text-gray-400">
+                              No image
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <p className="font-bold text-gray-900">
+                            {displayName}
+                          </p>
+
+                          {variantLabel && (
+                            <p className="mt-1 text-xs font-extrabold text-green-700">
+                              {lang === "ar" ? "الخيار: " : "Option: "}
+                              {variantLabel}
+                            </p>
+                          )}
+
+                          <p className="mt-1 text-gray-700">
+                            {lang === "ar" ? "الكمية" : "Qty"}: {item.quantity}
+                          </p>
+
+                          <p className="mt-1 text-xs font-semibold text-gray-500">
+                            {item.price.toLocaleString()} SYP
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="font-bold text-green-700">
+                        {(item.price * item.quantity).toLocaleString()} SYP
                       </p>
                     </div>
-
-                    <p className="font-bold text-green-700">
-                      {(item.price * item.quantity).toLocaleString()} SYP
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 

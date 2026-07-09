@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 export default function ProductGallery({
@@ -12,18 +12,18 @@ export default function ProductGallery({
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const selectedImage = images[selectedIndex];
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [images]);
+
+  const selectedImage = images[selectedIndex] || images[0];
 
   function goPrevious() {
-    setSelectedIndex((prev) =>
-      prev === 0 ? images.length - 1 : prev - 1
-    );
+    setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   }
 
   function goNext() {
-    setSelectedIndex((prev) =>
-      prev === images.length - 1 ? 0 : prev + 1
-    );
+    setSelectedIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   }
 
   return (
@@ -44,6 +44,7 @@ export default function ProductGallery({
         {images.length > 1 && (
           <>
             <button
+              type="button"
               onClick={goPrevious}
               className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md transition hover:bg-white hover:text-green-700"
               aria-label="Previous image"
@@ -52,6 +53,7 @@ export default function ProductGallery({
             </button>
 
             <button
+              type="button"
               onClick={goNext}
               className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md transition hover:bg-white hover:text-green-700"
               aria-label="Next image"
@@ -67,6 +69,7 @@ export default function ProductGallery({
           {images.map((image, index) => (
             <button
               key={`${image}-${index}`}
+              type="button"
               onClick={() => setSelectedIndex(index)}
               className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${
                 selectedIndex === index
