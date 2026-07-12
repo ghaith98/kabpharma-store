@@ -10,6 +10,7 @@ export default function Footer() {
   const t = {
     en: {
       slogan: "THE QUALITY FOR A HEALTHIER LIFE",
+      about: "About Us",
       contact: "Contact Us",
       privacy: "Privacy Policy",
       terms: "Terms & Conditions",
@@ -17,6 +18,7 @@ export default function Footer() {
     },
     ar: {
       slogan: "الجودة لحياة أكثر صحة",
+      about: "من نحن",
       contact: "تواصل معنا",
       privacy: "سياسة الخصوصية",
       terms: "الشروط والأحكام",
@@ -62,7 +64,17 @@ export default function Footer() {
         </div>
 
         {/* Footer links */}
-        <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-medium">
+        <nav
+          aria-label={lang === "ar" ? "روابط التذييل" : "Footer links"}
+          className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-medium"
+        >
+          <Link
+            href="/about"
+            className="text-gray-600 transition hover:text-green-700"
+          >
+            {t.about}
+          </Link>
+
           <Link
             href="/contact"
             className="text-gray-600 transition hover:text-green-700"
@@ -83,7 +95,7 @@ export default function Footer() {
           >
             {t.terms}
           </Link>
-        </div>
+        </nav>
 
         <p className="mt-6 text-sm text-gray-500">
           {t.rights}
