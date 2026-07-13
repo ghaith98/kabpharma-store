@@ -1,18 +1,17 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "../../context/LanguageContext";
 
-const MAX_PAYMENT_PROOF_SIZE = 5 * 1024 * 1024;
-
-const ALLOWED_PAYMENT_PROOF_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "application/pdf",
-];
+const MAX_PAYMENT_PROOF_SIZE = 20 * 1024 * 1024;
 
 type CartItemWithVariant = CartItem & {
   cart_key?: string;
@@ -34,7 +33,10 @@ type CheckoutData = {
 export default function PaymentPage() {
   const { lang } = useLanguage();
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState("");
   const [cart, setCart] = useState<CartItemWithVariant[]>([]);
   const [loading, setLoading] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
@@ -61,12 +63,17 @@ export default function PaymentPage() {
     }
 
     try {
-      const parsedCheckout = JSON.parse(savedCheckout) as CheckoutData;
+      const parsedCheckout = JSON.parse(
+        savedCheckout
+      ) as CheckoutData;
 
       setCheckout(parsedCheckout);
       setCart(getCart() as CartItemWithVariant[]);
     } catch (error) {
-      console.error("Failed to read checkout information:", error);
+      console.error(
+        "Failed to read checkout information:",
+        error
+      );
 
       localStorage.removeItem("checkout");
       window.location.href = "/checkout";
@@ -84,11 +91,12 @@ export default function PaymentPage() {
         setQrUrl(qrData.value);
       }
 
-      const { data: numberData, error: numberError } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "payment_number")
-        .single();
+      const { data: numberData, error: numberError } =
+        await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", "payment_number")
+          .single();
 
       if (!numberError && numberData?.value) {
         setPaymentNumber(numberData.value);
@@ -99,7 +107,10 @@ export default function PaymentPage() {
   }, []);
 
   function getCartItemKey(item: CartItemWithVariant) {
-    return item.cart_key || `${item.id}-${item.variant_id || "base"}`;
+    return (
+      item.cart_key ||
+      `${item.id}-${item.variant_id || "base"}`
+    );
   }
 
   function getVariantLabel(item: CartItemWithVariant) {
@@ -122,79 +133,120 @@ export default function PaymentPage() {
     return item.name;
   }
 
-  function formatFileSize(size: number) {
-    if (size < 1024) {
-      return `${size} B`;
+  function isImageOrPdf(selectedFile: File) {
+    const mimeType = selectedFile.type
+      .trim()
+      .toLowerCase();
+
+    const extension =
+      selectedFile.name
+        .split(".")
+        .pop()
+        ?.trim()
+        .toLowerCase() || "";
+
+    if (
+      mimeType === "application/pdf" ||
+      extension === "pdf"
+    ) {
+      return true;
     }
 
-    if (size < 1024 * 1024) {
-      return `${(size / 1024).toFixed(1)} KB`;
+    if (mimeType.startsWith("image/")) {
+      return true;
     }
 
-    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    /*
+      بعض الهواتف لا ترسل MIME type بشكل صحيح،
+      لذلك نتحقق أيضاً من امتداد الصور الشائعة.
+    */
+    const imageExtensions = [
+      "jpg",
+      "jpeg",
+      "jfif",
+      "png",
+      "webp",
+      "heic",
+      "heif",
+      "avif",
+      "gif",
+      "bmp",
+      "tif",
+      "tiff",
+    ];
+
+    return imageExtensions.includes(extension);
   }
 
-  function validatePaymentProof(selectedFile: File) {
-    if (!ALLOWED_PAYMENT_PROOF_TYPES.includes(selectedFile.type)) {
-      alert(
-        isArabic
-          ? "نوع الملف غير مسموح. يرجى رفع صورة JPG أو PNG أو WEBP أو ملف PDF."
-          : "Unsupported file type. Please upload JPG, PNG, WEBP, or PDF."
-      );
-
-      return false;
-    }
-
-    if (selectedFile.size > MAX_PAYMENT_PROOF_SIZE) {
-      alert(
-        isArabic
-          ? "حجم الملف كبير جداً. الحد الأقصى المسموح هو 5 ميغابايت."
-          : "The file is too large. The maximum allowed size is 5 MB."
-      );
-
-      return false;
+  function getPaymentProofError(selectedFile: File) {
+    if (!isImageOrPdf(selectedFile)) {
+      return isArabic
+        ? "يرجى اختيار صورة أو ملف PDF."
+        : "Please choose an image or PDF file.";
     }
 
     if (selectedFile.size === 0) {
-      alert(
-        isArabic
-          ? "الملف المختار فارغ. يرجى اختيار ملف آخر."
-          : "The selected file is empty. Please choose another file."
-      );
-
-      return false;
+      return isArabic
+        ? "الملف المختار فارغ. يرجى اختيار ملف آخر."
+        : "The selected file is empty. Please choose another file.";
     }
 
-    return true;
+    if (selectedFile.size > MAX_PAYMENT_PROOF_SIZE) {
+      return isArabic
+        ? "حجم الصورة أو الملف كبير جداً. يرجى اختيار ملف أصغر."
+        : "The image or file is too large. Please choose a smaller file.";
+    }
+
+    return "";
   }
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
     const selectedFile = event.target.files?.[0];
 
     if (!selectedFile) {
       setFile(null);
+      setFileError("");
       return;
     }
 
-    if (!validatePaymentProof(selectedFile)) {
-      event.target.value = "";
-      setFile(null);
-      return;
-    }
+    const validationError =
+      getPaymentProofError(selectedFile);
 
+    /*
+      نحتفظ باسم الملف حتى لو كان غير صالح،
+      حتى يظهر للزبون أي ملف اختاره ولماذا تم رفضه.
+    */
     setFile(selectedFile);
+    setFileError(validationError);
   }
 
-  const deliveryFee = Number(checkout.delivery_fee || 0);
+  function removeSelectedFile() {
+    setFile(null);
+    setFileError("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  const deliveryFee = Number(
+    checkout.delivery_fee || 0
+  );
 
   const productsTotal = cart.reduce(
-    (sum, item) => sum + Number(item.price) * Number(item.quantity),
+    (sum, item) =>
+      sum +
+      Number(item.price) * Number(item.quantity),
     0
   );
 
   const total = productsTotal + deliveryFee;
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     if (loading) {
@@ -202,7 +254,7 @@ export default function PaymentPage() {
     }
 
     if (!file) {
-      alert(
+      setFileError(
         isArabic
           ? "يرجى رفع إثبات الدفع."
           : "Please upload payment proof."
@@ -211,11 +263,18 @@ export default function PaymentPage() {
       return;
     }
 
-    if (!validatePaymentProof(file)) {
+    const validationError =
+      getPaymentProofError(file);
+
+    if (validationError) {
+      setFileError(validationError);
       return;
     }
 
-    const savedCheckout = localStorage.getItem("checkout");
+    setFileError("");
+
+    const savedCheckout =
+      localStorage.getItem("checkout");
 
     if (!savedCheckout) {
       alert(
@@ -231,7 +290,9 @@ export default function PaymentPage() {
     let currentCheckout: CheckoutData;
 
     try {
-      currentCheckout = JSON.parse(savedCheckout) as CheckoutData;
+      currentCheckout = JSON.parse(
+        savedCheckout
+      ) as CheckoutData;
     } catch {
       localStorage.removeItem("checkout");
 
@@ -245,7 +306,8 @@ export default function PaymentPage() {
       return;
     }
 
-    const currentCart = getCart() as CartItemWithVariant[];
+    const currentCart =
+      getCart() as CartItemWithVariant[];
 
     const currentDeliveryFee = Number(
       currentCheckout.delivery_fee || 0
@@ -269,7 +331,11 @@ export default function PaymentPage() {
     }
 
     if (currentCart.length === 0) {
-      alert(isArabic ? "السلة فارغة." : "Your cart is empty.");
+      alert(
+        isArabic
+          ? "السلة فارغة."
+          : "Your cart is empty."
+      );
 
       window.location.href = "/products";
       return;
@@ -280,20 +346,37 @@ export default function PaymentPage() {
     let createdOrderId: number | null = null;
 
     try {
-      const currentProductsTotal = currentCart.reduce(
-        (sum, item) =>
-          sum + Number(item.price) * Number(item.quantity),
-        0
-      );
+      const currentProductsTotal =
+        currentCart.reduce(
+          (sum, item) =>
+            sum +
+            Number(item.price) *
+              Number(item.quantity),
+          0
+        );
 
       const orderTotal =
-        currentProductsTotal + currentDeliveryFee;
+        currentProductsTotal +
+        currentDeliveryFee;
 
-      const safeFileName = file.name
+      const originalExtension =
+        file.name
+          .split(".")
+          .pop()
+          ?.trim()
+          .toLowerCase() || "";
+
+      const safeBaseName = file.name
+        .replace(/\.[^/.]+$/, "")
         .trim()
         .replace(/[^a-zA-Z0-9._-]/g, "-")
         .replace(/-+/g, "-")
-        .slice(-120);
+        .replace(/^-|-$/g, "")
+        .slice(0, 80);
+
+      const safeFileName = originalExtension
+        ? `${safeBaseName || "payment-proof"}.${originalExtension}`
+        : safeBaseName || "payment-proof";
 
       const uniqueFileId =
         typeof crypto !== "undefined" &&
@@ -303,15 +386,22 @@ export default function PaymentPage() {
               .toString(36)
               .slice(2)}`;
 
-      const filePath = `orders/${Date.now()}-${uniqueFileId}-${safeFileName}`;
+      const filePath =
+        `orders/${Date.now()}-` +
+        `${uniqueFileId}-${safeFileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("payment-proofs")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          contentType: file.type,
-          upsert: false,
-        });
+      const { error: uploadError } =
+        await supabase.storage
+          .from("payment-proofs")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            contentType:
+              file.type ||
+              (originalExtension === "pdf"
+                ? "application/pdf"
+                : undefined),
+            upsert: false,
+          });
 
       if (uploadError) {
         throw new Error(
@@ -321,61 +411,105 @@ export default function PaymentPage() {
         );
       }
 
-      const { data: publicUrlData } = supabase.storage
-        .from("payment-proofs")
-        .getPublicUrl(filePath);
+      const { data: publicUrlData } =
+        supabase.storage
+          .from("payment-proofs")
+          .getPublicUrl(filePath);
 
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          customer_name: currentCheckout.name.trim(),
-          phone: currentCheckout.phone.trim(),
-          governorate: currentCheckout.governorate,
-          delivery_area: currentCheckout.delivery_area,
-          address: currentCheckout.address.trim(),
-          delivery_fee: currentDeliveryFee,
-          total_price: orderTotal,
-          status: "pending",
+      const { data: order, error: orderError } =
+        await supabase
+          .from("orders")
+          .insert({
+            customer_name:
+              currentCheckout.name.trim(),
 
-          payment_proof_url: publicUrlData.publicUrl,
-          payment_proof_path: filePath,
+            phone:
+              currentCheckout.phone.trim(),
 
-          payment_proof_reviewed_at: null,
-          delivered_at: null,
-          payment_proof_deleted_at: null,
-        })
-        .select()
-        .single();
+            governorate:
+              currentCheckout.governorate,
+
+            delivery_area:
+              currentCheckout.delivery_area,
+
+            address:
+              currentCheckout.address.trim(),
+
+            delivery_fee:
+              currentDeliveryFee,
+
+            total_price:
+              orderTotal,
+
+            status:
+              "pending",
+
+            payment_proof_url:
+              publicUrlData.publicUrl,
+
+            payment_proof_path:
+              filePath,
+
+            payment_proof_reviewed_at:
+              null,
+
+            delivered_at:
+              null,
+
+            payment_proof_deleted_at:
+              null,
+          })
+          .select()
+          .single();
 
       if (orderError || !order) {
         throw new Error(
           isArabic
             ? `تعذر إنشاء الطلب: ${
-                orderError?.message || "Unknown error"
+                orderError?.message ||
+                "Unknown error"
               }`
             : `Could not create the order: ${
-                orderError?.message || "Unknown error"
+                orderError?.message ||
+                "Unknown error"
               }`
         );
       }
 
       createdOrderId = Number(order.id);
 
-      const orderItems = currentCart.map((item) => ({
-        order_id: order.id,
-        product_id: item.id,
-        product_name: item.product_name || item.name,
-        variant_id: item.variant_id || null,
-        variant_label_ar: item.variant_label_ar || null,
-        variant_label_en: item.variant_label_en || null,
-        image_url: item.image_url || null,
-        quantity: Number(item.quantity),
-        unit_price: Number(item.price),
-      }));
+      const orderItems = currentCart.map(
+        (item) => ({
+          order_id: order.id,
+          product_id: item.id,
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+          product_name:
+            item.product_name || item.name,
+
+          variant_id:
+            item.variant_id || null,
+
+          variant_label_ar:
+            item.variant_label_ar || null,
+
+          variant_label_en:
+            item.variant_label_en || null,
+
+          image_url:
+            item.image_url || null,
+
+          quantity:
+            Number(item.quantity),
+
+          unit_price:
+            Number(item.price),
+        })
+      );
+
+      const { error: itemsError } =
+        await supabase
+          .from("order_items")
+          .insert(orderItems);
 
       if (itemsError) {
         throw new Error(
@@ -386,20 +520,21 @@ export default function PaymentPage() {
       }
 
       saveCart([]);
-      window.dispatchEvent(new Event("cartUpdated"));
+      window.dispatchEvent(
+        new Event("cartUpdated")
+      );
+
       localStorage.removeItem("checkout");
 
-      window.location.href = `/orders/${order.id}`;
+      window.location.href =
+        `/orders/${order.id}`;
     } catch (error: unknown) {
-      /*
-        إذا تم إنشاء الطلب ثم فشل حفظ المنتجات،
-        نحاول إزالة الطلب غير المكتمل.
-      */
       if (createdOrderId !== null) {
-        const { error: deleteOrderError } = await supabase
-          .from("orders")
-          .delete()
-          .eq("id", createdOrderId);
+        const { error: deleteOrderError } =
+          await supabase
+            .from("orders")
+            .delete()
+            .eq("id", createdOrderId);
 
         if (deleteOrderError) {
           console.error(
@@ -429,7 +564,10 @@ export default function PaymentPage() {
       <div className="mx-auto max-w-5xl">
         {/* Checkout progress */}
         <div className="mx-auto mb-10 max-w-xl">
-          <div className="flex items-center" dir="ltr">
+          <div
+            className="flex items-center"
+            dir="ltr"
+          >
             <a
               href="/checkout"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-extrabold text-white transition hover:bg-green-700"
@@ -445,12 +583,19 @@ export default function PaymentPage() {
           </div>
 
           <div className="mt-3 flex justify-between text-sm font-bold">
-            <a href="/checkout" className="text-green-700">
-              {isArabic ? "معلومات الطلب" : "Checkout"}
+            <a
+              href="/checkout"
+              className="text-green-700"
+            >
+              {isArabic
+                ? "معلومات الطلب"
+                : "Checkout"}
             </a>
 
             <span className="text-green-700">
-              {isArabic ? "الدفع" : "Payment"}
+              {isArabic
+                ? "الدفع"
+                : "Payment"}
             </span>
           </div>
         </div>
@@ -458,7 +603,9 @@ export default function PaymentPage() {
         {/* Page header */}
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
-            {isArabic ? "الدفع" : "Payment"}
+            {isArabic
+              ? "الدفع"
+              : "Payment"}
           </h1>
 
           <p className="mt-3 text-gray-700">
@@ -472,7 +619,9 @@ export default function PaymentPage() {
           {/* Payment instructions */}
           <div className="rounded-3xl bg-white p-4 shadow-sm sm:p-8">
             <h2 className="mb-6 text-xl font-extrabold text-gray-900">
-              {isArabic ? "تعليمات الدفع" : "Payment Instructions"}
+              {isArabic
+                ? "تعليمات الدفع"
+                : "Payment Instructions"}
             </h2>
 
             <div className="rounded-3xl bg-gray-50 p-4 text-center sm:p-6">
@@ -505,7 +654,9 @@ export default function PaymentPage() {
               {paymentNumber && (
                 <div className="mx-auto mt-5 w-full max-w-[280px] rounded-2xl border border-gray-200 bg-white p-3 sm:max-w-[320px]">
                   <p className="mb-2 text-center text-xs font-bold text-gray-700">
-                    {isArabic ? "رقم الدفع" : "Payment Number"}
+                    {isArabic
+                      ? "رقم الدفع"
+                      : "Payment Number"}
                   </p>
 
                   <div
@@ -558,12 +709,6 @@ export default function PaymentPage() {
                   ? "بعد إتمام الدفع، ارفع صورة واضحة أو ملف PDF لإيصال الدفع."
                   : "After completing the payment, upload a clear image or PDF of the payment receipt."}
               </p>
-
-              <p className="mt-2 text-xs font-semibold text-gray-500">
-                {isArabic
-                  ? "الأنواع المسموحة: JPG وPNG وWEBP وPDF — الحد الأقصى 5 MB."
-                  : "Allowed: JPG, PNG, WEBP, and PDF — maximum 5 MB."}
-              </p>
             </div>
 
             {/* Upload form */}
@@ -574,17 +719,33 @@ export default function PaymentPage() {
               <label className="block cursor-pointer">
                 <div
                   className={`overflow-hidden rounded-2xl border bg-white transition ${
-                    file
+                    fileError
+                      ? "border-red-500 ring-2 ring-red-100"
+                      : file
                       ? "border-green-300 ring-1 ring-green-100"
                       : "border-gray-300"
                   }`}
                 >
                   <div className="flex items-center">
-                    <span className="shrink-0 bg-green-600 px-4 py-4 font-semibold text-white">
-                      {isArabic ? "اختر ملف" : "Choose File"}
+                    <span
+                      className={`shrink-0 px-4 py-4 font-semibold text-white transition ${
+                        fileError
+                          ? "bg-red-600"
+                          : "bg-green-600"
+                      }`}
+                    >
+                      {isArabic
+                        ? "اختر ملف"
+                        : "Choose File"}
                     </span>
 
-                    <span className="min-w-0 flex-1 truncate px-4 text-gray-600">
+                    <span
+                      className={`min-w-0 flex-1 truncate px-4 ${
+                        fileError
+                          ? "font-semibold text-red-700"
+                          : "text-gray-600"
+                      }`}
+                    >
                       {file
                         ? file.name
                         : isArabic
@@ -593,17 +754,19 @@ export default function PaymentPage() {
                     </span>
                   </div>
 
-                  {file && (
+                  {file && !fileError && (
                     <div className="border-t border-green-100 bg-green-50 px-4 py-2 text-xs font-semibold text-green-800">
-                      {isArabic ? "حجم الملف:" : "File size:"}{" "}
-                      {formatFileSize(file.size)}
+                      {isArabic
+                        ? "تم اختيار الملف بنجاح"
+                        : "File selected successfully"}
                     </div>
                   )}
                 </div>
 
                 <input
+                  ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  accept="image/*,application/pdf,.pdf"
                   onChange={handleFileChange}
                   disabled={loading}
                   required
@@ -611,11 +774,20 @@ export default function PaymentPage() {
                 />
               </label>
 
+              {fileError && (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
+                >
+                  {fileError}
+                </div>
+              )}
+
               {file && (
                 <button
                   type="button"
                   disabled={loading}
-                  onClick={() => setFile(null)}
+                  onClick={removeSelectedFile}
                   className="text-sm font-bold text-red-600 transition hover:text-red-700 disabled:opacity-50"
                 >
                   {isArabic
@@ -626,7 +798,11 @@ export default function PaymentPage() {
 
               <button
                 type="submit"
-                disabled={loading || !file}
+                disabled={
+                  loading ||
+                  !file ||
+                  Boolean(fileError)
+                }
                 className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 {loading
@@ -643,7 +819,9 @@ export default function PaymentPage() {
           {/* Order summary */}
           <aside className="h-fit rounded-3xl bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-xl font-extrabold text-gray-900">
-              {isArabic ? "ملخص الطلب" : "Order Summary"}
+              {isArabic
+                ? "ملخص الطلب"
+                : "Order Summary"}
             </h2>
 
             <div className="mt-5 space-y-4 border-b border-gray-200 pb-4">
@@ -655,9 +833,14 @@ export default function PaymentPage() {
                 </p>
               ) : (
                 cart.map((item) => {
-                  const itemKey = getCartItemKey(item);
-                  const variantLabel = getVariantLabel(item);
-                  const displayName = getDisplayName(item);
+                  const itemKey =
+                    getCartItemKey(item);
+
+                  const variantLabel =
+                    getVariantLabel(item);
+
+                  const displayName =
+                    getDisplayName(item);
 
                   return (
                     <div
@@ -686,18 +869,25 @@ export default function PaymentPage() {
 
                           {variantLabel && (
                             <p className="mt-1 text-xs font-extrabold text-green-700">
-                              {isArabic ? "الخيار: " : "Option: "}
+                              {isArabic
+                                ? "الخيار: "
+                                : "Option: "}
                               {variantLabel}
                             </p>
                           )}
 
                           <p className="mt-1 text-gray-700">
-                            {isArabic ? "الكمية" : "Qty"}:{" "}
-                            {item.quantity}
+                            {isArabic
+                              ? "الكمية"
+                              : "Qty"}
+                            : {item.quantity}
                           </p>
 
                           <p className="mt-1 text-xs font-semibold text-gray-500">
-                            {Number(item.price).toLocaleString()} SYP
+                            {Number(
+                              item.price
+                            ).toLocaleString()}{" "}
+                            SYP
                           </p>
                         </div>
                       </div>
@@ -717,22 +907,38 @@ export default function PaymentPage() {
 
             <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
               <div className="flex justify-between font-bold text-gray-800">
-                <span>{isArabic ? "المنتجات" : "Products"}</span>
+                <span>
+                  {isArabic
+                    ? "المنتجات"
+                    : "Products"}
+                </span>
 
                 <span>
-                  {productsTotal.toLocaleString()} SYP
+                  {productsTotal.toLocaleString()}{" "}
+                  SYP
                 </span>
               </div>
 
               <div className="flex justify-between font-bold text-gray-800">
-                <span>{isArabic ? "التوصيل" : "Delivery"}</span>
+                <span>
+                  {isArabic
+                    ? "التوصيل"
+                    : "Delivery"}
+                </span>
 
-                <span>{deliveryFee.toLocaleString()} SYP</span>
+                <span>
+                  {deliveryFee.toLocaleString()}{" "}
+                  SYP
+                </span>
               </div>
             </div>
 
             <div className="mt-4 flex justify-between gap-4 text-lg font-extrabold text-gray-900">
-              <span>{isArabic ? "الإجمالي" : "Total"}</span>
+              <span>
+                {isArabic
+                  ? "الإجمالي"
+                  : "Total"}
+              </span>
 
               <span className="text-green-700">
                 {total.toLocaleString()} SYP

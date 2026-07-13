@@ -689,24 +689,26 @@ export default function AdminPaymentProofsPage() {
                             Try Again
                           </button>
                         </div>
-                      ) : isPdf(order) ? (
-                        <div className="p-8 text-center">
-                          <div className="text-6xl">📄</div>
+                     ) : isPdf(order) ? (
+  <div className="w-full">
+    <iframe
+      src={signedUrl}
+      title={`Payment proof PDF for order ${order.id}`}
+      className="h-[500px] w-full border-0 sm:h-[620px]"
+    />
 
-                          <p className="mt-4 font-extrabold text-gray-900">
-                            PDF Payment Proof
-                          </p>
-
-                          <a
-                            href={signedUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-5 inline-flex rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
-                          >
-                            Open Secure PDF
-                          </a>
-                        </div>
-                      ) : (
+    <div className="border-t border-gray-200 bg-gray-50 p-4 text-center">
+      <a
+        href={signedUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
+      >
+        Open PDF in New Tab
+      </a>
+    </div>
+  </div>
+) : (
                         <a
                           href={signedUrl}
                           target="_blank"
