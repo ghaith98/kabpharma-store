@@ -20,20 +20,10 @@ export default function CartPage() {
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(0);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem("kab_user");
-
-    if (!savedUser) {
-      setCart([]);
-      saveCart([]);
-      window.dispatchEvent(new Event("cartUpdated"));
-      loadFreeShippingThreshold();
-      return;
-    }
-
-    setCart(getCart() as CartItemWithVariant[]);
-    loadFreeShippingThreshold();
-  }, []);
+   useEffect(() => {
+  setCart(getCart() as CartItemWithVariant[]);
+  loadFreeShippingThreshold();
+}, []);
 
   async function loadFreeShippingThreshold() {
     const { data } = await supabase

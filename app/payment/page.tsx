@@ -132,6 +132,32 @@ export default function PaymentPage() {
 
     return item.name;
   }
+  function getShortFileName(fileName: string, maxLength = 38) {
+  if (fileName.length <= maxLength) {
+    return fileName;
+  }
+
+  const lastDotIndex = fileName.lastIndexOf(".");
+  const hasExtension = lastDotIndex > 0;
+
+  const extension = hasExtension
+    ? fileName.slice(lastDotIndex)
+    : "";
+
+  const baseName = hasExtension
+    ? fileName.slice(0, lastDotIndex)
+    : fileName;
+
+  const availableBaseLength = Math.max(
+    12,
+    maxLength - extension.length - 3
+  );
+
+  return `${baseName.slice(
+    0,
+    availableBaseLength
+  )}...${extension}`;
+}
 
   function isImageOrPdf(selectedFile: File) {
     const mimeType = selectedFile.type
@@ -617,7 +643,7 @@ export default function PaymentPage() {
 
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
           {/* Payment instructions */}
-          <div className="rounded-3xl bg-white p-4 shadow-sm sm:p-8">
+          <div className="min-w-0 overflow-hidden rounded-3xl bg-white p-4 shadow-sm sm:p-8">
             <h2 className="mb-6 text-xl font-extrabold text-gray-900">
               {isArabic
                 ? "تعليمات الدفع"
@@ -712,76 +738,84 @@ export default function PaymentPage() {
             </div>
 
             {/* Upload form */}
-            <form
-              onSubmit={handleSubmit}
-              className="mt-6 space-y-4"
-            >
-              <label className="block cursor-pointer">
-                <div
-                  className={`overflow-hidden rounded-2xl border bg-white transition ${
-                    fileError
-                      ? "border-red-500 ring-2 ring-red-100"
-                      : file
-                      ? "border-green-300 ring-1 ring-green-100"
-                      : "border-gray-300"
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <span
-                      className={`shrink-0 px-4 py-4 font-semibold text-white transition ${
-                        fileError
-                          ? "bg-red-600"
-                          : "bg-green-600"
-                      }`}
-                    >
-                      {isArabic
-                        ? "اختر ملف"
-                        : "Choose File"}
-                    </span>
+           <form
+  onSubmit={handleSubmit}
+  className="mt-6 min-w-0 space-y-4"
+>
+             <label className="block w-full min-w-0 max-w-full cursor-pointer overflow-hidden">
+  <div
+    className={`w-full min-w-0 max-w-full overflow-hidden rounded-2xl border bg-white transition ${
+      fileError
+        ? "border-red-500 ring-2 ring-red-100"
+        : file
+        ? "border-green-300 ring-1 ring-green-100"
+        : "border-gray-300"
+    }`}
+  >
+    <div className="flex w-full min-w-0 items-center overflow-hidden">
+      <span
+        className={`shrink-0 whitespace-nowrap px-3 py-4 text-sm font-semibold text-white transition sm:px-4 sm:text-base ${
+          fileError
+            ? "bg-red-600"
+            : "bg-green-600"
+        }`}
+      >
+        {isArabic ? "اختر ملف" : "Choose File"}
+      </span>
 
-                    <span
-                      className={`min-w-0 flex-1 truncate px-4 ${
-                        fileError
-                          ? "font-semibold text-red-700"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {file
-                        ? file.name
-                        : isArabic
-                        ? "لم يتم اختيار ملف"
-                        : "No file chosen"}
-                    </span>
-                  </div>
+      <span
+        dir={
+          file
+            ? "ltr"
+            : isArabic
+            ? "rtl"
+            : "ltr"
+        }
+        title={file?.name || ""}
+        className={`block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-3 text-start text-sm sm:px-4 sm:text-base ${
+          fileError
+            ? "font-semibold text-red-700"
+            : "text-gray-600"
+        }`}
+      >
+        {file
+          ? getShortFileName(file.name)
+          : isArabic
+          ? "لم يتم اختيار ملف"
+          : "No file chosen"}
+      </span>
+    </div>
 
-                  {file && !fileError && (
-                    <div className="border-t border-green-100 bg-green-50 px-4 py-2 text-xs font-semibold text-green-800">
-                      {isArabic
-                        ? "تم اختيار الملف بنجاح"
-                        : "File selected successfully"}
-                    </div>
-                  )}
-                </div>
+    {file && !fileError && (
+      <div className="w-full min-w-0 overflow-hidden border-t border-green-100 bg-green-50 px-4 py-2 text-xs font-semibold text-green-800">
+        <p className="truncate">
+          {isArabic
+            ? "تم اختيار الملف بنجاح"
+            : "File selected successfully"}
+        </p>
+      </div>
+    )}
+  </div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,application/pdf,.pdf"
-                  onChange={handleFileChange}
-                  disabled={loading}
-                  required
-                  className="hidden"
-                />
-              </label>
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept="image/*,application/pdf,.pdf"
+    onChange={handleFileChange}
+    disabled={loading}
+    required
+    className="hidden"
+  />
+</label>
 
-              {fileError && (
-                <div
-                  role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
-                >
-                  {fileError}
-                </div>
-              )}
+             {fileError && (
+  <div
+    role="alert"
+    className="w-full max-w-full break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
+  >
+    {fileError}
+  </div>
+)}
 
               {file && (
                 <button
