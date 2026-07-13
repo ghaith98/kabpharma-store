@@ -30,6 +30,16 @@ type CheckoutData = {
   delivery_fee?: number | string;
 };
 
+type StoredUser = {
+  full_name?: string;
+  phone?: string;
+};
+
+type BanCheckResult = {
+  is_banned?: boolean;
+  reason?: string | null;
+};
+
 export default function PaymentPage() {
   const { lang } = useLanguage();
 
@@ -81,22 +91,25 @@ export default function PaymentPage() {
     }
 
     async function loadPaymentSettings() {
-      const { data: qrData, error: qrError } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "payment_qr_url")
-        .single();
+      const { data: qrData, error: qrError } =
+        await supabase
+          .from("settings")
+          .select("value")
+          .eq("key", "payment_qr_url")
+          .single();
 
       if (!qrError && qrData?.value) {
         setQrUrl(qrData.value);
       }
 
-      const { data: numberData, error: numberError } =
-        await supabase
-          .from("settings")
-          .select("value")
-          .eq("key", "payment_number")
-          .single();
+      const {
+        data: numberData,
+        error: numberError,
+      } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "payment_number")
+        .single();
 
       if (!numberError && numberData?.value) {
         setPaymentNumber(numberData.value);
@@ -115,8 +128,10 @@ export default function PaymentPage() {
 
   function getVariantLabel(item: CartItemWithVariant) {
     return isArabic
-      ? item.variant_label_ar || item.variant_label_en
-      : item.variant_label_en || item.variant_label_ar;
+      ? item.variant_label_ar ||
+          item.variant_label_en
+      : item.variant_label_en ||
+          item.variant_label_ar;
   }
 
   function getDisplayName(item: CartItemWithVariant) {
@@ -126,38 +141,45 @@ export default function PaymentPage() {
       return item.product_name;
     }
 
-    if (variantLabel && item.name.includes(" - ")) {
+    if (
+      variantLabel &&
+      item.name.includes(" - ")
+    ) {
       return item.name.split(" - ")[0];
     }
 
     return item.name;
   }
-  function getShortFileName(fileName: string, maxLength = 38) {
-  if (fileName.length <= maxLength) {
-    return fileName;
+
+  function getShortFileName(
+    fileName: string,
+    maxLength = 38
+  ) {
+    if (fileName.length <= maxLength) {
+      return fileName;
+    }
+
+    const lastDotIndex = fileName.lastIndexOf(".");
+    const hasExtension = lastDotIndex > 0;
+
+    const extension = hasExtension
+      ? fileName.slice(lastDotIndex)
+      : "";
+
+    const baseName = hasExtension
+      ? fileName.slice(0, lastDotIndex)
+      : fileName;
+
+    const availableBaseLength = Math.max(
+      12,
+      maxLength - extension.length - 3
+    );
+
+    return `${baseName.slice(
+      0,
+      availableBaseLength
+    )}...${extension}`;
   }
-
-  const lastDotIndex = fileName.lastIndexOf(".");
-  const hasExtension = lastDotIndex > 0;
-
-  const extension = hasExtension
-    ? fileName.slice(lastDotIndex)
-    : "";
-
-  const baseName = hasExtension
-    ? fileName.slice(0, lastDotIndex)
-    : fileName;
-
-  const availableBaseLength = Math.max(
-    12,
-    maxLength - extension.length - 3
-  );
-
-  return `${baseName.slice(
-    0,
-    availableBaseLength
-  )}...${extension}`;
-}
 
   function isImageOrPdf(selectedFile: File) {
     const mimeType = selectedFile.type
@@ -182,10 +204,6 @@ export default function PaymentPage() {
       return true;
     }
 
-    /*
-      بعض الهواتف لا ترسل MIME type بشكل صحيح،
-      لذلك نتحقق أيضاً من امتداد الصور الشائعة.
-    */
     const imageExtensions = [
       "jpg",
       "jpeg",
@@ -204,7 +222,9 @@ export default function PaymentPage() {
     return imageExtensions.includes(extension);
   }
 
-  function getPaymentProofError(selectedFile: File) {
+  function getPaymentProofError(
+    selectedFile: File
+  ) {
     if (!isImageOrPdf(selectedFile)) {
       return isArabic
         ? "يرجى اختيار صورة أو ملف PDF."
@@ -217,7 +237,10 @@ export default function PaymentPage() {
         : "The selected file is empty. Please choose another file.";
     }
 
-    if (selectedFile.size > MAX_PAYMENT_PROOF_SIZE) {
+    if (
+      selectedFile.size >
+      MAX_PAYMENT_PROOF_SIZE
+    ) {
       return isArabic
         ? "حجم الصورة أو الملف كبير جداً. يرجى اختيار ملف أصغر."
         : "The image or file is too large. Please choose a smaller file.";
@@ -229,7 +252,8 @@ export default function PaymentPage() {
   function handleFileChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
-    const selectedFile = event.target.files?.[0];
+    const selectedFile =
+      event.target.files?.[0];
 
     if (!selectedFile) {
       setFile(null);
@@ -240,10 +264,6 @@ export default function PaymentPage() {
     const validationError =
       getPaymentProofError(selectedFile);
 
-    /*
-      نحتفظ باسم الملف حتى لو كان غير صالح،
-      حتى يظهر للزبون أي ملف اختاره ولماذا تم رفضه.
-    */
     setFile(selectedFile);
     setFileError(validationError);
   }
@@ -264,7 +284,8 @@ export default function PaymentPage() {
   const productsTotal = cart.reduce(
     (sum, item) =>
       sum +
-      Number(item.price) * Number(item.quantity),
+      Number(item.price) *
+        Number(item.quantity),
     0
   );
 
@@ -298,6 +319,109 @@ export default function PaymentPage() {
     }
 
     setFileError("");
+
+    /*
+      نقرأ رقم الهاتف من الحساب الحالي، وليس من
+      checkout، حتى لا يمكن تجاوز الحظر بتغيير
+      localStorage.
+    */
+    const savedUser =
+      localStorage.getItem("kab_user");
+
+    if (!savedUser) {
+      localStorage.setItem(
+        "redirect_after_login",
+        "/payment"
+      );
+
+      window.location.href =
+        "/profile?account_required=1";
+
+      return;
+    }
+
+    let currentUser: StoredUser;
+
+    try {
+      currentUser = JSON.parse(
+        savedUser
+      ) as StoredUser;
+    } catch {
+      localStorage.removeItem("kab_user");
+
+      localStorage.setItem(
+        "redirect_after_login",
+        "/payment"
+      );
+
+      window.location.href = "/login";
+      return;
+    }
+
+    const accountPhone = String(
+      currentUser.phone || ""
+    ).trim();
+
+    if (!accountPhone) {
+      localStorage.removeItem("kab_user");
+
+      localStorage.setItem(
+        "redirect_after_login",
+        "/payment"
+      );
+
+      window.location.href = "/login";
+      return;
+    }
+
+    /*
+      فحص الحظر قبل رفع الملف، حتى لا يبقى
+      Payment Proof يتيم داخل Storage.
+    */
+    const {
+      data: banData,
+      error: banError,
+    } = await supabase.rpc("check_user_ban", {
+      p_phone: accountPhone,
+    });
+
+    if (banError) {
+      console.error(
+        "Failed to check account restriction:",
+        {
+          message: banError.message,
+          details: banError.details,
+          hint: banError.hint,
+          code: banError.code,
+        }
+      );
+
+      alert(
+        isArabic
+          ? "تعذر التحقق من حالة الحساب. يرجى المحاولة مرة أخرى."
+          : "Could not verify your account status. Please try again."
+      );
+
+      return;
+    }
+
+    const banResult: BanCheckResult | null =
+      Array.isArray(banData)
+        ? (banData[0] as
+            | BanCheckResult
+            | undefined) || null
+        : (banData as BanCheckResult | null);
+
+    if (banResult?.is_banned) {
+      alert(
+        isArabic
+          ? "لا يمكن إرسال طلبات جديدة من هذا الحساب حالياً. يرجى التواصل معنا للمساعدة."
+          : "This account cannot place new orders at the moment. Please contact us for assistance."
+      );
+
+      window.location.href = "/checkout";
+      return;
+    }
 
     const savedCheckout =
       localStorage.getItem("checkout");
@@ -341,7 +465,6 @@ export default function PaymentPage() {
 
     if (
       !currentCheckout.name ||
-      !currentCheckout.phone ||
       !currentCheckout.governorate ||
       !currentCheckout.delivery_area ||
       !currentCheckout.address
@@ -401,12 +524,15 @@ export default function PaymentPage() {
         .slice(0, 80);
 
       const safeFileName = originalExtension
-        ? `${safeBaseName || "payment-proof"}.${originalExtension}`
+        ? `${
+            safeBaseName || "payment-proof"
+          }.${originalExtension}`
         : safeBaseName || "payment-proof";
 
       const uniqueFileId =
         typeof crypto !== "undefined" &&
-        typeof crypto.randomUUID === "function"
+        typeof crypto.randomUUID ===
+          "function"
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random()
               .toString(36)
@@ -442,51 +568,44 @@ export default function PaymentPage() {
           .from("payment-proofs")
           .getPublicUrl(filePath);
 
-      const { data: order, error: orderError } =
-        await supabase
-          .from("orders")
-          .insert({
-            customer_name:
-              currentCheckout.name.trim(),
+      const {
+        data: order,
+        error: orderError,
+      } = await supabase
+        .from("orders")
+        .insert({
+          customer_name:
+            currentCheckout.name.trim(),
 
-            phone:
-              currentCheckout.phone.trim(),
+          phone: accountPhone,
 
-            governorate:
-              currentCheckout.governorate,
+          governorate:
+            currentCheckout.governorate,
 
-            delivery_area:
-              currentCheckout.delivery_area,
+          delivery_area:
+            currentCheckout.delivery_area,
 
-            address:
-              currentCheckout.address.trim(),
+          address:
+            currentCheckout.address.trim(),
 
-            delivery_fee:
-              currentDeliveryFee,
+          delivery_fee:
+            currentDeliveryFee,
 
-            total_price:
-              orderTotal,
+          total_price: orderTotal,
 
-            status:
-              "pending",
+          status: "pending",
 
-            payment_proof_url:
-              publicUrlData.publicUrl,
+          payment_proof_url:
+            publicUrlData.publicUrl,
 
-            payment_proof_path:
-              filePath,
+          payment_proof_path: filePath,
 
-            payment_proof_reviewed_at:
-              null,
-
-            delivered_at:
-              null,
-
-            payment_proof_deleted_at:
-              null,
-          })
-          .select()
-          .single();
+          payment_proof_reviewed_at: null,
+          delivered_at: null,
+          payment_proof_deleted_at: null,
+        })
+        .select()
+        .single();
 
       if (orderError || !order) {
         throw new Error(
@@ -546,6 +665,7 @@ export default function PaymentPage() {
       }
 
       saveCart([]);
+
       window.dispatchEvent(
         new Event("cartUpdated")
       );
@@ -619,9 +739,7 @@ export default function PaymentPage() {
             </a>
 
             <span className="text-green-700">
-              {isArabic
-                ? "الدفع"
-                : "Payment"}
+              {isArabic ? "الدفع" : "Payment"}
             </span>
           </div>
         </div>
@@ -629,9 +747,7 @@ export default function PaymentPage() {
         {/* Page header */}
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
-            {isArabic
-              ? "الدفع"
-              : "Payment"}
+            {isArabic ? "الدفع" : "Payment"}
           </h1>
 
           <p className="mt-3 text-gray-700">
@@ -738,84 +854,88 @@ export default function PaymentPage() {
             </div>
 
             {/* Upload form */}
-           <form
-  onSubmit={handleSubmit}
-  className="mt-6 min-w-0 space-y-4"
->
-             <label className="block w-full min-w-0 max-w-full cursor-pointer overflow-hidden">
-  <div
-    className={`w-full min-w-0 max-w-full overflow-hidden rounded-2xl border bg-white transition ${
-      fileError
-        ? "border-red-500 ring-2 ring-red-100"
-        : file
-        ? "border-green-300 ring-1 ring-green-100"
-        : "border-gray-300"
-    }`}
-  >
-    <div className="flex w-full min-w-0 items-center overflow-hidden">
-      <span
-        className={`shrink-0 whitespace-nowrap px-3 py-4 text-sm font-semibold text-white transition sm:px-4 sm:text-base ${
-          fileError
-            ? "bg-red-600"
-            : "bg-green-600"
-        }`}
-      >
-        {isArabic ? "اختر ملف" : "Choose File"}
-      </span>
+            <form
+              onSubmit={handleSubmit}
+              className="mt-6 min-w-0 space-y-4"
+            >
+              <label className="block w-full min-w-0 max-w-full cursor-pointer overflow-hidden">
+                <div
+                  className={`w-full min-w-0 max-w-full overflow-hidden rounded-2xl border bg-white transition ${
+                    fileError
+                      ? "border-red-500 ring-2 ring-red-100"
+                      : file
+                      ? "border-green-300 ring-1 ring-green-100"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <div className="flex w-full min-w-0 items-center overflow-hidden">
+                    <span
+                      className={`shrink-0 whitespace-nowrap px-3 py-4 text-sm font-semibold text-white transition sm:px-4 sm:text-base ${
+                        fileError
+                          ? "bg-red-600"
+                          : "bg-green-600"
+                      }`}
+                    >
+                      {isArabic
+                        ? "اختر ملف"
+                        : "Choose File"}
+                    </span>
 
-      <span
-        dir={
-          file
-            ? "ltr"
-            : isArabic
-            ? "rtl"
-            : "ltr"
-        }
-        title={file?.name || ""}
-        className={`block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-3 text-start text-sm sm:px-4 sm:text-base ${
-          fileError
-            ? "font-semibold text-red-700"
-            : "text-gray-600"
-        }`}
-      >
-        {file
-          ? getShortFileName(file.name)
-          : isArabic
-          ? "لم يتم اختيار ملف"
-          : "No file chosen"}
-      </span>
-    </div>
+                    <span
+                      dir={
+                        file
+                          ? "ltr"
+                          : isArabic
+                          ? "rtl"
+                          : "ltr"
+                      }
+                      title={file?.name || ""}
+                      className={`block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap px-3 text-start text-sm sm:px-4 sm:text-base ${
+                        fileError
+                          ? "font-semibold text-red-700"
+                          : "text-gray-600"
+                      }`}
+                    >
+                      {file
+                        ? getShortFileName(
+                            file.name
+                          )
+                        : isArabic
+                        ? "لم يتم اختيار ملف"
+                        : "No file chosen"}
+                    </span>
+                  </div>
 
-    {file && !fileError && (
-      <div className="w-full min-w-0 overflow-hidden border-t border-green-100 bg-green-50 px-4 py-2 text-xs font-semibold text-green-800">
-        <p className="truncate">
-          {isArabic
-            ? "تم اختيار الملف بنجاح"
-            : "File selected successfully"}
-        </p>
-      </div>
-    )}
-  </div>
+                  {file && !fileError && (
+                    <div className="w-full min-w-0 overflow-hidden border-t border-green-100 bg-green-50 px-4 py-2 text-xs font-semibold text-green-800">
+                      <p className="truncate">
+                        {isArabic
+                          ? "تم اختيار الملف بنجاح"
+                          : "File selected successfully"}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept="image/*,application/pdf,.pdf"
-    onChange={handleFileChange}
-    disabled={loading}
-    required
-    className="hidden"
-  />
-</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf,.pdf"
+                  onChange={handleFileChange}
+                  disabled={loading}
+                  required
+                  className="hidden"
+                />
+              </label>
 
-             {fileError && (
-  <div
-    role="alert"
-    className="w-full max-w-full break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
-  >
-    {fileError}
-  </div>
-)}
+              {fileError && (
+                <div
+                  role="alert"
+                  className="w-full max-w-full break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700"
+                >
+                  {fileError}
+                </div>
+              )}
 
               {file && (
                 <button
@@ -851,7 +971,7 @@ export default function PaymentPage() {
           </div>
 
           {/* Order summary */}
-          <aside className="h-fit rounded-3xl bg-white p-4 shadow-sm sm:p-6">
+          <aside className="h-fit min-w-0 rounded-3xl bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-xl font-extrabold text-gray-900">
               {isArabic
                 ? "ملخص الطلب"
@@ -879,7 +999,7 @@ export default function PaymentPage() {
                   return (
                     <div
                       key={itemKey}
-                      className="flex justify-between gap-4 text-sm"
+                      className="flex min-w-0 justify-between gap-4 text-sm"
                     >
                       <div className="flex min-w-0 gap-3">
                         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">

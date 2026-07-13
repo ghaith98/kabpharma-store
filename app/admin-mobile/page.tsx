@@ -18,16 +18,21 @@ export default function AdminMobilePage() {
   const router = useRouter();
 
   const [pending, setPending] = useState(0);
-  const [paymentProofs, setPaymentProofs] = useState(0);
+  const [paymentProofs, setPaymentProofs] =
+    useState(0);
   const [delivery, setDelivery] = useState(0);
   const [delivered, setDelivered] = useState(0);
   const [drivers, setDrivers] = useState(0);
 
   const [checking, setChecking] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] =
+    useState(false);
+
   const [touchStart, setTouchStart] =
     useState<number | null>(null);
-  const [notification, setNotification] = useState("");
+
+  const [notification, setNotification] =
+    useState("");
 
   const loadStats = useCallback(async () => {
     const [
@@ -39,29 +44,51 @@ export default function AdminMobilePage() {
     ] = await Promise.all([
       supabase
         .from("orders")
-        .select("*", { count: "exact", head: true })
+        .select("*", {
+          count: "exact",
+          head: true,
+        })
         .eq("status", "pending"),
 
       supabase
         .from("orders")
-        .select("*", { count: "exact", head: true })
+        .select("*", {
+          count: "exact",
+          head: true,
+        })
         .eq("status", "pending")
-        .not("payment_proof_path", "is", null)
-        .is("payment_proof_deleted_at", null),
+        .not(
+          "payment_proof_path",
+          "is",
+          null
+        )
+        .is(
+          "payment_proof_deleted_at",
+          null
+        ),
 
       supabase
         .from("orders")
-        .select("*", { count: "exact", head: true })
+        .select("*", {
+          count: "exact",
+          head: true,
+        })
         .eq("status", "out_for_delivery"),
 
       supabase
         .from("orders")
-        .select("*", { count: "exact", head: true })
+        .select("*", {
+          count: "exact",
+          head: true,
+        })
         .eq("status", "delivered"),
 
       supabase
         .from("delivery_drivers")
-        .select("*", { count: "exact", head: true })
+        .select("*", {
+          count: "exact",
+          head: true,
+        })
         .is("deleted_at", null),
     ]);
 
@@ -77,19 +104,26 @@ export default function AdminMobilePage() {
         "Failed to load mobile dashboard:",
         firstError
       );
+
       return;
     }
 
     setPending(pendingResult.count || 0);
-    setPaymentProofs(paymentProofResult.count || 0);
+    setPaymentProofs(
+      paymentProofResult.count || 0
+    );
     setDelivery(deliveryResult.count || 0);
-    setDelivered(deliveredResult.count || 0);
+    setDelivered(
+      deliveredResult.count || 0
+    );
     setDrivers(driversResult.count || 0);
   }, []);
 
   async function refreshStats() {
     setRefreshing(true);
+
     await loadStats();
+
     setRefreshing(false);
   }
 
@@ -120,7 +154,9 @@ export default function AdminMobilePage() {
   }, [loadStats, router]);
 
   useEffect(() => {
-    if (checking) return;
+    if (checking) {
+      return;
+    }
 
     const channel = supabase
       .channel("admin-mobile-orders")
@@ -208,6 +244,11 @@ export default function AdminMobilePage() {
       icon: "🧾",
     },
     {
+      href: "/admin/users",
+      title: "Users",
+      icon: "👥",
+    },
+    {
       href: "/admin/delivery-orders?mobile=1",
       title: "New Delivery",
       icon: "＋",
@@ -267,10 +308,14 @@ export default function AdminMobilePage() {
   return (
     <main
       onTouchStart={(event) => {
-        setTouchStart(event.touches[0].clientY);
+        setTouchStart(
+          event.touches[0].clientY
+        );
       }}
       onTouchEnd={async (event) => {
-        if (touchStart === null) return;
+        if (touchStart === null) {
+          return;
+        }
 
         const touchEnd =
           event.changedTouches[0].clientY;
@@ -335,8 +380,8 @@ export default function AdminMobilePage() {
           </h1>
 
           <p className="mt-2 text-sm text-green-50">
-            Payment proofs, delivery, orders and
-            settings.
+            Payment proofs, users, delivery,
+            orders and settings.
           </p>
         </section>
 
@@ -421,6 +466,9 @@ export default function AdminMobilePage() {
                   link.href ===
                   "/admin/payment-proofs"
                     ? "border-yellow-200 bg-yellow-50"
+                    : link.href ===
+                      "/admin/users"
+                    ? "border-blue-100 bg-blue-50"
                     : "border-gray-100 bg-gray-50"
                 }`}
               >
