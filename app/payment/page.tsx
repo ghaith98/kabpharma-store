@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "../../context/LanguageContext";
+
+const MAX_PAYMENT_PROOF_SIZE = 5 * 1024 * 1024;
+
+const ALLOWED_PAYMENT_PROOF_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
 
 type CartItemWithVariant = CartItem & {
   cart_key?: string;
@@ -11,6 +20,15 @@ type CartItemWithVariant = CartItem & {
   variant_id?: number | null;
   variant_label_ar?: string | null;
   variant_label_en?: string | null;
+};
+
+type CheckoutData = {
+  name?: string;
+  phone?: string;
+  governorate?: string;
+  delivery_area?: string;
+  address?: string;
+  delivery_fee?: number | string;
 };
 
 export default function PaymentPage() {
@@ -22,7 +40,9 @@ export default function PaymentPage() {
   const [qrUrl, setQrUrl] = useState("");
   const [paymentNumber, setPaymentNumber] = useState("");
   const [copied, setCopied] = useState(false);
-  const [checkout, setCheckout] = useState<any>({});
+  const [checkout, setCheckout] = useState<CheckoutData>({});
+
+  const isArabic = lang === "ar";
 
   useEffect(() => {
     const savedUser = localStorage.getItem("kab_user");
@@ -40,32 +60,42 @@ export default function PaymentPage() {
       return;
     }
 
-    setCart(getCart() as CartItemWithVariant[]);
-    setCheckout(JSON.parse(savedCheckout));
+    try {
+      const parsedCheckout = JSON.parse(savedCheckout) as CheckoutData;
 
-    async function loadQr() {
-      const { data, error } = await supabase
+      setCheckout(parsedCheckout);
+      setCart(getCart() as CartItemWithVariant[]);
+    } catch (error) {
+      console.error("Failed to read checkout information:", error);
+
+      localStorage.removeItem("checkout");
+      window.location.href = "/checkout";
+      return;
+    }
+
+    async function loadPaymentSettings() {
+      const { data: qrData, error: qrError } = await supabase
         .from("settings")
         .select("value")
         .eq("key", "payment_qr_url")
         .single();
 
-      if (!error && data?.value) {
-        setQrUrl(data.value);
+      if (!qrError && qrData?.value) {
+        setQrUrl(qrData.value);
       }
 
-      const { data: numberData } = await supabase
+      const { data: numberData, error: numberError } = await supabase
         .from("settings")
         .select("value")
         .eq("key", "payment_number")
         .single();
 
-      if (numberData?.value) {
+      if (!numberError && numberData?.value) {
         setPaymentNumber(numberData.value);
       }
     }
 
-    loadQr();
+    loadPaymentSettings();
   }, []);
 
   function getCartItemKey(item: CartItemWithVariant) {
@@ -73,7 +103,7 @@ export default function PaymentPage() {
   }
 
   function getVariantLabel(item: CartItemWithVariant) {
-    return lang === "ar"
+    return isArabic
       ? item.variant_label_ar || item.variant_label_en
       : item.variant_label_en || item.variant_label_ar;
   }
@@ -81,7 +111,9 @@ export default function PaymentPage() {
   function getDisplayName(item: CartItemWithVariant) {
     const variantLabel = getVariantLabel(item);
 
-    if (item.product_name) return item.product_name;
+    if (item.product_name) {
+      return item.product_name;
+    }
 
     if (variantLabel && item.name.includes(" - ")) {
       return item.name.split(" - ")[0];
@@ -90,74 +122,203 @@ export default function PaymentPage() {
     return item.name;
   }
 
+  function formatFileSize(size: number) {
+    if (size < 1024) {
+      return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+      return `${(size / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function validatePaymentProof(selectedFile: File) {
+    if (!ALLOWED_PAYMENT_PROOF_TYPES.includes(selectedFile.type)) {
+      alert(
+        isArabic
+          ? "نوع الملف غير مسموح. يرجى رفع صورة JPG أو PNG أو WEBP أو ملف PDF."
+          : "Unsupported file type. Please upload JPG, PNG, WEBP, or PDF."
+      );
+
+      return false;
+    }
+
+    if (selectedFile.size > MAX_PAYMENT_PROOF_SIZE) {
+      alert(
+        isArabic
+          ? "حجم الملف كبير جداً. الحد الأقصى المسموح هو 5 ميغابايت."
+          : "The file is too large. The maximum allowed size is 5 MB."
+      );
+
+      return false;
+    }
+
+    if (selectedFile.size === 0) {
+      alert(
+        isArabic
+          ? "الملف المختار فارغ. يرجى اختيار ملف آخر."
+          : "The selected file is empty. Please choose another file."
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selectedFile = event.target.files?.[0];
+
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
+
+    if (!validatePaymentProof(selectedFile)) {
+      event.target.value = "";
+      setFile(null);
+      return;
+    }
+
+    setFile(selectedFile);
+  }
+
   const deliveryFee = Number(checkout.delivery_fee || 0);
 
   const productsTotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + Number(item.price) * Number(item.quantity),
     0
   );
 
   const total = productsTotal + deliveryFee;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-    if (!file) {
-      alert(
-        lang === "ar"
-          ? "يرجى رفع إثبات الدفع"
-          : "Please upload payment proof"
-      );
+    if (loading) {
       return;
     }
 
-    const checkout = JSON.parse(localStorage.getItem("checkout") || "{}");
+    if (!file) {
+      alert(
+        isArabic
+          ? "يرجى رفع إثبات الدفع."
+          : "Please upload payment proof."
+      );
+
+      return;
+    }
+
+    if (!validatePaymentProof(file)) {
+      return;
+    }
+
+    const savedCheckout = localStorage.getItem("checkout");
+
+    if (!savedCheckout) {
+      alert(
+        isArabic
+          ? "معلومات الطلب غير موجودة. يرجى العودة وإدخالها من جديد."
+          : "Checkout information is missing. Please enter it again."
+      );
+
+      window.location.href = "/checkout";
+      return;
+    }
+
+    let currentCheckout: CheckoutData;
+
+    try {
+      currentCheckout = JSON.parse(savedCheckout) as CheckoutData;
+    } catch {
+      localStorage.removeItem("checkout");
+
+      alert(
+        isArabic
+          ? "تعذر قراءة معلومات الطلب. يرجى إدخالها من جديد."
+          : "Checkout information could not be read. Please enter it again."
+      );
+
+      window.location.href = "/checkout";
+      return;
+    }
+
     const currentCart = getCart() as CartItemWithVariant[];
-    const deliveryFee = Number(checkout.delivery_fee || 0);
+
+    const currentDeliveryFee = Number(
+      currentCheckout.delivery_fee || 0
+    );
 
     if (
-      !checkout.name ||
-      !checkout.phone ||
-      !checkout.governorate ||
-      !checkout.delivery_area ||
-      !checkout.address
+      !currentCheckout.name ||
+      !currentCheckout.phone ||
+      !currentCheckout.governorate ||
+      !currentCheckout.delivery_area ||
+      !currentCheckout.address
     ) {
       alert(
-        lang === "ar"
-          ? "معلومات الطلب غير مكتملة"
-          : "Missing checkout information"
+        isArabic
+          ? "معلومات الطلب غير مكتملة."
+          : "Checkout information is incomplete."
       );
+
       window.location.href = "/checkout";
       return;
     }
 
     if (currentCart.length === 0) {
-      alert(lang === "ar" ? "السلة فارغة" : "Cart is empty");
+      alert(isArabic ? "السلة فارغة." : "Your cart is empty.");
+
       window.location.href = "/products";
       return;
     }
 
     setLoading(true);
 
+    let createdOrderId: number | null = null;
+
     try {
-      const productsTotal = currentCart.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+      const currentProductsTotal = currentCart.reduce(
+        (sum, item) =>
+          sum + Number(item.price) * Number(item.quantity),
         0
       );
 
-      const orderTotal = productsTotal + deliveryFee;
+      const orderTotal =
+        currentProductsTotal + currentDeliveryFee;
 
-      const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const filePath = `${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}-${safeFileName}`;
+      const safeFileName = file.name
+        .trim()
+        .replace(/[^a-zA-Z0-9._-]/g, "-")
+        .replace(/-+/g, "-")
+        .slice(-120);
+
+      const uniqueFileId =
+        typeof crypto !== "undefined" &&
+        typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()
+              .toString(36)
+              .slice(2)}`;
+
+      const filePath = `orders/${Date.now()}-${uniqueFileId}-${safeFileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("payment-proofs")
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          contentType: file.type,
+          upsert: false,
+        });
 
       if (uploadError) {
-        throw new Error(uploadError.message);
+        throw new Error(
+          isArabic
+            ? `تعذر رفع إثبات الدفع: ${uploadError.message}`
+            : `Could not upload payment proof: ${uploadError.message}`
+        );
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -167,50 +328,61 @@ export default function PaymentPage() {
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
-          customer_name: checkout.name,
-          phone: checkout.phone,
-          governorate: checkout.governorate,
-          delivery_area: checkout.delivery_area,
-          address: checkout.address,
-          delivery_fee: deliveryFee,
+          customer_name: currentCheckout.name.trim(),
+          phone: currentCheckout.phone.trim(),
+          governorate: currentCheckout.governorate,
+          delivery_area: currentCheckout.delivery_area,
+          address: currentCheckout.address.trim(),
+          delivery_fee: currentDeliveryFee,
           total_price: orderTotal,
           status: "pending",
+
           payment_proof_url: publicUrlData.publicUrl,
+          payment_proof_path: filePath,
+
+          payment_proof_reviewed_at: null,
+          delivered_at: null,
+          payment_proof_deleted_at: null,
         })
         .select()
         .single();
 
-      if (orderError) {
-        throw new Error(orderError.message);
+      if (orderError || !order) {
+        throw new Error(
+          isArabic
+            ? `تعذر إنشاء الطلب: ${
+                orderError?.message || "Unknown error"
+              }`
+            : `Could not create the order: ${
+                orderError?.message || "Unknown error"
+              }`
+        );
       }
 
-      const orderItems = currentCart.map((item) => {
-        const variantLabel =
-          item.variant_label_en || item.variant_label_ar || null;
+      createdOrderId = Number(order.id);
 
-        return {
-          order_id: order.id,
-          product_id: item.id,
-
-          product_name: item.product_name || item.name,
-
-          variant_id: item.variant_id || null,
-          variant_label_ar: item.variant_label_ar || null,
-          variant_label_en: item.variant_label_en || null,
-
-          image_url: item.image_url || null,
-
-          quantity: item.quantity,
-          unit_price: item.price,
-        };
-      });
+      const orderItems = currentCart.map((item) => ({
+        order_id: order.id,
+        product_id: item.id,
+        product_name: item.product_name || item.name,
+        variant_id: item.variant_id || null,
+        variant_label_ar: item.variant_label_ar || null,
+        variant_label_en: item.variant_label_en || null,
+        image_url: item.image_url || null,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.price),
+      }));
 
       const { error: itemsError } = await supabase
         .from("order_items")
         .insert(orderItems);
 
       if (itemsError) {
-        throw new Error(itemsError.message);
+        throw new Error(
+          isArabic
+            ? `تعذر حفظ منتجات الطلب: ${itemsError.message}`
+            : `Could not save order items: ${itemsError.message}`
+        );
       }
 
       saveCart([]);
@@ -218,18 +390,44 @@ export default function PaymentPage() {
       localStorage.removeItem("checkout");
 
       window.location.href = `/orders/${order.id}`;
-    } catch (err: any) {
-      alert(err.message || "Something went wrong");
+    } catch (error: unknown) {
+      /*
+        إذا تم إنشاء الطلب ثم فشل حفظ المنتجات،
+        نحاول إزالة الطلب غير المكتمل.
+      */
+      if (createdOrderId !== null) {
+        const { error: deleteOrderError } = await supabase
+          .from("orders")
+          .delete()
+          .eq("id", createdOrderId);
+
+        if (deleteOrderError) {
+          console.error(
+            "Failed to delete incomplete order:",
+            deleteOrderError
+          );
+        }
+      }
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : isArabic
+          ? "حدث خطأ أثناء إرسال الطلب."
+          : "Something went wrong while submitting the order.";
+
+      alert(message);
       setLoading(false);
     }
   }
 
   return (
     <main
-      dir={lang === "ar" ? "rtl" : "ltr"}
+      dir={isArabic ? "rtl" : "ltr"}
       className="min-h-screen overflow-x-hidden bg-gradient-to-b from-white via-gray-50 to-green-50 px-3 py-8 sm:px-6 sm:py-12"
     >
       <div className="mx-auto max-w-5xl">
+        {/* Checkout progress */}
         <div className="mx-auto mb-10 max-w-xl">
           <div className="flex items-center" dir="ltr">
             <a
@@ -248,48 +446,56 @@ export default function PaymentPage() {
 
           <div className="mt-3 flex justify-between text-sm font-bold">
             <a href="/checkout" className="text-green-700">
-              {lang === "ar" ? "معلومات الطلب" : "Checkout"}
+              {isArabic ? "معلومات الطلب" : "Checkout"}
             </a>
 
             <span className="text-green-700">
-              {lang === "ar" ? "الدفع" : "Payment"}
+              {isArabic ? "الدفع" : "Payment"}
             </span>
           </div>
         </div>
 
+        {/* Page header */}
         <section className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900">
-            {lang === "ar" ? "الدفع" : "Payment"}
+            {isArabic ? "الدفع" : "Payment"}
           </h1>
 
           <p className="mt-3 text-gray-700">
-            {lang === "ar"
+            {isArabic
               ? "أكمل الدفع ثم ارفع الإيصال لإرسال الطلب."
               : "Complete your payment, then upload the receipt to submit your order."}
           </p>
         </section>
 
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          {/* Payment instructions */}
           <div className="rounded-3xl bg-white p-4 shadow-sm sm:p-8">
             <h2 className="mb-6 text-xl font-extrabold text-gray-900">
-              {lang === "ar" ? "تعليمات الدفع" : "Payment Instructions"}
+              {isArabic ? "تعليمات الدفع" : "Payment Instructions"}
             </h2>
 
             <div className="rounded-3xl bg-gray-50 p-4 text-center sm:p-6">
               <p className="mb-4 font-bold text-gray-900">
-                {lang === "ar" ? "امسح رمز QR للدفع" : "Scan QR Code to Pay"}
+                {isArabic
+                  ? "امسح رمز QR للدفع"
+                  : "Scan QR Code to Pay"}
               </p>
 
               <div className="mx-auto flex aspect-square w-full max-w-[280px] items-center justify-center overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm sm:max-w-[320px]">
                 {qrUrl ? (
                   <img
                     src={qrUrl}
-                    alt="Payment QR Code"
+                    alt={
+                      isArabic
+                        ? "رمز الدفع"
+                        : "Payment QR Code"
+                    }
                     className="h-full w-full object-contain"
                   />
                 ) : (
                   <span className="font-bold text-gray-500">
-                    {lang === "ar"
+                    {isArabic
                       ? "لم يتم رفع رمز QR بعد"
                       : "QR Code not uploaded yet"}
                   </span>
@@ -299,20 +505,37 @@ export default function PaymentPage() {
               {paymentNumber && (
                 <div className="mx-auto mt-5 w-full max-w-[280px] rounded-2xl border border-gray-200 bg-white p-3 sm:max-w-[320px]">
                   <p className="mb-2 text-center text-xs font-bold text-gray-700">
-                    {lang === "ar" ? "رقم الدفع" : "Payment Number"}
+                    {isArabic ? "رقم الدفع" : "Payment Number"}
                   </p>
 
-                  <div className="flex items-center justify-between gap-2" dir="ltr">
+                  <div
+                    className="flex items-center justify-between gap-2"
+                    dir="ltr"
+                  >
                     <span className="min-w-0 flex-1 break-all text-center font-mono text-sm font-bold text-gray-900">
                       {paymentNumber}
                     </span>
 
                     <button
                       type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(paymentNumber);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 1400);
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(
+                            paymentNumber
+                          );
+
+                          setCopied(true);
+
+                          setTimeout(() => {
+                            setCopied(false);
+                          }, 1400);
+                        } catch {
+                          alert(
+                            isArabic
+                              ? "تعذر نسخ الرقم."
+                              : "Could not copy the number."
+                          );
+                        }
                       }}
                       className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition ${
                         copied
@@ -320,69 +543,115 @@ export default function PaymentPage() {
                           : "bg-green-600 hover:bg-green-700"
                       }`}
                     >
-                      {copied ? "✓" : lang === "ar" ? "نسخ" : "Copy"}
+                      {copied
+                        ? "✓"
+                        : isArabic
+                        ? "نسخ"
+                        : "Copy"}
                     </button>
                   </div>
                 </div>
               )}
 
               <p className="mt-5 text-sm leading-6 text-gray-700">
-                {lang === "ar"
+                {isArabic
                   ? "بعد إتمام الدفع، ارفع صورة واضحة أو ملف PDF لإيصال الدفع."
                   : "After completing the payment, upload a clear image or PDF of the payment receipt."}
               </p>
+
+              <p className="mt-2 text-xs font-semibold text-gray-500">
+                {isArabic
+                  ? "الأنواع المسموحة: JPG وPNG وWEBP وPDF — الحد الأقصى 5 MB."
+                  : "Allowed: JPG, PNG, WEBP, and PDF — maximum 5 MB."}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {/* Upload form */}
+            <form
+              onSubmit={handleSubmit}
+              className="mt-6 space-y-4"
+            >
               <label className="block cursor-pointer">
-                <div className="flex items-center overflow-hidden rounded-2xl border border-gray-300 bg-white">
-                  <span className="bg-green-600 px-4 py-4 font-semibold text-white">
-                    {lang === "ar" ? "اختر ملف" : "Choose File"}
-                  </span>
+                <div
+                  className={`overflow-hidden rounded-2xl border bg-white transition ${
+                    file
+                      ? "border-green-300 ring-1 ring-green-100"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <span className="shrink-0 bg-green-600 px-4 py-4 font-semibold text-white">
+                      {isArabic ? "اختر ملف" : "Choose File"}
+                    </span>
 
-                  <span className="flex-1 truncate px-4 text-gray-600">
-                    {file
-                      ? file.name
-                      : lang === "ar"
-                      ? "لم يتم اختيار ملف"
-                      : "No file chosen"}
-                  </span>
+                    <span className="min-w-0 flex-1 truncate px-4 text-gray-600">
+                      {file
+                        ? file.name
+                        : isArabic
+                        ? "لم يتم اختيار ملف"
+                        : "No file chosen"}
+                    </span>
+                  </div>
+
+                  {file && (
+                    <div className="border-t border-green-100 bg-green-50 px-4 py-2 text-xs font-semibold text-green-800">
+                      {isArabic ? "حجم الملف:" : "File size:"}{" "}
+                      {formatFileSize(file.size)}
+                    </div>
+                  )}
                 </div>
 
                 <input
                   type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={handleFileChange}
+                  disabled={loading}
                   required
                   className="hidden"
                 />
               </label>
 
+              {file && (
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setFile(null)}
+                  className="text-sm font-bold text-red-600 transition hover:text-red-700 disabled:opacity-50"
+                >
+                  {isArabic
+                    ? "إزالة الملف المختار"
+                    : "Remove selected file"}
+                </button>
+              )}
+
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white transition hover:bg-green-700 disabled:bg-gray-400"
+                disabled={loading || !file}
+                className="w-full rounded-2xl bg-green-600 py-4 font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400"
               >
                 {loading
-                  ? lang === "ar"
-                    ? "جاري الإرسال..."
-                    : "Submitting..."
-                  : lang === "ar"
+                  ? isArabic
+                    ? "جاري رفع الإيصال وإرسال الطلب..."
+                    : "Uploading receipt and submitting order..."
+                  : isArabic
                   ? "تأكيد الدفع"
                   : "Confirm Payment"}
               </button>
             </form>
           </div>
 
+          {/* Order summary */}
           <aside className="h-fit rounded-3xl bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-xl font-extrabold text-gray-900">
-              {lang === "ar" ? "ملخص الطلب" : "Order Summary"}
+              {isArabic ? "ملخص الطلب" : "Order Summary"}
             </h2>
 
             <div className="mt-5 space-y-4 border-b border-gray-200 pb-4">
               {cart.length === 0 ? (
                 <p className="text-gray-700">
-                  {lang === "ar" ? "السلة فارغة" : "Your cart is empty"}
+                  {isArabic
+                    ? "السلة فارغة"
+                    : "Your cart is empty"}
                 </p>
               ) : (
                 cart.map((item) => {
@@ -395,8 +664,8 @@ export default function PaymentPage() {
                       key={itemKey}
                       className="flex justify-between gap-4 text-sm"
                     >
-                      <div className="flex gap-3">
-                        <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
+                      <div className="flex min-w-0 gap-3">
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
                           {item.image_url ? (
                             <img
                               src={item.image_url}
@@ -410,30 +679,35 @@ export default function PaymentPage() {
                           )}
                         </div>
 
-                        <div>
-                          <p className="font-bold text-gray-900">
+                        <div className="min-w-0">
+                          <p className="break-words font-bold text-gray-900">
                             {displayName}
                           </p>
 
                           {variantLabel && (
                             <p className="mt-1 text-xs font-extrabold text-green-700">
-                              {lang === "ar" ? "الخيار: " : "Option: "}
+                              {isArabic ? "الخيار: " : "Option: "}
                               {variantLabel}
                             </p>
                           )}
 
                           <p className="mt-1 text-gray-700">
-                            {lang === "ar" ? "الكمية" : "Qty"}: {item.quantity}
+                            {isArabic ? "الكمية" : "Qty"}:{" "}
+                            {item.quantity}
                           </p>
 
                           <p className="mt-1 text-xs font-semibold text-gray-500">
-                            {item.price.toLocaleString()} SYP
+                            {Number(item.price).toLocaleString()} SYP
                           </p>
                         </div>
                       </div>
 
-                      <p className="font-bold text-green-700">
-                        {(item.price * item.quantity).toLocaleString()} SYP
+                      <p className="shrink-0 font-bold text-green-700">
+                        {(
+                          Number(item.price) *
+                          Number(item.quantity)
+                        ).toLocaleString()}{" "}
+                        SYP
                       </p>
                     </div>
                   );
@@ -443,18 +717,22 @@ export default function PaymentPage() {
 
             <div className="mt-4 space-y-3 border-b border-gray-200 pb-4">
               <div className="flex justify-between font-bold text-gray-800">
-                <span>{lang === "ar" ? "المنتجات" : "Products"}</span>
-                <span>{productsTotal.toLocaleString()} SYP</span>
+                <span>{isArabic ? "المنتجات" : "Products"}</span>
+
+                <span>
+                  {productsTotal.toLocaleString()} SYP
+                </span>
               </div>
 
               <div className="flex justify-between font-bold text-gray-800">
-                <span>{lang === "ar" ? "التوصيل" : "Delivery"}</span>
+                <span>{isArabic ? "التوصيل" : "Delivery"}</span>
+
                 <span>{deliveryFee.toLocaleString()} SYP</span>
               </div>
             </div>
 
-            <div className="mt-4 flex justify-between text-lg font-extrabold text-gray-900">
-              <span>{lang === "ar" ? "الإجمالي" : "Total"}</span>
+            <div className="mt-4 flex justify-between gap-4 text-lg font-extrabold text-gray-900">
+              <span>{isArabic ? "الإجمالي" : "Total"}</span>
 
               <span className="text-green-700">
                 {total.toLocaleString()} SYP
@@ -465,7 +743,9 @@ export default function PaymentPage() {
               href="/checkout"
               className="mt-4 block text-center text-sm font-bold text-green-700 transition hover:text-green-800"
             >
-              {lang === "ar" ? "العودة إلى معلومات الطلب" : "Back to Checkout"}
+              {isArabic
+                ? "العودة إلى معلومات الطلب"
+                : "Back to Checkout"}
             </a>
           </aside>
         </div>
