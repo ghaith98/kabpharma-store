@@ -6,6 +6,8 @@ import ProductDetailsClient from "./ProductDetailsClient";
 import ShareProductButton from "./ShareProductButton";
 
 const SITE_URL = "https://www.kabpharma.com";
+const DEFAULT_SOCIAL_IMAGE =
+  `${SITE_URL}/opengraph-image.jpg`;
 
 type ProductPageProps = {
   params: Promise<{
@@ -18,6 +20,7 @@ function cleanMetaDescription(
   maxLength = 160
 ) {
   const cleaned = value
+    .replace(/<[^>]*>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -28,6 +31,72 @@ function cleanMetaDescription(
   return `${cleaned
     .slice(0, maxLength - 3)
     .trim()}...`;
+}
+
+function toAbsoluteUrl(url: string) {
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://")
+  ) {
+    return url;
+  }
+
+  return `${SITE_URL}${
+    url.startsWith("/") ? url : `/${url}`
+  }`;
+}
+
+function calculateFinalPrice(
+  price: number,
+  discountPercent: number
+) {
+  const safePrice = Number(price || 0);
+
+  const safeDiscount = Math.min(
+    100,
+    Math.max(
+      0,
+      Number(discountPercent || 0)
+    )
+  );
+
+  return Number(
+    (
+      safePrice *
+      (1 - safeDiscount / 100)
+    ).toFixed(2)
+  );
+}
+
+function formatSchemaPrice(price: number) {
+  if (Number.isInteger(price)) {
+    return String(price);
+  }
+
+  return price
+    .toFixed(2)
+    .replace(/\.?0+$/, "");
+}
+
+function getReviewRating(
+  review: Record<string, unknown>
+) {
+  const value =
+    review.rating ??
+    review.stars ??
+    review.rate;
+
+  const rating = Number(value);
+
+  if (
+    !Number.isFinite(rating) ||
+    rating < 1 ||
+    rating > 5
+  ) {
+    return null;
+  }
+
+  return rating;
 }
 
 export async function generateMetadata({
@@ -53,7 +122,9 @@ export async function generateMetadata({
   if (!product) {
     return {
       title: "المنتج غير موجود",
-      description: "المنتج المطلوب غير موجود.",
+
+      description:
+        "المنتج المطلوب غير موجود.",
 
       robots: {
         index: false,
@@ -62,10 +133,6 @@ export async function generateMetadata({
     };
   }
 
-  /*
-    العربية هي اللغة الرئيسية للموقع،
-    لذلك نستخدم الاسم والوصف العربي أولاً.
-  */
   const productName =
     product.name_ar ||
     product.name_en ||
@@ -78,32 +145,25 @@ export async function generateMetadata({
     product.description ||
     "اكتشف منتجات العناية بالبشرة والشعر والعناية الشخصية من KAB Pharma.";
 
-  /*
-    العنوان بدون KAB Pharma لأن Root Layout
-    يضيفها تلقائياً من خلال title template.
-  */
   const title = productName;
 
-  /*
-    عناوين المشاركة تحتاج الاسم كاملاً.
-  */
   const socialTitle =
     `${productName} | KAB Pharma`;
 
   const description =
-    cleanMetaDescription(productDescription);
+    cleanMetaDescription(
+      productDescription
+    );
 
   const productUrl =
     `${SITE_URL}/products/${product.id}`;
 
-  const productImages = product.image_url
-    ? [
-        {
-          url: product.image_url,
-          alt: productName,
-        },
-      ]
-    : undefined;
+  const socialImage =
+    product.image_url
+      ? toAbsoluteUrl(
+          product.image_url
+        )
+      : DEFAULT_SOCIAL_IMAGE;
 
   return {
     title,
@@ -121,16 +181,20 @@ export async function generateMetadata({
       alternateLocale: ["en_US"],
       title: socialTitle,
       description,
-      images: productImages,
+
+      images: [
+        {
+          url: socialImage,
+          alt: productName,
+        },
+      ],
     },
 
     twitter: {
       card: "summary_large_image",
       title: socialTitle,
       description,
-      images: product.image_url
-        ? [product.image_url]
-        : undefined,
+      images: [socialImage],
     },
 
     robots: {
@@ -152,12 +216,14 @@ export default async function ProductPage({
 }: ProductPageProps) {
   const { id } = await params;
 
-  const { data: product, error: productError } =
-    await supabase
-      .from("products")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+  const {
+    data: product,
+    error: productError,
+  } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
   if (productError) {
     console.error(
@@ -193,7 +259,10 @@ export default async function ProductPage({
     supabase
       .from("product_reviews")
       .select("*")
-      .eq("product_id", product.id)
+      .eq(
+        "product_id",
+        product.id
+      )
       .order("created_at", {
         ascending: false,
       }),
@@ -201,7 +270,10 @@ export default async function ProductPage({
     supabase
       .from("product_images")
       .select("*")
-      .eq("product_id", product.id)
+      .eq(
+        "product_id",
+        product.id
+      )
       .order("sort_order", {
         ascending: true,
       }),
@@ -209,7 +281,10 @@ export default async function ProductPage({
     supabase
       .from("product_variants")
       .select("*")
-      .eq("product_id", product.id)
+      .eq(
+        "product_id",
+        product.id
+      )
       .order("sort_order", {
         ascending: true,
       }),
@@ -222,11 +297,16 @@ export default async function ProductPage({
         product.category_id
       )
       .neq("id", product.id)
-      .eq("is_out_of_stock", false),
+      .eq(
+        "is_out_of_stock",
+        false
+      ),
 
     supabase
       .from("order_items")
-      .select("product_id, quantity"),
+      .select(
+        "product_id, quantity"
+      ),
   ]);
 
   if (reviewsResult.error) {
@@ -250,7 +330,9 @@ export default async function ProductPage({
     );
   }
 
-  if (sameCategoryProductsResult.error) {
+  if (
+    sameCategoryProductsResult.error
+  ) {
     console.error(
       "Failed to load related products:",
       sameCategoryProductsResult.error
@@ -274,7 +356,8 @@ export default async function ProductPage({
     variantsResult.data || [];
 
   const sameCategoryProducts =
-    sameCategoryProductsResult.data || [];
+    sameCategoryProductsResult.data ||
+    [];
 
   const allOrderItems =
     orderItemsResult.data || [];
@@ -286,10 +369,18 @@ export default async function ProductPage({
   let variantImages: any[] = [];
 
   if (variantIds.length > 0) {
-    const { data, error } = await supabase
-      .from("product_variant_images")
+    const {
+      data,
+      error,
+    } = await supabase
+      .from(
+        "product_variant_images"
+      )
       .select("*")
-      .in("variant_id", variantIds)
+      .in(
+        "variant_id",
+        variantIds
+      )
       .order("sort_order", {
         ascending: true,
       });
@@ -304,8 +395,8 @@ export default async function ProductPage({
     variantImages = data || [];
   }
 
-  const productVariants = variants.map(
-    (variant) => {
+  const productVariants =
+    variants.map((variant) => {
       const imagesForVariant =
         variantImages
           .filter(
@@ -314,7 +405,10 @@ export default async function ProductPage({
               variant.id
           )
           .sort(
-            (firstImage, secondImage) =>
+            (
+              firstImage,
+              secondImage
+            ) =>
               Number(
                 firstImage.sort_order
               ) -
@@ -329,45 +423,58 @@ export default async function ProductPage({
         images:
           imagesForVariant.length > 0
             ? imagesForVariant.map(
-                (image) => image.image_url
+                (image) =>
+                  image.image_url
               )
             : variant.image_url
             ? [variant.image_url]
             : [],
       };
-    }
-  );
+    });
 
-  const salesCount = allOrderItems.reduce(
-    (
-      accumulator: Record<
-        number,
-        number
-      >,
-      item: {
-        product_id: number | null;
-        quantity: number | null;
-      }
-    ) => {
-      if (!item.product_id) {
-        return accumulator;
-      }
+  const salesCount =
+    allOrderItems.reduce(
+      (
+        accumulator: Record<
+          number,
+          number
+        >,
+        item: {
+          product_id:
+            | number
+            | null;
 
-      accumulator[item.product_id] =
-        (accumulator[
+          quantity:
+            | number
+            | null;
+        }
+      ) => {
+        if (!item.product_id) {
+          return accumulator;
+        }
+
+        accumulator[
           item.product_id
-        ] || 0) +
-        Number(item.quantity || 0);
+        ] =
+          (accumulator[
+            item.product_id
+          ] || 0) +
+          Number(
+            item.quantity || 0
+          );
 
-      return accumulator;
-    },
-    {}
-  );
+        return accumulator;
+      },
+      {}
+    );
 
   const relatedProducts =
     sameCategoryProducts
       .sort(
-        (firstProduct, secondProduct) =>
+        (
+          firstProduct,
+          secondProduct
+        ) =>
           (salesCount[
             secondProduct.id
           ] || 0) -
@@ -384,7 +491,9 @@ export default async function ProductPage({
       (image) => image.image_url
     ),
   ].filter(
-    (image): image is string =>
+    (
+      image
+    ): image is string =>
       Boolean(image)
   );
 
@@ -392,8 +501,361 @@ export default async function ProductPage({
     product.sale_percent || 0
   );
 
+  /*
+    Product JSON-LD
+  */
+
+  const schemaProductName =
+    product.name_ar ||
+    product.name_en ||
+    product.name ||
+    "منتج KAB Pharma";
+
+  const schemaProductDescription =
+    product.description_ar ||
+    product.description_en ||
+    product.description ||
+    "منتج للعناية الشخصية من KAB Pharma.";
+
+  const productUrl =
+    `${SITE_URL}/products/${product.id}`;
+
+  const schemaImages = Array.from(
+    new Set(
+      [
+        ...normalGalleryImages,
+
+        ...productVariants.flatMap(
+          (variant) =>
+            Array.isArray(
+              variant.images
+            )
+              ? variant.images
+              : []
+        ),
+      ]
+        .filter(
+          (
+            image
+          ): image is string =>
+            Boolean(image)
+        )
+        .map(toAbsoluteUrl)
+    )
+  );
+
+  const validRatings = reviews
+    .map((review) =>
+      getReviewRating(
+        review as Record<
+          string,
+          unknown
+        >
+      )
+    )
+    .filter(
+      (
+        rating
+      ): rating is number =>
+        rating !== null
+    );
+
+  const averageRating =
+    validRatings.length > 0
+      ? validRatings.reduce(
+          (total, rating) =>
+            total + rating,
+          0
+        ) /
+        validRatings.length
+      : null;
+
+  const createOffer = ({
+    price,
+    isOutOfStock,
+    sku,
+    name,
+  }: {
+    price: number;
+    isOutOfStock: boolean;
+    sku: string;
+    name?: string;
+  }) => ({
+    "@type": "Offer",
+    url: productUrl,
+
+    priceCurrency: "SYP",
+
+    price:
+      formatSchemaPrice(price),
+
+    availability: isOutOfStock
+      ? "https://schema.org/OutOfStock"
+      : "https://schema.org/InStock",
+
+    itemCondition:
+      "https://schema.org/NewCondition",
+
+    sku,
+
+    ...(name
+      ? {
+          name,
+        }
+      : {}),
+
+    seller: {
+      "@type": "Organization",
+      name: "KAB Pharma",
+      url: SITE_URL,
+    },
+  });
+
+  const variantOffers:
+    ReturnType<
+      typeof createOffer
+    >[] = [];
+
+  productVariants.forEach(
+    (variant) => {
+      const variantPrice = Number(
+        variant.price ??
+          product.price ??
+          0
+      );
+
+      const variantDiscount =
+        Number(
+          variant.sale_percent ??
+            salePercent
+        );
+
+      const finalVariantPrice =
+        calculateFinalPrice(
+          variantPrice,
+          variantDiscount
+        );
+
+      if (
+        finalVariantPrice <= 0
+      ) {
+        return;
+      }
+
+      const variantName =
+        variant.name_ar ||
+        variant.name_en ||
+        variant.name ||
+        variant.label_ar ||
+        variant.label_en ||
+        variant.label ||
+        variant.variant_label;
+
+      const variantIsOutOfStock =
+        typeof variant.is_out_of_stock ===
+        "boolean"
+          ? variant.is_out_of_stock
+          : Boolean(
+              product.is_out_of_stock
+            );
+
+      variantOffers.push(
+        createOffer({
+          price:
+            finalVariantPrice,
+
+          isOutOfStock:
+            variantIsOutOfStock,
+
+          sku:
+            `${product.id}-${variant.id}`,
+
+          name: variantName
+            ? `${schemaProductName} - ${variantName}`
+            : undefined,
+        })
+      );
+    }
+  );
+
+  const baseProductPrice =
+    calculateFinalPrice(
+      Number(
+        product.price || 0
+      ),
+      salePercent
+    );
+
+  let productOffers:
+    | Record<string, unknown>
+    | undefined;
+
+  if (
+    variantOffers.length === 1
+  ) {
+    productOffers =
+      variantOffers[0];
+  } else if (
+    variantOffers.length > 1
+  ) {
+    const variantPrices =
+      variantOffers.map(
+        (offer) =>
+          Number(offer.price)
+      );
+
+    const hasAvailableVariant =
+      variantOffers.some(
+        (offer) =>
+          offer.availability ===
+          "https://schema.org/InStock"
+      );
+
+    productOffers = {
+      "@type":
+        "AggregateOffer",
+
+      url: productUrl,
+
+      priceCurrency: "SYP",
+
+      lowPrice:
+        formatSchemaPrice(
+          Math.min(
+            ...variantPrices
+          )
+        ),
+
+      highPrice:
+        formatSchemaPrice(
+          Math.max(
+            ...variantPrices
+          )
+        ),
+
+      offerCount:
+        variantOffers.length,
+
+      availability:
+        hasAvailableVariant
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+
+      offers:
+        variantOffers,
+
+      seller: {
+        "@type":
+          "Organization",
+
+        name:
+          "KAB Pharma",
+
+        url:
+          SITE_URL,
+      },
+    };
+  } else if (
+    baseProductPrice > 0
+  ) {
+    productOffers =
+      createOffer({
+        price:
+          baseProductPrice,
+
+        isOutOfStock:
+          Boolean(
+            product.is_out_of_stock
+          ),
+
+        sku:
+          String(product.id),
+      });
+  }
+
+  const productJsonLd = {
+    "@context":
+      "https://schema.org",
+
+    "@type": "Product",
+
+    "@id":
+      `${productUrl}#product`,
+
+    url:
+      productUrl,
+
+    name:
+      schemaProductName,
+
+    description:
+      cleanMetaDescription(
+        schemaProductDescription,
+        5000
+      ),
+
+    sku:
+      String(product.id),
+
+    brand: {
+      "@type": "Brand",
+      name: "KAB Pharma",
+    },
+
+    ...(schemaImages.length > 0
+      ? {
+          image:
+            schemaImages,
+        }
+      : {}),
+
+    ...(productOffers
+      ? {
+          offers:
+            productOffers,
+        }
+      : {}),
+
+    ...(averageRating !== null
+      ? {
+          aggregateRating: {
+            "@type":
+              "AggregateRating",
+
+            ratingValue:
+              Number(
+                averageRating.toFixed(
+                  1
+                )
+              ),
+
+            reviewCount:
+              validRatings.length,
+
+            ratingCount:
+              validRatings.length,
+
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-4 py-8 pb-28 sm:px-6 sm:py-12 md:pb-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            productJsonLd
+          ).replace(
+            /</g,
+            "\\u003c"
+          ),
+        }}
+      />
+
       <div className="mx-auto max-w-4xl rounded-3xl bg-white p-5 shadow-sm sm:p-8">
         <div
           dir="ltr"
@@ -402,7 +864,9 @@ export default async function ProductPage({
           <BackButton />
 
           <ShareProductButton
-            productId={product.id}
+            productId={
+              product.id
+            }
             productNameAr={
               product.name_ar
             }
