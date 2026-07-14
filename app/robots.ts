@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = "https://www.kabpharma.com";
+const SITE_URL =
+  "https://www.kabpharma.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,14 +10,18 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
 
+        /*
+          API ليست صفحات ويب ولا تحتاج فهرسة.
+        */
         disallow: [
-          "/admin/",
           "/api/",
         ],
       },
     ],
 
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    sitemap:
+      `${SITE_URL}/sitemap.xml`,
+
     host: SITE_URL,
   };
 }
