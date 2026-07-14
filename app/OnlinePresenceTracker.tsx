@@ -102,17 +102,18 @@ export default function OnlinePresenceTracker() {
     const presenceId =
       getOrCreatePresenceId();
 
-    const channel =
-      supabase.channel(
-        ONLINE_PRESENCE_CHANNEL,
-        {
-          config: {
-            presence: {
-              key: presenceId,
-            },
-          },
-        }
-      );
+   const channel =
+  supabase.channel(
+    ONLINE_PRESENCE_CHANNEL,
+    {
+      config: {
+        presence: {
+          key: presenceId,
+          enabled: true,
+        },
+      },
+    }
+  );
 
     channelRef.current =
       channel;
