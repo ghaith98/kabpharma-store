@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
 } from "react";
@@ -8,8 +9,8 @@ import { usePathname } from "next/navigation";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
-export const ONLINE_PRESENCE_CHANNEL =
-  "kab-store-online-users";
+const ONLINE_PRESENCE_CHANNEL =
+  "kab-store-online-users-v3";
 
 const PRESENCE_ID_STORAGE_KEY =
   "kab_presence_id";
@@ -17,7 +18,8 @@ const PRESENCE_ID_STORAGE_KEY =
 function createPresenceId() {
   if (
     typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
+    typeof crypto.randomUUID ===
+      "function"
   ) {
     return crypto.randomUUID();
   }
@@ -29,16 +31,17 @@ function createPresenceId() {
 
 function getOrCreatePresenceId() {
   try {
-    const storedId =
+    const savedId =
       window.localStorage.getItem(
         PRESENCE_ID_STORAGE_KEY
       );
 
-    if (storedId) {
-      return storedId;
+    if (savedId) {
+      return savedId;
     }
 
-    const newId = createPresenceId();
+    const newId =
+      createPresenceId();
 
     window.localStorage.setItem(
       PRESENCE_ID_STORAGE_KEY,
@@ -64,10 +67,11 @@ function isCustomerLoggedIn() {
 }
 
 export default function OnlinePresenceTracker() {
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
 
   const pathnameRef =
-    useRef(pathname);
+    useRef(pathname || "/");
 
   const channelRef =
     useRef<RealtimeChannel | null>(
@@ -77,17 +81,50 @@ export default function OnlinePresenceTracker() {
   const subscribedRef =
     useRef(false);
 
-  async function trackCurrentPresence() {
-    const channel =
-      channelRef.current;
+  const trackCurrentPresence =
+    useCallback(async () => {
+      const channel =
+        channelRef.current;
 
-    if (
-      !channel ||
-      !subscribedRef.current
-    ) {
-      return;
-    }
-  }
+      if (
+        !channel ||
+        !subscribedRef.current
+      ) {
+        return;
+      }
+
+      try {
+        const result =
+          await channel.track({
+            page:
+              pathnameRef.current ||
+              "/",
+
+            is_logged_in:
+              isCustomerLoggedIn(),
+
+            online_at:
+              new Date().toISOString(),
+          });
+
+        console.log(
+          "[Customer Presence] Track:",
+          result
+        );
+
+        if (result !== "ok") {
+          console.error(
+            "[Customer Presence] Tracking failed:",
+            result
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[Customer Presence] Tracking error:",
+          error
+        );
+      }
+    }, []);
 
   useEffect(() => {
     pathnameRef.current =
@@ -96,53 +133,107 @@ export default function OnlinePresenceTracker() {
     if (subscribedRef.current) {
       void trackCurrentPresence();
     }
-  }, [pathname]);
+  }, [
+    pathname,
+    trackCurrentPresence,
+  ]);
 
   useEffect(() => {
     const presenceId =
       getOrCreatePresenceId();
 
-   const channel =
-  supabase.channel(
-    ONLINE_PRESENCE_CHANNEL,
-    {
-      config: {
-        presence: {
-          key: presenceId,
-          enabled: true,
-        },
-      },
-    }
-  );
+    const channel =
+      supabase
+        .channel(
+          ONLINE_PRESENCE_CHANNEL,
+          {
+            config: {
+              presence: {
+                key: presenceId,
+              },
+            },
+          }
+        )
+        .on(
+          "presence",
+          {
+            event: "sync",
+          },
+          () => {
+            console.log(
+              "[Customer Presence] Sync:",
+              channel.presenceState()
+            );
+          }
+        )
+        .on(
+          "presence",
+          {
+            event: "join",
+          },
+          (payload) => {
+            console.log(
+              "[Customer Presence] Join:",
+              payload
+            );
+          }
+        )
+        .on(
+          "presence",
+          {
+            event: "leave",
+          },
+          (payload) => {
+            console.log(
+              "[Customer Presence] Leave:",
+              payload
+            );
+          }
+        );
 
     channelRef.current =
       channel;
 
     channel.subscribe(
-      (status, error) => {
+      async (status, error) => {
+        console.log(
+          "[Customer Presence] Channel:",
+          status,
+          error || ""
+        );
+
         if (
           status === "SUBSCRIBED"
         ) {
           subscribedRef.current =
             true;
 
-          void trackCurrentPresence();
-
+          await trackCurrentPresence();
           return;
         }
 
         if (
           status ===
             "CHANNEL_ERROR" ||
-          status === "TIMED_OUT"
+          status ===
+            "TIMED_OUT" ||
+          status === "CLOSED"
         ) {
+          subscribedRef.current =
+            false;
+
           console.error(
-            "Online presence connection error:",
+            "[Customer Presence] Connection failed:",
+            status,
             error
           );
         }
       }
     );
+
+    function handleFocus() {
+      void trackCurrentPresence();
+    }
 
     function handleVisibilityChange() {
       if (
@@ -155,7 +246,7 @@ export default function OnlinePresenceTracker() {
 
     window.addEventListener(
       "focus",
-      trackCurrentPresence
+      handleFocus
     );
 
     document.addEventListener(
@@ -169,7 +260,7 @@ export default function OnlinePresenceTracker() {
 
       window.removeEventListener(
         "focus",
-        trackCurrentPresence
+        handleFocus
       );
 
       document.removeEventListener(
@@ -179,11 +270,22 @@ export default function OnlinePresenceTracker() {
 
       channelRef.current = null;
 
-      void supabase.removeChannel(
-        channel
-      );
+      void (async () => {
+        try {
+          await channel.untrack();
+        } catch (error) {
+          console.error(
+            "[Customer Presence] Untrack error:",
+            error
+          );
+        } finally {
+          await supabase.removeChannel(
+            channel
+          );
+        }
+      })();
     };
-  }, []);
+  }, [trackCurrentPresence]);
 
   return null;
 }

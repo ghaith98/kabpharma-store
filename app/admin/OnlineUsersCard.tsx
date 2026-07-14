@@ -1,4 +1,4 @@
-    "use client";
+"use client";
 
 import {
   useEffect,
@@ -11,9 +11,9 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
-import {
-  ONLINE_PRESENCE_CHANNEL,
-} from "../OnlinePresenceTracker";
+
+const ONLINE_PRESENCE_CHANNEL =
+  "kab-store-online-users-v3";
 
 type PresencePayload = {
   page?: string;
@@ -56,8 +56,9 @@ function getTimestamp(
 
 function getLatestPresence(
   presences: PresencePayload[]
-) {
+): PresencePayload {
   if (
+    !Array.isArray(presences) ||
     presences.length === 0
   ) {
     return {};
@@ -108,7 +109,32 @@ function formatPageLabel(
     case "/about":
       return "About";
 
+    case "/login":
+      return "Login";
+
+    case "/signup":
+      return "Sign Up";
+
     default:
+      if (
+        page.startsWith(
+          "/products/"
+        )
+      ) {
+        const productId =
+          page.split("/")[2];
+
+        return `Product #${productId}`;
+      }
+
+      if (
+        page.startsWith(
+          "/orders/"
+        )
+      ) {
+        return "Order Details";
+      }
+
       return page;
   }
 }
@@ -151,22 +177,39 @@ export default function OnlineUsersCard() {
       );
 
     function updatePresenceState() {
+      const rawPresenceState =
+        channel.presenceState();
+
       const presenceState =
-        channel.presenceState() as PresenceState;
+        rawPresenceState as unknown as PresenceState;
+
+      console.log(
+        "[Admin Presence] State:",
+        presenceState
+      );
 
       /*
-        كل Presence key يمثل متصفحاً واحداً.
-        فتح Tabs متعددة بنفس المتصفح
-        يبقى محسوباً مرة واحدة.
+        كل key يمثل متصفحاً أو جهازاً واحداً.
+
+        إذا نفس المتصفح فاتح عدة Tabs،
+        Supabase يضعها ضمن نفس key،
+        ونحن نأخذ أحدث Presence فقط.
       */
       const uniqueVisitors =
         Object.values(
           presenceState
-        ).map(
-          getLatestPresence
-        );
+        )
+          .map(
+            getLatestPresence
+          )
+          .filter(
+            (presence) =>
+              Object.keys(
+                presence
+              ).length > 0
+          );
 
-      const loggedInVisitors =
+      const registeredCustomers =
         uniqueVisitors.filter(
           (presence) =>
             presence.is_logged_in ===
@@ -180,7 +223,7 @@ export default function OnlineUsersCard() {
             true
         );
 
-      const pagesCount =
+      const pageCounts =
         uniqueVisitors.reduce(
           (
             accumulator: Record<
@@ -209,7 +252,7 @@ export default function OnlineUsersCard() {
 
       const sortedPages =
         Object.entries(
-          pagesCount
+          pageCounts
         )
           .map(
             ([page, count]) => ({
@@ -232,7 +275,7 @@ export default function OnlineUsersCard() {
       );
 
       setCustomerCount(
-        loggedInVisitors.length
+        registeredCustomers.length
       );
 
       setGuestCount(
@@ -250,10 +293,50 @@ export default function OnlineUsersCard() {
         {
           event: "sync",
         },
-        updatePresenceState
+        () => {
+          console.log(
+            "[Admin Presence] Sync"
+          );
+
+          updatePresenceState();
+        }
+      )
+      .on(
+        "presence",
+        {
+          event: "join",
+        },
+        (payload) => {
+          console.log(
+            "[Admin Presence] Join:",
+            payload
+          );
+
+          updatePresenceState();
+        }
+      )
+      .on(
+        "presence",
+        {
+          event: "leave",
+        },
+        (payload) => {
+          console.log(
+            "[Admin Presence] Leave:",
+            payload
+          );
+
+          updatePresenceState();
+        }
       )
       .subscribe(
         (status, error) => {
+          console.log(
+            "[Admin Presence] Channel:",
+            status,
+            error || ""
+          );
+
           if (
             status ===
             "SUBSCRIBED"
@@ -263,7 +346,6 @@ export default function OnlineUsersCard() {
             );
 
             updatePresenceState();
-
             return;
           }
 
@@ -271,14 +353,16 @@ export default function OnlineUsersCard() {
             status ===
               "CHANNEL_ERROR" ||
             status ===
-              "TIMED_OUT"
+              "TIMED_OUT" ||
+            status === "CLOSED"
           ) {
             setConnectionStatus(
               "error"
             );
 
             console.error(
-              "Admin online presence error:",
+              "[Admin Presence] Connection failed:",
+              status,
               error
             );
           }
@@ -297,22 +381,20 @@ export default function OnlineUsersCard() {
       <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-100 text-green-700">
-                  <FiUsers className="text-2xl" />
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-100 text-green-700">
+                <FiUsers className="text-2xl" />
+              </div>
 
-                <div>
-                  <h2 className="text-xl font-extrabold text-gray-900">
-                    Online Now
-                  </h2>
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900">
+                  Online Now
+                </h2>
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    Live visitors currently
-                    browsing the store.
-                  </p>
-                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  Live visitors currently
+                  browsing the store.
+                </p>
               </div>
             </div>
 
@@ -398,9 +480,10 @@ export default function OnlineUsersCard() {
           </div>
 
           <p className="mt-4 text-xs leading-5 text-gray-400">
-            Multiple tabs from the same browser
-            are counted once. Incognito or another
-            browser is counted separately.
+            Multiple tabs from the same
+            browser are counted once.
+            Incognito and other devices are
+            counted separately.
           </p>
         </div>
 
@@ -416,7 +499,8 @@ export default function OnlineUsersCard() {
               </h3>
 
               <p className="mt-1 text-xs text-gray-500">
-                Pages visitors are viewing now.
+                Pages visitors are viewing
+                now.
               </p>
             </div>
           </div>
@@ -441,8 +525,8 @@ export default function OnlineUsersCard() {
                   >
                     <p
                       dir="ltr"
-                      className="min-w-0 truncate text-left text-sm font-bold text-gray-700"
                       title={item.page}
+                      className="min-w-0 truncate text-left text-sm font-bold text-gray-700"
                     >
                       {formatPageLabel(
                         item.page
