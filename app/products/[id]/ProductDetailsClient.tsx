@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductGallery from "./ProductGallery";
+import ShareProductButton from "./ShareProductButton";
 import { useLanguage } from "../../../context/LanguageContext";
 
 export default function ProductDetailsClient({
@@ -20,15 +25,21 @@ export default function ProductDetailsClient({
 
   const sortedVariants = useMemo(() => {
     return [...(productVariants || [])].sort(
-      (a, b) => Number(a.price) - Number(b.price)
+      (a, b) =>
+        Number(a.price) - Number(b.price)
     );
   }, [productVariants]);
 
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [
+    selectedVariant,
+    setSelectedVariant,
+  ] = useState<any>(null);
 
   useEffect(() => {
     if (sortedVariants.length > 0) {
-      setSelectedVariant(sortedVariants[0]);
+      setSelectedVariant(
+        sortedVariants[0]
+      );
     } else {
       setSelectedVariant(null);
     }
@@ -41,14 +52,18 @@ export default function ProductDetailsClient({
 
   const productDescription =
     lang === "ar"
-      ? product.description_ar || product.description
-      : product.description_en || product.description;
+      ? product.description_ar ||
+        product.description
+      : product.description_en ||
+        product.description;
 
   const selectedVariantLabel =
     selectedVariant &&
     (lang === "ar"
-      ? selectedVariant.label_ar || selectedVariant.label_en
-      : selectedVariant.label_en || selectedVariant.label_ar);
+      ? selectedVariant.label_ar ||
+        selectedVariant.label_en
+      : selectedVariant.label_en ||
+        selectedVariant.label_ar);
 
   const galleryImages =
     selectedVariant?.images?.length > 0
@@ -61,55 +76,92 @@ export default function ProductDetailsClient({
 
   const finalPrice =
     salePercent > 0
-      ? originalPrice - originalPrice * (salePercent / 100)
+      ? originalPrice -
+        originalPrice *
+          (salePercent / 100)
       : originalPrice;
 
-  const finalImage = galleryImages[0] || product.image_url;
+  const finalImage =
+    galleryImages[0] ||
+    product.image_url;
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
-      <ProductGallery images={galleryImages} productName={productName} />
+      <ProductGallery
+        images={galleryImages}
+        productName={productName}
+      />
 
       <div
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className={lang === "ar" ? "text-right" : "text-left"}
+        className={
+          lang === "ar"
+            ? "text-right"
+            : "text-left"
+        }
       >
-        <h1 className="text-4xl font-extrabold text-gray-900">
-          {productName}
-        </h1>
+        {/* Product title and share button */}
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="min-w-0 flex-1 break-words text-3xl font-extrabold leading-tight text-gray-900 sm:text-4xl">
+            {productName}
+          </h1>
 
-        <p className="mt-6 leading-8 text-gray-700">{productDescription}</p>
+          <ShareProductButton
+            productId={product.id}
+            productName={productName}
+            variantLabel={
+              selectedVariantLabel || null
+            }
+            lang={lang}
+          />
+        </div>
+
+        <p className="mt-6 whitespace-pre-line leading-8 text-gray-700">
+          {productDescription}
+        </p>
 
         {sortedVariants.length > 0 && (
           <div className="mt-6">
             <h3 className="mb-3 font-extrabold text-gray-900">
-              {lang === "ar" ? "اختاري الحجم" : "Choose Size"}
+              {lang === "ar"
+                ? "اختاري الحجم"
+                : "Choose Size"}
             </h3>
 
             <div className="flex flex-wrap gap-3">
-              {sortedVariants.map((variant: any) => {
-                const variantLabel =
-                  lang === "ar"
-                    ? variant.label_ar || variant.label_en
-                    : variant.label_en || variant.label_ar;
+              {sortedVariants.map(
+                (variant: any) => {
+                  const variantLabel =
+                    lang === "ar"
+                      ? variant.label_ar ||
+                        variant.label_en
+                      : variant.label_en ||
+                        variant.label_ar;
 
-                const isSelected = selectedVariant?.id === variant.id;
+                  const isSelected =
+                    selectedVariant?.id ===
+                    variant.id;
 
-                return (
-                  <button
-                    key={variant.id}
-                    type="button"
-                    onClick={() => setSelectedVariant(variant)}
-                    className={`rounded-2xl border px-4 py-3 font-extrabold transition ${
-                      isSelected
-                        ? "border-green-600 bg-green-50 text-green-700"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-green-300"
-                    }`}
-                  >
-                    {variantLabel}
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedVariant(
+                          variant
+                        )
+                      }
+                      className={`rounded-2xl border px-4 py-3 font-extrabold transition ${
+                        isSelected
+                          ? "border-green-600 bg-green-50 text-green-700"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-green-300"
+                      }`}
+                    >
+                      {variantLabel}
+                    </button>
+                  );
+                }
+              )}
             </div>
           </div>
         )}
@@ -124,13 +176,17 @@ export default function ProductDetailsClient({
                   </span>
 
                   <span className="text-lg font-bold text-gray-400 line-through">
-                    {originalPrice.toLocaleString()} SYP
+                    {originalPrice.toLocaleString()}{" "}
+                    SYP
                   </span>
                 </div>
               )}
 
               <p className="text-3xl font-extrabold text-green-700">
-                {Math.round(finalPrice).toLocaleString()} SYP
+                {Math.round(
+                  finalPrice
+                ).toLocaleString()}{" "}
+                SYP
               </p>
             </div>
 
@@ -138,33 +194,55 @@ export default function ProductDetailsClient({
               disabled
               className="mt-8 w-full cursor-not-allowed rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
             >
-              {lang === "ar" ? "غير متوفر" : "Out of Stock"}
+              {lang === "ar"
+                ? "غير متوفر"
+                : "Out of Stock"}
             </button>
           </>
         ) : (
           <ProductDetailsAddToCart
             product={{
               id: product.id,
+
               name: selectedVariantLabel
                 ? `${productName} - ${selectedVariantLabel}`
                 : productName,
-              product_name: productName,
-              price: Math.round(finalPrice),
-              original_price: originalPrice,
-              sale_percent: salePercent,
-              image_url: finalImage,
 
-              variant_id: selectedVariant?.id || null,
-              variant_label_ar: selectedVariant?.label_ar || null,
-              variant_label_en: selectedVariant?.label_en || null,
+              product_name: productName,
+
+              price:
+                Math.round(finalPrice),
+
+              original_price:
+                originalPrice,
+
+              sale_percent:
+                salePercent,
+
+              image_url:
+                finalImage,
+
+              variant_id:
+                selectedVariant?.id ||
+                null,
+
+              variant_label_ar:
+                selectedVariant?.label_ar ||
+                null,
+
+              variant_label_en:
+                selectedVariant?.label_en ||
+                null,
             }}
             finalPrice={finalPrice}
             originalPrice={originalPrice}
             salePercent={salePercent}
-            selectedVariant={selectedVariant}
+            selectedVariant={
+              selectedVariant
+            }
           />
         )}
       </div>
     </div>
   );
-} 
+}
