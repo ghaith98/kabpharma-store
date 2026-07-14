@@ -20,6 +20,7 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
+import OnlineUsersCard from "./OnlineUsersCard";
 
 type NewOrderPayload = {
   id?: number;
@@ -588,6 +589,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </section>
+        <OnlineUsersCard />
 
         {/* Payment proof notification */}
         <a

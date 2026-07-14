@@ -4,18 +4,45 @@ import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./FooterComponent";
 import MobileBottomNav from "./MobileBottomNav";
+import OnlinePresenceTracker from "./OnlinePresenceTracker";
 
 export default function LayoutShell({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
 
-  const isDriverPage = pathname.startsWith("/driver");
-  const isAdminPage = pathname.startsWith("/admin");
+  const isDriverPage =
+    pathname.startsWith(
+      "/driver"
+    );
+
+  const isAdminPage =
+    pathname.startsWith(
+      "/admin"
+    );
+
   const isDeliveryCompanyPage =
-    pathname.startsWith("/delivery-company");
+    pathname.startsWith(
+      "/delivery-company"
+    );
+
+  /*
+    صفحة delivery داخلية أيضاً،
+    لذلك لا نحسبها ضمن زوار المتجر.
+  */
+  const isDeliveryPage =
+    pathname.startsWith(
+      "/delivery"
+    );
+
+  const shouldTrackPresence =
+    !isDriverPage &&
+    !isAdminPage &&
+    !isDeliveryCompanyPage &&
+    !isDeliveryPage;
 
   if (
     isDriverPage ||
@@ -27,9 +54,18 @@ export default function LayoutShell({
 
   return (
     <>
+      {shouldTrackPresence && (
+        <OnlinePresenceTracker />
+      )}
+
       <Navbar />
-      <main className="flex-1">{children}</main>
+
+      <main className="flex-1">
+        {children}
+      </main>
+
       <Footer />
+
       <MobileBottomNav />
     </>
   );
