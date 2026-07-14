@@ -18,7 +18,7 @@ type ShareProductButtonProps = {
   fallbackName?: string | null;
 };
 
-const WEBSITE_URL = "https://kabpharma.com";
+const WEBSITE_URL = "https://www.kabpharma.com";
 
 export default function ShareProductButton({
   productId,

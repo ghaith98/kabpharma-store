@@ -5,6 +5,8 @@ import BackButton from "./BackButton";
 import ProductDetailsClient from "./ProductDetailsClient";
 import ShareProductButton from "./ShareProductButton";
 
+const SITE_URL = "https://www.kabpharma.com";
+
 type ProductPageProps = {
   params: Promise<{
     id: string;
@@ -35,28 +37,23 @@ export async function generateMetadata({
 
   const { data: product } = await supabase
     .from("products")
-    .select(
-      `
-        id,
-        name,
-        name_ar,
-        name_en,
-        description,
-        description_ar,
-        description_en,
-        image_url
-      `
-    )
+    .select(`
+      id,
+      name,
+      name_ar,
+      name_en,
+      description,
+      description_ar,
+      description_en,
+      image_url
+    `)
     .eq("id", id)
     .maybeSingle();
 
   if (!product) {
     return {
-      title:
-        "المنتج غير موجود | KAB Pharma",
-
-      description:
-        "المنتج المطلوب غير موجود.",
+      title: "المنتج غير موجود",
+      description: "المنتج المطلوب غير موجود.",
 
       robots: {
         index: false,
@@ -65,28 +62,48 @@ export async function generateMetadata({
     };
   }
 
+  /*
+    العربية هي اللغة الرئيسية للموقع،
+    لذلك نستخدم الاسم والوصف العربي أولاً.
+  */
   const productName =
     product.name_ar ||
     product.name_en ||
     product.name ||
-    "KAB Pharma Product";
+    "منتج KAB Pharma";
 
   const productDescription =
     product.description_ar ||
     product.description_en ||
     product.description ||
-    "اكتشف منتجات العناية بالبشرة والشعر من KAB Pharma.";
+    "اكتشف منتجات العناية بالبشرة والشعر والعناية الشخصية من KAB Pharma.";
 
-  const title =
+  /*
+    العنوان بدون KAB Pharma لأن Root Layout
+    يضيفها تلقائياً من خلال title template.
+  */
+  const title = productName;
+
+  /*
+    عناوين المشاركة تحتاج الاسم كاملاً.
+  */
+  const socialTitle =
     `${productName} | KAB Pharma`;
 
   const description =
-    cleanMetaDescription(
-      productDescription
-    );
+    cleanMetaDescription(productDescription);
 
   const productUrl =
-    `https://kabpharma.com/products/${product.id}`;
+    `${SITE_URL}/products/${product.id}`;
+
+  const productImages = product.image_url
+    ? [
+        {
+          url: product.image_url,
+          alt: productName,
+        },
+      ]
+    : undefined;
 
   return {
     title,
@@ -100,33 +117,32 @@ export async function generateMetadata({
       type: "website",
       url: productUrl,
       siteName: "KAB Pharma",
-      title,
+      locale: "ar_SY",
+      alternateLocale: ["en_US"],
+      title: socialTitle,
       description,
-
-      ...(product.image_url
-        ? {
-            images: [
-              {
-                url: product.image_url,
-                alt: productName,
-              },
-            ],
-          }
-        : {}),
+      images: productImages,
     },
 
     twitter: {
       card: "summary_large_image",
-      title,
+      title: socialTitle,
       description,
+      images: product.image_url
+        ? [product.image_url]
+        : undefined,
+    },
 
-      ...(product.image_url
-        ? {
-            images: [
-              product.image_url,
-            ],
-          }
-        : {}),
+    robots: {
+      index: true,
+      follow: true,
+
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
   };
 }
@@ -136,53 +152,141 @@ export default async function ProductPage({
 }: ProductPageProps) {
   const { id } = await params;
 
-  const { data: product } = await supabase
-    .from("products")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data: product, error: productError } =
+    await supabase
+      .from("products")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+  if (productError) {
+    console.error(
+      "Failed to load product:",
+      productError
+    );
+  }
 
   if (!product) {
     return (
-      <main className="p-10 text-center">
-        Product not found
+      <main className="min-h-screen bg-gray-50 px-6 py-16 text-center">
+        <h1 className="text-2xl font-extrabold text-gray-900">
+          Product not found
+        </h1>
+
+        <a
+          href="/products"
+          className="mt-5 inline-flex rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
+        >
+          Back to Products
+        </a>
       </main>
     );
   }
 
-  const { data: reviews } = await supabase
-    .from("product_reviews")
-    .select("*")
-    .eq("product_id", product.id)
-    .order("created_at", {
-      ascending: false,
-    });
+  const [
+    reviewsResult,
+    extraImagesResult,
+    variantsResult,
+    sameCategoryProductsResult,
+    orderItemsResult,
+  ] = await Promise.all([
+    supabase
+      .from("product_reviews")
+      .select("*")
+      .eq("product_id", product.id)
+      .order("created_at", {
+        ascending: false,
+      }),
 
-  const { data: extraImages } =
-    await supabase
+    supabase
       .from("product_images")
       .select("*")
       .eq("product_id", product.id)
       .order("sort_order", {
         ascending: true,
-      });
+      }),
 
-  const { data: variants } = await supabase
-    .from("product_variants")
-    .select("*")
-    .eq("product_id", product.id)
-    .order("sort_order", {
-      ascending: true,
-    });
+    supabase
+      .from("product_variants")
+      .select("*")
+      .eq("product_id", product.id)
+      .order("sort_order", {
+        ascending: true,
+      }),
 
-  const variantIds = (variants || []).map(
+    supabase
+      .from("products")
+      .select("*")
+      .eq(
+        "category_id",
+        product.category_id
+      )
+      .neq("id", product.id)
+      .eq("is_out_of_stock", false),
+
+    supabase
+      .from("order_items")
+      .select("product_id, quantity"),
+  ]);
+
+  if (reviewsResult.error) {
+    console.error(
+      "Failed to load reviews:",
+      reviewsResult.error
+    );
+  }
+
+  if (extraImagesResult.error) {
+    console.error(
+      "Failed to load product images:",
+      extraImagesResult.error
+    );
+  }
+
+  if (variantsResult.error) {
+    console.error(
+      "Failed to load product variants:",
+      variantsResult.error
+    );
+  }
+
+  if (sameCategoryProductsResult.error) {
+    console.error(
+      "Failed to load related products:",
+      sameCategoryProductsResult.error
+    );
+  }
+
+  if (orderItemsResult.error) {
+    console.error(
+      "Failed to load product sales:",
+      orderItemsResult.error
+    );
+  }
+
+  const reviews =
+    reviewsResult.data || [];
+
+  const extraImages =
+    extraImagesResult.data || [];
+
+  const variants =
+    variantsResult.data || [];
+
+  const sameCategoryProducts =
+    sameCategoryProductsResult.data || [];
+
+  const allOrderItems =
+    orderItemsResult.data || [];
+
+  const variantIds = variants.map(
     (variant) => variant.id
   );
 
   let variantImages: any[] = [];
 
   if (variantIds.length > 0) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("product_variant_images")
       .select("*")
       .in("variant_id", variantIds)
@@ -190,66 +294,60 @@ export default async function ProductPage({
         ascending: true,
       });
 
+    if (error) {
+      console.error(
+        "Failed to load variant images:",
+        error
+      );
+    }
+
     variantImages = data || [];
   }
 
-  const productVariants = (
-    variants || []
-  ).map((variant) => {
-    const imagesForVariant =
-      variantImages
-        .filter(
-          (image) =>
-            image.variant_id ===
-            variant.id
-        )
-        .sort(
-          (a, b) =>
-            Number(a.sort_order) -
-            Number(b.sort_order)
-        );
+  const productVariants = variants.map(
+    (variant) => {
+      const imagesForVariant =
+        variantImages
+          .filter(
+            (image) =>
+              image.variant_id ===
+              variant.id
+          )
+          .sort(
+            (firstImage, secondImage) =>
+              Number(
+                firstImage.sort_order
+              ) -
+              Number(
+                secondImage.sort_order
+              )
+          );
 
-    return {
-      ...variant,
+      return {
+        ...variant,
 
-      images:
-        imagesForVariant.length > 0
-          ? imagesForVariant.map(
-              (image) =>
-                image.image_url
-            )
-          : variant.image_url
-          ? [variant.image_url]
-          : [],
-    };
-  });
+        images:
+          imagesForVariant.length > 0
+            ? imagesForVariant.map(
+                (image) => image.image_url
+              )
+            : variant.image_url
+            ? [variant.image_url]
+            : [],
+      };
+    }
+  );
 
-  const {
-    data: sameCategoryProducts,
-  } = await supabase
-    .from("products")
-    .select("*")
-    .eq(
-      "category_id",
-      product.category_id
-    )
-    .neq("id", product.id)
-    .eq("is_out_of_stock", false);
-
-  const { data: allOrderItems } =
-    await supabase
-      .from("order_items")
-      .select("product_id, quantity");
-
-  const salesCount = (
-    allOrderItems || []
-  ).reduce(
+  const salesCount = allOrderItems.reduce(
     (
       accumulator: Record<
         number,
         number
       >,
-      item: any
+      item: {
+        product_id: number | null;
+        quantity: number | null;
+      }
     ) => {
       if (!item.product_id) {
         return accumulator;
@@ -266,23 +364,29 @@ export default async function ProductPage({
     {}
   );
 
-  const relatedProducts = (
-    sameCategoryProducts || []
-  )
-    .sort(
-      (a, b) =>
-        (salesCount[b.id] || 0) -
-        (salesCount[a.id] || 0)
-    )
-    .slice(0, 6);
+  const relatedProducts =
+    sameCategoryProducts
+      .sort(
+        (firstProduct, secondProduct) =>
+          (salesCount[
+            secondProduct.id
+          ] || 0) -
+          (salesCount[
+            firstProduct.id
+          ] || 0)
+      )
+      .slice(0, 6);
 
   const normalGalleryImages = [
     product.image_url,
 
-    ...(extraImages?.map(
+    ...extraImages.map(
       (image) => image.image_url
-    ) || []),
-  ].filter(Boolean);
+    ),
+  ].filter(
+    (image): image is string =>
+      Boolean(image)
+  );
 
   const salePercent = Number(
     product.sale_percent || 0
@@ -314,12 +418,14 @@ export default async function ProductPage({
         <ProductDetailsClient
           product={product}
           normalGalleryImages={
-            normalGalleryImages as string[]
+            normalGalleryImages
           }
           productVariants={
             productVariants
           }
-          salePercent={salePercent}
+          salePercent={
+            salePercent
+          }
         />
       </div>
 
@@ -328,7 +434,7 @@ export default async function ProductPage({
         relatedProducts={
           relatedProducts
         }
-        reviews={reviews || []}
+        reviews={reviews}
       />
     </main>
   );
