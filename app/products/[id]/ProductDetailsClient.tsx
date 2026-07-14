@@ -7,7 +7,6 @@ import {
 } from "react";
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductGallery from "./ProductGallery";
-import ShareProductButton from "./ShareProductButton";
 import { useLanguage } from "../../../context/LanguageContext";
 
 export default function ProductDetailsClient({
@@ -100,21 +99,9 @@ export default function ProductDetailsClient({
             : "text-left"
         }
       >
-        {/* Product title and share button */}
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="min-w-0 flex-1 break-words text-3xl font-extrabold leading-tight text-gray-900 sm:text-4xl">
-            {productName}
-          </h1>
-
-          <ShareProductButton
-            productId={product.id}
-            productName={productName}
-            variantLabel={
-              selectedVariantLabel || null
-            }
-            lang={lang}
-          />
-        </div>
+        <h1 className="break-words text-3xl font-extrabold leading-tight text-gray-900 sm:text-4xl">
+          {productName}
+        </h1>
 
         <p className="mt-6 whitespace-pre-line leading-8 text-gray-700">
           {productDescription}

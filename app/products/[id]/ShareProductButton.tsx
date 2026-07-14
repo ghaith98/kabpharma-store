@@ -9,20 +9,25 @@ import {
   FiCheck,
   FiShare2,
 } from "react-icons/fi";
+import { useLanguage } from "../../../context/LanguageContext";
 
 type ShareProductButtonProps = {
   productId: number | string;
-  productName: string;
-  variantLabel?: string | null;
-  lang: "ar" | "en";
+  productNameAr?: string | null;
+  productNameEn?: string | null;
+  fallbackName?: string | null;
 };
+
+const WEBSITE_URL = "https://kabpharma.com";
 
 export default function ShareProductButton({
   productId,
-  productName,
-  variantLabel,
-  lang,
+  productNameAr,
+  productNameEn,
+  fallbackName,
 }: ShareProductButtonProps) {
+  const { lang } = useLanguage();
+
   const [copied, setCopied] = useState(false);
 
   const resetTimerRef =
@@ -38,21 +43,39 @@ export default function ShareProductButton({
     };
   }, []);
 
+  const productName =
+    lang === "ar"
+      ? productNameAr ||
+        productNameEn ||
+        fallbackName ||
+        "KAB Pharma"
+      : productNameEn ||
+        productNameAr ||
+        fallbackName ||
+        "KAB Pharma";
+
   function isMobileOrTablet() {
-    const hasCoarsePointer =
-      window.matchMedia(
-        "(pointer: coarse)"
-      ).matches;
+    const userAgent =
+      navigator.userAgent || "";
 
-    const hasSmallScreen =
-      window.innerWidth <= 1024;
+    const mobileUserAgent =
+      /Android|iPhone|iPad|iPod|Mobile/i.test(
+        userAgent
+      );
 
-    return hasCoarsePointer && hasSmallScreen;
+    const isIPadOS =
+      navigator.platform === "MacIntel" &&
+      navigator.maxTouchPoints > 1;
+
+    return mobileUserAgent || isIPadOS;
   }
 
   async function copyText(value: string) {
     if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
+      await navigator.clipboard.writeText(
+        value
+      );
+
       return;
     }
 
@@ -69,12 +92,12 @@ export default function ShareProductButton({
     textarea.focus();
     textarea.select();
 
-    const success =
+    const successful =
       document.execCommand("copy");
 
     document.body.removeChild(textarea);
 
-    if (!success) {
+    if (!successful) {
       throw new Error(
         "Could not copy product link."
       );
@@ -94,29 +117,26 @@ export default function ShareProductButton({
   }
 
   async function handleShare() {
+    /*
+      نستخدم رابط الموقع الحقيقي حتى أثناء
+      التجربة على localhost.
+    */
     const productUrl =
-      `${window.location.origin}/products/${productId}`;
-
-    const selectedProductName =
-      variantLabel
-        ? `${productName} - ${variantLabel}`
-        : productName;
+      `${WEBSITE_URL}/products/${productId}`;
 
     const shareTitle =
-      `${selectedProductName} | KAB Pharma`;
+      `${productName} | KAB Pharma`;
 
     const shareText =
       lang === "ar"
-        ? `تعرّف على ${selectedProductName} من KAB Pharma`
-        : `Check out ${selectedProductName} from KAB Pharma`;
-
-    const completeShareMessage =
-      `${shareText}\n${productUrl}`;
+        ? `شاهد هذا المنتج من KAB Pharma:\n${productName}`
+        : `Check out this product from KAB Pharma:\n${productName}`;
 
     try {
       /*
-        فقط على الموبايل أو التابلت
-        نفتح قائمة المشاركة الأصلية.
+        على الموبايل والتابلت:
+        تفتح قائمة المشاركة وفيها WhatsApp
+        وباقي التطبيقات.
       */
       if (
         isMobileOrTablet() &&
@@ -132,9 +152,10 @@ export default function ShareProductButton({
       }
 
       /*
-        على الكمبيوتر ننسخ النص والرابط مباشرة.
+        على الكمبيوتر:
+        ينسخ رابط المنتج الحقيقي مباشرة.
       */
-      await copyText(completeShareMessage);
+      await copyText(productUrl);
       showCopiedState();
     } catch (error: unknown) {
       /*
@@ -148,11 +169,11 @@ export default function ShareProductButton({
       }
 
       try {
-        await copyText(completeShareMessage);
+        await copyText(productUrl);
         showCopiedState();
       } catch (copyError) {
         console.error(
-          "Failed to share product:",
+          "Failed to copy product link:",
           copyError
         );
 
@@ -179,10 +200,10 @@ export default function ShareProductButton({
           ? "مشاركة المنتج"
           : "Share product"
       }
-      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-extrabold transition active:scale-95 ${
+      className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-extrabold transition active:scale-95 sm:px-4 ${
         copied
           ? "border-green-600 bg-green-600 text-white"
-          : "border-gray-200 bg-white text-gray-700 hover:border-green-300 hover:bg-green-50 hover:text-green-700"
+          : "border-gray-300 bg-white text-gray-700 hover:border-green-500 hover:bg-green-50 hover:text-green-700"
       }`}
     >
       {copied ? (
@@ -191,10 +212,10 @@ export default function ShareProductButton({
         <FiShare2 className="text-lg" />
       )}
 
-      <span className="hidden sm:inline">
+      <span>
         {copied
           ? lang === "ar"
-            ? "تم نسخ الرابط"
+            ? "تم النسخ"
             : "Link Copied"
           : lang === "ar"
           ? "مشاركة"

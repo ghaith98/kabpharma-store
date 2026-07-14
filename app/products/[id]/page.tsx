@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import ProductExtraClient from "./ProductExtraClient";
 import BackButton from "./BackButton";
 import ProductDetailsClient from "./ProductDetailsClient";
+import ShareProductButton from "./ShareProductButton";
 
 type ProductPageProps = {
   params: Promise<{
@@ -34,7 +35,18 @@ export async function generateMetadata({
 
   const { data: product } = await supabase
     .from("products")
-    .select("*")
+    .select(
+      `
+        id,
+        name,
+        name_ar,
+        name_en,
+        description,
+        description_ar,
+        description_en,
+        image_url
+      `
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -53,10 +65,6 @@ export async function generateMetadata({
     };
   }
 
-  /*
-    نعتمد العربية لأنها اللغة الرئيسية للموقع.
-    في حال لم يوجد اسم عربي نستخدم الإنكليزي.
-  */
   const productName =
     product.name_ar ||
     product.name_en ||
@@ -80,9 +88,6 @@ export async function generateMetadata({
   const productUrl =
     `https://kabpharma.com/products/${product.id}`;
 
-  const productImage =
-    product.image_url || null;
-
   return {
     title,
     description,
@@ -98,11 +103,11 @@ export async function generateMetadata({
       title,
       description,
 
-      ...(productImage
+      ...(product.image_url
         ? {
             images: [
               {
-                url: productImage,
+                url: product.image_url,
                 alt: productName,
               },
             ],
@@ -115,9 +120,11 @@ export async function generateMetadata({
       title,
       description,
 
-      ...(productImage
+      ...(product.image_url
         ? {
-            images: [productImage],
+            images: [
+              product.image_url,
+            ],
           }
         : {}),
     },
@@ -143,70 +150,32 @@ export default async function ProductPage({
     );
   }
 
-  const [
-    reviewsResult,
-    extraImagesResult,
-    variantsResult,
-    sameCategoryResult,
-    orderItemsResult,
-  ] = await Promise.all([
-    supabase
-      .from("product_reviews")
-      .select("*")
-      .eq("product_id", product.id)
-      .order("created_at", {
-        ascending: false,
-      }),
+  const { data: reviews } = await supabase
+    .from("product_reviews")
+    .select("*")
+    .eq("product_id", product.id)
+    .order("created_at", {
+      ascending: false,
+    });
 
-    supabase
+  const { data: extraImages } =
+    await supabase
       .from("product_images")
       .select("*")
       .eq("product_id", product.id)
       .order("sort_order", {
         ascending: true,
-      }),
+      });
 
-    supabase
-      .from("product_variants")
-      .select("*")
-      .eq("product_id", product.id)
-      .order("sort_order", {
-        ascending: true,
-      }),
+  const { data: variants } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", product.id)
+    .order("sort_order", {
+      ascending: true,
+    });
 
-    supabase
-      .from("products")
-      .select("*")
-      .eq(
-        "category_id",
-        product.category_id
-      )
-      .neq("id", product.id)
-      .eq("is_out_of_stock", false),
-
-    supabase
-      .from("order_items")
-      .select(
-        "product_id, quantity"
-      ),
-  ]);
-
-  const reviews =
-    reviewsResult.data || [];
-
-  const extraImages =
-    extraImagesResult.data || [];
-
-  const variants =
-    variantsResult.data || [];
-
-  const sameCategoryProducts =
-    sameCategoryResult.data || [];
-
-  const allOrderItems =
-    orderItemsResult.data || [];
-
-  const variantIds = variants.map(
+  const variantIds = (variants || []).map(
     (variant) => variant.id
   );
 
@@ -224,38 +193,57 @@ export default async function ProductPage({
     variantImages = data || [];
   }
 
-  const productVariants = variants.map(
-    (variant) => {
-      const imagesForVariant =
-        variantImages
-          .filter(
-            (image) =>
-              image.variant_id ===
-              variant.id
-          )
-          .sort(
-            (a, b) =>
-              Number(a.sort_order) -
-              Number(b.sort_order)
-          );
+  const productVariants = (
+    variants || []
+  ).map((variant) => {
+    const imagesForVariant =
+      variantImages
+        .filter(
+          (image) =>
+            image.variant_id ===
+            variant.id
+        )
+        .sort(
+          (a, b) =>
+            Number(a.sort_order) -
+            Number(b.sort_order)
+        );
 
-      return {
-        ...variant,
+    return {
+      ...variant,
 
-        images:
-          imagesForVariant.length > 0
-            ? imagesForVariant.map(
-                (image) =>
-                  image.image_url
-              )
-            : variant.image_url
-            ? [variant.image_url]
-            : [],
-      };
-    }
-  );
+      images:
+        imagesForVariant.length > 0
+          ? imagesForVariant.map(
+              (image) =>
+                image.image_url
+            )
+          : variant.image_url
+          ? [variant.image_url]
+          : [],
+    };
+  });
 
-  const salesCount = allOrderItems.reduce(
+  const {
+    data: sameCategoryProducts,
+  } = await supabase
+    .from("products")
+    .select("*")
+    .eq(
+      "category_id",
+      product.category_id
+    )
+    .neq("id", product.id)
+    .eq("is_out_of_stock", false);
+
+  const { data: allOrderItems } =
+    await supabase
+      .from("order_items")
+      .select("product_id, quantity");
+
+  const salesCount = (
+    allOrderItems || []
+  ).reduce(
     (
       accumulator: Record<
         number,
@@ -278,21 +266,22 @@ export default async function ProductPage({
     {}
   );
 
-  const relatedProducts =
-    sameCategoryProducts
-      .sort(
-        (a, b) =>
-          (salesCount[b.id] || 0) -
-          (salesCount[a.id] || 0)
-      )
-      .slice(0, 6);
+  const relatedProducts = (
+    sameCategoryProducts || []
+  )
+    .sort(
+      (a, b) =>
+        (salesCount[b.id] || 0) -
+        (salesCount[a.id] || 0)
+    )
+    .slice(0, 6);
 
   const normalGalleryImages = [
     product.image_url,
 
-    ...extraImages.map(
+    ...(extraImages?.map(
       (image) => image.image_url
-    ),
+    ) || []),
   ].filter(Boolean);
 
   const salePercent = Number(
@@ -302,8 +291,24 @@ export default async function ProductPage({
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-4 py-8 pb-28 sm:px-6 sm:py-12 md:pb-12">
       <div className="mx-auto max-w-4xl rounded-3xl bg-white p-5 shadow-sm sm:p-8">
-        <div className="mb-8">
+        <div
+          dir="ltr"
+          className="mb-8 flex items-center justify-between gap-3"
+        >
           <BackButton />
+
+          <ShareProductButton
+            productId={product.id}
+            productNameAr={
+              product.name_ar
+            }
+            productNameEn={
+              product.name_en
+            }
+            fallbackName={
+              product.name
+            }
+          />
         </div>
 
         <ProductDetailsClient
@@ -323,7 +328,7 @@ export default async function ProductPage({
         relatedProducts={
           relatedProducts
         }
-        reviews={reviews}
+        reviews={reviews || []}
       />
     </main>
   );
