@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-import Link from "next/link";
+
 import WishlistButton from "./products/WishlistButton";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -14,18 +15,21 @@ export default function ProductSwiper({
   bestSellerIds?: number[];
 }) {
   const { lang } = useLanguage();
+  const currentLang = lang as "en" | "ar";
 
-  if (products.length === 0) {
+  if (!products || products.length === 0) {
     return (
-      <div className="rounded-3xl bg-white p-10 text-center shadow-sm ring-1 ring-gray-100">
-        <h3 className="text-xl font-bold text-gray-900">
-          {lang === "ar" ? "لا توجد منتجات حالياً" : "No featured products yet"}
+      <div className="rounded-2xl border border-gray-100 bg-white p-10 text-center shadow-sm">
+        <h3 className="text-lg font-extrabold text-gray-900">
+          {currentLang === "ar"
+            ? "لا توجد منتجات حالياً"
+            : "No products available yet"}
         </h3>
 
-        <p className="mt-3 text-gray-600">
-          {lang === "ar"
+        <p className="mt-2 text-sm text-gray-500">
+          {currentLang === "ar"
             ? "ستظهر المنتجات هنا بعد إضافتها."
-            : "Featured products will appear here once added."}
+            : "Products will appear here once added."}
         </p>
       </div>
     );
@@ -34,40 +38,98 @@ export default function ProductSwiper({
   return (
     <Swiper
       dir="ltr"
-      spaceBetween={20}
+      spaceBetween={14}
       slidesPerView={1.22}
       watchOverflow
       breakpoints={{
-        640: { slidesPerView: 2 },
-        1024: { slidesPerView: 3 },
+        480: {
+          slidesPerView: 1.65,
+          spaceBetween: 14,
+        },
+        640: {
+          slidesPerView: 2.2,
+          spaceBetween: 16,
+        },
+        768: {
+          slidesPerView: 2.6,
+          spaceBetween: 18,
+        },
+        1024: {
+          slidesPerView: 3.25,
+          spaceBetween: 20,
+        },
+        1280: {
+          slidesPerView: 4,
+          spaceBetween: 20,
+        },
       }}
+      className="!overflow-visible"
     >
       {products.map((product) => {
         const salePercent = Number(product.sale_percent || 0);
-        const originalPrice = Number(product.price);
+        const originalPrice = Number(product.price || 0);
+
         const finalPrice =
           salePercent > 0
             ? originalPrice - originalPrice * (salePercent / 100)
             : originalPrice;
 
         const productName =
-          lang === "ar"
-            ? product.name_ar || product.name
-            : product.name_en || product.name;
+          currentLang === "ar"
+            ? product.name_ar || product.name || product.name_en
+            : product.name_en || product.name || product.name_ar;
 
         const productDescription =
-          lang === "ar"
-            ? product.description_ar || product.description
-            : product.description_en || product.description;
+          currentLang === "ar"
+            ? product.description_ar ||
+              product.description ||
+              product.description_en
+            : product.description_en ||
+              product.description ||
+              product.description_ar;
 
         return (
-          <SwiperSlide key={product.id}>
-            <Link
-              href={`/products/${product.id}`}
-              className="group flex h-[372px] flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-gray-100 transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+          <SwiperSlide key={product.id} className="h-auto">
+            <article
+              dir={currentLang === "ar" ? "rtl" : "ltr"}
+              className="group flex h-[390px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-green-100 hover:shadow-xl hover:shadow-green-950/5"
             >
-              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-b from-white to-gray-100">
-                <div className="absolute right-4 top-4 z-20">
+              {/* Product image */}
+              <div className="relative h-[218px] shrink-0 overflow-hidden bg-[#f7f8f7]">
+                <Link
+                  href={`/products/${product.id}`}
+                  aria-label={productName}
+                  className="flex h-full w-full items-center justify-center p-4"
+                >
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={productName}
+                      loading="lazy"
+                      className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.04] ${
+                        product.is_out_of_stock
+                          ? "opacity-60 grayscale-[20%]"
+                          : ""
+                      }`}
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-xl bg-gray-100 text-sm font-bold text-gray-400">
+                      {currentLang === "ar"
+                        ? "لا توجد صورة"
+                        : "No image"}
+                    </div>
+                  )}
+                </Link>
+
+                {/* Wishlist */}
+                <div
+                  dir="ltr"
+                  className="absolute right-3 top-3 z-20"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                >
                   <WishlistButton
                     product={{
                       id: product.id,
@@ -80,72 +142,73 @@ export default function ProductSwiper({
                   />
                 </div>
 
-                {product.is_out_of_stock ? (
-                  <span className="absolute left-4 top-4 z-20 rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs font-extrabold text-gray-700 shadow-sm">
-                    {lang === "ar" ? "غير متوفر" : "Out of Stock"}
-                  </span>
-                ) : (
-                  salePercent > 0 && (
-                    <span className="absolute left-4 top-4 z-20 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-extrabold text-red-600 shadow-sm">
+                {/* Product badge */}
+                <div
+                  dir={currentLang === "ar" ? "rtl" : "ltr"}
+                  className="absolute left-3 top-3 z-10 flex flex-col items-start gap-2"
+                >
+                  {product.is_out_of_stock ? (
+                    <span className="rounded-full border border-gray-200 bg-white/95 px-3 py-1.5 text-[10px] font-extrabold text-gray-700 shadow-sm backdrop-blur">
+                      {currentLang === "ar"
+                        ? "غير متوفر"
+                        : "Out of stock"}
+                    </span>
+                  ) : salePercent > 0 ? (
+                    <span className="rounded-full border border-red-100 bg-white/95 px-3 py-1.5 text-[10px] font-extrabold text-red-600 shadow-sm backdrop-blur">
                       -{salePercent}%
                     </span>
-                  )
-                )}
+                  ) : null}
 
-                {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt={productName}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                  />
-                ) : (
-                  <span className="text-gray-400">
-                    {lang === "ar" ? "لا توجد صورة" : "No image"}
-                  </span>
-                )}
+                
+                </div>
               </div>
 
+              {/* Product information */}
               <div
-                dir={lang === "ar" ? "rtl" : "ltr"}
-                className={`flex flex-1 flex-col p-5 ${
-  lang === "ar" ? "text-right" : "text-left"
-}`}
+                className={`flex flex-1 flex-col p-4 sm:p-5 ${
+                  currentLang === "ar" ? "text-right" : "text-left"
+                }`}
               >
-                <h3 className="line-clamp-2 text-base font-extrabold text-gray-900">
-                  {productName}
-                </h3>
+                <Link href={`/products/${product.id}`}>
+                  <h3 className="line-clamp-2 min-h-[48px] text-[15px] font-extrabold leading-6 text-gray-950 transition group-hover:text-green-700 sm:text-base">
+                    {productName}
+                  </h3>
+                </Link>
 
-                <p className="mt-2 line-clamp-2 min-h-[48px] text-sm leading-6 text-gray-600">
+                <p className="mt-1.5 line-clamp-1 text-xs leading-5 text-gray-500 sm:text-sm">
                   {productDescription}
                 </p>
 
-                <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-                  <div className="min-h-[44px]">
-                    <p
-                      className={`font-extrabold ${
-                        salePercent > 0 ? "text-red-600" : "text-green-700"
-                      }`}
-                    >
-                      {Math.round(finalPrice).toLocaleString()} SYP
-                    </p>
+                <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <p
+                        className={`whitespace-nowrap text-base font-extrabold ${
+                          salePercent > 0
+                            ? "text-red-600"
+                            : "text-green-700"
+                        }`}
+                      >
+                        {Math.round(finalPrice).toLocaleString()} SYP
+                      </p>
 
-                    <p
-                      className={`mt-1 text-xs font-bold ${
-                        salePercent > 0
-                          ? "text-gray-400 line-through"
-                          : "invisible"
-                      }`}
-                    >
-                      {originalPrice.toLocaleString()} SYP
-                    </p>
+                      {salePercent > 0 && (
+                        <p className="whitespace-nowrap text-[11px] font-bold text-gray-400 line-through">
+                          {originalPrice.toLocaleString()} SYP
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
-                    {lang === "ar" ? "عرض" : "View"}
-                  </span>
+                  <Link
+                    href={`/products/${product.id}`}
+                    className="inline-flex h-9 shrink-0 items-center justify-center rounded-xl bg-green-50 px-3 text-xs font-extrabold text-green-700 transition hover:bg-green-700 hover:text-white"
+                  >
+                    {currentLang === "ar" ? "عرض" : "View"}
+                  </Link>
                 </div>
               </div>
-            </Link>
+            </article>
           </SwiperSlide>
         );
       })}
