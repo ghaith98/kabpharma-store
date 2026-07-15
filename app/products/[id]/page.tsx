@@ -257,8 +257,16 @@ export default async function ProductPage({
     orderItemsResult,
   ] = await Promise.all([
     supabase
-      .from("product_reviews")
-      .select("*")
+     .from("product_reviews")
+.select(`
+  id,
+  product_id,
+  customer_name,
+  rating,
+  review,
+  created_at,
+  is_anonymous
+`)
       .eq(
         "product_id",
         product.id
