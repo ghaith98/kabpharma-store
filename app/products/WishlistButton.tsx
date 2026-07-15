@@ -32,9 +32,9 @@ export default function WishlistButton({
       type="button"
       onClick={handleClick}
       aria-label="Wishlist"
-      className="absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-red-600 shadow-sm transition hover:scale-105"
+      className="absolute right-2.5 top-2.5 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-[#e1e6e2] bg-white/95 text-red-600 shadow-sm transition hover:border-red-200 hover:bg-white sm:right-3 sm:top-3 sm:h-10 sm:w-10"
     >
-      {saved ? <FaHeart size={18} /> : <FaRegHeart size={18} />}
+      {saved ? <FaHeart size={16} /> : <FaRegHeart size={16} />}
     </button>
   );
 }
