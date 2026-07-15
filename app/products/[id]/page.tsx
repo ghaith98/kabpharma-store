@@ -843,63 +843,46 @@ export default async function ProductPage({
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-4 py-8 pb-28 sm:px-6 sm:py-12 md:pb-12">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            productJsonLd
-          ).replace(
-            /</g,
-            "\\u003c"
-          ),
-        }}
-      />
+  <main className="min-h-screen bg-white px-4 pb-32 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(
+          productJsonLd
+        ).replace(/</g, "\\u003c"),
+      }}
+    />
 
-      <div className="mx-auto max-w-4xl rounded-3xl bg-white p-5 shadow-sm sm:p-8">
-        <div
-          dir="ltr"
-          className="mb-8 flex items-center justify-between gap-3"
-        >
-          <BackButton />
+    <div className="mx-auto max-w-[1200px]">
+      <div
+        dir="ltr"
+        className="mb-5 flex items-center justify-between gap-3 border-b border-gray-100 pb-5"
+      >
+        <BackButton />
 
-          <ShareProductButton
-            productId={
-              product.id
-            }
-            productNameAr={
-              product.name_ar
-            }
-            productNameEn={
-              product.name_en
-            }
-            fallbackName={
-              product.name
-            }
-          />
-        </div>
-
-        <ProductDetailsClient
-          product={product}
-          normalGalleryImages={
-            normalGalleryImages
-          }
-          productVariants={
-            productVariants
-          }
-          salePercent={
-            salePercent
-          }
+        <ShareProductButton
+          productId={product.id}
+          productNameAr={product.name_ar}
+          productNameEn={product.name_en}
+          fallbackName={product.name}
         />
       </div>
 
+      <ProductDetailsClient
+        product={product}
+        normalGalleryImages={
+          normalGalleryImages
+        }
+        productVariants={productVariants}
+        salePercent={salePercent}
+      />
+
       <ProductExtraClient
         product={product}
-        relatedProducts={
-          relatedProducts
-        }
+        relatedProducts={relatedProducts}
         reviews={reviews}
       />
-    </main>
-  );
+    </div>
+  </main>
+);
 }

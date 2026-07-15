@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import {
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 export default function ProductGallery({
   images,
@@ -10,33 +13,43 @@ export default function ProductGallery({
   images: string[];
   productName: string;
 }) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] =
+    useState(0);
 
   useEffect(() => {
     setSelectedIndex(0);
   }, [images]);
 
-  const selectedImage = images[selectedIndex] || images[0];
+  const selectedImage =
+    images[selectedIndex] || images[0];
 
   function goPrevious() {
-    setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setSelectedIndex((current) =>
+      current === 0
+        ? images.length - 1
+        : current - 1
+    );
   }
 
   function goNext() {
-    setSelectedIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setSelectedIndex((current) =>
+      current === images.length - 1
+        ? 0
+        : current + 1
+    );
   }
 
   return (
-    <div>
-      <div className="relative overflow-hidden rounded-3xl bg-gray-100">
+    <div className="min-w-0">
+     <div className="relative flex aspect-square min-h-[360px] items-center justify-center overflow-hidden bg-[#f6f7f5] sm:min-h-[480px] lg:aspect-[4/3] lg:min-h-0">
         {selectedImage ? (
           <img
             src={selectedImage}
             alt={productName}
-            className="w-full rounded-3xl object-cover"
+            className="h-full w-full object-contain p-6 transition duration-500 sm:p-10 lg:p-10"
           />
         ) : (
-          <div className="flex h-80 items-center justify-center text-gray-400">
+          <div className="flex h-full min-h-[400px] items-center justify-center text-sm font-bold text-gray-400">
             No image
           </div>
         )}
@@ -46,44 +59,60 @@ export default function ProductGallery({
             <button
               type="button"
               onClick={goPrevious}
-              className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md transition hover:bg-white hover:text-green-700"
               aria-label="Previous image"
+              className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-700 shadow-sm backdrop-blur transition hover:border-green-200 hover:text-green-700"
             >
-              <FaChevronLeft size={18} />
+              <ChevronLeft size={19} />
             </button>
 
             <button
               type="button"
               onClick={goNext}
-              className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow-md transition hover:bg-white hover:text-green-700"
               aria-label="Next image"
+              className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-700 shadow-sm backdrop-blur transition hover:border-green-200 hover:text-green-700"
             >
-              <FaChevronRight size={18} />
+              <ChevronRight size={19} />
             </button>
           </>
+        )}
+
+        {images.length > 1 && (
+          <span className="absolute bottom-4 right-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-extrabold text-gray-700 shadow-sm backdrop-blur">
+            {selectedIndex + 1} / {images.length}
+          </span>
         )}
       </div>
 
       {images.length > 1 && (
-        <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
-          {images.map((image, index) => (
-            <button
-              key={`${image}-${index}`}
-              type="button"
-              onClick={() => setSelectedIndex(index)}
-              className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition ${
-                selectedIndex === index
-                  ? "border-green-600"
-                  : "border-gray-200"
-              }`}
-            >
-              <img
-                src={image}
-                alt={`${productName} ${index + 1}`}
-                className="h-full w-full object-cover"
-              />
-            </button>
-          ))}
+        <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+          {images.map((image, index) => {
+            const selected =
+              selectedIndex === index;
+
+            return (
+              <button
+                key={`${image}-${index}`}
+                type="button"
+                onClick={() =>
+                  setSelectedIndex(index)
+                }
+                aria-label={`View product image ${
+                  index + 1
+                }`}
+                className={`h-[76px] w-[76px] shrink-0 overflow-hidden border bg-[#f6f7f5] transition sm:h-20 sm:w-20 ${
+                  selected
+                    ? "border-[#0a583b] ring-1 ring-[#0a583b]"
+                    : "border-gray-200 hover:border-gray-400"
+                }`}
+              >
+                <img
+                  src={image}
+                  alt={`${productName} ${index + 1}`}
+                  className="h-full w-full object-contain p-1.5"
+                />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

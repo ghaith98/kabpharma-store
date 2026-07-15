@@ -1,6 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import {
+  Check,
+  Minus,
+  Plus,
+  ShoppingBag,
+  X,
+} from "lucide-react";
+
 import { addToCart } from "@/lib/cart";
 import { useLanguage } from "../../../context/LanguageContext";
 
@@ -23,7 +32,6 @@ export default function ProductDetailsAddToCart({
   finalPrice,
   originalPrice,
   salePercent,
-  selectedVariant,
 }: {
   product: Product;
   finalPrice: number;
@@ -32,36 +40,32 @@ export default function ProductDetailsAddToCart({
   selectedVariant?: any;
 }) {
   const { lang } = useLanguage();
-  const [showModal, setShowModal] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const isArabic = lang === "ar";
 
-  const selectedVariantLabel =
-    selectedVariant &&
-    (lang === "ar"
-      ? selectedVariant.label_ar || selectedVariant.label_en
-      : selectedVariant.label_en || selectedVariant.label_ar);
+  const [showModal, setShowModal] =
+    useState(false);
+
+  const [quantity, setQuantity] =
+    useState(1);
 
   function handleAdd() {
     addToCart(product, quantity);
-    window.dispatchEvent(new Event("cartUpdated"));
+
+    window.dispatchEvent(
+      new Event("cartUpdated")
+    );
+
     setShowModal(true);
   }
 
   return (
     <>
-      <div className="mt-8 rounded-[1.75rem] border border-gray-100 bg-white p-4 shadow-sm">
-        {selectedVariantLabel && (
-          <div className="mb-3 rounded-2xl bg-green-50 px-4 py-3 text-sm font-extrabold text-green-700">
-            {lang === "ar" ? "الخيار المحدد: " : "Selected option: "}
-            {selectedVariantLabel}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between gap-4">
+      <div className="mt-7 border-t border-gray-200 pt-6">
+        <div className="flex items-end justify-between gap-5">
           <div>
             {salePercent > 0 && (
-              <div className="mb-2 flex items-center gap-2">
-                <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-extrabold text-red-600">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-extrabold text-red-600">
                   -{salePercent}%
                 </span>
 
@@ -72,90 +76,136 @@ export default function ProductDetailsAddToCart({
             )}
 
             <p
-              className={`text-2xl font-extrabold tracking-tight ${
-                salePercent > 0 ? "text-red-600" : "text-green-700"
+              className={`text-3xl font-extrabold tracking-tight ${
+                salePercent > 0
+                  ? "text-red-600"
+                  : "text-[#0a583b]"
               }`}
             >
-              {Math.round(finalPrice).toLocaleString()} SYP
+              {Math.round(
+                finalPrice
+              ).toLocaleString()}{" "}
+              SYP
             </p>
           </div>
 
-          <div className="flex h-10 items-center rounded-full bg-gray-50 p-1 ring-1 ring-gray-200">
+          <div className="flex h-12 items-center rounded-full border border-gray-200 bg-white p-1">
             <button
               type="button"
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-lg font-extrabold text-gray-600 transition hover:bg-white hover:text-green-700"
+              onClick={() =>
+                setQuantity((current) =>
+                  Math.max(1, current - 1)
+                )
+              }
+              aria-label="Decrease quantity"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 hover:text-green-700"
             >
-              −
+              <Minus size={16} />
             </button>
 
-            <span className="min-w-8 text-center text-sm font-extrabold text-gray-900">
+            <span className="min-w-9 text-center text-sm font-extrabold text-gray-950">
               {quantity}
             </span>
 
             <button
               type="button"
-              onClick={() => setQuantity(quantity + 1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-lg font-extrabold text-gray-600 transition hover:bg-white hover:text-green-700"
+              onClick={() =>
+                setQuantity(
+                  (current) => current + 1
+                )
+              }
+              aria-label="Increase quantity"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 hover:text-green-700"
             >
-              +
+              <Plus size={16} />
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="mt-6 hidden md:block">
         <button
           type="button"
           onClick={handleAdd}
-          className="w-full rounded-2xl bg-green-600 py-3.5 font-extrabold text-white shadow-sm transition hover:bg-green-700 hover:shadow-md"
+          className="mt-6 hidden min-h-[54px] w-full items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg md:flex"
         >
-          {lang === "ar" ? "أضف إلى السلة" : "Add to Cart"}
+          <ShoppingBag size={19} />
+          {isArabic
+            ? "أضف إلى السلة"
+            : "Add to cart"}
         </button>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-100 bg-white/95 p-4 pb-24 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
+      {/* Mobile sticky purchase button */}
+      <div className="fixed inset-x-0 bottom-[70px] z-40 border-t border-gray-100 bg-white/95 p-3 shadow-[0_-8px_25px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
         <button
           type="button"
           onClick={handleAdd}
-          className="w-full rounded-2xl bg-green-600 py-3.5 font-extrabold text-white shadow-sm transition active:scale-[0.98]"
+          className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white active:scale-[0.99]"
         >
-          {lang === "ar" ? "أضف إلى السلة" : "Add to Cart"}
+          <ShoppingBag size={19} />
+
+          {isArabic
+            ? `أضف إلى السلة · ${Math.round(
+                finalPrice
+              ).toLocaleString()} ل.س`
+            : `Add to cart · ${Math.round(
+                finalPrice
+              ).toLocaleString()} SYP`}
         </button>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-6">
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/45 px-5 backdrop-blur-sm">
           <div
-            dir={lang === "ar" ? "rtl" : "ltr"}
-            className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-xl"
+            dir={isArabic ? "rtl" : "ltr"}
+            className="relative w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl sm:p-8"
           >
-            <div className="mb-4 text-5xl text-green-600">✓</div>
+            <button
+              type="button"
+              onClick={() =>
+                setShowModal(false)
+              }
+              aria-label="Close"
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition hover:bg-gray-200"
+            >
+              <X size={17} />
+            </button>
 
-            <h2 className="text-2xl font-extrabold text-gray-900">
-              {lang === "ar" ? "تمت الإضافة إلى السلة" : "Added to Cart"}
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-50 text-green-700">
+              <Check size={27} strokeWidth={2.5} />
+            </div>
+
+            <h2 className="mt-5 text-2xl font-extrabold text-gray-950">
+              {isArabic
+                ? "تمت الإضافة إلى السلة"
+                : "Added to cart"}
             </h2>
 
-            <p className="mt-3 text-gray-600">
-              {lang === "ar"
+            <p className="mt-3 leading-7 text-gray-600">
+              {isArabic
                 ? `تمت إضافة ${quantity} × ${product.name} بنجاح.`
                 : `${quantity} × ${product.name} has been added successfully.`}
             </p>
 
-            <div className="mt-6 flex flex-col gap-3">
-              <a
+            <div className="mt-7 flex flex-col gap-3">
+              <Link
                 href="/cart"
-                className="rounded-2xl bg-green-600 py-3 font-bold text-white transition hover:bg-green-700"
+                className="flex min-h-12 items-center justify-center rounded-full bg-[#0a583b] px-5 font-extrabold text-white transition hover:bg-[#073f2c]"
               >
-                {lang === "ar" ? "الذهاب إلى السلة" : "Go to Cart"}
-              </a>
+                {isArabic
+                  ? "الذهاب إلى السلة"
+                  : "View cart"}
+              </Link>
 
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
-                className="rounded-2xl border border-gray-300 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+                onClick={() =>
+                  setShowModal(false)
+                }
+                className="min-h-12 rounded-full border border-gray-200 px-5 font-extrabold text-gray-700 transition hover:bg-gray-50"
               >
-                {lang === "ar" ? "متابعة التسوق" : "Continue Shopping"}
+                {isArabic
+                  ? "متابعة التسوق"
+                  : "Continue shopping"}
               </button>
             </div>
           </div>
@@ -163,4 +213,4 @@ export default function ProductDetailsAddToCart({
       )}
     </>
   );
-} 
+}

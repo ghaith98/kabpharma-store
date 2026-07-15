@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductGallery from "./ProductGallery";
 import { useLanguage } from "../../../context/LanguageContext";
@@ -21,11 +22,13 @@ export default function ProductDetailsClient({
   salePercent: number;
 }) {
   const { lang } = useLanguage();
+  const isArabic = lang === "ar";
 
   const sortedVariants = useMemo(() => {
     return [...(productVariants || [])].sort(
-      (a, b) =>
-        Number(a.price) - Number(b.price)
+      (first, second) =>
+        Number(first.price) -
+        Number(second.price)
     );
   }, [productVariants]);
 
@@ -35,30 +38,32 @@ export default function ProductDetailsClient({
   ] = useState<any>(null);
 
   useEffect(() => {
-    if (sortedVariants.length > 0) {
-      setSelectedVariant(
-        sortedVariants[0]
-      );
-    } else {
-      setSelectedVariant(null);
-    }
+    setSelectedVariant(
+      sortedVariants.length > 0
+        ? sortedVariants[0]
+        : null
+    );
   }, [sortedVariants]);
 
-  const productName =
-    lang === "ar"
-      ? product.name_ar || product.name
-      : product.name_en || product.name;
+  const productName = isArabic
+    ? product.name_ar ||
+      product.name ||
+      product.name_en
+    : product.name_en ||
+      product.name ||
+      product.name_ar;
 
-  const productDescription =
-    lang === "ar"
-      ? product.description_ar ||
-        product.description
-      : product.description_en ||
-        product.description;
+  const productDescription = isArabic
+    ? product.description_ar ||
+      product.description ||
+      product.description_en
+    : product.description_en ||
+      product.description ||
+      product.description_ar;
 
   const selectedVariantLabel =
     selectedVariant &&
-    (lang === "ar"
+    (isArabic
       ? selectedVariant.label_ar ||
         selectedVariant.label_en
       : selectedVariant.label_en ||
@@ -75,9 +80,8 @@ export default function ProductDetailsClient({
 
   const finalPrice =
     salePercent > 0
-      ? originalPrice -
-        originalPrice *
-          (salePercent / 100)
+      ? originalPrice *
+        (1 - salePercent / 100)
       : originalPrice;
 
   const finalImage =
@@ -85,47 +89,72 @@ export default function ProductDetailsClient({
     product.image_url;
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)] lg:gap-14">
       <ProductGallery
         images={galleryImages}
         productName={productName}
       />
 
-      <div
-        dir={lang === "ar" ? "rtl" : "ltr"}
-        className={
-          lang === "ar"
+      <aside
+        dir={isArabic ? "rtl" : "ltr"}
+        className={`lg:sticky lg:top-[104px] ${
+          isArabic
             ? "text-right"
             : "text-left"
-        }
+        }`}
       >
-        <h1 className="break-words text-3xl font-extrabold leading-tight text-gray-900 sm:text-4xl">
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#0a583b]">
+          KAB Pharma
+        </p>
+
+        <h1
+          className={`mt-3 break-words text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-[44px] ${
+            isArabic
+              ? "leading-[1.25] tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+              : "leading-[1.08] tracking-[-0.035em]"
+          }`}
+        >
           {productName}
         </h1>
 
-        <p className="mt-6 whitespace-pre-line leading-8 text-gray-700">
-          {productDescription}
-        </p>
+        {productDescription && (
+          <p
+            className={`mt-5 whitespace-pre-line text-[15px] text-[#5f6c64] ${
+              isArabic
+                ? "leading-7 [font-family:Tahoma,Arial,sans-serif]"
+                : "leading-8"
+            }`}
+          >
+            {productDescription}
+          </p>
+        )}
 
         {sortedVariants.length > 0 && (
-          <div className="mt-6">
-            <h3 className="mb-3 font-extrabold text-gray-900">
-              {lang === "ar"
-                ? "اختاري الحجم"
-                : "Choose Size"}
-            </h3>
+          <div className="mt-7 border-t border-gray-200 pt-6">
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <h2 className="text-sm font-extrabold text-gray-950">
+                {isArabic
+                  ? "اختاري الحجم"
+                  : "Choose a size"}
+              </h2>
 
-            <div className="flex flex-wrap gap-3">
+              {selectedVariantLabel && (
+                <span className="text-xs font-bold text-gray-500">
+                  {selectedVariantLabel}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2.5">
               {sortedVariants.map(
                 (variant: any) => {
-                  const variantLabel =
-                    lang === "ar"
-                      ? variant.label_ar ||
-                        variant.label_en
-                      : variant.label_en ||
-                        variant.label_ar;
+                  const label = isArabic
+                    ? variant.label_ar ||
+                      variant.label_en
+                    : variant.label_en ||
+                      variant.label_ar;
 
-                  const isSelected =
+                  const selected =
                     selectedVariant?.id ===
                     variant.id;
 
@@ -138,13 +167,13 @@ export default function ProductDetailsClient({
                           variant
                         )
                       }
-                      className={`rounded-2xl border px-4 py-3 font-extrabold transition ${
-                        isSelected
-                          ? "border-green-600 bg-green-50 text-green-700"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-green-300"
+                      className={`min-h-12 rounded-full border px-5 text-sm font-extrabold transition ${
+                        selected
+                          ? "border-[#0a583b] bg-[#0a583b] text-white"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-[#7ea990] hover:text-[#0a583b]"
                       }`}
                     >
-                      {variantLabel}
+                      {label}
                     </button>
                   );
                 }
@@ -154,38 +183,24 @@ export default function ProductDetailsClient({
         )}
 
         {product.is_out_of_stock ? (
-          <>
-            <div className="mt-6">
-              {salePercent > 0 && (
-                <div className="mb-2 flex items-center gap-3">
-                  <span className="rounded-full bg-pink-600 px-3 py-1 text-sm font-bold text-white">
-                    -{salePercent}%
-                  </span>
-
-                  <span className="text-lg font-bold text-gray-400 line-through">
-                    {originalPrice.toLocaleString()}{" "}
-                    SYP
-                  </span>
-                </div>
-              )}
-
-              <p className="text-3xl font-extrabold text-green-700">
-                {Math.round(
-                  finalPrice
-                ).toLocaleString()}{" "}
-                SYP
-              </p>
-            </div>
+          <div className="mt-7 border-t border-gray-200 pt-6">
+            <p className="text-3xl font-extrabold text-[#0a583b]">
+              {Math.round(
+                finalPrice
+              ).toLocaleString()}{" "}
+              SYP
+            </p>
 
             <button
+              type="button"
               disabled
-              className="mt-8 w-full cursor-not-allowed rounded-2xl bg-gray-200 py-3 font-semibold text-gray-500"
+              className="mt-6 min-h-[54px] w-full cursor-not-allowed rounded-full bg-gray-200 px-6 font-extrabold text-gray-500"
             >
-              {lang === "ar"
+              {isArabic
                 ? "غير متوفر"
-                : "Out of Stock"}
+                : "Out of stock"}
             </button>
-          </>
+          </div>
         ) : (
           <ProductDetailsAddToCart
             product={{
@@ -197,8 +212,7 @@ export default function ProductDetailsClient({
 
               product_name: productName,
 
-              price:
-                Math.round(finalPrice),
+              price: Math.round(finalPrice),
 
               original_price:
                 originalPrice,
@@ -206,12 +220,10 @@ export default function ProductDetailsClient({
               sale_percent:
                 salePercent,
 
-              image_url:
-                finalImage,
+              image_url: finalImage,
 
               variant_id:
-                selectedVariant?.id ||
-                null,
+                selectedVariant?.id || null,
 
               variant_label_ar:
                 selectedVariant?.label_ar ||
@@ -224,12 +236,10 @@ export default function ProductDetailsClient({
             finalPrice={finalPrice}
             originalPrice={originalPrice}
             salePercent={salePercent}
-            selectedVariant={
-              selectedVariant
-            }
+            selectedVariant={selectedVariant}
           />
         )}
-      </div>
+      </aside>
     </div>
   );
 }
