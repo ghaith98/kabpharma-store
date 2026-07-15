@@ -629,48 +629,46 @@ export default function ProductsClient({
                       )}
                     </Link>
 
-                    <div
-                      dir="ltr"
-                      className="absolute right-3 top-3 z-20"
-                      onClick={(
-                        event
-                      ) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                      }}
-                    >
-                      <WishlistButton
-                        product={{
-                          id:
-                            product.id,
-
-                          name:
-                            productName,
-
-                          price:
-                            Math.round(
-                              finalPrice
-                            ),
-
-                          original_price:
-                            originalPrice,
-
-                          sale_percent:
-                            salePercent,
-
-                          image_url:
-                            product.image_url,
-                        }}
-                      />
-                    </div>
-
-                    <div
-                      className={`absolute top-3 z-10 ${
-                        isArabic
-                          ? "right-3"
-                          : "left-3"
-                      }`}
-                    >
+                   <div
+  dir="ltr"
+  className="
+    absolute right-2.5 top-2.5 z-20
+    [&_button]:!flex
+    [&_button]:!h-10
+    [&_button]:!w-10
+    [&_button]:!items-center
+    [&_button]:!justify-center
+    [&_button]:!rounded-full
+    [&_button]:!border
+    [&_button]:!border-[#e1e6e2]
+    [&_button]:!bg-white/95
+    [&_button]:!p-0
+    [&_button]:!shadow-sm
+    sm:right-3 sm:top-3
+    sm:[&_button]:!h-11
+    sm:[&_button]:!w-11
+    [&_svg]:!h-[17px]
+    [&_svg]:!w-[17px]
+    sm:[&_svg]:!h-[18px]
+    sm:[&_svg]:!w-[18px]
+  "
+  onClick={(event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }}
+>
+  <WishlistButton
+    product={{
+      id: product.id,
+      name: productName,
+      price: Math.round(finalPrice),
+      original_price: originalPrice,
+      sale_percent: salePercent,
+      image_url: product.image_url,
+    }}
+  />
+</div>
+                    <div className="absolute left-3 top-3 z-10">
                       {isOutOfStock ? (
                         <span className="inline-flex rounded-full border border-[#dfe4e0] bg-white/95 px-2.5 py-1.5 text-[9px] font-extrabold text-[#526057] shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
                           {isArabic
