@@ -1,49 +1,106 @@
 import { NextResponse } from "next/server";
+import { getNabdaInstanceToken } from "@/lib/nabda";
 
-export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    route: "send-otp exists",
-  });
-}
+export const dynamic = "force-dynamic";
 
-export async function POST(req: Request) {
+const NABDA_API_URL =
+  "https://api.nabdaotp.com";
+
+export async function POST(
+  request: Request
+) {
   try {
-    const { phone } = await req.json();
+    const body = await request.json();
 
-    if (!process.env.NABDA_API_URL || !process.env.NABDA_API_KEY) {
-      return NextResponse.json({
-        success: false,
-        error: "Missing NABDA env variables",
-        hasUrl: !!process.env.NABDA_API_URL,
-        hasKey: !!process.env.NABDA_API_KEY,
-      });
+    const phone = String(
+      body?.phone || ""
+    ).trim();
+
+    if (!/^9639\d{8}$/.test(phone)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid phone number",
+        },
+        {
+          status: 400,
+        }
+      );
     }
 
+    /*
+      نأخذ access token خاص بالـInstance
+      باستخدام NABDA_API_KEY و
+      NABDA_INSTANCE_ID.
+    */
+    const instanceToken =
+      await getNabdaInstanceToken();
+
     const response = await fetch(
-      `${process.env.NABDA_API_URL}/api/v1/messages/otp/send`,
+      `${NABDA_API_URL}/api/v1/messages/otp/send`,
       {
         method: "POST",
+
         headers: {
-          "Content-Type": "application/json",
-          Authorization: process.env.NABDA_API_KEY!,
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${instanceToken}`,
         },
-        body: JSON.stringify({ phone }),
+
+        body: JSON.stringify({
+          phone: `+${phone}`,
+        }),
+
+        cache: "no-store",
       }
     );
 
-    const text = await response.text();
+    if (!response.ok) {
+      const providerResponse =
+        await response.text();
+
+      console.error(
+        "NABDA OTP send failed:",
+        response.status,
+        providerResponse
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Could not send verification code",
+        },
+        {
+          status:
+            response.status >= 400 &&
+            response.status < 500
+              ? response.status
+              : 502,
+        }
+      );
+    }
 
     return NextResponse.json({
-      success: response.ok,
-      nabdaStatus: response.status,
-      sentPhone: phone,
-      nabdaResponse: text,
+      success: true,
     });
-  } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: error?.message || "Unknown server error",
-    });
+  } catch (error) {
+    console.error(
+      "Send OTP error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          "Could not send verification code",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }

@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function SignupPage() {
@@ -61,126 +60,166 @@ export default function SignupPage() {
       );
       return;
     }
-    const { data: existingUser, error: checkError } = await supabase
-  .from("profiles")
-  .select("id")
-  .eq("phone", fullPhone)
-  .maybeSingle();
-
-if (checkError) {
-  setErrorMessage(
-    t(
-      "Could not check this phone number. Please try again.",
-      "تعذر التحقق من رقم الهاتف. يرجى المحاولة مرة أخرى."
-    )
-  );
-  return;
-}
-
-if (existingUser) {
-  setErrorMessage(
-    t(
-      "This phone number is already registered. Please sign in instead.",
-      "رقم الهاتف هذا مسجل مسبقاً. يرجى تسجيل الدخول بدلاً من إنشاء حساب جديد."
-    )
-  );
-  return;
-}
 
     setLoading(true);
-    setErrorMessage("");
+setErrorMessage("");
 
-    const res = await fetch(`${window.location.origin}/api/send-otp`, {
+try {
+  const response = await fetch(
+    "/api/send-otp",
+    {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: fullPhone }),
-    });
 
-    setLoading(false);
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
 
-    if (!res.ok) {
-      setErrorMessage(
-        t(
-          "Could not send the verification code. Please try again.",
-          "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
-        )
-      );
-      return;
-    }
-
-    setOtpSent(true);
-    setTimeout(() => inputRefs.current[0]?.focus(), 100);
-  }
-
-  async function createAccountAfterVerify() {
-    if (otpCode.length !== 6) {
-      setErrorMessage(
-        t(
-          "Please enter your verification code.",
-          "يرجى إدخال رمز التحقق."
-        )
-      );
-      return;
-    }
-
-    setLoading(true);
-    setErrorMessage("");
-
-    const verifyRes = await fetch("/api/verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         phone: fullPhone,
-        code: otpCode,
       }),
-    });
-
-    if (!verifyRes.ok) {
-      setLoading(false);
-      setErrorMessage(
-        t(
-          "Invalid or expired verification code.",
-          "رمز التحقق غير صحيح أو منتهي الصلاحية."
-        )
-      );
-      return;
     }
+  );
 
-    const { error } = await supabase.from("profiles").insert({
-      full_name: fullName.trim(),
-      phone: fullPhone,
-    });
+  const result =
+    await response.json();
 
-    setLoading(false);
+  if (
+    !response.ok ||
+    !result.success
+  ) {
+    setErrorMessage(
+      t(
+        "Could not send the verification code. Please try again.",
+        "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
+      )
+    );
 
-    if (error) {
-      if (
-        error.message.includes("duplicate key") ||
-        error.message.includes("profiles_phone_key")
-      ) {
+    return;
+  }
+
+  setOtpSent(true);
+
+  setTimeout(() => {
+    inputRefs.current[0]?.focus();
+  }, 100);
+} catch {
+  setErrorMessage(
+    t(
+      "Could not connect to the verification service.",
+      "تعذر الاتصال بخدمة التحقق."
+    )
+  );
+} finally {
+  setLoading(false);
+}
+  }
+
+ async function createAccountAfterVerify() {
+  if (otpCode.length !== 6) {
+    setErrorMessage(
+      t(
+        "Please enter your verification code.",
+        "يرجى إدخال رمز التحقق."
+      )
+    );
+
+    return;
+  }
+
+  setLoading(true);
+  setErrorMessage("");
+
+  try {
+    const response = await fetch(
+      "/api/verify-otp",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        credentials: "include",
+
+        body: JSON.stringify({
+          phone: fullPhone,
+          code: otpCode,
+          mode: "signup",
+          fullName: fullName.trim(),
+        }),
+      }
+    );
+
+    const result =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !result.success
+    ) {
+      if (response.status === 409) {
         setErrorMessage(
           t(
-            "This phone number is already registered.",
-            "رقم الهاتف هذا مسجل مسبقاً."
+            "This phone number is already registered. Please sign in instead.",
+            "رقم الهاتف هذا مسجل مسبقاً. يرجى تسجيل الدخول."
           )
         );
       } else {
-        setErrorMessage(error.message);
+        setErrorMessage(
+          t(
+            "Invalid or expired verification code.",
+            "رمز التحقق غير صحيح أو منتهي الصلاحية."
+          )
+        );
       }
 
       return;
     }
 
+    /*
+      مؤقتاً لتوافق الصفحات القديمة.
+      الـCookie هي إثبات الدخول الحقيقي.
+    */
     localStorage.setItem(
       "kab_user",
       JSON.stringify({
-        full_name: fullName.trim(),
-        phone: fullPhone,
+        id: result.user.id,
+        full_name:
+          result.user.full_name,
+        phone: result.user.phone,
       })
     );
 
+    const redirectAfterLogin =
+      localStorage.getItem(
+        "redirect_after_login"
+      );
+
+    if (redirectAfterLogin) {
+      localStorage.removeItem(
+        "redirect_after_login"
+      );
+
+      window.location.href =
+        redirectAfterLogin;
+
+      return;
+    }
+
     window.location.href = "/profile";
+  } catch {
+    setErrorMessage(
+      t(
+        "Could not create your account. Please try again.",
+        "تعذر إنشاء الحساب. يرجى المحاولة مرة أخرى."
+      )
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();

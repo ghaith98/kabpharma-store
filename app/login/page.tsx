@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function LoginPage() {
@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [otpSent, setOtpSent] = useState(false);
-  const [profileData, setProfileData] = useState<any>(null);
+  
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -45,112 +45,178 @@ export default function LoginPage() {
     }
   }
 
-  async function sendLoginOtp() {
-    setErrorMessage("");
+ async function sendLoginOtp() {
+  setErrorMessage("");
 
-    if (!/^9\d{8}$/.test(phone.trim())) {
-      setErrorMessage(
-        t(
-          "Please enter a valid Syrian mobile number starting with 9.",
-          "يرجى إدخال رقم موبايل سوري صحيح يبدأ بالرقم 9."
-        )
-      );
-      return;
-    }
+  if (!/^9\d{8}$/.test(phone.trim())) {
+    setErrorMessage(
+      t(
+        "Please enter a valid Syrian mobile number starting with 9.",
+        "يرجى إدخال رقم موبايل سوري صحيح يبدأ بالرقم 9."
+      )
+    );
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("phone", fullPhone)
-      .maybeSingle();
+  try {
+    const response = await fetch(
+      "/api/send-otp",
+      {
+        method: "POST",
 
-    if (error || !data) {
-      setLoading(false);
-      setErrorMessage(
-        t(
-          "Phone number not found. Please create an account first.",
-          "رقم الهاتف غير موجود. يرجى إنشاء حساب أولاً."
-        )
-      );
-      return;
-    }
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
 
-    const res = await fetch(`${window.location.origin}/api/send-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: fullPhone }),
-    });
+        body: JSON.stringify({
+          phone: fullPhone,
+        }),
+      }
+    );
 
-    setLoading(false);
+    const result =
+      await response.json();
 
-    if (!res.ok) {
+    if (
+      !response.ok ||
+      !result.success
+    ) {
       setErrorMessage(
         t(
           "Could not send the verification code. Please try again.",
           "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
         )
       );
+
       return;
     }
 
-    setProfileData(data);
     setOtpSent(true);
-    setTimeout(() => inputRefs.current[0]?.focus(), 100);
+
+    setTimeout(() => {
+      inputRefs.current[0]?.focus();
+    }, 100);
+  } catch {
+    setErrorMessage(
+      t(
+        "Could not connect to the verification service.",
+        "تعذر الاتصال بخدمة التحقق."
+      )
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   async function verifyAndLogin() {
-    setErrorMessage("");
+  setErrorMessage("");
 
-    if (otpCode.length !== 6) {
-      setErrorMessage(
-        t("Please enter your verification code.", "يرجى إدخال رمز التحقق.")
-      );
+  if (otpCode.length !== 6) {
+    setErrorMessage(
+      t(
+        "Please enter your verification code.",
+        "يرجى إدخال رمز التحقق."
+      )
+    );
+
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await fetch(
+      "/api/verify-otp",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        credentials: "include",
+
+        body: JSON.stringify({
+          phone: fullPhone,
+          code: otpCode,
+          mode: "login",
+        }),
+      }
+    );
+
+    const result =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !result.success
+    ) {
+      if (response.status === 404) {
+        setErrorMessage(
+          t(
+            "No account was found for this phone number. Please create an account first.",
+            "لا يوجد حساب مرتبط بهذا الرقم. يرجى إنشاء حساب أولاً."
+          )
+        );
+      } else {
+        setErrorMessage(
+          t(
+            "Invalid or expired verification code.",
+            "رمز التحقق غير صحيح أو منتهي الصلاحية."
+          )
+        );
+      }
+
       return;
     }
 
-    setLoading(true);
-
-    const verifyRes = await fetch(`${window.location.origin}/api/verify-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        phone: fullPhone,
-        code: otpCode,
-      }),
-    });
-
-    setLoading(false);
-
-    if (!verifyRes.ok) {
-      setErrorMessage(
-        t(
-          "Invalid or expired verification code.",
-          "رمز التحقق غير صحيح أو منتهي الصلاحية."
-        )
-      );
-      return;
-    }
-
+    /*
+      مؤقتاً للمحافظة على توافق
+      Profile وOrders القديمة.
+      الصلاحيات الآمنة تعتمد على Cookie.
+    */
     localStorage.setItem(
       "kab_user",
       JSON.stringify({
-        full_name: profileData.full_name,
-        phone: profileData.phone,
+        id: result.user.id,
+        full_name:
+          result.user.full_name,
+        phone: result.user.phone,
       })
     );
 
-    const redirectAfterLogin = localStorage.getItem("redirect_after_login");
+    const redirectAfterLogin =
+      localStorage.getItem(
+        "redirect_after_login"
+      );
 
     if (redirectAfterLogin) {
-      localStorage.removeItem("redirect_after_login");
-      window.location.href = redirectAfterLogin;
+      localStorage.removeItem(
+        "redirect_after_login"
+      );
+
+      window.location.href =
+        redirectAfterLogin;
+
       return;
     }
 
-    window.location.href = "/profile";
+        window.location.href = "/profile";
+  } catch {
+    setErrorMessage(
+      t(
+        "Could not complete sign in. Please try again.",
+        "تعذر إكمال تسجيل الدخول. يرجى المحاولة مرة أخرى."
+      )
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -163,7 +229,7 @@ export default function LoginPage() {
     await verifyAndLogin();
   }
 
-  return (
+  return (  
     <main
       dir="ltr"
       className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12"
