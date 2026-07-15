@@ -1,106 +1,365 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import {
   FaFacebookF,
   FaInstagram,
-  FaPlus,
   FaMinus,
-  FaChevronRight,
+  FaPlus,
 } from "react-icons/fa";
+import {
+  FiArrowLeft,
+  FiArrowRight,
+} from "react-icons/fi";
 import { useLanguage } from "../context/LanguageContext";
 
-type SectionKey = "about" | "contact" | "policies";
+type SectionKey =
+  | "explore"
+  | "company"
+  | "policies";
 
 export default function Footer() {
   const { lang } = useLanguage();
-  const [openSection, setOpenSection] = useState<SectionKey | null>(
-    null
-  );
 
-  const isArabic = lang === "ar";
+  const isArabic =
+    lang === "ar";
 
-  const t = {
+  const [openSection, setOpenSection] =
+    useState<SectionKey | null>(null);
+
+  const currentYear =
+    new Date().getFullYear();
+
+  const text = {
     en: {
-      slogan: "THE QUALITY FOR A HEALTHIER LIFE",
-      about: "About Us",
-      contact: "Contact Us",
+      slogan:
+        "THE QUALITY FOR A HEALTHIER LIFE",
+
+      description:
+        "Clinical and personal care products designed to support healthier everyday routines.",
+
+      explore: "Explore",
+      products: "All products",
+      wishlist: "My wishlist",
+
+      company: "Company",
+      about: "About KAB Pharma",
+      contact: "Contact our team",
+
       policies: "Policies",
       privacy: "Privacy Policy",
       terms: "Terms & Conditions",
       refund: "Refund Policy",
-      viewAbout: "Discover KAB Pharma",
-      contactTeam: "Contact our team",
-      rights: "© 2026 KAB Pharma. All rights reserved.",
-      footerLinks: "Footer links",
+
+      shopNow: "Explore our products",
+
+      rights: `© ${currentYear} KAB Pharma. All rights reserved.`,
+
+      navigation:
+        "Footer navigation",
     },
 
     ar: {
-      slogan: "الجودة لحياة أكثر صحة",
-      about: "من نحن",
-      contact: "تواصل معنا",
+      slogan:
+        "الجودة لحياة أكثر صحة",
+
+      description:
+        "منتجات للعناية الشخصية واليومية مصممة لدعم حياة أكثر صحة وراحة.",
+
+      explore: "اكتشف",
+      products: "جميع المنتجات",
+      wishlist: "قائمة المفضلة",
+
+      company: "عن الشركة",
+      about: "عن KAB Pharma",
+      contact: "تواصل مع فريقنا",
+
       policies: "السياسات",
       privacy: "سياسة الخصوصية",
       terms: "الشروط والأحكام",
       refund: "سياسة الاسترجاع",
-      viewAbout: "تعرّف على KAB Pharma",
-      contactTeam: "تواصل مع فريقنا",
-      rights: "© 2026 KAB Pharma. جميع الحقوق محفوظة.",
-      footerLinks: "روابط التذييل",
-    },
-  }[lang as "en" | "ar"];
 
-  function toggleSection(section: SectionKey) {
-    setOpenSection((currentSection) =>
-      currentSection === section ? null : section
+      shopNow: "اكتشف منتجاتنا",
+
+      rights: `© ${currentYear} KAB Pharma. جميع الحقوق محفوظة.`,
+
+      navigation:
+        "روابط تذييل الموقع",
+    },
+  };
+
+  const t =
+    text[
+      lang as "en" | "ar"
+    ];
+
+  const sections: Array<{
+    key: SectionKey;
+    title: string;
+    links: Array<{
+      label: string;
+      href: string;
+    }>;
+  }> = [
+    {
+      key: "explore",
+      title: t.explore,
+      links: [
+        {
+          label: t.products,
+          href: "/products",
+        },
+        {
+          label: t.wishlist,
+          href: "/wishlist",
+        },
+      ],
+    },
+
+    {
+      key: "company",
+      title: t.company,
+      links: [
+        {
+          label: t.about,
+          href: "/about",
+        },
+        {
+          label: t.contact,
+          href: "/contact",
+        },
+      ],
+    },
+
+    {
+      key: "policies",
+      title: t.policies,
+      links: [
+        {
+          label: t.privacy,
+          href: "/privacy-policy",
+        },
+        {
+          label: t.terms,
+          href: "/terms",
+        },
+        {
+          label: t.refund,
+          href: "/refund-policy",
+        },
+      ],
+    },
+  ];
+
+  const ArrowIcon =
+    isArabic
+      ? FiArrowLeft
+      : FiArrowRight;
+
+  function toggleSection(
+    section: SectionKey
+  ) {
+    setOpenSection(
+      (current) =>
+        current === section
+          ? null
+          : section
     );
   }
 
+  const footerLinkClass =
+    "group inline-flex w-fit items-center gap-2 text-sm font-semibold text-[#526057] transition hover:text-[#0a583b]";
+
   const socialButtonClass =
-    "group flex h-12 w-12 items-center justify-center rounded-full border-2 border-green-200 bg-white text-green-700 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-green-600 hover:bg-green-600 hover:text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2";
-
-  const mobileSectionButtonClass =
-    "flex w-full items-center justify-between border-b border-gray-200 py-5 text-start transition hover:text-green-700";
-
-  const mobileLinkClass =
-    "group inline-flex items-center gap-2 py-2 text-sm font-bold text-green-700 transition hover:text-green-800 hover:underline";
-
-  const desktopLinkClass =
-    "group inline-flex items-center gap-2 text-sm font-semibold text-green-700 transition hover:text-green-800 hover:underline";
-
-  const arrowClass = `text-xs transition group-hover:translate-x-1 ${
-    isArabic
-      ? "rotate-180 group-hover:-translate-x-1 group-hover:translate-x-0"
-      : ""
-  }`;
+    "flex h-11 w-11 items-center justify-center rounded-full border border-[#d9e0db] bg-white text-[#0a583b] transition duration-300 hover:-translate-y-0.5 hover:border-[#0a583b] hover:bg-[#0a583b] hover:text-white hover:shadow-md focus:outline-none focus:ring-4 focus:ring-[#edf5f0]";
 
   return (
     <footer
-      dir={isArabic ? "rtl" : "ltr"}
-      className="mt-auto border-t border-gray-200 bg-gray-50"
+      dir={
+        isArabic
+          ? "rtl"
+          : "ltr"
+      }
+      className="mt-auto border-t border-[#dfe4e0] bg-[#f7f8f6]"
     >
-      <div className="mx-auto max-w-7xl px-6 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-10 md:py-10">
-        {/* Brand */}
-        <div className="text-center">
-          <h3 className="text-xl font-bold text-green-700">
-            KAB Pharma
-          </h3>
+      <div className="mx-auto max-w-[1440px] px-4 pb-[calc(7.25rem+env(safe-area-inset-bottom))] pt-12 sm:px-6 sm:pt-14 md:pb-8 lg:px-8">
+        {/* Desktop footer */}
+        <div className="hidden gap-12 lg:grid lg:grid-cols-[1.45fr_0.75fr_0.75fr_1fr]">
+          {/* Brand */}
+          <div
+            className={
+              isArabic
+                ? "text-right"
+                : "text-left"
+            }
+          >
+            <Link
+              href="/"
+              aria-label="KAB Pharma home"
+              className="inline-flex"
+            >
+              <Image
+                src="/logo.png"
+                alt="KAB Pharma"
+                width={230}
+                height={75}
+                className="h-auto w-[210px] mix-blend-multiply"
+              />
+            </Link>
 
-          <p className="mt-3 text-sm text-gray-600 md:text-base">
+            <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.16em] text-[#0a583b]">
+              {t.slogan}
+            </p>
+
+            <p className="mt-4 max-w-[390px] text-sm leading-7 text-[#647168]">
+              {t.description}
+            </p>
+
+            <Link
+              href="/products"
+              className="group mt-6 inline-flex items-center gap-3 rounded-full bg-[#0a583b] px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-md"
+            >
+              <span>
+                {t.shopNow}
+              </span>
+
+              <ArrowIcon className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
+            </Link>
+
+            <div className="mt-7 flex items-center gap-3">
+              <a
+                href="https://www.facebook.com/share/17YjFUHZcR/?mibextid=wwXIfr"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className={
+                  socialButtonClass
+                }
+              >
+                <FaFacebookF
+                  size={16}
+                />
+              </a>
+
+              <a
+                href="https://www.instagram.com/kabpharma?igsh=NHpuY2F1eHFlYWgw&utm_source=qr"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className={
+                  socialButtonClass
+                }
+              >
+                <FaInstagram
+                  size={18}
+                />
+              </a>
+            </div>
+          </div>
+
+          {/* Desktop navigation */}
+          {sections.map(
+            (section) => (
+              <section
+                key={
+                  section.key
+                }
+              >
+                <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-[#142019]">
+                  {section.title}
+                </h2>
+
+                <nav
+                  aria-label={
+                    section.title
+                  }
+                  className="mt-6 flex flex-col items-start gap-4"
+                >
+                  {section.links.map(
+                    (item) => (
+                      <Link
+                        key={
+                          item.href
+                        }
+                        href={
+                          item.href
+                        }
+                        className={
+                          footerLinkClass
+                        }
+                      >
+                        <span className="relative">
+                          {item.label}
+
+                          <span className="absolute inset-x-0 -bottom-1 h-px origin-left scale-x-0 bg-[#0a583b] transition-transform group-hover:scale-x-100 rtl:origin-right" />
+                        </span>
+
+                        <ArrowIcon className="text-sm opacity-60 transition-transform group-hover:translate-x-1 group-hover:opacity-100 rtl:group-hover:-translate-x-1" />
+                      </Link>
+                    )
+                  )}
+                </nav>
+              </section>
+            )
+          )}
+        </div>
+
+        {/* Mobile brand */}
+        <div className="text-center lg:hidden">
+          <Link
+            href="/"
+            aria-label="KAB Pharma home"
+            className="inline-flex"
+          >
+            <Image
+              src="/logo.png"
+              alt="KAB Pharma"
+              width={230}
+              height={75}
+              className="h-auto w-[205px] mix-blend-multiply"
+            />
+          </Link>
+
+          <p
+            className={`mt-5 text-xs font-extrabold uppercase text-[#0a583b] ${
+              isArabic
+                ? "tracking-normal"
+                : "tracking-[0.14em]"
+            }`}
+          >
             {t.slogan}
           </p>
 
-          {/* Social media */}
-          <div className="mt-6 flex justify-center gap-4">
+          <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-[#647168]">
+            {t.description}
+          </p>
+
+          <Link
+            href="/products"
+            className="group mt-6 inline-flex items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 py-3.5 text-sm font-extrabold text-white transition active:scale-[0.98]"
+          >
+            <span>
+              {t.shopNow}
+            </span>
+
+            <ArrowIcon />
+          </Link>
+
+          <div className="mt-6 flex justify-center gap-3">
             <a
               href="https://www.facebook.com/share/17YjFUHZcR/?mibextid=wwXIfr"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
-              className={socialButtonClass}
+              className={
+                socialButtonClass
+              }
             >
-              <FaFacebookF size={18} />
+              <FaFacebookF
+                size={16}
+              />
             </a>
 
             <a
@@ -108,206 +367,129 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
-              className={socialButtonClass}
+              className={
+                socialButtonClass
+              }
             >
-              <FaInstagram size={20} />
+              <FaInstagram
+                size={18}
+              />
             </a>
           </div>
         </div>
 
         {/* Mobile accordion */}
-        <div className="mt-8 border-t border-gray-200 md:hidden">
-          {/* About */}
-          <section>
-            <button
-              type="button"
-              onClick={() => toggleSection("about")}
-              className={mobileSectionButtonClass}
-              aria-expanded={openSection === "about"}
-              aria-controls="mobile-about-section"
-            >
-              <span className="text-lg font-semibold text-gray-900">
-                {t.about}
-              </span>
+        <div
+          className="mt-10 border-y border-[#dfe4e0] lg:hidden"
+          aria-label={
+            t.navigation
+          }
+        >
+          {sections.map(
+            (section) => {
+              const isOpen =
+                openSection ===
+                section.key;
 
-              <span className="flex h-7 w-7 items-center justify-center rounded-full text-sm text-gray-700">
-                {openSection === "about" ? (
-                  <FaMinus />
-                ) : (
-                  <FaPlus />
-                )}
-              </span>
-            </button>
+              const sectionId =
+                `footer-${section.key}`;
 
-            {openSection === "about" && (
-              <div
-                id="mobile-about-section"
-                className="border-b border-gray-200 pb-5 pt-3"
-              >
-                <Link href="/about" className={mobileLinkClass}>
-                  <span>{t.viewAbout}</span>
-                  <FaChevronRight className={arrowClass} />
-                </Link>
-              </div>
-            )}
-          </section>
-
-          {/* Contact */}
-          <section>
-            <button
-              type="button"
-              onClick={() => toggleSection("contact")}
-              className={mobileSectionButtonClass}
-              aria-expanded={openSection === "contact"}
-              aria-controls="mobile-contact-section"
-            >
-              <span className="text-lg font-semibold text-gray-900">
-                {t.contact}
-              </span>
-
-              <span className="flex h-7 w-7 items-center justify-center rounded-full text-sm text-gray-700">
-                {openSection === "contact" ? (
-                  <FaMinus />
-                ) : (
-                  <FaPlus />
-                )}
-              </span>
-            </button>
-
-            {openSection === "contact" && (
-              <div
-                id="mobile-contact-section"
-                className="border-b border-gray-200 pb-5 pt-3"
-              >
-                <Link href="/contact" className={mobileLinkClass}>
-                  <span>{t.contactTeam}</span>
-                  <FaChevronRight className={arrowClass} />
-                </Link>
-              </div>
-            )}
-          </section>
-
-          {/* Policies */}
-          <section>
-            <button
-              type="button"
-              onClick={() => toggleSection("policies")}
-              className={mobileSectionButtonClass}
-              aria-expanded={openSection === "policies"}
-              aria-controls="mobile-policies-section"
-            >
-              <span className="text-lg font-semibold text-gray-900">
-                {t.policies}
-              </span>
-
-              <span className="flex h-7 w-7 items-center justify-center rounded-full text-sm text-gray-700">
-                {openSection === "policies" ? (
-                  <FaMinus />
-                ) : (
-                  <FaPlus />
-                )}
-              </span>
-            </button>
-
-            {openSection === "policies" && (
-              <nav
-                id="mobile-policies-section"
-                aria-label={t.footerLinks}
-                className="flex flex-col items-start gap-1 border-b border-gray-200 pb-5 pt-3"
-              >
-                <Link
-                  href="/privacy-policy"
-                  className={mobileLinkClass}
+              return (
+                <section
+                  key={
+                    section.key
+                  }
+                  className="border-b border-[#dfe4e0] last:border-b-0"
                 >
-                  <span>{t.privacy}</span>
-                  <FaChevronRight className={arrowClass} />
-                </Link>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleSection(
+                        section.key
+                      )
+                    }
+                    aria-expanded={
+                      isOpen
+                    }
+                    aria-controls={
+                      sectionId
+                    }
+                    className="flex w-full items-center justify-between gap-5 py-5 text-start"
+                  >
+                    <span className="text-base font-extrabold text-[#142019]">
+                      {
+                        section.title
+                      }
+                    </span>
 
-                <Link href="/terms" className={mobileLinkClass}>
-                  <span>{t.terms}</span>
-                  <FaChevronRight className={arrowClass} />
-                </Link>
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${
+                        isOpen
+                          ? "bg-[#0a583b] text-white"
+                          : "bg-[#edf1ee] text-[#526057]"
+                      }`}
+                    >
+                      {isOpen ? (
+                        <FaMinus
+                          size={11}
+                        />
+                      ) : (
+                        <FaPlus
+                          size={11}
+                        />
+                      )}
+                    </span>
+                  </button>
 
-                <Link
-                  href="/refund-policy"
-                  className={mobileLinkClass}
-                >
-                  <span>{t.refund}</span>
-                  <FaChevronRight className={arrowClass} />
-                </Link>
-              </nav>
-            )}
-          </section>
-        </div>
+                  {isOpen && (
+                    <nav
+                      id={
+                        sectionId
+                      }
+                      aria-label={
+                        section.title
+                      }
+                      className="flex flex-col items-start gap-4 pb-6"
+                    >
+                      {section.links.map(
+                        (item) => (
+                          <Link
+                            key={
+                              item.href
+                            }
+                            href={
+                              item.href
+                            }
+                            className={
+                              footerLinkClass
+                            }
+                          >
+                            <span>
+                              {
+                                item.label
+                              }
+                            </span>
 
-        {/* Desktop links */}
-        <div className="mt-10 hidden grid-cols-3 gap-12 border-t border-gray-200 pt-8 md:grid">
-          {/* About */}
-          <div>
-            <h4 className="text-base font-semibold text-gray-900">
-              {t.about}
-            </h4>
-
-            <div className="mt-4">
-              <Link href="/about" className={desktopLinkClass}>
-                <span>{t.viewAbout}</span>
-                <FaChevronRight className={arrowClass} />
-              </Link>
-            </div>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h4 className="text-base font-semibold text-gray-900">
-              {t.contact}
-            </h4>
-
-            <div className="mt-4">
-              <Link href="/contact" className={desktopLinkClass}>
-                <span>{t.contactTeam}</span>
-                <FaChevronRight className={arrowClass} />
-              </Link>
-            </div>
-          </div>
-
-          {/* Policies */}
-          <div>
-            <h4 className="text-base font-semibold text-gray-900">
-              {t.policies}
-            </h4>
-
-            <nav
-              aria-label={t.footerLinks}
-              className="mt-4 flex flex-col items-start gap-3"
-            >
-              <Link
-                href="/privacy-policy"
-                className={desktopLinkClass}
-              >
-                <span>{t.privacy}</span>
-                <FaChevronRight className={arrowClass} />
-              </Link>
-
-              <Link href="/terms" className={desktopLinkClass}>
-                <span>{t.terms}</span>
-                <FaChevronRight className={arrowClass} />
-              </Link>
-
-              <Link
-                href="/refund-policy"
-                className={desktopLinkClass}
-              >
-                <span>{t.refund}</span>
-                <FaChevronRight className={arrowClass} />
-              </Link>
-            </nav>
-          </div>
+                            <ArrowIcon className="text-sm opacity-60" />
+                          </Link>
+                        )
+                      )}
+                    </nav>
+                  )}
+                </section>
+              );
+            }
+          )}
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 border-t border-gray-200 pt-6 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[#dfe4e0] pt-6 text-center sm:flex-row sm:text-start">
+          <p className="text-xs leading-6 text-[#7a857e] sm:text-sm">
             {t.rights}
+          </p>
+
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#0a583b]">
+            KAB Pharma
           </p>
         </div>
       </div>
