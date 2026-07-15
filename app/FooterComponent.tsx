@@ -2,16 +2,20 @@
 
 import Link from "next/link";
 import { useState } from "react";
+
 import {
   ArrowLeft,
   ArrowRight,
   Minus,
   Plus,
 } from "lucide-react";
+
 import {
   FaFacebookF,
+  FaGlobe,
   FaInstagram,
 } from "react-icons/fa";
+
 import { useLanguage } from "../context/LanguageContext";
 
 type SectionKey =
@@ -76,10 +80,10 @@ export default function Footer() {
       terms: "Terms & conditions",
       refund: "Refund policy",
 
-      follow: "Follow",
+      follow: "Follow us",
+      language: "Language",
 
-      rights:
-        `© ${currentYear} KAB Pharma. All rights reserved.`,
+      rights: `© ${currentYear} KAB Pharma. All rights reserved.`,
 
       quality:
         "The quality for a healthier life",
@@ -120,9 +124,9 @@ export default function Footer() {
       refund: "سياسة الاسترجاع",
 
       follow: "تابعنا",
+      language: "اللغة",
 
-      rights:
-        `© ${currentYear} KAB Pharma. جميع الحقوق محفوظة.`,
+      rights: `© ${currentYear} KAB Pharma. جميع الحقوق محفوظة.`,
 
       quality:
         "الجودة لحياة أكثر صحة",
@@ -133,9 +137,7 @@ export default function Footer() {
   };
 
   const t =
-    text[
-      lang as "en" | "ar"
-    ];
+    text[lang as "en" | "ar"];
 
   const ArrowIcon =
     isArabic
@@ -149,18 +151,12 @@ export default function Footer() {
 
       links: [
         {
-          label:
-            t.allProducts,
-
-          href:
-            "/products",
+          label: t.allProducts,
+          href: "/products",
         },
         {
-          label:
-            t.wishlist,
-
-          href:
-            "/wishlist",
+          label: t.wishlist,
+          href: "/wishlist",
         },
       ],
     },
@@ -171,18 +167,12 @@ export default function Footer() {
 
       links: [
         {
-          label:
-            t.contact,
-
-          href:
-            "/contact",
+          label: t.contact,
+          href: "/contact",
         },
         {
-          label:
-            t.account,
-
-          href:
-            "/profile",
+          label: t.account,
+          href: "/profile",
         },
       ],
     },
@@ -193,11 +183,8 @@ export default function Footer() {
 
       links: [
         {
-          label:
-            t.about,
-
-          href:
-            "/about",
+          label: t.about,
+          href: "/about",
         },
       ],
     },
@@ -208,25 +195,16 @@ export default function Footer() {
 
       links: [
         {
-          label:
-            t.privacy,
-
-          href:
-            "/privacy-policy",
+          label: t.privacy,
+          href: "/privacy-policy",
         },
         {
-          label:
-            t.terms,
-
-          href:
-            "/terms",
+          label: t.terms,
+          href: "/terms",
         },
         {
-          label:
-            t.refund,
-
-          href:
-            "/refund-policy",
+          label: t.refund,
+          href: "/refund-policy",
         },
       ],
     },
@@ -275,23 +253,279 @@ export default function Footer() {
   const desktopLinkClass =
     "group inline-flex w-fit items-center gap-2 text-[15px] leading-6 text-[#4f5d54] transition-colors duration-200 hover:text-[#0a583b]";
 
-  const mobileLinkClass =
-    "group inline-flex w-full items-center justify-between gap-4 py-1 text-[15px] leading-7 text-[#4f5d54] transition-colors hover:text-[#0a583b]";
+  const desktopSocialIconClass =
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#142019] text-white shadow-sm transition duration-300 hover:-translate-y-1 hover:bg-[#0a583b] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#dfeae3]";
 
- const socialIconClass =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#142019] text-white shadow-sm transition duration-300 hover:-translate-y-1 hover:bg-[#0a583b] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#dfeae3]";  
+  const mobileSocialIconClass =
+    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b] transition active:scale-95 active:bg-[#dfece4]";
+
   return (
     <footer
-      dir={
+      dir={isArabic ? "rtl" : "ltr"}
+      className={`mt-auto border-t border-[#dfe4e0] bg-[#f2f3ef] text-[#142019] ${
         isArabic
-          ? "rtl"
-          : "ltr"
-      }
-      className="mt-auto border-t border-[#dfe4e0] bg-[#f2f3ef] text-[#142019]"
+          ? "[font-family:Tahoma,Arial,sans-serif]"
+          : ""
+      }`}
     >
-      <div className="mx-auto max-w-[1600px] px-5 sm:px-6 lg:px-10">
+      {/* Mobile footer */}
+      <div className="mx-auto max-w-md px-4 pb-[calc(7.25rem+env(safe-area-inset-bottom))] pt-5 md:hidden">
+        {/* Compact brand card */}
+        <section className="relative overflow-hidden rounded-[1.5rem] bg-[#073f2c] p-5 text-white shadow-[0_14px_35px_rgba(7,63,44,0.14)]">
+          <div className="absolute -end-16 -top-20 h-48 w-48 rounded-full bg-white/[0.05]" />
+
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <span className="h-px w-7 bg-white/50" />
+
+              <p
+                dir="ltr"
+                className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/65"
+              >
+                KAB Pharma
+              </p>
+            </div>
+
+            <h2 className="mt-4 max-w-[320px] text-[25px] font-extrabold leading-[1.35] tracking-normal">
+              {t.statement}
+            </h2>
+
+            <Link
+              href="/contact"
+              className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-extrabold text-[#073f2c] transition active:scale-[0.98]"
+            >
+              <span>
+                {t.contactTeam}
+              </span>
+
+              <ArrowIcon
+                size={14}
+                strokeWidth={2}
+              />
+            </Link>
+          </div>
+        </section>
+
+        {/* Mobile navigation card */}
+        <section
+          aria-label={t.navigation}
+          className="mt-4 overflow-hidden rounded-[1.25rem] border border-[#e0e6e1] bg-white"
+        >
+          {sections.map(
+            (section) => {
+              const isOpen =
+                openSection ===
+                section.key;
+
+              const sectionId =
+                `mobile-footer-${section.key}`;
+
+              return (
+                <div
+                  key={section.key}
+                  className="border-b border-[#edf0ed] last:border-b-0"
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      toggleSection(
+                        section.key
+                      )
+                    }
+                    aria-expanded={isOpen}
+                    aria-controls={
+                      sectionId
+                    }
+                    className="flex min-h-[62px] w-full items-center justify-between gap-5 px-4 text-start transition active:bg-[#f3f6f4]"
+                  >
+                    <span className="text-sm font-extrabold text-[#142019]">
+                      {section.title}
+                    </span>
+
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#f1f4f2] text-[#647168]">
+                      {isOpen ? (
+                        <Minus
+                          size={15}
+                          strokeWidth={1.8}
+                        />
+                      ) : (
+                        <Plus
+                          size={15}
+                          strokeWidth={1.8}
+                        />
+                      )}
+                    </span>
+                  </button>
+
+                  <div
+                    id={sectionId}
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      isOpen
+                        ? "grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <nav
+                        aria-label={
+                          section.title
+                        }
+                        className="border-t border-[#edf0ed] px-4 py-2"
+                      >
+                        {section.links.map(
+                          (item) => (
+                            <Link
+                              key={
+                                item.href
+                              }
+                              href={
+                                item.href
+                              }
+                              className="group flex min-h-[52px] items-center justify-between gap-4 border-b border-[#f0f2f0] py-2 text-sm font-bold text-[#5d6a61] transition last:border-b-0 active:text-[#0a583b]"
+                            >
+                              <span>
+                                {item.label}
+                              </span>
+
+                              <ArrowIcon
+                                size={13}
+                                className="shrink-0 opacity-40 transition group-active:opacity-100"
+                              />
+                            </Link>
+                          )
+                        )}
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+          )}
+        </section>
+
+        {/* Social and language */}
+        <section className="mt-4 overflow-hidden rounded-[1.25rem] border border-[#e0e6e1] bg-white">
+          <div className="flex min-h-[76px] items-center justify-between gap-4 px-4 py-3.5">
+            <div>
+              <p className="text-sm font-extrabold text-[#142019]">
+                {t.follow}
+              </p>
+            </div>
+
+            <div
+              dir="ltr"
+              className="flex items-center gap-2"
+            >
+              {socialLinks.map(
+                ({
+                  label,
+                  href,
+                  Icon,
+                }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    title={label}
+                    className={
+                      mobileSocialIconClass
+                    }
+                  >
+                    <Icon
+                      size={
+                        label ===
+                        "Instagram"
+                          ? 17
+                          : 15
+                      }
+                    />
+                  </a>
+                )
+              )}
+            </div>
+          </div>
+
+          <div className="flex min-h-[76px] items-center justify-between gap-4 border-t border-[#edf0ed] px-4 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <FaGlobe />
+              </div>
+
+              <span className="text-sm font-extrabold text-[#142019]">
+                {t.language}
+              </span>
+            </div>
+
+            <div
+              dir="ltr"
+              className="flex rounded-full bg-[#f1f4f2] p-1"
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  changeLanguage("en")
+                }
+                aria-pressed={
+                  lang === "en"
+                }
+                className={`flex h-9 min-w-12 items-center justify-center rounded-full px-3 text-xs font-extrabold transition ${
+                  lang === "en"
+                    ? "bg-[#0a583b] text-white shadow-sm"
+                    : "text-[#647168]"
+                }`}
+              >
+                EN
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  changeLanguage("ar")
+                }
+                aria-pressed={
+                  lang === "ar"
+                }
+                className={`flex h-9 min-w-12 items-center justify-center rounded-full px-3 text-xs font-extrabold transition ${
+                  lang === "ar"
+                    ? "bg-[#0a583b] text-white shadow-sm"
+                    : "text-[#647168]"
+                }`}
+              >
+                AR
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Compact mobile signature */}
+        <div className="pt-8 text-center">
+          <Link
+            href="/"
+            dir="ltr"
+            aria-label="KAB Pharma home"
+            className="inline-flex items-baseline whitespace-nowrap"
+          >
+            <span className="text-2xl font-black tracking-[-0.055em] text-[#142019]">
+              KAB
+            </span>
+
+            <span className="ml-1 text-2xl font-light tracking-[-0.055em] text-[#526057]">
+              PHARMA
+            </span>
+          </Link>
+
+          <p className="mt-4 text-[11px] leading-5 text-[#7a857e]">
+            {t.rights}
+          </p>
+        </div>
+      </div>
+
+      {/* Desktop footer — unchanged */}
+      <div className="mx-auto hidden max-w-[1600px] px-5 sm:px-6 md:block lg:px-10">
         {/* Editorial introduction */}
-        <section className="grid gap-10 border-b border-[#cfd6d1] py-14 sm:py-16 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)] lg:items-end lg:gap-20 lg:py-20">
+        <section className="grid gap-10 border-b border-[#cfd6d1] py-16 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)] lg:items-end lg:gap-20 lg:py-20">
           <div>
             <p
               dir="ltr"
@@ -303,8 +537,8 @@ export default function Footer() {
             <h2
               className={`mt-5 max-w-[950px] font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-[38px] leading-[1.22] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[48px] lg:text-[64px]"
-                  : "text-[42px] leading-[0.98] tracking-[-0.055em] sm:text-[58px] lg:text-[82px]"
+                  ? "text-[48px] leading-[1.22] tracking-normal lg:text-[64px]"
+                  : "text-[58px] leading-[0.98] tracking-[-0.055em] lg:text-[82px]"
               }`}
             >
               {t.statement}
@@ -318,7 +552,7 @@ export default function Footer() {
                 : "text-left"
             }
           >
-            <p className="max-w-lg text-[15px] leading-8 text-[#526057] sm:text-base">
+            <p className="max-w-lg text-base leading-8 text-[#526057]">
               {t.description}
             </p>
 
@@ -352,7 +586,7 @@ export default function Footer() {
         {/* Desktop navigation */}
         <section
           aria-label={t.navigation}
-          className="hidden grid-cols-5 gap-10 border-b border-[#cfd6d1] py-12 md:grid lg:gap-16"
+          className="grid grid-cols-5 gap-10 border-b border-[#cfd6d1] py-12 lg:gap-16"
         >
           {sections.map(
             (section) => (
@@ -406,9 +640,7 @@ export default function Footer() {
           )}
 
           {/* Desktop social */}
-          <nav
-            aria-label={t.follow}
-          >
+          <nav aria-label={t.follow}>
             <h3
               className={`text-[11px] font-extrabold uppercase text-[#142019] ${
                 isArabic
@@ -420,160 +652,13 @@ export default function Footer() {
             </h3>
 
             <div
-  dir="ltr"
-  className={`mt-5 flex w-full items-center gap-2.5 ${
-    isArabic
-      ? "justify-end"
-      : "justify-start"
-  }`}
->
-  {socialLinks.map(
-    ({
-      label,
-      href,
-      Icon,
-    }) => (
-      <a
-        key={label}
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={label}
-        title={label}
-        className={socialIconClass}
-      >
-        <Icon
-          size={
-            label === "Instagram"
-              ? 18
-              : 16
-          }
-        />
-      </a>
-    )
-  )}
-</div>
-          </nav>
-        </section>
-
-        {/* Mobile navigation */}
-        <section
-          aria-label={t.navigation}
-          className="border-b border-[#cfd6d1] md:hidden"
-        >
-          {sections.map(
-            (section) => {
-              const isOpen =
-                openSection ===
-                section.key;
-
-              const sectionId =
-                `footer-${section.key}`;
-
-              return (
-                <div
-                  key={
-                    section.key
-                  }
-                  className="border-b border-[#cfd6d1] last:border-b-0"
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleSection(
-                        section.key
-                      )
-                    }
-                    aria-expanded={
-                      isOpen
-                    }
-                    aria-controls={
-                      sectionId
-                    }
-                    className="flex min-h-[62px] w-full items-center justify-between gap-6 text-start"
-                  >
-                    <span
-                      className={`text-[12px] font-extrabold uppercase text-[#142019] ${
-                        isArabic
-                          ? "tracking-normal"
-                          : "tracking-[0.13em]"
-                      }`}
-                    >
-                      {section.title}
-                    </span>
-
-                    {isOpen ? (
-                      <Minus
-                        size={17}
-                        strokeWidth={1.5}
-                      />
-                    ) : (
-                      <Plus
-                        size={17}
-                        strokeWidth={1.5}
-                      />
-                    )}
-                  </button>
-
-                  {isOpen && (
-                    <nav
-                      id={sectionId}
-                      aria-label={
-                        section.title
-                      }
-                      className="space-y-2 pb-6"
-                    >
-                      {section.links.map(
-                        (item) => (
-                          <Link
-                            key={
-                              item.href
-                            }
-                            href={
-                              item.href
-                            }
-                            className={
-                              mobileLinkClass
-                            }
-                          >
-                            <span>
-                              {item.label}
-                            </span>
-
-                            <ArrowIcon
-                              size={14}
-                              className="opacity-45"
-                            />
-                          </Link>
-                        )
-                      )}
-                    </nav>
-                  )}
-                </div>
-              );
-            }
-          )}
-
-          {/* Mobile social */}
-          <div className="py-7">
-            <p
-              className={`text-[11px] font-extrabold uppercase text-[#142019] ${
+              dir="ltr"
+              className={`mt-5 flex w-full items-center gap-2.5 ${
                 isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.14em]"
+                  ? "justify-end"
+                  : "justify-start"
               }`}
             >
-              {t.follow}
-            </p>
-
-            <div
-  dir="ltr"
-  className={`mt-5 flex w-full items-center gap-2.5 ${
-    isArabic
-      ? "justify-end"
-      : "justify-start"
-  }`}
->
               {socialLinks.map(
                 ({
                   label,
@@ -588,7 +673,7 @@ export default function Footer() {
                     aria-label={label}
                     title={label}
                     className={
-                      socialIconClass
+                      desktopSocialIconClass
                     }
                   >
                     <Icon
@@ -603,15 +688,15 @@ export default function Footer() {
                 )
               )}
             </div>
-          </div>
+          </nav>
         </section>
 
-        {/* Large brand signature */}
+        {/* Large desktop signature */}
         <Link
           href="/"
           dir="ltr"
           aria-label="KAB Pharma home"
-          className="group block overflow-hidden border-b border-[#cfd6d1] py-9 sm:py-12 lg:py-14"
+          className="group block overflow-hidden border-b border-[#cfd6d1] py-12 lg:py-14"
         >
           <div className="flex items-end whitespace-nowrap">
             <span className="text-[clamp(3.1rem,10.7vw,10rem)] font-black leading-[0.78] tracking-[-0.075em] text-[#142019] transition-colors duration-300 group-hover:text-[#0a583b]">
@@ -641,10 +726,10 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Language selector */}
+        {/* Desktop language selector */}
         <div
           dir="ltr"
-          className="pb-[calc(7.25rem+env(safe-area-inset-bottom))] pt-8 text-center md:pb-7"
+          className="pb-7 pt-8 text-center"
         >
           <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#8a948d]">
             Language
@@ -654,9 +739,7 @@ export default function Footer() {
             <button
               type="button"
               onClick={() =>
-                changeLanguage(
-                  "ar"
-                )
+                changeLanguage("ar")
               }
               aria-pressed={
                 lang === "ar"
@@ -679,9 +762,7 @@ export default function Footer() {
             <button
               type="button"
               onClick={() =>
-                changeLanguage(
-                  "en"
-                )
+                changeLanguage("en")
               }
               aria-pressed={
                 lang === "en"
