@@ -1,69 +1,123 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay } from "swiper/modules";
+import { Autoplay, Pagination } from "swiper/modules";
 import { useLanguage } from "../context/LanguageContext";
 
 import "swiper/css";
+import "swiper/css/pagination";
 
-export default function HomeBannerSwiper({ banners }: { banners: any[] }) {
+export default function HomeBannerSwiper({
+  banners,
+}: {
+  banners: any[];
+}) {
   const { lang } = useLanguage();
+  const currentLang = lang as "en" | "ar";
+  const isArabic = currentLang === "ar";
 
   if (!banners || banners.length === 0) return null;
 
   return (
     <Swiper
       dir="ltr"
-      modules={[Autoplay]}
-      autoplay={{
-        delay: 5000,
-        disableOnInteraction: false,
-      }}
-      loop
+      modules={[Autoplay, Pagination]}
       slidesPerView={1}
-      className="rounded-[2rem]"
+      loop={banners.length > 1}
+      autoplay={
+        banners.length > 1
+          ? {
+              delay: 6000,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
+            }
+          : false
+      }
+      pagination={
+        banners.length > 1
+          ? {
+              clickable: true,
+            }
+          : false
+      }
+      className="kab-campaign-swiper"
     >
       {banners.map((slide) => {
-        const title =
-          lang === "ar"
-            ? slide.title_ar || slide.title
-            : slide.title_en || slide.title;
+        const title = isArabic
+          ? slide.title_ar || slide.title
+          : slide.title_en || slide.title;
 
-        const text =
-          lang === "ar"
-            ? slide.text_ar || slide.text
-            : slide.text_en || slide.text;
+        const description = isArabic
+          ? slide.text_ar || slide.text
+          : slide.text_en || slide.text;
+
+        const buttonText = isArabic
+          ? slide.button_text_ar || "اكتشف المنتج"
+          : slide.button_text || "Discover product";
 
         return (
           <SwiperSlide key={slide.id}>
-            <div className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-gray-100">
-              <div className="grid md:grid-cols-2">
-                <div className="h-[280px] md:h-[420px]">
-                  <img
-                    src={slide.image_url}
-                    alt={title}
-                    className="h-full w-full object-cover"
+            <article
+              dir={isArabic ? "rtl" : "ltr"}
+              className="relative min-h-[680px] overflow-hidden bg-[#f6f6f3] md:min-h-[560px] lg:min-h-[620px]"
+            >
+              {/* Responsive campaign background */}
+              <picture>
+                {slide.image_url_mobile && (
+                  <source
+                    media="(max-width: 767px)"
+                    srcSet={slide.image_url_mobile}
                   />
-                </div>
+                )}
 
+                <img
+                  src={slide.image_url}
+                  alt={title || "KAB Pharma campaign"}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              </picture>
+
+              {/* Soft readability layer */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-transparent md:bg-gradient-to-r md:from-white/25 md:via-transparent md:to-transparent" />
+
+              {/* Live content */}
+             <div className="relative z-10 mx-auto flex min-h-[680px] max-w-[1440px] items-start px-5 py-10 sm:px-8 md:min-h-[560px] md:items-center md:px-12 lg:min-h-[620px] lg:px-16">
                 <div
-                  dir={lang === "ar" ? "rtl" : "ltr"}
-                  className={`flex items-center bg-pink-300 p-10 ${
-                    lang === "ar" ? "text-right" : "text-left"
-                  }`}
-                >
-                  <div>
-                    <h2 className="text-4xl font-extrabold text-black">
-                      {title}
-                    </h2>
+  className={`w-full max-w-[490px] md:mr-auto md:ml-0 md:w-[46%] ${
+    isArabic ? "text-right" : "text-left"
+  }`}
+>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#0a583b] sm:text-xs">
+                    KAB Pharma
+                  </p>
 
-                    <p className="mt-6 text-lg leading-8 text-black/80">
-                      {text}
+                  <h1 className="mt-3 max-w-[440px] text-[32px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px]">
+                    {title}
+                  </h1>
+
+                  {description && (
+                    <p className="mt-4 max-w-[430px] text-sm leading-7 text-[#526058] sm:text-base sm:leading-8">
+                      {description}
                     </p>
-                  </div>
+                  )}
+
+                  <Link
+                    href={slide.link_url || "/products"}
+                    className="mt-6 inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg"
+                  >
+                    <span>{buttonText}</span>
+
+                    {isArabic ? (
+                      <ArrowLeft size={17} />
+                    ) : (
+                      <ArrowRight size={17} />
+                    )}
+                  </Link>
                 </div>
               </div>
-            </div>
+            </article>
           </SwiperSlide>
         );
       })}

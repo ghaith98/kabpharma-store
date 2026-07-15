@@ -2,7 +2,16 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #142019;
+
+  --kab-green: #0a583b;
+  --kab-green-dark: #073f2c;
+  --kab-green-soft: #edf5f0;
+
+  --kab-surface: #ffffff;
+  --kab-surface-soft: #f7f8f6;
+  --kab-border: #e7ebe8;
+  --kab-muted: #647168;
 }
 
 @theme inline {
@@ -12,15 +21,95 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-geist-sans),
+    Inter,
+    Arial,
+    Helvetica,
+    sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: #cde9d9;
+  color: #073f2c;
+}
+
+/* Campaign banner */
+.kab-campaign-swiper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.kab-campaign-swiper .swiper-pagination {
+  bottom: 18px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kab-campaign-swiper .swiper-pagination-bullet {
+  width: 7px;
+  height: 7px;
+  margin: 0 4px !important;
+  border: 0;
+  background: rgba(10, 88, 59, 0.4);
+  opacity: 1;
+  transition:
+    width 200ms ease,
+    background-color 200ms ease;
+}
+
+.kab-campaign-swiper
+  .swiper-pagination-bullet-active {
+  width: 26px;
+  border-radius: 999px;
+  background: #0a583b;
+}
+
+/* Mobile banner dots */
+@media (max-width: 767px) {
+  .kab-campaign-swiper .swiper-pagination {
+    bottom: 14px !important;
+  }
+
+  .kab-campaign-swiper .swiper-pagination-bullet {
+    background: rgba(10, 88, 59, 0.35);
+  }
+
+  .kab-campaign-swiper
+    .swiper-pagination-bullet-active {
+    background: #0a583b;
+  }
 }
