@@ -9,21 +9,23 @@ export default function BackButton() {
   const { lang } = useLanguage();
 
   function handleBack() {
-    const hasPreviousPage =
-      window.history.length > 1 &&
-      document.referrer !== "";
+  const referrer = document.referrer;
 
-    if (hasPreviousPage) {
-      router.back();
-      return;
-    }
+  const cameFromExternalWebsite =
+    referrer !== "" &&
+    new URL(referrer).origin !== window.location.origin;
 
-    /*
-      إذا المنتج انفتح مباشرة من رابط Share
-      وما في صفحة سابقة، منرجع لصفحة المنتجات.
-    */
-    router.push("/products");
+  if (
+    window.history.length > 1 &&
+    !cameFromExternalWebsite
+  ) {
+    router.back();
+    return;
   }
+
+  // إذا انفتح المنتج مباشرة أو من موقع خارجي
+  router.push("/products");
+}
 
   const BackIcon =
     lang === "ar" ? FiArrowRight : FiArrowLeft;
