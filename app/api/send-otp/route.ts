@@ -36,26 +36,28 @@ export async function POST(
     const instanceToken =
       await getNabdaInstanceToken();
 
-    const response = await fetch(
-      `${NABDA_API_URL}/api/v1/messages/otp/send`,
-      {
-        method: "POST",
+    const otp = Math.floor(
+  100000 + Math.random() * 900000
+).toString();
 
-        headers: {
-          "Content-Type":
-            "application/json",
+const response = await fetch(
+  `${NABDA_API_URL}/api/v1/messages/send`,
+  {
+    method: "POST",
 
-          Authorization:
-            `Bearer ${instanceToken}`,
-        },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${instanceToken}`,
+    },
 
-        body: JSON.stringify({
-          phone: `+${phone}`,
-        }),
+    body: JSON.stringify({
+      phone: `+${phone}`,
+      message: `رمز التحقق الخاص بك في KAB Pharma هو: ${otp}. صالح لمدة 5 دقائق.`,
+    }),
 
-        cache: "no-store",
-      }
-    );
+    cache: "no-store",
+  }
+);
 
     if (!response.ok) {
       const providerResponse =
