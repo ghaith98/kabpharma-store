@@ -629,40 +629,40 @@ export default function ProductsClient({
                       )}
                     </Link>
 
-                      <div
-                        dir="ltr"
-                        className="absolute right-3 top-3 z-20"
-                        onClick={(
-                          event
-                        ) => {
-                          event.preventDefault();
-                          event.stopPropagation();
+                    <div
+                      dir="ltr"
+                      className="absolute right-3 top-3 z-20"
+                      onClick={(
+                        event
+                      ) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }}
+                    >
+                      <WishlistButton
+                        product={{
+                          id:
+                            product.id,
+
+                          name:
+                            productName,
+
+                          price:
+                            Math.round(
+                              finalPrice
+                            ),
+
+                          original_price:
+                            originalPrice,
+
+                          sale_percent:
+                            salePercent,
+
+                          image_url:
+                            product.image_url,
                         }}
-                      >
-                        <WishlistButton
-                          product={{
-                            id:
-                              product.id,
-
-                            name:
-                              productName,
-
-                            price:
-                              Math.round(
-                                finalPrice
-                              ),
-
-                            original_price:
-                              originalPrice,
-
-                            sale_percent:
-                              salePercent,
-
-                            image_url:
-                              product.image_url,
-                          }}
-                        />
-                      </div>
+                      />
+                    </div>
 
                     <div className="absolute left-3 top-3 z-10">
                       {isOutOfStock ? (
