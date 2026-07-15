@@ -226,208 +226,208 @@ export default function ProductsClient({
       ? 1
       : 0);
 
-  const filteredProducts =
-    useMemo(() => {
-      const cleanSearch = search
-        .trim()
-        .toLocaleLowerCase();
+    const filteredProducts =
+      useMemo(() => {
+        const cleanSearch = search
+          .trim()
+          .toLocaleLowerCase();
 
-      return [...products]
-        .filter((product) => {
-          const productName =
-            isArabic
-              ? product.name_ar ||
-                product.name ||
-                product.name_en
-              : product.name_en ||
-                product.name ||
-                product.name_ar;
-
-          const productDescription =
-            isArabic
-              ? product.description_ar ||
-                product.description ||
-                product.description_en
-              : product.description_en ||
-                product.description ||
-                product.description_ar;
-
-          const categoryName =
-            isArabic
-              ? product.categories
-                  ?.name_ar ||
-                product.categories
-                  ?.name ||
-                product.categories
-                  ?.name_en
-              : product.categories
-                  ?.name_en ||
-                product.categories
-                  ?.name ||
-                product.categories
-                  ?.name_ar;
-
-          const searchableText = `
-            ${productName || ""}
-            ${productDescription || ""}
-            ${categoryName || ""}
-          `.toLocaleLowerCase();
-
-          const finalPrice =
-            getFinalPrice(product);
-
-          const matchesSearch =
-            !cleanSearch ||
-            searchableText.includes(
-              cleanSearch
-            );
-
-          const matchesCategory =
-            selectedCategoryId ===
-              null ||
-            Number(
-              product.category_id
-            ) ===
-              selectedCategoryId;
-
-          const matchesPrice =
-            finalPrice >=
-              priceRange[0] &&
-            finalPrice <=
-              priceRange[1];
-
-          const matchesStock =
-            !inStockOnly ||
-            product.is_out_of_stock ===
-              false;
-
-          const matchesSale =
-            !onSaleOnly ||
-            Number(
-              product.sale_percent || 0
-            ) > 0;
-
-          return (
-            matchesSearch &&
-            matchesCategory &&
-            matchesPrice &&
-            matchesStock &&
-            matchesSale
-          );
-        })
-        .sort(
-          (
-            firstProduct,
-            secondProduct
-          ) => {
-            if (
-              sortBy === "price_low"
-            ) {
-              return (
-                getFinalPrice(
-                  firstProduct
-                ) -
-                getFinalPrice(
-                  secondProduct
-                )
-              );
-            }
-
-            if (
-              sortBy === "price_high"
-            ) {
-              return (
-                getFinalPrice(
-                  secondProduct
-                ) -
-                getFinalPrice(
-                  firstProduct
-                )
-              );
-            }
-
-            if (
-              sortBy === "newest"
-            ) {
-              return (
-                Number(
-                  secondProduct.id
-                ) -
-                Number(
-                  firstProduct.id
-                )
-              );
-            }
-
-            return 0;
-          }
-        );
-    }, [
-      products,
-      search,
-      isArabic,
-      selectedCategoryId,
-      priceRange,
-      inStockOnly,
-      onSaleOnly,
-      sortBy,
-    ]);
-
-  return (
-    <div
-      dir={isArabic ? "rtl" : "ltr"}
-      className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8"
-    >
-      {showHeader && (
-        <header
-          className={`border-b border-[#e7ebe8] pb-8 sm:pb-10 ${
-            isArabic
-              ? "text-right"
-              : "text-left"
-          }`}
-        >
-          <p
-            className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
+        return [...products]
+          .filter((product) => {
+            const productName =
               isArabic
-                ? "tracking-normal"
-                : "tracking-[0.2em]"
+                ? product.name_ar ||
+                  product.name ||
+                  product.name_en
+                : product.name_en ||
+                  product.name ||
+                  product.name_ar;
+
+            const productDescription =
+              isArabic
+                ? product.description_ar ||
+                  product.description ||
+                  product.description_en
+                : product.description_en ||
+                  product.description ||
+                  product.description_ar;
+
+            const categoryName =
+              isArabic
+                ? product.categories
+                    ?.name_ar ||
+                  product.categories
+                    ?.name ||
+                  product.categories
+                    ?.name_en
+                : product.categories
+                    ?.name_en ||
+                  product.categories
+                    ?.name ||
+                  product.categories
+                    ?.name_ar;
+
+            const searchableText = `
+              ${productName || ""}
+              ${productDescription || ""}
+              ${categoryName || ""}
+            `.toLocaleLowerCase();
+
+            const finalPrice =
+              getFinalPrice(product);
+
+            const matchesSearch =
+              !cleanSearch ||
+              searchableText.includes(
+                cleanSearch
+              );
+
+            const matchesCategory =
+              selectedCategoryId ===
+                null ||
+              Number(
+                product.category_id
+              ) ===
+                selectedCategoryId;
+
+            const matchesPrice =
+              finalPrice >=
+                priceRange[0] &&
+              finalPrice <=
+                priceRange[1];
+
+            const matchesStock =
+              !inStockOnly ||
+              product.is_out_of_stock ===
+                false;
+
+            const matchesSale =
+              !onSaleOnly ||
+              Number(
+                product.sale_percent || 0
+              ) > 0;
+
+            return (
+              matchesSearch &&
+              matchesCategory &&
+              matchesPrice &&
+              matchesStock &&
+              matchesSale
+            );
+          })
+          .sort(
+            (
+              firstProduct,
+              secondProduct
+            ) => {
+              if (
+                sortBy === "price_low"
+              ) {
+                return (
+                  getFinalPrice(
+                    firstProduct
+                  ) -
+                  getFinalPrice(
+                    secondProduct
+                  )
+                );
+              }
+
+              if (
+                sortBy === "price_high"
+              ) {
+                return (
+                  getFinalPrice(
+                    secondProduct
+                  ) -
+                  getFinalPrice(
+                    firstProduct
+                  )
+                );
+              }
+
+              if (
+                sortBy === "newest"
+              ) {
+                return (
+                  Number(
+                    secondProduct.id
+                  ) -
+                  Number(
+                    firstProduct.id
+                  )
+                );
+              }
+
+              return 0;
+            }
+          );
+      }, [
+        products,
+        search,
+        isArabic,
+        selectedCategoryId,
+        priceRange,
+        inStockOnly,
+        onSaleOnly,
+        sortBy,
+      ]);
+
+    return (
+      <div
+        dir={isArabic ? "rtl" : "ltr"}
+        className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8"
+      >
+        {showHeader && (
+          <header
+            className={`border-b border-[#e7ebe8] pb-8 sm:pb-10 ${
+              isArabic
+                ? "text-right"
+                : "text-left"
             }`}
           >
-            {isArabic
-              ? "مجموعة كاب فارما"
-              : "KAB Pharma collection"}
-          </p>
+            <p
+              className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
+                isArabic
+                  ? "tracking-normal"
+                  : "tracking-[0.2em]"
+              }`}
+            >
+              {isArabic
+                ? "مجموعة كاب فارما"
+                : "KAB Pharma collection"}
+            </p>
 
-          <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1
-                className={`text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-5xl ${
-                  isArabic
-                    ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
-                    : "tracking-[-0.04em]"
-                }`}
-              >
-                {isArabic
-                  ? "اكتشف منتجاتنا"
-                  : "Discover our products"}
-              </h1>
-
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
-                {isArabic
-                  ? "منتجات مختارة للعناية اليومية بالبشرة والجسم والشعر."
-                  : "Explore skincare, body care and personal care products selected for your everyday routine."}
-              </p>
-            </div>
-
-            {showSearch && (
-              <div className="relative w-full lg:max-w-md">
-                <FaSearch
-                  className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-sm text-[#7a857e] ${
+            <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h1
+                  className={`text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-5xl ${
                     isArabic
-                      ? "right-4"
-                      : "left-4"
+                      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                      : "tracking-[-0.04em]"
                   }`}
-                />
+                >
+                  {isArabic
+                    ? "اكتشف منتجاتنا"
+                    : "Discover our products"}
+                </h1>
+
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
+                  {isArabic
+                    ? "منتجات مختارة للعناية اليومية بالبشرة والجسم والشعر."
+                    : "Explore skincare, body care and personal care products selected for your everyday routine."}
+                </p>
+              </div>
+
+              {showSearch && (
+                <div className="relative w-full lg:max-w-md">
+                  <FaSearch
+                    className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-sm text-[#7a857e] ${
+                      isArabic
+                        ? "right-4"
+                        : "left-4"
+                    }`}
+                  />
 
                 <input
                   type="search"
@@ -691,10 +691,15 @@ export default function ProductsClient({
                         : "text-left"
                     }`}
                   >
-                    <p className="min-h-4 truncate text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#0a583b] sm:text-[10px]">
-                      {categoryName ||
-                        "KAB Pharma"}
-                    </p>
+                    <p
+  className={`min-h-4 truncate text-[9px] font-extrabold text-[#0a583b] sm:text-[10px] ${
+    isArabic
+      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+      : "uppercase tracking-[0.12em]"
+  }`}
+>
+  {categoryName || "KAB Pharma"}
+</p>
 
                     <Link
                       href={`/products/${product.id}`}
