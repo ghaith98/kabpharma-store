@@ -28,12 +28,23 @@ function ProductSection({
           className="mb-6 flex items-end justify-between gap-4 sm:mb-8"
         >
           <div className={lang === "ar" ? "text-right" : "text-left"}>
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#0a583b] sm:text-xs">
+           <span
+  className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
+    lang === "ar"
+      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+      : "tracking-[0.2em]"
+  }`}
+>
               {eyebrow}
             </span>
 
-            <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.025em] text-[#142019] sm:text-3xl lg:text-[34px]">
-              {title}
+           <h2
+  className={`mt-2 text-2xl font-extrabold text-[#142019] sm:text-3xl lg:text-[34px] ${
+    lang === "ar"
+      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+      : "tracking-[-0.025em]"
+  }`}
+>
             </h2>
           </div>
 

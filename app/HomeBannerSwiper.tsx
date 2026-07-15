@@ -93,9 +93,15 @@ export default function HomeBannerSwiper({
                     KAB Pharma
                   </p>
 
-                  <h1 className="mt-3 max-w-[440px] text-[32px] font-extrabold leading-[1.08] tracking-[-0.035em] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px]">
-                    {title}
-                  </h1>
+                  <h1
+  className={`mt-3 max-w-[440px] text-[32px] font-extrabold leading-[1.2] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px] ${
+    isArabic
+      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+      : "leading-[1.08] tracking-[-0.035em]"
+  }`}
+>
+  {title}
+</h1>
 
                   {description && (
                     <p className="mt-4 max-w-[430px] text-sm leading-7 text-[#526058] sm:text-base sm:leading-8">
