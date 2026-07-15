@@ -6,19 +6,19 @@ import HomeBannerSwiper from "./HomeBannerSwiper";
 import { useLanguage } from "../context/LanguageContext";
 
 function ProductSection({
-  eyebrow,
   title,
   products,
   bestSellerIds = [],
   lang,
 }: {
-  eyebrow: string;
   title: string;
   products: any[];
   bestSellerIds?: number[];
   lang: "en" | "ar";
 }) {
-  if (!products || products.length === 0) return null;
+  if (!products || products.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-7 sm:py-9 lg:py-10">
@@ -27,36 +27,33 @@ function ProductSection({
           dir={lang === "ar" ? "rtl" : "ltr"}
           className="mb-6 flex items-end justify-between gap-4 sm:mb-8"
         >
-          <div className={lang === "ar" ? "text-right" : "text-left"}>
-           <span
-  className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
-    lang === "ar"
-      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
-      : "tracking-[0.2em]"
-  }`}
->
-              {eyebrow}
-            </span>
-
-           <h2
-  className={`mt-2 text-2xl font-extrabold text-[#142019] sm:text-3xl lg:text-[34px] ${
-    lang === "ar"
-      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
-      : "tracking-[-0.025em]"
-  }`}
->
-            </h2>
-          </div>
+          <h2
+            className={`text-2xl font-extrabold text-[#142019] sm:text-3xl lg:text-[34px] ${
+              lang === "ar"
+                ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                : "tracking-[-0.025em]"
+            }`}
+          >
+            {title}
+          </h2>
 
           <Link
             href="/products"
             className="group flex shrink-0 items-center gap-2 pb-1 text-xs font-extrabold text-[#0a583b] transition hover:text-[#073f2c] sm:text-sm"
           >
             <span>
-              {lang === "ar" ? "عرض الكل" : "View all"}
+              {lang === "ar"
+                ? "عرض الكل"
+                : "View all"}
             </span>
 
-            <span className="transition-transform group-hover:translate-x-1">
+            <span
+              className={`transition-transform ${
+                lang === "ar"
+                  ? "group-hover:-translate-x-1"
+                  : "group-hover:translate-x-1"
+              }`}
+            >
               {lang === "ar" ? "←" : "→"}
             </span>
           </Link>
@@ -89,24 +86,14 @@ export default function HomeClient({
 
   const text = {
     en: {
-      bestSelling: "Best Sellers",
       topSellers: "Bestsellers",
-
-      new: "Just arrived",
       newArrivals: "New Arrivals",
-
-      featured: "Selected for you",
       featuredProducts: "Featured Products",
     },
 
     ar: {
-      bestSelling: "الأكثر مبيعاً",
       topSellers: "الأكثر مبيعاً",
-
-      new: "وصل حديثاً",
       newArrivals: "منتجات جديدة",
-
-      featured: "مختارة لكِ",
       featuredProducts: "منتجات مميزة",
     },
   };
@@ -120,19 +107,20 @@ export default function HomeClient({
     >
       {/* Main campaign hero */}
       <section className="mx-auto max-w-[1600px] px-4 pb-2 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
-        <HomeBannerSwiper banners={banners || []} />
+        <HomeBannerSwiper
+          banners={banners || []}
+        />
       </section>
 
       {/* Bestselling products */}
       <ProductSection
-        eyebrow={t.bestSelling}
         title={t.topSellers}
         products={topSellerProducts || []}
         bestSellerIds={topSellerIds || []}
         lang={currentLang}
       />
 
-      {/* Section divider */}
+      {/* Divider */}
       {topSellerProducts?.length > 0 &&
         newProducts?.length > 0 && (
           <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
@@ -142,13 +130,12 @@ export default function HomeClient({
 
       {/* New products */}
       <ProductSection
-        eyebrow={t.new}
         title={t.newArrivals}
         products={newProducts || []}
         lang={currentLang}
       />
 
-      {/* Section divider */}
+      {/* Divider */}
       {newProducts?.length > 0 &&
         featuredProducts?.length > 0 && (
           <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
@@ -158,13 +145,11 @@ export default function HomeClient({
 
       {/* Featured products */}
       <ProductSection
-        eyebrow={t.featured}
         title={t.featuredProducts}
         products={featuredProducts || []}
         lang={currentLang}
       />
 
-      {/* Bottom breathing space */}
       <div className="h-10 sm:h-16" />
     </main>
   );
