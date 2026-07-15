@@ -33,17 +33,90 @@ export default function ProductDetailsClient({
   }, [productVariants]);
 
   const [
-    selectedVariant,
-    setSelectedVariant,
-  ] = useState<any>(null);
+  selectedVariantId,
+  setSelectedVariantId,
+] = useState<number | null>(
+  null
+);
 
-  useEffect(() => {
-    setSelectedVariant(
-      sortedVariants.length > 0
-        ? sortedVariants[0]
-        : null
+const selectedVariant =
+  useMemo(() => {
+    if (
+      sortedVariants.length === 0
+    ) {
+      return null;
+    }
+
+    const selected =
+      sortedVariants.find(
+        (variant) =>
+          Number(variant.id) ===
+          Number(selectedVariantId)
+      );
+
+    /*
+      قبل تشغيل useEffect أيضاً،
+      أرخص variant هو الخيار الافتراضي.
+    */
+    return (
+      selected ||
+      sortedVariants[0]
     );
-  }, [sortedVariants]);
+  }, [
+    sortedVariants,
+    selectedVariantId,
+  ]);
+
+useEffect(() => {
+  if (
+    sortedVariants.length === 0
+  ) {
+    setSelectedVariantId(null);
+    return;
+  }
+
+  const selectedStillExists =
+    sortedVariants.some(
+      (variant) =>
+        Number(variant.id) ===
+        Number(selectedVariantId)
+    );
+
+  if (!selectedStillExists) {
+    setSelectedVariantId(
+      Number(
+        sortedVariants[0].id
+      )
+    );
+  }
+}, [
+  sortedVariants,
+  selectedVariantId,
+]);
+const selectedVariantLabelAr =
+  selectedVariant
+    ? selectedVariant.label_ar ||
+      selectedVariant.name_ar ||
+      selectedVariant.label ||
+      selectedVariant.name ||
+      selectedVariant.label_en ||
+      selectedVariant.name_en
+    : null;
+
+const selectedVariantLabelEn =
+  selectedVariant
+    ? selectedVariant.label_en ||
+      selectedVariant.name_en ||
+      selectedVariant.label ||
+      selectedVariant.name ||
+      selectedVariant.label_ar ||
+      selectedVariant.name_ar
+    : null;
+
+const selectedVariantLabel =
+  lang === "ar"
+    ? selectedVariantLabelAr
+    : selectedVariantLabelEn;
 
   const productName = isArabic
     ? product.name_ar ||
@@ -60,14 +133,6 @@ export default function ProductDetailsClient({
     : product.description_en ||
       product.description ||
       product.description_ar;
-
-  const selectedVariantLabel =
-    selectedVariant &&
-    (isArabic
-      ? selectedVariant.label_ar ||
-        selectedVariant.label_en
-      : selectedVariant.label_en ||
-        selectedVariant.label_ar);
 
   const galleryImages =
     selectedVariant?.images?.length > 0
@@ -146,38 +211,55 @@ export default function ProductDetailsClient({
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-              {sortedVariants.map(
-                (variant: any) => {
-                  const label = isArabic
-                    ? variant.label_ar ||
-                      variant.label_en
-                    : variant.label_en ||
-                      variant.label_ar;
+             {sortedVariants.map(
+  (variant: any) => {
+    const labelAr =
+      variant.label_ar ||
+      variant.name_ar ||
+      variant.label ||
+      variant.name ||
+      variant.label_en ||
+      variant.name_en;
 
-                  const selected =
-                    selectedVariant?.id ===
-                    variant.id;
+    const labelEn =
+      variant.label_en ||
+      variant.name_en ||
+      variant.label ||
+      variant.name ||
+      variant.label_ar ||
+      variant.name_ar;
 
-                  return (
-                    <button
-                      key={variant.id}
-                      type="button"
-                      onClick={() =>
-                        setSelectedVariant(
-                          variant
-                        )
-                      }
-                      className={`min-h-12 rounded-full border px-5 text-sm font-extrabold transition ${
-                        selected
-                          ? "border-[#0a583b] bg-[#0a583b] text-white"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-[#7ea990] hover:text-[#0a583b]"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                }
-              )}
+    const label =
+      isArabic
+        ? labelAr
+        : labelEn;
+
+    const selected =
+      Number(
+        selectedVariant?.id
+      ) ===
+      Number(variant.id);
+
+    return (
+      <button
+        key={variant.id}
+        type="button"
+        onClick={() =>
+          setSelectedVariantId(
+            Number(variant.id)
+          )
+        }
+        className={`min-h-12 rounded-full border px-5 text-sm font-extrabold transition ${
+          selected
+            ? "border-[#0a583b] bg-[#0a583b] text-white"
+            : "border-gray-200 bg-white text-gray-700 hover:border-[#7ea990] hover:text-[#0a583b]"
+        }`}
+      >
+        {label}
+      </button>
+    );
+  }
+)}
             </div>
           </div>
         )}
@@ -226,12 +308,12 @@ export default function ProductDetailsClient({
                 selectedVariant?.id || null,
 
               variant_label_ar:
-                selectedVariant?.label_ar ||
-                null,
+  selectedVariantLabelAr ||
+  null,
 
-              variant_label_en:
-                selectedVariant?.label_en ||
-                null,
+variant_label_en:
+  selectedVariantLabelEn ||
+  null,
             }}
             finalPrice={finalPrice}
             originalPrice={originalPrice}
