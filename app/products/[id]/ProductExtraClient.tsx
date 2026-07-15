@@ -80,24 +80,37 @@ export default function ProductExtraClient({
       </section>
 
       {relatedProducts?.length > 0 && (
-        <section className="mt-14">
-          <h2
-            className={`mb-6 text-2xl font-extrabold text-[#142019] sm:text-3xl ${
-              isArabic
-                ? "text-right [font-family:Tahoma,Arial,sans-serif]"
-                : "text-left tracking-[-0.025em]"
-            }`}
-          >
-            {isArabic
-              ? "قد يعجبك أيضاً"
-              : "You may also like"}
-          </h2>
+  <section
+    dir={isArabic ? "rtl" : "ltr"}
+    className="mt-14 border-t border-[#e7ebe8] pt-10 sm:mt-16 sm:pt-14"
+  >
+    <div className="mb-7">
+      <p
+        className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+          isArabic
+            ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+            : "tracking-[0.18em]"
+        }`}
+      >
+        {isArabic ? "مختارة لك" : "Complete your routine"}
+      </p>
 
-          <RelatedProductsSwiper
-            products={relatedProducts}
-          />
-        </section>
-      )}
+      <h2
+        className={`mt-2 text-2xl font-extrabold text-[#142019] sm:text-3xl ${
+          isArabic
+            ? "text-right tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+            : "text-left tracking-[-0.025em]"
+        }`}
+      >
+        {isArabic
+          ? "قد يعجبك أيضاً"
+          : "You may also like"}
+      </h2>
+    </div>
+
+    <RelatedProductsSwiper products={relatedProducts} />
+  </section>
+)}
     </div>
   );
 }
