@@ -104,7 +104,8 @@ img {
     bottom: 14px !important;
   }
 
-  .kab-campaign-swiper .swiper-pagination-bullet {
+  .kab-campaign-swiper
+    .swiper-pagination-bullet {
     background: rgba(10, 88, 59, 0.35);
   }
 
@@ -112,4 +113,33 @@ img {
     .swiper-pagination-bullet-active {
     background: #0a583b;
   }
+}
+
+/* Products price slider */
+.kab-price-slider .rc-slider-rail {
+  height: 5px;
+  background: #dfe4e0;
+}
+
+.kab-price-slider .rc-slider-track {
+  height: 5px;
+  background: #0a583b;
+}
+
+.kab-price-slider .rc-slider-handle {
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border: 3px solid #0a583b;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(7, 63, 44, 0.15);
+  opacity: 1;
+}
+
+.kab-price-slider .rc-slider-handle:hover,
+.kab-price-slider .rc-slider-handle:focus,
+.kab-price-slider
+  .rc-slider-handle-dragging {
+  border-color: #073f2c !important;
+  box-shadow: 0 0 0 5px #edf5f0 !important;
 }
