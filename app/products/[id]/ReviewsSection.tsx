@@ -8,6 +8,7 @@ import {
 
 import {
   FiCheck,
+  FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
   FiStar,
@@ -44,22 +45,15 @@ export default function ReviewsSection({
   initialReviews: Review[];
 }) {
   const { lang } = useLanguage();
+  const isArabic = lang === "ar";
 
-  const isArabic =
-    lang === "ar";
-
-  const [reviews, setReviews] =
-    useState<Review[]>(() =>
-      [...(initialReviews || [])].sort(
-        (firstReview, secondReview) =>
-          new Date(
-            secondReview.created_at
-          ).getTime() -
-          new Date(
-            firstReview.created_at
-          ).getTime()
-      )
-    );
+  const [reviews, setReviews] = useState<Review[]>(() =>
+    [...(initialReviews || [])].sort(
+      (firstReview, secondReview) =>
+        new Date(secondReview.created_at).getTime() -
+        new Date(firstReview.created_at).getTime()
+    )
+  );
 
   const [user, setUser] =
     useState<KabUser | null>(null);
@@ -76,10 +70,8 @@ export default function ReviewsSection({
   const [rating, setRating] =
     useState(5);
 
-  const [
-    isAnonymous,
-    setIsAnonymous,
-  ] = useState(false);
+  const [isAnonymous, setIsAnonymous] =
+    useState(false);
 
   const [loading, setLoading] =
     useState(false);
@@ -87,9 +79,11 @@ export default function ReviewsSection({
   const [page, setPage] =
     useState(1);
 
+  const [breakdownOpen, setBreakdownOpen] =
+    useState(false);
+
   /*
-    نتحقق من الـHttpOnly Session،
-    وليس من localStorage.
+    التحقق من HttpOnly Session.
   */
   useEffect(() => {
     let cancelled = false;
@@ -142,8 +136,8 @@ export default function ReviewsSection({
   }, []);
 
   /*
-    إغلاق الـModal بزر Escape
-    ومنع الصفحة من التحرك خلفه.
+    منع تحرك الصفحة خلف الـModal
+    وإغلاقه بزر Escape.
   */
   useEffect(() => {
     if (!modalOpen) return;
@@ -178,67 +172,50 @@ export default function ReviewsSection({
     };
   }, [modalOpen]);
 
-  const averageRating =
-    useMemo(() => {
-      if (reviews.length === 0) {
-        return 0;
+  const averageRating = useMemo(() => {
+    if (reviews.length === 0) {
+      return 0;
+    }
+
+    const total = reviews.reduce(
+      (sum, item) =>
+        sum + Number(item.rating || 0),
+      0
+    );
+
+    return total / reviews.length;
+  }, [reviews]);
+
+  const ratingDistribution = useMemo(() => {
+    return [5, 4, 3, 2, 1].map(
+      (star) => {
+        const count = reviews.filter(
+          (review) =>
+            Number(review.rating) === star
+        ).length;
+
+        const percentage =
+          reviews.length > 0
+            ? (count / reviews.length) * 100
+            : 0;
+
+        return {
+          star,
+          count,
+          percentage,
+        };
       }
-
-      const total =
-        reviews.reduce(
-          (sum, item) =>
-            sum +
-            Number(
-              item.rating || 0
-            ),
-          0
-        );
-
-      return (
-        total / reviews.length
-      );
-    }, [reviews]);
-
-  const ratingDistribution =
-    useMemo(() => {
-      return [5, 4, 3, 2, 1].map(
-        (star) => {
-          const count =
-            reviews.filter(
-              (review) =>
-                Number(
-                  review.rating
-                ) === star
-            ).length;
-
-          const percentage =
-            reviews.length > 0
-              ? (count /
-                  reviews.length) *
-                100
-              : 0;
-
-          return {
-            star,
-            count,
-            percentage,
-          };
-        }
-      );
-    }, [reviews]);
+    );
+  }, [reviews]);
 
   const totalPages = Math.ceil(
-    reviews.length /
-      REVIEWS_PER_PAGE
+    reviews.length / REVIEWS_PER_PAGE
   );
 
-  const paginatedReviews =
-    reviews.slice(
-      (page - 1) *
-        REVIEWS_PER_PAGE,
-
-      page * REVIEWS_PER_PAGE
-    );
+  const paginatedReviews = reviews.slice(
+    (page - 1) * REVIEWS_PER_PAGE,
+    page * REVIEWS_PER_PAGE
+  );
 
   function formatReviewDate(
     value: string
@@ -247,9 +224,7 @@ export default function ReviewsSection({
 
     try {
       return new Intl.DateTimeFormat(
-        isArabic
-          ? "ar-SY"
-          : "en-US",
+        isArabic ? "ar-SY" : "en-US",
         {
           year: "numeric",
           month: "short",
@@ -266,8 +241,7 @@ export default function ReviewsSection({
   ) {
     if (
       item.is_anonymous ||
-      item.customer_name ===
-        "Anonymous"
+      item.customer_name === "Anonymous"
     ) {
       return isArabic
         ? "مجهول"
@@ -276,9 +250,7 @@ export default function ReviewsSection({
 
     return (
       item.customer_name ||
-      (isArabic
-        ? "عميل"
-        : "Customer")
+      (isArabic ? "عميل" : "Customer")
     );
   }
 
@@ -297,19 +269,13 @@ export default function ReviewsSection({
   function openReviewModal() {
     if (authLoading) return;
 
-    /*
-      إذا Guest، نحفظ صفحة المنتج
-      حتى نرجعه إليها بعد Login.
-    */
     if (!user) {
       localStorage.setItem(
         "redirect_after_login",
         `${window.location.pathname}${window.location.search}`
       );
 
-      window.location.href =
-        "/login";
-
+      window.location.href = "/login";
       return;
     }
 
@@ -329,9 +295,7 @@ export default function ReviewsSection({
     const cleanReview =
       reviewText.trim();
 
-    if (
-      cleanReview.length < 2
-    ) {
+    if (cleanReview.length < 2) {
       alert(
         isArabic
           ? "يرجى كتابة تقييمك قبل الإرسال."
@@ -359,8 +323,7 @@ export default function ReviewsSection({
           body: JSON.stringify({
             productId,
             rating,
-            review:
-              cleanReview,
+            review: cleanReview,
             isAnonymous,
           }),
         }
@@ -377,9 +340,7 @@ export default function ReviewsSection({
           `${window.location.pathname}${window.location.search}`
         );
 
-        window.location.href =
-          "/login";
-
+        window.location.href = "/login";
         return;
       }
 
@@ -405,34 +366,26 @@ export default function ReviewsSection({
       const savedReview =
         result.review as Review;
 
-      /*
-        إذا المستخدم قيّم المنتج سابقاً،
-        الـAPI تعدّل نفس التقييم،
-        لذلك نحذف النسخة القديمة ثم
-        نضيف النسخة الجديدة.
-      */
-      setReviews(
-        (currentReviews) =>
-          [
-            savedReview,
+      setReviews((currentReviews) =>
+        [
+          savedReview,
 
-            ...currentReviews.filter(
-              (item) =>
-                item.id !==
-                savedReview.id
-            ),
-          ].sort(
-            (
-              firstReview,
-              secondReview
-            ) =>
-              new Date(
-                secondReview.created_at
-              ).getTime() -
-              new Date(
-                firstReview.created_at
-              ).getTime()
-          )
+          ...currentReviews.filter(
+            (item) =>
+              item.id !== savedReview.id
+          ),
+        ].sort(
+          (
+            firstReview,
+            secondReview
+          ) =>
+            new Date(
+              secondReview.created_at
+            ).getTime() -
+            new Date(
+              firstReview.created_at
+            ).getTime()
+        )
       );
 
       resetForm();
@@ -469,14 +422,11 @@ export default function ReviewsSection({
 
   return (
     <section
-      dir={
-        isArabic
-          ? "rtl"
-          : "ltr"
-      }
-       className="mt-14 pt-10 sm:mt-16 sm:pt-14"
+      dir={isArabic ? "rtl" : "ltr"}
+      className="mt-12 border-t border-[#edf0ed] pt-9 sm:mt-16 sm:pt-14"
     >
-      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      {/* Section heading */}
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div
           className={
             isArabic
@@ -496,7 +446,13 @@ export default function ReviewsSection({
               : "Customer feedback"}
           </p>
 
-          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#142019] sm:text-3xl">
+          <h2
+            className={`mt-2 text-2xl font-extrabold text-[#142019] sm:text-3xl ${
+              isArabic
+                ? "tracking-normal"
+                : "tracking-tight"
+            }`}
+          >
             {isArabic
               ? "تقييمات العملاء"
               : "Customer reviews"}
@@ -505,13 +461,9 @@ export default function ReviewsSection({
 
         <button
           type="button"
-          onClick={
-            openReviewModal
-          }
-          disabled={
-            authLoading
-          }
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#0a583b] bg-white px-6 text-sm font-extrabold text-[#0a583b] transition hover:bg-[#0a583b] hover:text-white active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
+          onClick={openReviewModal}
+          disabled={authLoading}
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#0a583b] bg-white px-6 text-sm font-extrabold text-[#0a583b] transition duration-200 hover:bg-[#0a583b] hover:text-white active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 sm:min-h-12 sm:w-auto"
         >
           <FiStar className="text-base" />
 
@@ -519,105 +471,161 @@ export default function ReviewsSection({
         </button>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-12">
-        <aside className="h-fit rounded-[1.5rem] bg-[#f7f8f6] p-6 sm:p-7">
-          {reviews.length >
-          0 ? (
+      <div className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)] lg:items-start lg:gap-10 xl:gap-12">
+        {/* Rating summary */}
+        <aside className="h-fit overflow-hidden rounded-[1.4rem] border border-[#e1e8e3] bg-[linear-gradient(145deg,#fbfcfb_0%,#f1f6f3_100%)] p-5 shadow-[0_18px_50px_rgba(10,88,59,0.055)] lg:sticky lg:top-28 lg:rounded-[1.75rem] lg:p-7">
+          {reviews.length > 0 ? (
             <>
-              <div className="flex items-end gap-3">
-                <span className="text-5xl font-extrabold tracking-tight text-[#142019]">
-                  {averageRating.toFixed(
-                    1
-                  )}
-                </span>
+              {/* Mobile compact row / desktop stack */}
+              <div className="flex items-center justify-between gap-5 lg:block">
+                <div className="flex shrink-0 items-end gap-2">
+                  <span className="text-4xl font-extrabold tracking-[-0.04em] text-[#142019] lg:text-5xl">
+                    {averageRating.toFixed(1)}
+                  </span>
 
-                <span className="pb-1 text-sm font-bold text-[#647168]">
-                  / 5
-                </span>
-              </div>
+                  <span className="pb-1 text-xs font-bold text-[#647168] lg:text-sm">
+                    / 5
+                  </span>
+                </div>
 
-              <div
-                dir="ltr"
-                className="mt-4 flex items-center gap-1"
-                aria-label={`${averageRating.toFixed(
-                  1
-                )} out of 5`}
-              >
-                {[
-                  1, 2, 3, 4, 5,
-                ].map((star) => (
-                  <FaStar
-                    key={star}
-                    className={
-                      star <=
-                      Math.round(
-                        averageRating
-                      )
-                        ? "text-[#e4aa00]"
-                        : "text-[#dfe4e0]"
-                    }
-                  />
-                ))}
-              </div>
-
-              <p className="mt-2 text-sm text-[#647168]">
-                {isArabic
-                  ? `بناءً على ${
-                      reviews.length
-                    } ${
-                      reviews.length ===
-                      1
-                        ? "تقييم"
-                        : "تقييمات"
-                    }`
-                  : `Based on ${
-                      reviews.length
-                    } ${
-                      reviews.length ===
-                      1
-                        ? "review"
-                        : "reviews"
+                <div
+                  className={`min-w-0 ${
+                    isArabic
+                      ? "text-left lg:text-right"
+                      : "text-right lg:text-left"
+                  }`}
+                >
+                  <div
+                    dir="ltr"
+                    className={`flex items-center gap-1 ${
+                      isArabic
+                        ? "justify-start lg:justify-end"
+                        : "justify-end lg:justify-start"
                     }`}
-              </p>
-
-              <div className="mt-7 space-y-3">
-                {ratingDistribution.map(
-                  (item) => (
-                    <div
-                      key={
-                        item.star
-                      }
-                      dir="ltr"
-                      className="grid grid-cols-[20px_1fr_24px] items-center gap-3"
-                    >
-                      <span className="text-xs font-bold text-[#647168]">
-                        {item.star}
-                      </span>
-
-                      <div className="h-1.5 overflow-hidden rounded-full bg-[#dfe4e0]">
-                        <div
-                          className="h-full rounded-full bg-[#0a583b] transition-all duration-500"
-                          style={{
-                            width: `${item.percentage}%`,
-                          }}
+                    aria-label={`${averageRating.toFixed(
+                      1
+                    )} out of 5`}
+                  >
+                    {[1, 2, 3, 4, 5].map(
+                      (star) => (
+                        <FaStar
+                          key={star}
+                          className={`text-[15px] lg:text-base ${
+                            star <=
+                            Math.round(
+                              averageRating
+                            )
+                              ? "text-[#e4aa00]"
+                              : "text-[#dfe4e0]"
+                          }`}
                         />
-                      </div>
+                      )
+                    )}
+                  </div>
 
-                      <span className="text-right text-xs font-bold text-[#647168]">
-                        {item.count}
-                      </span>
-                    </div>
+                  <p className="mt-2 text-xs leading-5 text-[#647168] lg:text-sm">
+                    {isArabic
+                      ? `بناءً على ${
+                          reviews.length
+                        } ${
+                          reviews.length ===
+                          1
+                            ? "تقييم"
+                            : "تقييمات"
+                        }`
+                      : `Based on ${
+                          reviews.length
+                        } ${
+                          reviews.length ===
+                          1
+                            ? "review"
+                            : "reviews"
+                        }`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Mobile accordion button */}
+              <button
+                type="button"
+                onClick={() =>
+                  setBreakdownOpen(
+                    (current) => !current
                   )
-                )}
+                }
+                aria-expanded={breakdownOpen}
+                className="mt-5 flex w-full items-center justify-between border-t border-[#dfe7e1] pt-4 text-sm font-extrabold text-[#142019] lg:hidden"
+              >
+                <span>
+                  {isArabic
+                    ? "تفاصيل التقييمات"
+                    : "Rating breakdown"}
+                </span>
+
+                <FiChevronDown
+                  className={`text-lg text-[#647168] transition-transform duration-300 ${
+                    breakdownOpen
+                      ? "rotate-180"
+                      : ""
+                  }`}
+                />
+              </button>
+
+              {/* Rating distribution */}
+              <div
+                className={`grid transition-all duration-300 ${
+                  breakdownOpen
+                    ? "grid-rows-[1fr] opacity-100"
+                    : "grid-rows-[0fr] opacity-0"
+                } lg:mt-7 lg:block lg:opacity-100`}
+              >
+                <div className="overflow-hidden">
+                  <div className="space-y-3 pt-4 lg:pt-0">
+                    {ratingDistribution.map(
+                      (item) => (
+                        <div
+                          key={item.star}
+                          dir="ltr"
+                          className="grid grid-cols-[22px_1fr_25px] items-center gap-3"
+                        >
+                          <span className="text-xs font-extrabold text-[#526057]">
+                            {item.star}
+                          </span>
+
+                          <div className="h-1.5 overflow-hidden rounded-full bg-[#dce4df]">
+                            <div
+                              className="h-full rounded-full bg-[#0a583b] transition-all duration-500"
+                              style={{
+                                width: `${item.percentage}%`,
+                              }}
+                            />
+                          </div>
+
+                          <span className="text-right text-xs font-extrabold text-[#647168]">
+                            {item.count}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-7 hidden border-t border-[#dfe7e1] pt-5 lg:block">
+                <p className="text-xs leading-5 text-[#718078]">
+                  {isArabic
+                    ? "تجارب حقيقية يشاركها مجتمع كاب فارما."
+                    : "Real experiences shared by the KAB Pharma community."}
+                </p>
               </div>
             </>
           ) : (
-            <div className="py-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+            <div className="py-1 lg:py-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e7f1eb] text-[#0a583b] lg:h-12 lg:w-12">
                 <FiStar className="text-xl" />
               </div>
 
-              <h3 className="mt-5 text-lg font-extrabold text-[#142019]">
+              <h3 className="mt-4 text-lg font-extrabold text-[#142019] lg:mt-5">
                 {isArabic
                   ? "لا توجد تقييمات بعد"
                   : "No reviews yet"}
@@ -632,11 +640,15 @@ export default function ReviewsSection({
           )}
         </aside>
 
-        <div>
-          {reviews.length ===
-          0 ? (
-            <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#dce3de] px-6 text-center">
-              <h3 className="text-xl font-extrabold text-[#142019]">
+        {/* Reviews list */}
+        <div className="min-w-0">
+          {reviews.length === 0 ? (
+            <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#dce3de] bg-[#fbfcfb] px-6 text-center sm:min-h-[280px]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <FiStar className="text-xl" />
+              </div>
+
+              <h3 className="mt-5 text-xl font-extrabold text-[#142019]">
                 {isArabic
                   ? "كن أول من يشارك تجربته"
                   : "Be the first to share your experience"}
@@ -650,12 +662,8 @@ export default function ReviewsSection({
 
               <button
                 type="button"
-                onClick={
-                  openReviewModal
-                }
-                disabled={
-                  authLoading
-                }
+                onClick={openReviewModal}
+                disabled={authLoading}
                 className="mt-6 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-wait disabled:opacity-60"
               >
                 {authLoading
@@ -672,44 +680,31 @@ export default function ReviewsSection({
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {paginatedReviews.map(
                 (item) => {
                   const displayedName =
-                    getDisplayedName(
-                      item
-                    );
+                    getDisplayedName(item);
 
                   return (
                     <article
-                      key={
-                        item.id
-                      }
-                      className={`rounded-[1.5rem] border border-[#e7ebe8] bg-white p-5 transition hover:border-[#d3dfd7] sm:p-6 ${
-                        paginatedReviews.length ===
-                        1
-                          ? "lg:min-h-[290px]"
-                          : ""
-                      }`}
+                      key={item.id}
+                      className="rounded-[1.35rem] border border-[#e4e9e5] bg-white p-4 shadow-[0_10px_35px_rgba(20,32,25,0.025)] transition duration-200 hover:border-[#cfdcd3] hover:shadow-[0_16px_45px_rgba(10,88,59,0.055)] sm:rounded-[1.6rem] sm:p-6"
                     >
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-sm font-extrabold uppercase text-[#0a583b]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf3ed] text-sm font-extrabold uppercase text-[#0a583b] sm:h-11 sm:w-11">
                             {displayedName
                               .trim()
-                              .charAt(
-                                0
-                              )}
+                              .charAt(0)}
                           </div>
 
-                          <div>
-                            <h3 className="font-extrabold text-[#142019]">
-                              {
-                                displayedName
-                              }
+                          <div className="min-w-0">
+                            <h3 className="truncate text-sm font-extrabold text-[#142019] sm:text-base">
+                              {displayedName}
                             </h3>
 
-                            <p className="mt-1 text-xs text-[#7a857e]">
+                            <p className="mt-1 text-[11px] text-[#7a857e] sm:text-xs">
                               {formatReviewDate(
                                 item.created_at
                               )}
@@ -719,20 +714,13 @@ export default function ReviewsSection({
 
                         <div
                           dir="ltr"
-                          className="flex items-center gap-1"
+                          className="flex shrink-0 items-center gap-0.5 pt-1 text-[13px] sm:gap-1 sm:text-base"
                           aria-label={`${item.rating} out of 5`}
                         >
-                          {[
-                            1, 2, 3,
-                            4, 5,
-                          ].map(
-                            (
-                              star
-                            ) => (
+                          {[1, 2, 3, 4, 5].map(
+                            (star) => (
                               <FaStar
-                                key={
-                                  star
-                                }
+                                key={star}
                                 className={
                                   star <=
                                   Number(
@@ -747,11 +735,9 @@ export default function ReviewsSection({
                         </div>
                       </div>
 
-                      <div className="mt-6 border-t border-[#edf0ed] pt-5">
-                        <p className="whitespace-pre-line text-[15px] leading-7 text-[#4f5d54]">
-                          {
-                            item.review
-                          }
+                      <div className="mt-4 border-t border-[#edf0ed] pt-4 sm:mt-5 sm:pt-5">
+                        <p className="whitespace-pre-line text-sm leading-6 text-[#4f5d54] sm:text-[15px] sm:leading-7">
+                          {item.review}
                         </p>
                       </div>
                     </article>
@@ -761,89 +747,70 @@ export default function ReviewsSection({
             </div>
           )}
 
+          {/* Pagination */}
           {totalPages > 1 && (
             <div
               dir="ltr"
-              className="mt-8 flex items-center justify-center gap-2"
+              className="mt-7 flex items-center justify-center gap-1.5 sm:mt-8 sm:gap-2"
             >
               <button
                 type="button"
-                onClick={() => {
-                  setPage(
-                    (
-                      currentPage
-                    ) =>
-                      Math.max(
-                        1,
-                        currentPage -
-                          1
-                      )
-                  );
-                }}
-                disabled={
-                  page === 1
+                onClick={() =>
+                  setPage((currentPage) =>
+                    Math.max(
+                      1,
+                      currentPage - 1
+                    )
+                  )
                 }
+                disabled={page === 1}
                 aria-label="Previous reviews"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dfe4e0] text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b] disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dfe4e0] bg-white text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <FiChevronLeft />
               </button>
 
               {Array.from(
-                {
-                  length:
-                    totalPages,
-                },
-                (_, index) =>
-                  index + 1
-              ).map(
-                (
-                  pageNumber
-                ) => (
-                  <button
-                    key={
-                      pageNumber
-                    }
-                    type="button"
-                    onClick={() =>
-                      setPage(
-                        pageNumber
-                      )
-                    }
-                    className={`h-10 min-w-10 rounded-full px-3 text-sm font-extrabold transition ${
-                      page ===
-                      pageNumber
-                        ? "bg-[#0a583b] text-white"
-                        : "text-[#647168] hover:bg-[#edf5f0] hover:text-[#0a583b]"
-                    }`}
-                  >
-                    {
-                      pageNumber
-                    }
-                  </button>
-                )
-              )}
+                { length: totalPages },
+                (_, index) => index + 1
+              ).map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() =>
+                    setPage(pageNumber)
+                  }
+                  aria-label={`Page ${pageNumber}`}
+                  aria-current={
+                    page === pageNumber
+                      ? "page"
+                      : undefined
+                  }
+                  className={`h-10 min-w-10 rounded-full px-3 text-sm font-extrabold transition ${
+                    page === pageNumber
+                      ? "bg-[#0a583b] text-white"
+                      : "text-[#647168] hover:bg-[#edf5f0] hover:text-[#0a583b]"
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
 
               <button
                 type="button"
-                onClick={() => {
-                  setPage(
-                    (
-                      currentPage
-                    ) =>
-                      Math.min(
-                        totalPages,
-                        currentPage +
-                          1
-                      )
-                  );
-                }}
+                onClick={() =>
+                  setPage((currentPage) =>
+                    Math.min(
+                      totalPages,
+                      currentPage + 1
+                    )
+                  )
+                }
                 disabled={
-                  page ===
-                  totalPages
+                  page === totalPages
                 }
                 aria-label="Next reviews"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dfe4e0] text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b] disabled:cursor-not-allowed disabled:opacity-30"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dfe4e0] bg-white text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <FiChevronRight />
               </button>
@@ -852,12 +819,11 @@ export default function ReviewsSection({
         </div>
       </div>
 
+      {/* Review modal */}
       {modalOpen && user && (
         <div
           className="fixed inset-0 z-[999] flex items-end justify-center bg-[#07130d]/55 p-0 backdrop-blur-sm sm:items-center sm:p-5"
-          onMouseDown={(
-            event
-          ) => {
+          onMouseDown={(event) => {
             if (
               event.target ===
               event.currentTarget
@@ -867,11 +833,7 @@ export default function ReviewsSection({
           }}
         >
           <div
-            dir={
-              isArabic
-                ? "rtl"
-                : "ltr"
-            }
+            dir={isArabic ? "rtl" : "ltr"}
             role="dialog"
             aria-modal="true"
             aria-labelledby="review-modal-title"
@@ -891,7 +853,11 @@ export default function ReviewsSection({
 
                 <h3
                   id="review-modal-title"
-                  className="mt-2 text-2xl font-extrabold tracking-tight text-[#142019]"
+                  className={`mt-2 text-2xl font-extrabold text-[#142019] ${
+                    isArabic
+                      ? "tracking-normal"
+                      : "tracking-tight"
+                  }`}
                 >
                   {isArabic
                     ? "شاركنا تجربتك"
@@ -907,12 +873,8 @@ export default function ReviewsSection({
 
               <button
                 type="button"
-                onClick={
-                  closeModal
-                }
-                disabled={
-                  loading
-                }
+                onClick={closeModal}
+                disabled={loading}
                 aria-label={
                   isArabic
                     ? "إغلاق"
@@ -925,9 +887,7 @@ export default function ReviewsSection({
             </div>
 
             <form
-              onSubmit={
-                handleSubmit
-              }
+              onSubmit={handleSubmit}
               className="mt-7 space-y-5"
             >
               <fieldset>
@@ -941,30 +901,27 @@ export default function ReviewsSection({
                   dir="ltr"
                   className="flex gap-2"
                 >
-                  {[
-                    1, 2, 3, 4, 5,
-                  ].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() =>
-                        setRating(
-                          star
-                        )
-                      }
-                      aria-label={`${star} stars`}
-                      className="p-1 text-3xl transition hover:scale-110 active:scale-95"
-                    >
-                      <FaStar
-                        className={
-                          star <=
-                          rating
-                            ? "text-[#e4aa00]"
-                            : "text-[#dfe4e0]"
+                  {[1, 2, 3, 4, 5].map(
+                    (star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() =>
+                          setRating(star)
                         }
-                      />
-                    </button>
-                  ))}
+                        aria-label={`${star} stars`}
+                        className="p-1 text-3xl transition hover:scale-110 active:scale-95"
+                      >
+                        <FaStar
+                          className={
+                            star <= rating
+                              ? "text-[#e4aa00]"
+                              : "text-[#dfe4e0]"
+                          }
+                        />
+                      </button>
+                    )
+                  )}
                 </div>
               </fieldset>
 
@@ -980,15 +937,10 @@ export default function ReviewsSection({
 
                 <textarea
                   id="review-text"
-                  value={
-                    reviewText
-                  }
-                  onChange={(
-                    event
-                  ) =>
+                  value={reviewText}
+                  onChange={(event) =>
                     setReviewText(
-                      event.target
-                        .value
+                      event.target.value
                     )
                   }
                   placeholder={
@@ -997,32 +949,22 @@ export default function ReviewsSection({
                       : "Tell us about your experience with the product..."
                   }
                   rows={5}
-                  maxLength={
-                    1500
-                  }
+                  maxLength={1500}
                   className="w-full resize-none rounded-2xl border border-[#dfe4e0] bg-white px-4 py-3.5 text-base leading-7 text-[#142019] outline-none transition placeholder:text-[#99a29c] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
                 />
 
                 <p className="mt-1.5 text-end text-xs text-[#99a29c]">
-                  {
-                    reviewText.length
-                  }
-                  /1500
+                  {reviewText.length}/1500
                 </p>
               </div>
 
               <label className="flex cursor-pointer items-center gap-3 text-sm font-bold text-[#526057]">
                 <input
                   type="checkbox"
-                  checked={
-                    isAnonymous
-                  }
+                  checked={isAnonymous}
                   onChange={() =>
                     setIsAnonymous(
-                      (
-                        current
-                      ) =>
-                        !current
+                      (current) => !current
                     )
                   }
                   className="h-4 w-4 accent-[#0a583b]"
@@ -1051,8 +993,7 @@ export default function ReviewsSection({
                 type="submit"
                 disabled={
                   loading ||
-                  reviewText.trim()
-                    .length < 2
+                  reviewText.trim().length < 2
                 }
                 className="flex min-h-13 w-full items-center justify-center rounded-full bg-[#0a583b] px-6 py-3.5 font-extrabold text-white shadow-sm transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:opacity-50"
               >
