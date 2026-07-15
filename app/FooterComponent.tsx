@@ -5,10 +5,13 @@ import { useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  ArrowUpRight,
   Minus,
   Plus,
 } from "lucide-react";
+import {
+  FaFacebookF,
+  FaInstagram,
+} from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
 
 type SectionKey =
@@ -29,7 +32,8 @@ type FooterSection = {
 };
 
 export default function Footer() {
-  const { lang } = useLanguage();
+  const { lang, setLang } =
+    useLanguage();
 
   const isArabic =
     lang === "ar";
@@ -42,8 +46,7 @@ export default function Footer() {
 
   const text = {
     en: {
-      eyebrow:
-        "KAB Pharma",
+      eyebrow: "KAB Pharma",
 
       statement:
         "Thoughtful care, made for everyday life.",
@@ -57,44 +60,23 @@ export default function Footer() {
       contactTeam:
         "Speak to our team",
 
-      shop:
-        "Shop",
+      shop: "Shop",
+      allProducts: "All products",
+      wishlist: "Wishlist",
 
-      allProducts:
-        "All products",
+      care: "Customer care",
+      contact: "Contact us",
+      account: "My account",
 
-      wishlist:
-        "Wishlist",
+      company: "Company",
+      about: "About KAB Pharma",
 
-      care:
-        "Customer care",
+      policies: "Legal",
+      privacy: "Privacy policy",
+      terms: "Terms & conditions",
+      refund: "Refund policy",
 
-      contact:
-        "Contact us",
-
-      account:
-        "My account",
-
-      company:
-        "Company",
-
-      about:
-        "About KAB Pharma",
-
-      policies:
-        "Legal",
-
-      privacy:
-        "Privacy policy",
-
-      terms:
-        "Terms & conditions",
-
-      refund:
-        "Refund policy",
-
-      follow:
-        "Follow",
+      follow: "Follow",
 
       rights:
         `© ${currentYear} KAB Pharma. All rights reserved.`,
@@ -107,8 +89,7 @@ export default function Footer() {
     },
 
     ar: {
-      eyebrow:
-        "KAB Pharma",
+      eyebrow: "KAB Pharma",
 
       statement:
         "عناية مدروسة، لحياة يومية أكثر صحة.",
@@ -122,44 +103,23 @@ export default function Footer() {
       contactTeam:
         "تواصل مع فريقنا",
 
-      shop:
-        "المتجر",
+      shop: "المتجر",
+      allProducts: "جميع المنتجات",
+      wishlist: "قائمة المفضلة",
 
-      allProducts:
-        "جميع المنتجات",
+      care: "خدمة العملاء",
+      contact: "تواصل معنا",
+      account: "حسابي",
 
-      wishlist:
-        "قائمة المفضلة",
+      company: "عن الشركة",
+      about: "عن KAB Pharma",
 
-      care:
-        "خدمة العملاء",
+      policies: "السياسات",
+      privacy: "سياسة الخصوصية",
+      terms: "الشروط والأحكام",
+      refund: "سياسة الاسترجاع",
 
-      contact:
-        "تواصل معنا",
-
-      account:
-        "حسابي",
-
-      company:
-        "عن الشركة",
-
-      about:
-        "عن KAB Pharma",
-
-      policies:
-        "السياسات",
-
-      privacy:
-        "سياسة الخصوصية",
-
-      terms:
-        "الشروط والأحكام",
-
-      refund:
-        "سياسة الاسترجاع",
-
-      follow:
-        "تابعنا",
+      follow: "تابعنا",
 
       rights:
         `© ${currentYear} KAB Pharma. جميع الحقوق محفوظة.`,
@@ -185,7 +145,6 @@ export default function Footer() {
   const sections: FooterSection[] = [
     {
       key: "shop",
-
       title: t.shop,
 
       links: [
@@ -196,7 +155,6 @@ export default function Footer() {
           href:
             "/products",
         },
-
         {
           label:
             t.wishlist,
@@ -209,7 +167,6 @@ export default function Footer() {
 
     {
       key: "care",
-
       title: t.care,
 
       links: [
@@ -220,7 +177,6 @@ export default function Footer() {
           href:
             "/contact",
         },
-
         {
           label:
             t.account,
@@ -233,7 +189,6 @@ export default function Footer() {
 
     {
       key: "company",
-
       title: t.company,
 
       links: [
@@ -249,7 +204,6 @@ export default function Footer() {
 
     {
       key: "policies",
-
       title: t.policies,
 
       links: [
@@ -260,7 +214,6 @@ export default function Footer() {
           href:
             "/privacy-policy",
         },
-
         {
           label:
             t.terms,
@@ -268,7 +221,6 @@ export default function Footer() {
           href:
             "/terms",
         },
-
         {
           label:
             t.refund,
@@ -282,19 +234,20 @@ export default function Footer() {
 
   const socialLinks = [
     {
-      label:
-        "Instagram",
-
-      href:
-        "https://www.instagram.com/kabpharma?igsh=NHpuY2F1eHFlYWgw&utm_source=qr",
-    },
-
-    {
-      label:
-        "Facebook",
+      label: "Facebook",
 
       href:
         "https://www.facebook.com/share/17YjFUHZcR/?mibextid=wwXIfr",
+
+      Icon: FaFacebookF,
+    },
+    {
+      label: "Instagram",
+
+      href:
+        "https://www.instagram.com/kabpharma?igsh=NHpuY2F1eHFlYWgw&utm_source=qr",
+
+      Icon: FaInstagram,
     },
   ];
 
@@ -309,12 +262,24 @@ export default function Footer() {
     );
   }
 
+  function changeLanguage(
+    nextLanguage: "ar" | "en"
+  ) {
+    if (lang === nextLanguage) {
+      return;
+    }
+
+    setLang(nextLanguage);
+  }
+
   const desktopLinkClass =
     "group inline-flex w-fit items-center gap-2 text-[15px] leading-6 text-[#4f5d54] transition-colors duration-200 hover:text-[#0a583b]";
 
   const mobileLinkClass =
     "group inline-flex w-full items-center justify-between gap-4 py-1 text-[15px] leading-7 text-[#4f5d54] transition-colors hover:text-[#0a583b]";
 
+ const socialIconClass =
+  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#142019] text-white shadow-sm transition duration-300 hover:-translate-y-1 hover:bg-[#0a583b] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#dfeae3]";  
   return (
     <footer
       dir={
@@ -386,17 +351,13 @@ export default function Footer() {
 
         {/* Desktop navigation */}
         <section
-          aria-label={
-            t.navigation
-          }
+          aria-label={t.navigation}
           className="hidden grid-cols-5 gap-10 border-b border-[#cfd6d1] py-12 md:grid lg:gap-16"
         >
           {sections.map(
             (section) => (
               <nav
-                key={
-                  section.key
-                }
+                key={section.key}
                 aria-label={
                   section.title
                 }
@@ -428,7 +389,13 @@ export default function Footer() {
                         <span className="relative">
                           {item.label}
 
-                          <span className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-[#0a583b] transition-transform duration-200 group-hover:scale-x-100 rtl:origin-right" />
+                          <span
+                            className={`absolute inset-x-0 -bottom-0.5 h-px scale-x-0 bg-[#0a583b] transition-transform duration-200 group-hover:scale-x-100 ${
+                              isArabic
+                                ? "origin-right"
+                                : "origin-left"
+                            }`}
+                          />
                         </span>
                       </Link>
                     )
@@ -438,10 +405,9 @@ export default function Footer() {
             )
           )}
 
+          {/* Desktop social */}
           <nav
-            aria-label={
-              t.follow
-            }
+            aria-label={t.follow}
           >
             <h3
               className={`text-[11px] font-extrabold uppercase text-[#142019] ${
@@ -453,47 +419,46 @@ export default function Footer() {
               {t.follow}
             </h3>
 
-            <div className="mt-6 flex flex-col items-start gap-3.5">
-              {socialLinks.map(
-                (social) => (
-                  <a
-                    key={
-                      social.label
-                    }
-                    href={
-                      social.href
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={
-                      desktopLinkClass
-                    }
-                  >
-                    <span className="relative">
-                      {
-                        social.label
-                      }
-
-                      <span className="absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 bg-[#0a583b] transition-transform duration-200 group-hover:scale-x-100" />
-                    </span>
-
-                    <ArrowUpRight
-                      size={13}
-                      strokeWidth={1.8}
-                      className="opacity-50 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100"
-                    />
-                  </a>
-                )
-              )}
-            </div>
+            <div
+  dir="ltr"
+  className={`mt-5 flex w-full items-center gap-2.5 ${
+    isArabic
+      ? "justify-end"
+      : "justify-start"
+  }`}
+>
+  {socialLinks.map(
+    ({
+      label,
+      href,
+      Icon,
+    }) => (
+      <a
+        key={label}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        title={label}
+        className={socialIconClass}
+      >
+        <Icon
+          size={
+            label === "Instagram"
+              ? 18
+              : 16
+          }
+        />
+      </a>
+    )
+  )}
+</div>
           </nav>
         </section>
 
         {/* Mobile navigation */}
         <section
-          aria-label={
-            t.navigation
-          }
+          aria-label={t.navigation}
           className="border-b border-[#cfd6d1] md:hidden"
         >
           {sections.map(
@@ -534,9 +499,7 @@ export default function Footer() {
                           : "tracking-[0.13em]"
                       }`}
                     >
-                      {
-                        section.title
-                      }
+                      {section.title}
                     </span>
 
                     {isOpen ? (
@@ -554,9 +517,7 @@ export default function Footer() {
 
                   {isOpen && (
                     <nav
-                      id={
-                        sectionId
-                      }
+                      id={sectionId}
                       aria-label={
                         section.title
                       }
@@ -576,9 +537,7 @@ export default function Footer() {
                             }
                           >
                             <span>
-                              {
-                                item.label
-                              }
+                              {item.label}
                             </span>
 
                             <ArrowIcon
@@ -595,7 +554,8 @@ export default function Footer() {
             }
           )}
 
-          <div className="py-6">
+          {/* Mobile social */}
+          <div className="py-7">
             <p
               className={`text-[11px] font-extrabold uppercase text-[#142019] ${
                 isArabic
@@ -607,36 +567,37 @@ export default function Footer() {
             </p>
 
             <div
-              dir="ltr"
-              className={`mt-5 flex flex-wrap gap-x-7 gap-y-3 ${
-                isArabic
-                  ? "justify-end"
-                  : "justify-start"
-              }`}
-            >
+  dir="ltr"
+  className={`mt-5 flex w-full items-center gap-2.5 ${
+    isArabic
+      ? "justify-end"
+      : "justify-start"
+  }`}
+>
               {socialLinks.map(
-                (social) => (
+                ({
+                  label,
+                  href,
+                  Icon,
+                }) => (
                   <a
-                    key={
-                      social.label
-                    }
-                    href={
-                      social.href
-                    }
+                    key={label}
+                    href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[#4f5d54] transition hover:text-[#0a583b]"
+                    aria-label={label}
+                    title={label}
+                    className={
+                      socialIconClass
+                    }
                   >
-                    <span>
-                      {
-                        social.label
+                    <Icon
+                      size={
+                        label ===
+                        "Instagram"
+                          ? 18
+                          : 16
                       }
-                    </span>
-
-                    <ArrowUpRight
-                      size={13}
-                      strokeWidth={1.8}
-                      className="opacity-50"
                     />
                   </a>
                 )
@@ -663,8 +624,8 @@ export default function Footer() {
           </div>
         </Link>
 
-        {/* Legal line */}
-        <div className="flex flex-col gap-3 pb-[calc(7.25rem+env(safe-area-inset-bottom))] pt-6 text-xs text-[#7a857e] sm:flex-row sm:items-center sm:justify-between md:pb-7">
+        {/* Copyright */}
+        <div className="flex flex-col gap-3 pt-6 text-xs text-[#7a857e] sm:flex-row sm:items-center sm:justify-between">
           <p>
             {t.rights}
           </p>
@@ -678,6 +639,66 @@ export default function Footer() {
           >
             {t.quality}
           </p>
+        </div>
+
+        {/* Language selector */}
+        <div
+          dir="ltr"
+          className="pb-[calc(7.25rem+env(safe-area-inset-bottom))] pt-8 text-center md:pb-7"
+        >
+          <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#8a948d]">
+            Language
+          </p>
+
+          <div className="mt-3 inline-flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() =>
+                changeLanguage(
+                  "ar"
+                )
+              }
+              aria-pressed={
+                lang === "ar"
+              }
+              className={`relative pb-1 text-xs font-extrabold tracking-[0.12em] transition ${
+                lang === "ar"
+                  ? "text-[#0a583b]"
+                  : "text-[#8a948d] hover:text-[#142019]"
+              }`}
+            >
+              AR
+
+              {lang === "ar" && (
+                <span className="absolute inset-x-0 bottom-0 h-px bg-[#0a583b]" />
+              )}
+            </button>
+
+            <span className="h-3 w-px bg-[#cbd3cd]" />
+
+            <button
+              type="button"
+              onClick={() =>
+                changeLanguage(
+                  "en"
+                )
+              }
+              aria-pressed={
+                lang === "en"
+              }
+              className={`relative pb-1 text-xs font-extrabold tracking-[0.12em] transition ${
+                lang === "en"
+                  ? "text-[#0a583b]"
+                  : "text-[#8a948d] hover:text-[#142019]"
+              }`}
+            >
+              EN
+
+              {lang === "en" && (
+                <span className="absolute inset-x-0 bottom-0 h-px bg-[#0a583b]" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </footer>
