@@ -82,7 +82,7 @@ export default function ProductExtraClient({
       {relatedProducts?.length > 0 && (
   <section
     dir={isArabic ? "rtl" : "ltr"}
-    className="mt-12 pt-0 sm:mt-14"
+    className="mt-14 border-t border-[#e7ebe8] pt-10 sm:mt-16 sm:pt-14"
   >
     <div className="mb-7">
       <p

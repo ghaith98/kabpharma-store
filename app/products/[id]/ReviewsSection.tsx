@@ -474,7 +474,7 @@ export default function ReviewsSection({
           ? "rtl"
           : "ltr"
       }
-      className="mt-14 border-t border-[#e7ebe8] pt-10 sm:mt-16 sm:pt-14"
+       className="mt-14 pt-10 sm:mt-16 sm:pt-14"
     >
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div
