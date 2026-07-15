@@ -98,15 +98,33 @@ export default function ProfilePage() {
   const policyLinkClass =
     "group flex items-center justify-between gap-5 border-b border-[#edf0ed] py-5 transition last:border-b-0 hover:ps-2";
 
+  const mobileActionClass =
+    "group flex min-h-[76px] items-center justify-between gap-4 px-4 py-3.5 transition active:bg-[#f3f6f4]";
+
+  const mobilePolicyLinkClass =
+    "group flex min-h-[64px] items-center justify-between gap-4 border-t border-[#edf0ed] px-4 py-3.5 transition active:bg-[#f3f6f4]";
+
   if (!pageReady) {
     return (
       <main className="min-h-screen bg-[#f7f7f3]">
-        <div className="mx-auto max-w-[1240px] px-4 py-10 sm:px-6 lg:px-8">
+        {/* Mobile skeleton */}
+        <div className="mx-auto max-w-md px-4 py-5 lg:hidden">
+          <div className="h-[190px] animate-pulse rounded-[1.5rem] bg-[#0a583b]/90" />
+
+          <div className="mt-4 h-[152px] animate-pulse rounded-[1.25rem] bg-white" />
+
+          <div className="mt-4 h-[76px] animate-pulse rounded-[1.25rem] bg-white" />
+
+          <div className="mt-4 h-[76px] animate-pulse rounded-[1.25rem] bg-white" />
+        </div>
+
+        {/* Desktop skeleton */}
+        <div className="mx-auto hidden max-w-[1240px] px-4 py-10 sm:px-6 lg:block lg:px-8">
           <div className="overflow-hidden rounded-[1.75rem] border border-[#e4e8e4] bg-white">
             <div className="grid lg:grid-cols-[310px_minmax(0,1fr)]">
-              <div className="h-[260px] animate-pulse bg-[#0a583b]/90 lg:h-[680px]" />
+              <div className="h-[680px] animate-pulse bg-[#0a583b]/90" />
 
-              <div className="space-y-6 p-6 sm:p-10 lg:p-14">
+              <div className="space-y-6 p-14">
                 <div className="h-4 w-28 animate-pulse rounded-full bg-[#edf0ed]" />
 
                 <div className="h-12 max-w-md animate-pulse rounded-xl bg-[#edf0ed]" />
@@ -131,10 +149,369 @@ export default function ProfilePage() {
           : ""
       }`}
     >
-      <div className="mx-auto max-w-[1240px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8 lg:pt-12">
-        {/* Editorial heading */}
+      {/* Mobile layout */}
+      <div className="mx-auto max-w-md px-4 pb-10 pt-4 lg:hidden">
+        {/* Account comes first */}
+        {user ? (
+          <section className="relative overflow-hidden rounded-[1.5rem] bg-[#073f2c] p-5 text-white shadow-[0_14px_35px_rgba(7,63,44,0.15)]">
+            <div className="absolute -end-12 -top-16 h-40 w-40 rounded-full bg-white/[0.05]" />
+
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xl font-extrabold uppercase">
+                {profileInitial}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-white/55">
+                  {isArabic
+                    ? "تم تسجيل الدخول باسم"
+                    : "Signed in as"}
+                </p>
+
+                <h1 className="mt-1 truncate text-xl font-extrabold">
+                  {user.full_name}
+                </h1>
+
+                <p
+                  dir="ltr"
+                  className={`mt-1 text-xs text-white/60 ${
+                    isArabic
+                      ? "text-right"
+                      : "text-left"
+                  }`}
+                >
+                  +
+                  {user.phone.replace(
+                    /^\+/,
+                    ""
+                  )}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                aria-label={
+                  isArabic
+                    ? "تسجيل الخروج"
+                    : "Sign out"
+                }
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.08] text-sm text-white/75 transition active:scale-95 active:bg-white/15"
+              >
+                <FaSignOutAlt />
+              </button>
+            </div>
+          </section>
+        ) : (
+          <section className="relative overflow-hidden rounded-[1.5rem] bg-[#073f2c] p-5 text-white shadow-[0_14px_35px_rgba(7,63,44,0.15)]">
+            <div className="absolute -end-12 -top-16 h-40 w-40 rounded-full bg-white/[0.05]" />
+
+            <div className="relative">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-2xl">
+                  <FaUserCircle />
+                </div>
+
+                <div>
+                  <h1 className="text-xl font-extrabold">
+                    {isArabic
+                      ? "حسابي"
+                      : "My account"}
+                  </h1>
+
+                  <p className="mt-1 text-xs leading-5 text-white/65">
+                    {isArabic
+                      ? "سجّل دخولك لمتابعة طلباتك."
+                      : "Sign in to view and track your orders."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-2.5">
+                <Link
+                  href="/login"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-4 text-sm font-extrabold text-[#073f2c] transition active:scale-[0.98]"
+                >
+                  {isArabic
+                    ? "تسجيل الدخول"
+                    : "Sign in"}
+                </Link>
+
+                <Link
+                  href="/signup"
+                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/30 bg-white/[0.08] px-4 text-center text-sm font-extrabold text-white transition active:scale-[0.98] active:bg-white/15"
+                >
+                  {isArabic
+                    ? "إنشاء حساب"
+                    : "Create account"}
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Main actions */}
+        <nav
+          aria-label={
+            isArabic
+              ? "روابط الحساب"
+              : "Account links"
+          }
+          className="mt-4 divide-y divide-[#edf0ed] overflow-hidden rounded-[1.25rem] border border-[#e2e7e3] bg-white"
+        >
+          <Link
+            href="/orders"
+            className={mobileActionClass}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <FaBoxOpen />
+              </div>
+
+              <span className="font-extrabold text-[#142019]">
+                {isArabic
+                  ? "طلباتي"
+                  : "My orders"}
+              </span>
+            </div>
+
+            <FaChevronRight
+              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
+                isArabic
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          </Link>
+
+          <Link
+            href="/contact"
+            className={mobileActionClass}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <FaHeadset />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-[#142019]">
+                  {isArabic
+                    ? "خدمة العملاء"
+                    : "Customer care"}
+                </span>
+
+                <span className="h-2 w-2 rounded-full bg-[#22a66f]" />
+              </div>
+            </div>
+
+            <FaChevronRight
+              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
+                isArabic
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          </Link>
+        </nav>
+
+        {/* Language */}
+        <section className="mt-4 flex min-h-[76px] items-center justify-between gap-4 rounded-[1.25rem] border border-[#e2e7e3] bg-white px-4 py-3.5">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+              <FaGlobe />
+            </div>
+
+            <span className="font-extrabold text-[#142019]">
+              {isArabic
+                ? "اللغة"
+                : "Language"}
+            </span>
+          </div>
+
+          <div
+            dir="ltr"
+            className="flex rounded-full bg-[#f1f4f2] p-1"
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setLang("en")
+              }
+              aria-pressed={
+                lang === "en"
+              }
+              className={`flex h-9 min-w-12 items-center justify-center rounded-full px-3 text-xs font-extrabold transition ${
+                lang === "en"
+                  ? "bg-[#0a583b] text-white shadow-sm"
+                  : "text-[#647168]"
+              }`}
+            >
+              EN
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setLang("ar")
+              }
+              aria-pressed={
+                lang === "ar"
+              }
+              className={`flex h-9 min-w-12 items-center justify-center rounded-full px-3 text-xs font-extrabold transition ${
+                lang === "ar"
+                  ? "bg-[#0a583b] text-white shadow-sm"
+                  : "text-[#647168]"
+              }`}
+            >
+              AR
+            </button>
+          </div>
+        </section>
+
+        {/* Mobile policies */}
+        <section className="mt-4 overflow-hidden rounded-[1.25rem] border border-[#e2e7e3] bg-white">
+          <button
+            type="button"
+            onClick={() =>
+              setPoliciesOpen(
+                (current) => !current
+              )
+            }
+            aria-expanded={policiesOpen}
+            aria-controls="mobile-profile-policies"
+            className="flex min-h-[76px] w-full items-center justify-between gap-4 px-4 py-3.5 text-start transition active:bg-[#f3f6f4]"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <FaFileContract />
+              </div>
+
+              <span className="font-extrabold text-[#142019]">
+                {isArabic
+                  ? "السياسات والمعلومات"
+                  : "Policies & information"}
+              </span>
+            </div>
+
+            <FaChevronDown
+              className={`shrink-0 text-xs text-[#96a098] transition-transform duration-300 ${
+                policiesOpen
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          </button>
+
+          <div
+            id="mobile-profile-policies"
+            className={`grid transition-all duration-300 ease-in-out ${
+              policiesOpen
+                ? "grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <nav
+                aria-label={
+                  isArabic
+                    ? "روابط السياسات"
+                    : "Policy links"
+                }
+              >
+                <Link
+                  href="/privacy-policy"
+                  className={mobilePolicyLinkClass}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <FaShieldAlt className="shrink-0 text-[#0a583b]" />
+
+                    <span className="text-sm font-bold text-[#526057]">
+                      {isArabic
+                        ? "سياسة الخصوصية"
+                        : "Privacy policy"}
+                    </span>
+                  </div>
+
+                  <FaChevronRight
+                    className={`shrink-0 text-[10px] text-[#99a29c] ${
+                      isArabic
+                        ? "rotate-180"
+                        : ""
+                    }`}
+                  />
+                </Link>
+
+                <Link
+                  href="/terms"
+                  className={mobilePolicyLinkClass}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <FaFileContract className="shrink-0 text-[#0a583b]" />
+
+                    <span className="text-sm font-bold text-[#526057]">
+                      {isArabic
+                        ? "الشروط والأحكام"
+                        : "Terms & conditions"}
+                    </span>
+                  </div>
+
+                  <FaChevronRight
+                    className={`shrink-0 text-[10px] text-[#99a29c] ${
+                      isArabic
+                        ? "rotate-180"
+                        : ""
+                    }`}
+                  />
+                </Link>
+
+                <Link
+                  href="/refund-policy"
+                  className={mobilePolicyLinkClass}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <FaUndoAlt className="shrink-0 text-[#0a583b]" />
+
+                    <span className="text-sm font-bold text-[#526057]">
+                      {isArabic
+                        ? "سياسة الاسترجاع"
+                        : "Refund policy"}
+                    </span>
+                  </div>
+
+                  <FaChevronRight
+                    className={`shrink-0 text-[10px] text-[#99a29c] ${
+                      isArabic
+                        ? "rotate-180"
+                        : ""
+                    }`}
+                  />
+                </Link>
+              </nav>
+            </div>
+          </div>
+        </section>
+
+        {user && (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-[#78837b] transition active:bg-[#e9edea] active:text-[#142019]"
+          >
+            <FaSignOutAlt />
+
+            <span>
+              {isArabic
+                ? "تسجيل الخروج"
+                : "Sign out"}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Desktop layout — unchanged */}
+      <div className="mx-auto hidden max-w-[1240px] px-4 pb-10 pt-8 sm:px-6 lg:block lg:px-8 lg:pt-12">
         <header
-          className={`mb-7 sm:mb-9 ${
+          className={`mb-9 ${
             isArabic
               ? "text-right"
               : "text-left"
@@ -144,7 +521,7 @@ export default function ProfilePage() {
             <span className="h-px w-8 bg-[#0a583b]" />
 
             <p
-              className={`text-[10px] font-extrabold uppercase text-[#0a583b] sm:text-[11px] ${
+              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
                 isArabic
                   ? "tracking-normal"
                   : "tracking-[0.2em]"
@@ -155,7 +532,7 @@ export default function ProfilePage() {
           </div>
 
           <h1
-            className={`mt-4 text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-[2.8rem] ${
+            className={`mt-4 text-[2.8rem] font-extrabold text-[#142019] ${
               isArabic
                 ? "tracking-normal"
                 : "tracking-[-0.045em]"
@@ -167,14 +544,12 @@ export default function ProfilePage() {
           </h1>
         </header>
 
-        {/* Main account shell */}
-        <div className="overflow-hidden rounded-[1.75rem] border border-[#dde4df] bg-white shadow-[0_25px_80px_rgba(20,32,25,0.06)] lg:rounded-[2rem]">
-          <div className="grid lg:grid-cols-[310px_minmax(0,1fr)]">
-            {/* Account navigation rail */}
+        <div className="overflow-hidden rounded-[2rem] border border-[#dde4df] bg-white shadow-[0_25px_80px_rgba(20,32,25,0.06)]">
+          <div className="grid grid-cols-[310px_minmax(0,1fr)]">
             <aside className="relative overflow-hidden bg-[#073f2c] text-white">
               <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
 
-              <div className="relative flex h-full flex-col p-5 sm:p-7 lg:min-h-[680px] lg:p-8">
+              <div className="relative flex min-h-[680px] h-full flex-col p-8">
                 <p
                   className={`text-[10px] font-extrabold uppercase text-white/55 ${
                     isArabic
@@ -187,9 +562,8 @@ export default function ProfilePage() {
                     : "Account center"}
                 </p>
 
-                {/* User identity */}
-                <div className="mt-7 flex items-center gap-4 lg:mt-10 lg:block">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xl font-extrabold uppercase backdrop-blur lg:h-16 lg:w-16 lg:text-2xl">
+                <div className="mt-10 block">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-2xl font-extrabold uppercase backdrop-blur">
                     {user ? (
                       profileInitial
                     ) : (
@@ -198,14 +572,14 @@ export default function ProfilePage() {
                   </div>
 
                   {user ? (
-                    <div className="min-w-0 lg:mt-5">
+                    <div className="mt-5 min-w-0">
                       <p className="text-xs font-bold text-white/55">
                         {isArabic
                           ? "تم تسجيل الدخول باسم"
                           : "Signed in as"}
                       </p>
 
-                      <h2 className="mt-1 truncate text-lg font-extrabold text-white lg:text-xl">
+                      <h2 className="mt-1 truncate text-xl font-extrabold text-white">
                         {user.full_name}
                       </h2>
 
@@ -225,14 +599,14 @@ export default function ProfilePage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="min-w-0 lg:mt-5">
+                    <div className="mt-5 min-w-0">
                       <p className="text-xs font-bold text-white/55">
                         {isArabic
                           ? "حساب كاب فارما"
                           : "KAB Pharma account"}
                       </p>
 
-                      <h2 className="mt-1 text-lg font-extrabold text-white lg:text-xl">
+                      <h2 className="mt-1 text-xl font-extrabold text-white">
                         {isArabic
                           ? "أهلاً بك"
                           : "Welcome"}
@@ -241,14 +615,13 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                {/* Account navigation */}
                 <nav
                   aria-label={
                     isArabic
                       ? "روابط الحساب"
                       : "Account navigation"
                   }
-                  className="mt-7 border-t border-white/15 pt-4 lg:mt-9"
+                  className="mt-9 border-t border-white/15 pt-4"
                 >
                   <Link
                     href="/orders"
@@ -293,9 +666,7 @@ export default function ProfilePage() {
                   </Link>
                 </nav>
 
-                {/* Sidebar footer */}
-                <div className="mt-7 space-y-5 border-t border-white/15 pt-5 lg:mt-auto">
-                  {/* Minimal language switch */}
+                <div className="mt-auto space-y-5 border-t border-white/15 pt-5">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-xs font-bold text-white/55">
                       <FaGlobe />
@@ -370,23 +741,20 @@ export default function ProfilePage() {
               </div>
             </aside>
 
-            {/* Main account content */}
-            <div className="min-w-0 p-5 sm:p-8 lg:p-12 xl:p-14">
-             
+            <div className="min-w-0 p-12 xl:p-14">
               {user ? (
-                /* Signed-in actions */
                 <section>
                   <Link
                     href="/orders"
                     className={accountLinkClass}
                   >
-                    <div className="flex min-w-0 items-center gap-4 sm:gap-5">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#dbe5de] bg-[#f3f7f4] text-[#0a583b] sm:h-12 sm:w-12">
+                    <div className="flex min-w-0 items-center gap-5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#dbe5de] bg-[#f3f7f4] text-[#0a583b]">
                         <FaBoxOpen />
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-lg font-extrabold text-[#142019] sm:text-xl">
+                        <p className="text-xl font-extrabold text-[#142019]">
                           {isArabic
                             ? "طلباتي"
                             : "My orders"}
@@ -415,13 +783,13 @@ export default function ProfilePage() {
                     href="/contact"
                     className={`${accountLinkClass} border-b`}
                   >
-                    <div className="flex min-w-0 items-center gap-4 sm:gap-5">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#dbe5de] bg-[#f3f7f4] text-[#0a583b] sm:h-12 sm:w-12">
+                    <div className="flex min-w-0 items-center gap-5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#dbe5de] bg-[#f3f7f4] text-[#0a583b]">
                         <FaHeadset />
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-lg font-extrabold text-[#142019] sm:text-xl">
+                        <p className="text-xl font-extrabold text-[#142019]">
                           {isArabic
                             ? "خدمة العملاء"
                             : "Customer care"}
@@ -447,8 +815,7 @@ export default function ProfilePage() {
                   </Link>
                 </section>
               ) : (
-                /* Guest account introduction */
-                <section className="border border-[#e3e6df] bg-[#f5f3ed] p-5 sm:p-8">
+                <section className="border border-[#e3e6df] bg-[#f5f3ed] p-8">
                   <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
                     <div className="max-w-xl">
                       <p
@@ -508,7 +875,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+                    <div className="flex shrink-0 flex-col gap-3 xl:flex-row">
                       <Link
                         href="/signup"
                         className="inline-flex min-h-12 items-center justify-center bg-[#0a583b] px-7 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
@@ -531,7 +898,6 @@ export default function ProfilePage() {
                 </section>
               )}
 
-              {/* Policies */}
               <section className="mt-11 sm:mt-14">
                 <div>
                   <p
@@ -561,7 +927,7 @@ export default function ProfilePage() {
                     )
                   }
                   aria-expanded={policiesOpen}
-                  aria-controls="profile-policies"
+                  aria-controls="desktop-profile-policies"
                   className="group mt-6 flex w-full items-center justify-between gap-5 border-y border-[#dfe5e1] py-5 text-start"
                 >
                   <div>
@@ -590,7 +956,7 @@ export default function ProfilePage() {
                 </button>
 
                 <div
-                  id="profile-policies"
+                  id="desktop-profile-policies"
                   className={`grid transition-all duration-300 ease-in-out ${
                     policiesOpen
                       ? "grid-rows-[1fr] opacity-100"
