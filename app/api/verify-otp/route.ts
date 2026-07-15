@@ -17,30 +17,46 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const phone = String(body?.phone || "").trim();
+
     const code = String(body?.code || "").trim();
-    const mode = String(body?.mode || "") as VerificationMode;
+
+    const mode = String(
+      body?.mode || ""
+    ) as VerificationMode;
 
     const fullName = String(body?.fullName || "")
       .replace(/\s+/g, " ")
       .trim();
 
+    /*
+      Validate Syrian phone number:
+      963 + 9 digits starting with 9
+      Example: 963964376659
+    */
     if (!/^9639\d{8}$/.test(phone)) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid phone number",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
+    /*
+      NABDA OTP code contains 6 digits.
+    */
     if (!/^\d{6}$/.test(code)) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid verification code",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -50,7 +66,9 @@ export async function POST(request: Request) {
           success: false,
           error: "Invalid verification mode",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -63,33 +81,50 @@ export async function POST(request: Request) {
           success: false,
           error: "Invalid full name",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const apiUrl = "https://api.nabdaotp.com";
+    /*
+      NABDA credentials.
+
+      This uses the same URL and API-key format
+      as the previously working implementation.
+    */
+    const apiUrl = process.env.NABDA_API_URL;
     const apiKey = process.env.NABDA_API_KEY;
 
-    if (!apiKey) {
-      console.error("Missing NABDA_API_KEY");
+    if (!apiUrl || !apiKey) {
+      console.error(
+        "Missing NABDA environment variables"
+      );
 
       return NextResponse.json(
         {
           success: false,
           error: "OTP service is unavailable",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
     /*
+      Verify the OTP through NABDA.
+
       Important:
-      - Same API URL used in send-otp
-      - Same Authorization format
-      - Same phone format: +963...
+      Do not add "+" before the phone.
+      Send the exact same phone format used
+      by the send-otp route.
     */
     const otpResponse = await fetch(
-      `${apiUrl}/api/v1/messages/otp/verify`,
+      `${apiUrl.replace(
+        /\/$/,
+        ""
+      )}/api/v1/messages/otp/verify`,
       {
         method: "POST",
 
@@ -99,7 +134,7 @@ export async function POST(request: Request) {
         },
 
         body: JSON.stringify({
-          phone: `+${phone}`,
+          phone,
           code,
         }),
 
@@ -107,45 +142,42 @@ export async function POST(request: Request) {
       }
     );
 
-    const providerText = await otpResponse.text();
-
-    let providerResult: any = null;
-
-    try {
-      providerResult = JSON.parse(providerText);
-    } catch {
-      providerResult = null;
-    }
+    const providerResponse =
+      await otpResponse.text();
 
     console.log(
       "NABDA OTP verify response:",
       otpResponse.status,
-      providerText
+      providerResponse
     );
 
-    if (
-      !otpResponse.ok ||
-      providerResult?.success === false
-    ) {
+    if (!otpResponse.ok) {
       console.error(
         "NABDA OTP verification failed:",
         otpResponse.status,
-        providerText
+        providerResponse
       );
 
       return NextResponse.json(
         {
           success: false,
           error:
-            providerResult?.message ||
             "Invalid or expired verification code",
         },
         {
-          status: 401,
+          status:
+            otpResponse.status >= 400 &&
+            otpResponse.status < 500
+              ? otpResponse.status
+              : 502,
         }
       );
     }
 
+    /*
+      OTP verification succeeded.
+      Now find the customer profile.
+    */
     const {
       data: existingProfile,
       error: profileLookupError,
@@ -164,32 +196,50 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Could not access customer account",
+          error:
+            "Could not access customer account",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
     let profile = existingProfile;
 
-    if (mode === "login" && !profile) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Account does not exist",
-        },
-        { status: 404 }
-      );
+    /*
+      Login mode:
+      the customer account must already exist.
+    */
+    if (mode === "login") {
+      if (!profile) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Account does not exist",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
     }
 
+    /*
+      Signup mode:
+      create a new profile after OTP verification.
+    */
     if (mode === "signup") {
       if (profile) {
         return NextResponse.json(
           {
             success: false,
-            error: "Phone number is already registered",
+            error:
+              "Phone number is already registered",
           },
-          { status: 409 }
+          {
+            status: 409,
+          }
         );
       }
 
@@ -214,9 +264,12 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
-            error: "Could not create customer account",
+            error:
+              "Could not create customer account",
           },
-          { status: 500 }
+          {
+            status: 500,
+          }
         );
       }
 
@@ -227,16 +280,23 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Customer account is unavailable",
+          error:
+            "Customer account is unavailable",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
-    const token = await createCustomerSessionToken({
-      profileId: Number(profile.id),
-      phone: profile.phone,
-    });
+    /*
+      Create the secure signed customer session.
+    */
+    const token =
+      await createCustomerSessionToken({
+        profileId: Number(profile.id),
+        phone: String(profile.phone),
+      });
 
     const response = NextResponse.json({
       success: true,
@@ -248,6 +308,9 @@ export async function POST(request: Request) {
       },
     });
 
+    /*
+      Save the session in an HttpOnly cookie.
+    */
     response.cookies.set(
       CUSTOMER_SESSION_COOKIE,
       token,
@@ -263,7 +326,9 @@ export async function POST(request: Request) {
         success: false,
         error: "Could not verify the code",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
