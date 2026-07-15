@@ -89,7 +89,7 @@ export default function HomeClient({
 
   const text = {
     en: {
-      bestSelling: "Most loved",
+      bestSelling: "Best Sellers",
       topSellers: "Bestsellers",
 
       new: "Just arrived",
@@ -100,7 +100,7 @@ export default function HomeClient({
     },
 
     ar: {
-      bestSelling: "الأكثر طلباً",
+      bestSelling: "الأكثر مبيعاً",
       topSellers: "الأكثر مبيعاً",
 
       new: "وصل حديثاً",
