@@ -1,68 +1,59 @@
 import { NextResponse } from "next/server";
-import { getNabdaInstanceToken } from "@/lib/nabda";
 
 export const dynamic = "force-dynamic";
 
-const NABDA_API_URL =
-  "https://api.nabdaotp.com";
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    route: "send-otp exists",
+  });
+}
 
-export async function POST(
-  request: Request
-) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
+    const { phone } = await req.json();
 
-    const phone = String(
-      body?.phone || ""
-    ).trim();
-
-    if (!/^9639\d{8}$/.test(phone)) {
+    if (!/^9639\d{8}$/.test(String(phone || ""))) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid phone number",
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       );
     }
 
-    /*
-      نأخذ access token خاص بالـInstance
-      باستخدام NABDA_API_KEY و
-      NABDA_INSTANCE_ID.
-    */
-    const instanceToken =
-      await getNabdaInstanceToken();
+    const apiUrl = process.env.NABDA_API_URL;
+    const apiKey = process.env.NABDA_API_KEY;
 
-    const otp = Math.floor(
-  100000 + Math.random() * 900000
-).toString();
+    if (!apiUrl || !apiKey) {
+      console.error("Missing NABDA environment variables");
 
-const response = await fetch(
-  `${NABDA_API_URL}/api/v1/messages/send`,
-  {
-    method: "POST",
+      return NextResponse.json(
+        {
+          success: false,
+          error: "OTP service is unavailable",
+        },
+        { status: 500 }
+      );
+    }
 
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${instanceToken}`,
-    },
+    const response = await fetch(
+      `${apiUrl.replace(/\/$/, "")}/api/v1/messages/otp/send`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: apiKey,
+        },
+        body: JSON.stringify({ phone }),
+        cache: "no-store",
+      }
+    );
 
-    body: JSON.stringify({
-      phone: `+${phone}`,
-      message: `رمز التحقق الخاص بك في KAB Pharma هو: ${otp}. صالح لمدة 5 دقائق.`,
-    }),
-
-    cache: "no-store",
-  }
-);
+    const providerResponse = await response.text();
 
     if (!response.ok) {
-      const providerResponse =
-        await response.text();
-
       console.error(
         "NABDA OTP send failed:",
         response.status,
@@ -72,13 +63,11 @@ const response = await fetch(
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Could not send verification code",
+          error: "Could not send verification code",
         },
         {
           status:
-            response.status >= 400 &&
-            response.status < 500
+            response.status >= 400 && response.status < 500
               ? response.status
               : 502,
         }
@@ -89,20 +78,14 @@ const response = await fetch(
       success: true,
     });
   } catch (error) {
-    console.error(
-      "Send OTP error:",
-      error
-    );
+    console.error("Send OTP error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error:
-          "Could not send verification code",
+        error: "Could not send verification code",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
