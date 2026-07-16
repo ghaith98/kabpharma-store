@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -257,6 +258,34 @@ const [
   setMenuOpen(false);
   setProductsOpen(false);
 }
+
+  function handleProductsNavigation(
+    event: ReactMouseEvent<HTMLAnchorElement>
+  ) {
+    closeMenu();
+
+    if (pathname !== "/products") {
+      return;
+    }
+
+    event.preventDefault();
+    setSearchOpen(false);
+    setQuery("");
+
+    window.dispatchEvent(
+      new Event("productsResetRequested")
+    );
+
+    router.replace("/products", {
+      scroll: false,
+    });
+    router.refresh();
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
 
   useEffect(() => {
     updateCartCount();
@@ -697,6 +726,11 @@ const [
                             href={
                               item.href
                             }
+                            onClick={
+                              item.href === "/products"
+                                ? handleProductsNavigation
+                                : undefined
+                            }
                             aria-current={
                               active
                                 ? "page"
@@ -1066,7 +1100,7 @@ const [
           {/* All products */}
           <Link
             href="/products"
-            onClick={closeMenu}
+            onClick={handleProductsNavigation}
             className="flex min-h-11 items-center text-sm font-extrabold text-[#0a583b] transition hover:opacity-70"
           >
             {t.allProducts}

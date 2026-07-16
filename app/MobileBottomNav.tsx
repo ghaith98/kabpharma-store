@@ -4,10 +4,14 @@ import {
   useEffect,
   useState,
 } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 
 import Link from "next/link";
 
-import { usePathname } from "next/navigation";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
 
 import {
   Home,
@@ -22,6 +26,7 @@ import { useLanguage } from "../context/LanguageContext";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { lang } = useLanguage();
 
   const currentLang =
@@ -118,6 +123,34 @@ export default function MobileBottomNav() {
     );
   }
 
+  function handleNavigation(
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    href: string
+  ) {
+    if (
+      href !== "/products" ||
+      pathname !== "/products"
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    window.dispatchEvent(
+      new Event("productsResetRequested")
+    );
+
+    router.replace("/products", {
+      scroll: false,
+    });
+    router.refresh();
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
   return (
     <nav
       dir={
@@ -149,6 +182,12 @@ export default function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={(event) =>
+                handleNavigation(
+                  event,
+                  item.href
+                )
+              }
               aria-current={
                 active
                   ? "page"

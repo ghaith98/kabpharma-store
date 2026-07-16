@@ -175,6 +175,33 @@ export default function ProductsClient({
     };
   }, [filtersOpen]);
 
+  useEffect(() => {
+    function resetProductsView() {
+      setSearch("");
+      setSelectedCategoryId(null);
+      setSortBy("default");
+      setPriceRange([
+        0,
+        maxProductPrice,
+      ]);
+      setInStockOnly(false);
+      setOnSaleOnly(false);
+      setFiltersOpen(false);
+    }
+
+    window.addEventListener(
+      "productsResetRequested",
+      resetProductsView
+    );
+
+    return () => {
+      window.removeEventListener(
+        "productsResetRequested",
+        resetProductsView
+      );
+    };
+  }, [maxProductPrice]);
+
   const categories = useMemo(() => {
     const categoryMap = new Map<
       number,
