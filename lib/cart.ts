@@ -32,8 +32,14 @@ function getCartKey() {
   }
 }
 
-function getItemKey(item: Pick<CartItem, "id" | "variant_id">) {
-  return `${item.id}-${item.variant_id || "base"}`;
+function getItemKey(
+  item: Pick<CartItem, "id" | "variant_id">
+) {
+  return `${Number(item.id)}-${
+    item.variant_id != null
+      ? Number(item.variant_id)
+      : "base"
+  }`;
 }
 
 export function getCart(): CartItem[] {
@@ -58,10 +64,10 @@ export function addToCart(item: Omit<CartItem, "quantity">, quantity = 1) {
 
   const itemKey = getItemKey(item);
 
-  const existingItem = cart.find((cartItem) => {
-    const cartItemKey = cartItem.cart_key || getItemKey(cartItem);
-    return cartItemKey === itemKey;
-  });
+  const existingItem = cart.find(
+  (cartItem) =>
+    getItemKey(cartItem) === itemKey
+);
 
   if (existingItem) {
     existingItem.quantity += quantity;

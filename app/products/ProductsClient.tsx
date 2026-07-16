@@ -756,30 +756,32 @@ export default function ProductsClient({
                         </button>
                       ) : (
                         <div className="[&_button]:!min-h-11 [&_button]:!w-full [&_button]:!rounded-full [&_button]:!bg-[#0a583b] [&_button]:!px-3 [&_button]:!py-2.5 [&_button]:!text-xs [&_button]:!font-extrabold [&_button]:!text-white [&_button]:!shadow-none [&_button]:hover:!bg-[#073f2c] sm:[&_button]:!text-sm">
-                          <AddToCartButton
-                            product={{
-                              id:
-                                product.id,
+  <AddToCartButton
+    product={{
+      id: product.id,
 
-                              name:
-                                productName,
+      name: productName,
 
-                              price:
-                                Math.round(
-                                  finalPrice
-                                ),
+      price: Math.round(
+        finalPrice
+      ),
 
-                              original_price:
-                                originalPrice,
+      original_price:
+        originalPrice,
 
-                              sale_percent:
-                                salePercent,
+      sale_percent:
+        salePercent,
 
-                              image_url:
-                                product.image_url,
-                            }}
-                          />
-                        </div>
+      image_url:
+        product.image_url,
+    }}
+
+    productVariants={
+      product.product_variants ||
+      []
+    }
+  />
+</div>
                       )}
                     </div>
                   </div>

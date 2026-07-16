@@ -96,20 +96,23 @@ export default async function ProductsPage() {
     orderItemsResult,
     availableProductsResult,
   ] = await Promise.all([
-    supabase
-      .from("products")
-      .select(`
-        *,
-        categories (
-          id,
-          name,
-          name_ar,
-          name_en
-        )
-      `)
-      .order("id", {
-        ascending: true,
-      }),
+   supabase
+  .from("products")
+  .select(`
+    *,
+    categories (
+      id,
+      name,
+      name_ar,
+      name_en
+    ),
+    product_variants (
+      *
+    )
+  `)
+  .order("id", {
+    ascending: true,
+  }),
 
     supabase
       .from("order_items")

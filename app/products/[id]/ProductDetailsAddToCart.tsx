@@ -32,6 +32,7 @@ export default function ProductDetailsAddToCart({
   finalPrice,
   originalPrice,
   salePercent,
+  selectedVariant,
 }: {
   product: Product;
   finalPrice: number;
@@ -48,15 +49,46 @@ export default function ProductDetailsAddToCart({
   const [quantity, setQuantity] =
     useState(1);
 
-  function handleAdd() {
-    addToCart(product, quantity);
+ function handleAdd() {
+  const variantLabelAr =
+    selectedVariant?.label_ar ||
+    selectedVariant?.name_ar ||
+    selectedVariant?.label ||
+    selectedVariant?.name ||
+    product.variant_label_ar ||
+    null;
 
-    window.dispatchEvent(
-      new Event("cartUpdated")
-    );
+  const variantLabelEn =
+    selectedVariant?.label_en ||
+    selectedVariant?.name_en ||
+    selectedVariant?.label ||
+    selectedVariant?.name ||
+    product.variant_label_en ||
+    null;
 
-    setShowModal(true);
-  }
+  const itemToAdd: Omit<
+    import("@/lib/cart").CartItem,
+    "quantity"
+  > = {
+    ...product,
+
+    variant_id:
+      selectedVariant?.id != null
+        ? Number(selectedVariant.id)
+        : product.variant_id ?? null,
+
+    variant_label_ar: variantLabelAr,
+    variant_label_en: variantLabelEn,
+  };
+
+  addToCart(itemToAdd, quantity);
+
+  window.dispatchEvent(
+    new Event("cartUpdated")
+  );
+
+  setShowModal(true);
+}
 
   return (
     <>
