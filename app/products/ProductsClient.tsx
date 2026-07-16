@@ -851,10 +851,10 @@ export default function ProductsClient({
       ? "rtl"
       : "ltr"
   }
-  className={`absolute inset-y-0 left-0 w-[86%] max-w-[360px] overflow-y-auto bg-white shadow-2xl sm:w-[90%] sm:max-w-md ${
+  className={`absolute inset-y-0 w-[78%] max-w-[320px] overflow-y-auto bg-white sm:w-[82%] sm:max-w-[340px] md:w-[90%] md:max-w-md ${
     isArabic
-      ? "md:left-0"
-      : "md:left-auto md:right-0"
+      ? "right-0 shadow-[-18px_0_60px_rgba(7,31,20,0.16)]"
+      : "left-0 shadow-[18px_0_60px_rgba(7,31,20,0.16)]"
   }`}
 >
             <div className="flex min-h-full flex-col">

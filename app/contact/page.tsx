@@ -12,44 +12,39 @@ import {
   PackageCheck,
   Sparkles,
 } from "lucide-react";
+
 import {
-  FaFacebookF,
-  FaInstagram,
+  FaFacebookF as Facebook,
+  FaInstagram as Instagram,
+  FaWhatsapp,
 } from "react-icons/fa";
 
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function ContactPage() {
-  const { lang } =
-    useLanguage();
+  const { lang } = useLanguage();
 
-  const isArabic =
-    lang === "ar";
+  const isArabic = lang === "ar";
 
-  const ArrowIcon =
-    isArabic
-      ? ArrowLeft
-      : ArrowRight;
+  const ArrowIcon = isArabic
+    ? ArrowLeft
+    : ArrowRight;
 
   const text = {
     ar: {
-      eyebrow:
-        "خدمة العملاء",
+      eyebrow: "خدمة العملاء",
 
-      title:
-        "نحن هنا لمساعدتك.",
+      title: "نحن هنا لمساعدتك.",
 
       description:
         "سواء كان لديك سؤال عن أحد منتجاتنا، أو احتجت إلى مساعدة بخصوص طلبك، يمكنك التواصل مباشرة مع فريق KAB Pharma.",
 
-      status:
-        "جاهزون لاستقبال رسالتك",
+      status: "جاهزون لاستقبال رسالتك",
 
       statusText:
         "سنراجع رسالتك ونرد عليك في أقرب وقت ممكن.",
 
-      primaryLabel:
-        "الطريقة الأسرع",
+      primaryLabel: "الطريقة الأسرع",
 
       whatsappTitle:
         "تحدث معنا عبر واتساب",
@@ -59,6 +54,9 @@ export default function ContactPage() {
 
       whatsappButton:
         "بدء المحادثة",
+
+      whatsappSupport:
+        "دعم للمنتجات والطلبات",
 
       otherChannels:
         "قنوات التواصل",
@@ -98,11 +96,9 @@ export default function ContactPage() {
     },
 
     en: {
-      eyebrow:
-        "Customer care",
+      eyebrow: "Customer care",
 
-      title:
-        "We’re here to help.",
+      title: "We’re here to help.",
 
       description:
         "Whether you have a question about a product or need help with an order, you can contact the KAB Pharma team directly.",
@@ -124,6 +120,9 @@ export default function ContactPage() {
 
       whatsappButton:
         "Start conversation",
+
+      whatsappSupport:
+        "Product and order support",
 
       otherChannels:
         "Contact channels",
@@ -161,59 +160,51 @@ export default function ContactPage() {
       note:
         "Your privacy matters. Never send passwords or verification codes through messages.",
     },
-  }[
-    lang as "ar" | "en"
-  ];
+  }[lang as "ar" | "en"];
 
-  const whatsappUrl =
-    useMemo(() => {
-      const message =
-        isArabic
-          ? `مرحباً فريق KAB Pharma 👋
+  const whatsappUrl = useMemo(() => {
+    const message = isArabic
+      ? `مرحباً فريق KAB Pharma 👋
 أحتاج مساعدة بخصوص:
 
 `
-          : `Hello KAB Pharma team 👋
+      : `Hello KAB Pharma team 👋
 I need help regarding:
 
 `;
 
-      return `https://wa.me/963958088969?text=${encodeURIComponent(
-        message
-      )}`;
-    }, [isArabic]);
+    return `https://wa.me/963958088969?text=${encodeURIComponent(
+      message
+    )}`;
+  }, [isArabic]);
 
   const channels = [
     {
       label: "Instagram",
 
-      text:
-        text.instagramText,
+      text: text.instagramText,
 
       href:
         "https://www.instagram.com/kabpharma?igsh=NHpuY2F1eHFlYWgw&utm_source=qr",
 
-      Icon: FaInstagram
+      Icon: Instagram,
     },
 
     {
       label: "Facebook",
 
-      text:
-        text.facebookText,
+      text: text.facebookText,
 
       href:
         "https://www.facebook.com/share/17YjFUHZcR/?mibextid=wwXIfr",
 
-      Icon: FaFacebookF
+      Icon: Facebook,
     },
 
     {
-      label:
-        text.emailTitle,
+      label: text.emailTitle,
 
-      text:
-        text.emailText,
+      text: text.emailText,
 
       href:
         "mailto:kabpharma.sy@hotmail.com",
@@ -221,19 +212,14 @@ I need help regarding:
       detail:
         "kabpharma.sy@hotmail.com",
 
-      Icon:
-        Mail,
+      Icon: Mail,
     },
   ];
 
   return (
     <main
-      dir={
-        isArabic
-          ? "rtl"
-          : "ltr"
-      }
-      className="min-h-screen bg-[#f7f8f6] pb-16 text-[#142019]"
+      dir={isArabic ? "rtl" : "ltr"}
+      className="min-h-screen bg-[#f7f8f6] pb-28 text-[#142019] lg:pb-16"
     >
       {/* Hero */}
       <header className="border-b border-[#dfe4e0] bg-white px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-24">
@@ -290,12 +276,96 @@ I need help regarding:
       <div className="mx-auto max-w-[1320px] px-5 sm:px-6 lg:px-10">
         {/* Contact methods */}
         <section className="grid gap-6 py-10 sm:py-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-8 lg:py-20">
-          {/* WhatsApp */}
+          {/* WhatsApp — mobile and tablet */}
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative flex min-h-[380px] flex-col justify-between overflow-hidden rounded-[1.75rem] bg-[#0a583b] p-6 text-white transition duration-300 hover:bg-[#073f2c] sm:p-9 lg:min-h-[480px] lg:p-11"
+            aria-label={text.whatsappTitle}
+            className="group block overflow-hidden rounded-[1.5rem] border border-[#dfe4e0] bg-white transition duration-200 active:scale-[0.99] lg:hidden"
+          >
+            <div className="p-5 sm:p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                  <FaWhatsapp size={22} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p
+                      className={`text-[10px] font-extrabold uppercase text-[#0a583b] ${
+                        isArabic
+                          ? "tracking-normal"
+                          : "tracking-[0.14em]"
+                      }`}
+                    >
+                      {text.primaryLabel}
+                    </p>
+
+                    <span className="h-1 w-1 rounded-full bg-[#b8c2bb]" />
+
+                    <p className="text-[10px] font-bold text-[#7a857e]">
+                      WhatsApp
+                    </p>
+                  </div>
+
+                  <h2
+                    className={`mt-2 font-extrabold text-[#142019] ${
+                      isArabic
+                        ? "text-lg leading-7 [font-family:Tahoma,Arial,sans-serif]"
+                        : "text-xl leading-6 tracking-[-0.02em]"
+                    }`}
+                  >
+                    {text.whatsappTitle}
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-[#647168]">
+                    {text.whatsappText}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex min-h-12 items-center justify-between gap-4 rounded-full bg-[#0a583b] px-5 text-sm font-extrabold text-white transition group-active:bg-[#073f2c]">
+                <span>
+                  {text.whatsappButton}
+                </span>
+
+                <ArrowIcon
+                  size={17}
+                  className={`shrink-0 transition-transform ${
+                    isArabic
+                      ? "group-active:-translate-x-1"
+                      : "group-active:translate-x-1"
+                  }`}
+                />
+              </div>
+            </div>
+
+            <div
+              dir="ltr"
+              className="flex items-center justify-between gap-3 border-t border-[#e7ebe8] bg-[#f7f8f6] px-5 py-3 sm:px-6"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-[#25d366]" />
+
+                <span className="truncate text-[11px] font-bold text-[#647168]">
+                  {text.whatsappSupport}
+                </span>
+              </div>
+
+              <span className="shrink-0 text-[11px] font-bold text-[#7a857e]">
+                +963 958 088 969
+              </span>
+            </div>
+          </a>
+
+          {/* WhatsApp — desktop */}
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={text.whatsappTitle}
+            className="group relative hidden min-h-[480px] flex-col justify-between overflow-hidden rounded-[1.75rem] bg-[#0a583b] p-11 text-white transition duration-300 hover:bg-[#073f2c] lg:flex"
           >
             <div>
               <div className="flex items-center justify-between gap-5">
@@ -304,23 +374,21 @@ I need help regarding:
                 </span>
 
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0a583b]">
-                  <MessageCircle
-                    size={22}
-                  />
+                  <MessageCircle size={22} />
                 </div>
               </div>
 
               <h2
                 className={`mt-10 max-w-xl font-extrabold ${
                   isArabic
-                    ? "text-3xl leading-[1.3] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl"
-                    : "text-4xl leading-[1.02] tracking-[-0.04em] sm:text-5xl"
+                    ? "text-4xl leading-[1.3] [font-family:Tahoma,Arial,sans-serif]"
+                    : "text-5xl leading-[1.02] tracking-[-0.04em]"
                 }`}
               >
                 {text.whatsappTitle}
               </h2>
 
-              <p className="mt-5 max-w-lg text-sm leading-7 text-white/75 sm:text-base sm:leading-8">
+              <p className="mt-5 max-w-lg text-base leading-8 text-white/75">
                 {text.whatsappText}
               </p>
             </div>
@@ -378,16 +446,12 @@ I need help regarding:
                     key={label}
                     href={href}
                     target={
-                      href.startsWith(
-                        "mailto:"
-                      )
+                      href.startsWith("mailto:")
                         ? undefined
                         : "_blank"
                     }
                     rel={
-                      href.startsWith(
-                        "mailto:"
-                      )
+                      href.startsWith("mailto:")
                         ? undefined
                         : "noopener noreferrer"
                     }
@@ -448,9 +512,7 @@ I need help regarding:
           <div className="grid gap-8 sm:grid-cols-2 sm:gap-12">
             <article className="flex items-start gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-                <PackageCheck
-                  size={19}
-                />
+                <PackageCheck size={19} />
               </div>
 
               <div>
@@ -466,9 +528,7 @@ I need help regarding:
 
             <article className="flex items-start gap-4">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-                <Sparkles
-                  size={19}
-                />
+                <Sparkles size={19} />
               </div>
 
               <div>
@@ -503,7 +563,7 @@ I need help regarding:
             rel="noopener noreferrer"
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[#0a583b] px-5 text-xs font-extrabold text-[#0a583b] transition hover:bg-[#0a583b] hover:text-white"
           >
-            <MessageCircle size={15} />
+            <FaWhatsapp size={15} />
 
             {text.whatsappButton}
           </a>
