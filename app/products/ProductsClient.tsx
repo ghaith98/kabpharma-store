@@ -846,17 +846,17 @@ export default function ProductsClient({
           }}
         >
           <aside
-            dir={
-              isArabic
-                ? "rtl"
-                : "ltr"
-            }
-            className={`absolute inset-y-0 w-[90%] max-w-md overflow-y-auto bg-white shadow-2xl ${
-              isArabic
-                ? "left-0"
-                : "right-0"
-            }`}
-          >
+  dir={
+    isArabic
+      ? "rtl"
+      : "ltr"
+  }
+  className={`absolute inset-y-0 left-0 w-[86%] max-w-[360px] overflow-y-auto bg-white shadow-2xl sm:w-[90%] sm:max-w-md ${
+    isArabic
+      ? "md:left-0"
+      : "md:left-auto md:right-0"
+  }`}
+>
             <div className="flex min-h-full flex-col">
               <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e7ebe8] bg-white/95 px-5 py-5 backdrop-blur sm:px-7">
                 <div>
@@ -897,7 +897,7 @@ export default function ProductsClient({
 
               <div className="flex-1 px-5 sm:px-7">
                 {showCategories && (
-                  <section className="border-b border-[#e7ebe8] py-7">
+  <section className="hidden border-b border-[#e7ebe8] py-7 md:block">
                     <h3 className="text-sm font-extrabold text-[#142019]">
                       {isArabic
                         ? "تصنيفات المنتجات"
