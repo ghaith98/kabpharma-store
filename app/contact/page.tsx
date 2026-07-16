@@ -148,7 +148,7 @@ export default function ContactPage() {
         "For order questions",
 
       orderHelpText:
-        "Include the phone number linked to your account and your order number if available.",
+        "Include the phone number linked to your account and your order number.",
 
       productHelpTitle:
         "For product questions",
