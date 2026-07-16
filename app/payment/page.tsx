@@ -1423,528 +1423,415 @@ export default function PaymentPage() {
               </div>
             </div>
 
-            {/* Upload */}
-            <div className="border-t border-[#e7ebe8] p-5 sm:p-7">
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-                  <UploadCloud
-                    size={20}
-                  />
-                </div>
+          {/* Upload */}
+<div className="border-t border-[#e7ebe8] p-4 sm:p-7">
+  <h2 className="text-lg font-extrabold text-[#142019]">
+    {isArabic
+      ? "ارفع إثبات الدفع"
+      : "Upload payment proof"}
+  </h2>
 
-                <div>
-                  <h2 className="text-lg font-extrabold text-[#142019]">
-                    {isArabic
-                      ? "ارفع إثبات الدفع"
-                      : "Upload payment proof"}
-                  </h2>
-
-                  <p className="mt-1 text-sm leading-6 text-[#647168]">
-                    {isArabic
-                      ? "يمكنك رفع صورة الإيصال أو ملف PDF بحجم أقصى 20 MB."
-                      : "Upload a receipt image or PDF with a maximum size of 20 MB."}
-                  </p>
-                </div>
-              </div>
-
-              <form
-                id="payment-proof-form"
-                onSubmit={
-                  handleSubmit
-                }
-                className="mt-6"
-              >
-                {!file ? (
-                  <label
-                    className={`group flex min-h-[210px] cursor-pointer flex-col items-center justify-center rounded-[1.5rem] border-2 border-dashed px-5 text-center transition ${
-                      fileError
-                        ? "border-red-300 bg-red-50/50"
-                        : "border-[#cbd3cd] bg-[#fafbf9] hover:border-[#0a583b] hover:bg-[#f3f8f5]"
-                    }`}
-                  >
-                    <div
-                      className={`flex h-14 w-14 items-center justify-center rounded-full transition ${
-                        fileError
-                          ? "bg-red-100 text-red-600"
-                          : "bg-white text-[#0a583b] shadow-sm ring-1 ring-[#e7ebe8] group-hover:scale-105"
-                      }`}
-                    >
-                      <UploadCloud
-                        size={23}
-                      />
-                    </div>
-
-                    <p className="mt-5 text-sm font-extrabold text-[#142019]">
-                      {isArabic
-                        ? "اضغط لاختيار إثبات الدفع"
-                        : "Choose your payment proof"}
-                    </p>
-
-                    <p className="mt-2 text-xs leading-5 text-[#7a857e]">
-                      JPG, PNG, WEBP,
-                      HEIC or PDF · Max
-                      20 MB
-                    </p>
-
-                    <span className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full border border-[#cbd3cd] bg-white px-5 text-xs font-extrabold text-[#142019] transition group-hover:border-[#0a583b] group-hover:text-[#0a583b]">
-                      {isArabic
-                        ? "اختيار ملف"
-                        : "Select file"}
-                    </span>
-
-                    <input
-                      ref={
-                        fileInputRef
-                      }
-                      type="file"
-                      accept="image/*,application/pdf,.pdf"
-                      onChange={
-                        handleFileChange
-                      }
-                      disabled={
-                        loading
-                      }
-                      required
-                      className="hidden"
-                    />
-                  </label>
-                ) : (
-                  <div
-                    className={`rounded-[1.5rem] border p-5 ${
-                      fileError
-                        ? "border-red-300 bg-red-50"
-                        : "border-[#b8d7c4] bg-[#f1f8f4]"
-                    }`}
-                  >
-                    <div className="flex min-w-0 items-start gap-4">
-                      <div
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-                          fileError
-                            ? "bg-red-100 text-red-600"
-                            : "bg-white text-[#0a583b] shadow-sm"
-                        }`}
-                      >
-                        {fileError ? (
-                          <FileText
-                            size={20}
-                          />
-                        ) : (
-                          <FileCheck2
-                            size={20}
-                          />
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p
-                          dir="ltr"
-                          title={
-                            file.name
-                          }
-                          className={`truncate text-start text-sm font-extrabold ${
-                            fileError
-                              ? "text-red-700"
-                              : "text-[#142019]"
-                          }`}
-                        >
-                          {getShortFileName(
-                            file.name
-                          )}
-                        </p>
-
-                        <p className="mt-1 text-xs font-bold text-[#7a857e]">
-                          {getFileSizeLabel(
-                            file.size
-                          )}
-                        </p>
-
-                        {!fileError && (
-                          <p className="mt-2 text-xs font-bold text-[#0a583b]">
-                            {isArabic
-                              ? "الملف جاهز للإرسال"
-                              : "Ready to submit"}
-                          </p>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={
-                          loading
-                        }
-                        onClick={
-                          removeSelectedFile
-                        }
-                        aria-label={
-                          isArabic
-                            ? "إزالة الملف"
-                            : "Remove file"
-                        }
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#7a857e] shadow-sm transition hover:text-red-600 disabled:opacity-50"
-                      >
-                        <X
-                          size={17}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {fileError && (
-                  <div
-                    role="alert"
-                    className="mt-3 rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold leading-6 text-red-700"
-                  >
-                    {fileError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={
-                    loading ||
-                    !file ||
-                    Boolean(
-                      fileError
-                    )
-                  }
-                  className="mt-6 hidden min-h-[52px] w-full items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg disabled:cursor-not-allowed disabled:bg-[#b4bdb7] disabled:hover:translate-y-0 disabled:hover:shadow-none lg:flex"
-                >
-                  {loading ? (
-                    <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-
-                      <span>
-                        {isArabic
-                          ? "جاري إرسال الطلب..."
-                          : "Submitting order..."}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck
-                        size={17}
-                      />
-
-                      <span>
-                        {isArabic
-                          ? "تأكيد الدفع وإرسال الطلب"
-                          : "Confirm payment and submit order"}
-                      </span>
-                    </>
-                  )}
-                </button>
-              </form>
-
-              <div className="mt-5 flex items-start gap-3 rounded-[1.25rem] bg-[#f7f8f6] p-4">
-                <LockKeyhole
-                  size={17}
-                  className="mt-0.5 shrink-0 text-[#0a583b]"
-                />
-
-                <p className="text-xs leading-6 text-[#647168]">
-                  {isArabic
-                    ? "سيتم إرسال الطلب للمراجعة بعد رفع إثبات الدفع، ويمكنك متابعة حالته من حسابك."
-                    : "Your order will be submitted for review after the payment proof is uploaded. You can track its status from your account."}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Summary */}
-          <aside className="h-fit min-w-0 rounded-[1.75rem] border border-[#dfe4e0] bg-white p-5 sm:p-6 lg:sticky lg:top-6">
-            <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-                isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.15em]"
-              }`}
-            >
-              {isArabic
-                ? "ملخص الطلب"
-                : "Order summary"}
-            </p>
-
-            <div className="mt-3 flex items-end justify-between gap-4">
-              <h2 className="text-2xl font-extrabold tracking-tight text-[#142019]">
-                {isArabic
-                  ? "طلبك"
-                  : "Your order"}
-              </h2>
-
-              <span className="text-xs font-bold text-[#7a857e]">
-                {isArabic
-                  ? `${itemsCount} قطعة`
-                  : `${itemsCount} ${
-                      itemsCount ===
-                      1
-                        ? "item"
-                        : "items"
-                    }`}
-              </span>
-            </div>
-
-            {/* Items */}
-            <div className="mt-6 max-h-[340px] space-y-4 overflow-y-auto border-b border-[#e7ebe8] pb-5 pe-1">
-              {cart.length ===
-              0 ? (
-                <p className="text-sm text-[#647168]">
-                  {isArabic
-                    ? "السلة فارغة"
-                    : "Your cart is empty"}
-                </p>
-              ) : (
-                cart.map(
-                  (item) => {
-                    const itemKey =
-                      getCartItemKey(
-                        item
-                      );
-
-                    const variantLabel =
-                      getVariantLabel(
-                        item
-                      );
-
-                    const displayName =
-                      getDisplayName(
-                        item
-                      );
-
-                    return (
-                      <div
-                        key={
-                          itemKey
-                        }
-                        className="flex min-w-0 gap-3"
-                      >
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1rem] bg-[#f7f8f6] p-2">
-                          {item.image_url ? (
-                            <img
-                              src={
-                                item.image_url
-                              }
-                              alt={
-                                displayName
-                              }
-                              className="h-full w-full object-contain"
-                            />
-                          ) : (
-                            <Package
-                              size={20}
-                              className="text-[#a2aaa4]"
-                            />
-                          )}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="line-clamp-2 text-sm font-extrabold leading-5 text-[#142019]">
-                              {
-                                displayName
-                              }
-                            </p>
-
-                            <p className="shrink-0 text-sm font-extrabold text-[#142019]">
-                              {formatPrice(
-                                Number(
-                                  item.price
-                                ) *
-                                  Number(
-                                    item.quantity
-                                  )
-                              )}
-                            </p>
-                          </div>
-
-                          {variantLabel && (
-                            <p className="mt-1 text-xs font-bold text-[#0a583b]">
-                              {isArabic
-                                ? "الخيار: "
-                                : "Option: "}
-
-                              {
-                                variantLabel
-                              }
-                            </p>
-                          )}
-
-                          <p className="mt-1 text-xs text-[#7a857e]">
-                            {isArabic
-                              ? `الكمية: ${item.quantity}`
-                              : `Qty: ${item.quantity}`}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  }
-                )
-              )}
-            </div>
-
-            {/* Totals */}
-            <div className="mt-5 space-y-3.5 text-sm">
-              <div className="flex items-center justify-between gap-4 text-[#526057]">
-                <span>
-                  {isArabic
-                    ? "المنتجات"
-                    : "Products"}
-                </span>
-
-                <span className="font-bold text-[#142019]">
-                  {formatPrice(
-                    productsTotal
-                  )}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-4 text-[#526057]">
-                <span>
-                  {isArabic
-                    ? "التوصيل"
-                    : "Delivery"}
-                </span>
-
-                <span className="font-bold text-[#142019]">
-                  {deliveryFee >
-                  0
-                    ? formatPrice(
-                        deliveryFee
-                      )
-                    : isArabic
-                    ? "مجاني"
-                    : "Free"}
-                </span>
-              </div>
-            </div>
-
-            <div className="my-5 h-px bg-[#dfe4e0]" />
-
-            <div className="flex items-end justify-between gap-4">
-              <span className="font-extrabold text-[#142019]">
-                {isArabic
-                  ? "الإجمالي"
-                  : "Total"}
-              </span>
-
-              <span className="text-xl font-extrabold text-[#0a583b]">
-                {formatPrice(
-                  total
-                )}
-              </span>
-            </div>
-
-            {/* Delivery */}
-            {deliveryLocation && (
-              <div className="mt-6 flex items-start gap-3 rounded-[1.25rem] bg-[#f7f8f6] p-4">
-                <Truck
-                  size={18}
-                  className="mt-0.5 shrink-0 text-[#0a583b]"
-                />
-
-                <div className="min-w-0">
-                  <p className="text-xs font-extrabold text-[#142019]">
-                    {isArabic
-                      ? "التوصيل إلى"
-                      : "Delivering to"}
-                  </p>
-
-                  <p className="mt-1 text-xs leading-5 text-[#647168]">
-                    {
-                      deliveryLocation
-                    }
-                  </p>
-
-                  {checkout.address && (
-                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#7a857e]">
-                      {
-                        checkout.address
-                      }
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <Link
-              href="/checkout"
-              className="group mt-6 inline-flex items-center gap-2 text-xs font-extrabold text-[#526057] transition hover:text-[#0a583b]"
-            >
-              <BackArrow
-                size={14}
-                className="transition-transform group-hover:-translate-x-1 rtl:group-hover:translate-x-1"
-              />
-
-              <span>
-                {isArabic
-                  ? "تعديل معلومات الطلب"
-                  : "Edit delivery information"}
-              </span>
-            </Link>
-          </aside>
-        </div>
-      </div>
-
-      {/* Mobile submit */}
-      <div
-        dir={
-          isArabic
-            ? "rtl"
-            : "ltr"
-        }
-        className="fixed inset-x-0 bottom-16 z-50 border-t border-[#dfe4e0] bg-white/95 px-4 py-3 shadow-[0_-12px_30px_rgba(20,32,25,0.08)] backdrop-blur-xl lg:hidden"
+  <form
+    id="payment-proof-form"
+    onSubmit={handleSubmit}
+    className="mt-4"
+  >
+    <label
+      className={`group flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 transition ${
+        fileError
+          ? "border-red-300 bg-red-50/60"
+          : file
+            ? "border-[#b8d7c4] bg-[#edf5f0]"
+            : "border-[#dfe4e0] bg-white hover:border-[#8fb5a0] hover:bg-[#f7f8f6]"
+      }`}
+    >
+      <span
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+          fileError
+            ? "bg-red-100 text-red-600"
+            : file
+              ? "bg-white text-[#0a583b]"
+              : "bg-[#edf5f0] text-[#0a583b]"
+        }`}
       >
-        <div className="mx-auto flex max-w-3xl items-center gap-4">
-          <div className="min-w-0 shrink-0">
-            <p className="text-[10px] font-bold text-[#7a857e]">
-              {isArabic
-                ? "الإجمالي"
-                : "Total"}
-            </p>
+        {file && !fileError ? (
+          <FileCheck2 size={19} />
+        ) : (
+          <UploadCloud size={19} />
+        )}
+      </span>
 
-            <p className="mt-0.5 whitespace-nowrap text-sm font-extrabold text-[#142019]">
-              {formatPrice(
-                total
-              )}
-            </p>
-          </div>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-extrabold text-[#142019]">
+          {file
+            ? isArabic
+              ? "تم اختيار إثبات الدفع"
+              : "Payment proof selected"
+            : isArabic
+              ? "اختر إثبات الدفع"
+              : "Choose payment proof"}
+        </span>
 
-          <button
-            type="submit"
-            form="payment-proof-form"
-            disabled={
-              loading ||
-              !file ||
-              Boolean(fileError)
-            }
-            className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-4 text-sm font-extrabold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#b4bdb7]"
+        <span
+          dir={file ? "ltr" : undefined}
+          title={file?.name || ""}
+          className={`mt-1 block truncate text-xs ${
+            fileError
+              ? "font-bold text-red-600"
+              : "text-[#7a857e]"
+          }`}
+        >
+          {file
+            ? getShortFileName(file.name)
+            : isArabic
+              ? "اضغط لاختيار الملف"
+              : "Tap to choose a file"}
+        </span>
+      </span>
+
+      <span className="shrink-0 text-xs font-extrabold text-[#0a583b]">
+        {file
+          ? isArabic
+            ? "تغيير"
+            : "Change"
+          : isArabic
+            ? "اختيار"
+            : "Choose"}
+      </span>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,application/pdf,.pdf"
+        onChange={handleFileChange}
+        disabled={loading}
+        required
+        className="hidden"
+      />
+    </label>
+
+    {fileError && (
+      <p
+        role="alert"
+        className="mt-2 text-xs font-bold leading-5 text-red-600"
+      >
+        {fileError}
+      </p>
+    )}
+
+    {file && (
+      <button
+        type="button"
+        disabled={loading}
+        onClick={removeSelectedFile}
+        className="mt-2 text-xs font-bold text-[#7a857e] transition hover:text-red-600 disabled:opacity-50"
+      >
+        {isArabic
+          ? "إزالة الملف"
+          : "Remove file"}
+      </button>
+    )}
+
+    {/* Desktop submit */}
+    <button
+      type="submit"
+      disabled={
+        loading ||
+        !file ||
+        Boolean(fileError)
+      }
+      className="mt-5 hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex"
+    >
+      {loading ? (
+        <>
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+
+          <span>
+            {isArabic
+              ? "جاري إرسال الطلب..."
+              : "Submitting order..."}
+          </span>
+        </>
+      ) : (
+        <>
+          <ShieldCheck size={17} />
+
+          <span>
+            {isArabic
+              ? "تأكيد الدفع وإرسال الطلب"
+              : "Confirm payment and submit order"}
+          </span>
+        </>
+      )}
+    </button>
+  </form>
+
+  <div className="mt-4 flex items-start gap-3 rounded-2xl bg-[#f7f8f6] px-4 py-3">
+    <LockKeyhole
+      size={16}
+      className="mt-0.5 shrink-0 text-[#0a583b]"
+    />
+
+    <p className="text-xs leading-5 text-[#647168]">
+      {isArabic
+        ? "سيتم إرسال الطلب للمراجعة، ويمكنك متابعة حالته من حسابك."
+        : "Your order will be submitted for review and can be tracked from your account."}
+    </p>
+  </div>
+</div>
+</section>
+
+{/* Summary */}
+<aside className="h-fit min-w-0 rounded-[1.75rem] border border-[#dfe4e0] bg-white p-5 sm:p-6 lg:sticky lg:top-6">
+  <p
+    className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+      isArabic
+        ? "tracking-normal"
+        : "tracking-[0.15em]"
+    }`}
+  >
+    {isArabic
+      ? "ملخص الطلب"
+      : "Order summary"}
+  </p>
+
+  <div className="mt-3 flex items-end justify-between gap-4">
+    <h2 className="text-2xl font-extrabold tracking-tight text-[#142019]">
+      {isArabic
+        ? "طلبك"
+        : "Your order"}
+    </h2>
+
+    <span className="text-xs font-bold text-[#7a857e]">
+      {isArabic
+        ? `${itemsCount} قطعة`
+        : `${itemsCount} ${
+            itemsCount === 1
+              ? "item"
+              : "items"
+          }`}
+    </span>
+  </div>
+
+  {/* Items */}
+  <div className="mt-6 max-h-[340px] space-y-4 overflow-y-auto border-b border-[#e7ebe8] pb-5 pe-1">
+    {cart.length === 0 ? (
+      <p className="text-sm text-[#647168]">
+        {isArabic
+          ? "السلة فارغة"
+          : "Your cart is empty"}
+      </p>
+    ) : (
+      cart.map((item) => {
+        const itemKey =
+          getCartItemKey(item);
+
+        const variantLabel =
+          getVariantLabel(item);
+
+        const displayName =
+          getDisplayName(item);
+
+        return (
+          <div
+            key={itemKey}
+            className="flex min-w-0 gap-3"
           >
-            {loading ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-
-                <span className="truncate">
-                  {isArabic
-                    ? "جاري الإرسال..."
-                    : "Submitting..."}
-                </span>
-              </>
-            ) : (
-              <>
-                <ShieldCheck
-                  size={16}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#f7f8f6] p-2">
+              {item.image_url ? (
+                <img
+                  src={item.image_url}
+                  alt={displayName}
+                  className="h-full w-full object-contain"
                 />
+              ) : (
+                <Package
+                  size={20}
+                  className="text-[#a2aaa4]"
+                />
+              )}
+            </div>
 
-                <span className="truncate">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <p className="line-clamp-2 text-sm font-extrabold leading-5 text-[#142019]">
+                  {displayName}
+                </p>
+
+                <p className="shrink-0 text-sm font-extrabold text-[#142019]">
+                  {formatPrice(
+                    Number(item.price) *
+                      Number(item.quantity)
+                  )}
+                </p>
+              </div>
+
+              {variantLabel && (
+                <p className="mt-1 text-xs font-bold text-[#0a583b]">
                   {isArabic
-                    ? "تأكيد الدفع"
-                    : "Confirm payment"}
-                </span>
-              </>
-            )}
-          </button>
-        </div>
+                    ? "الخيار: "
+                    : "Option: "}
+
+                  {variantLabel}
+                </p>
+              )}
+
+              <p className="mt-1 text-xs text-[#7a857e]">
+                {isArabic
+                  ? `الكمية: ${item.quantity}`
+                  : `Qty: ${item.quantity}`}
+              </p>
+            </div>
+          </div>
+        );
+      })
+    )}
+  </div>
+
+  {/* Totals */}
+  <div className="mt-5 space-y-3.5 text-sm">
+    <div className="flex items-center justify-between gap-4 text-[#526057]">
+      <span>
+        {isArabic
+          ? "المنتجات"
+          : "Products"}
+      </span>
+
+      <span className="font-bold text-[#142019]">
+        {formatPrice(productsTotal)}
+      </span>
+    </div>
+
+    <div className="flex items-center justify-between gap-4 text-[#526057]">
+      <span>
+        {isArabic
+          ? "التوصيل"
+          : "Delivery"}
+      </span>
+
+      <span className="font-bold text-[#142019]">
+        {deliveryFee > 0
+          ? formatPrice(deliveryFee)
+          : isArabic
+            ? "مجاني"
+            : "Free"}
+      </span>
+    </div>
+  </div>
+
+  <div className="my-5 h-px bg-[#dfe4e0]" />
+
+  <div className="flex items-end justify-between gap-4">
+    <span className="font-extrabold text-[#142019]">
+      {isArabic
+        ? "الإجمالي"
+        : "Total"}
+    </span>
+
+    <span className="text-xl font-extrabold text-[#0a583b]">
+      {formatPrice(total)}
+    </span>
+  </div>
+
+  {/* Delivery */}
+  {deliveryLocation && (
+    <div className="mt-6 flex items-start gap-3 rounded-2xl bg-[#f7f8f6] p-4">
+      <Truck
+        size={18}
+        className="mt-0.5 shrink-0 text-[#0a583b]"
+      />
+
+      <div className="min-w-0">
+        <p className="text-xs font-extrabold text-[#142019]">
+          {isArabic
+            ? "التوصيل إلى"
+            : "Delivering to"}
+        </p>
+
+        <p className="mt-1 text-xs leading-5 text-[#647168]">
+          {deliveryLocation}
+        </p>
+
+        {checkout.address && (
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#7a857e]">
+            {checkout.address}
+          </p>
+        )}
       </div>
-    </main>
-  );
+    </div>
+  )}
+
+  <Link
+    href="/checkout"
+    className="group mt-6 inline-flex items-center gap-2 text-xs font-extrabold text-[#526057] transition hover:text-[#0a583b]"
+  >
+    <BackArrow
+      size={14}
+      className="transition-transform group-hover:-translate-x-1 rtl:group-hover:translate-x-1"
+    />
+
+    <span>
+      {isArabic
+        ? "تعديل معلومات الطلب"
+        : "Edit delivery information"}
+    </span>
+  </Link>
+</aside>
+</div>
+</div>
+
+{/* Mobile submit */}
+<div
+  dir={isArabic ? "rtl" : "ltr"}
+  className="fixed inset-x-0 bottom-16 z-50 border-t border-[#dfe4e0] bg-white/95 px-4 py-3 shadow-[0_-12px_30px_rgba(20,32,25,0.08)] backdrop-blur-xl lg:hidden"
+>
+  <div className="mx-auto flex max-w-3xl items-center gap-4">
+    <div className="min-w-0 shrink-0">
+      <p className="text-[10px] font-bold text-[#7a857e]">
+        {isArabic
+          ? "الإجمالي"
+          : "Total"}
+      </p>
+
+      <p className="mt-0.5 whitespace-nowrap text-sm font-extrabold text-[#142019]">
+        {formatPrice(total)}
+      </p>
+    </div>
+
+    <button
+      type="submit"
+      form="payment-proof-form"
+      disabled={
+        loading ||
+        !file ||
+        Boolean(fileError)
+      }
+      className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-4 text-sm font-extrabold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#b4bdb7]"
+    >
+      {loading ? (
+        <>
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+
+          <span className="truncate">
+            {isArabic
+              ? "جاري الإرسال..."
+              : "Submitting..."}
+          </span>
+        </>
+      ) : (
+        <>
+          <ShieldCheck size={16} />
+
+          <span className="truncate">
+            {isArabic
+              ? "تأكيد الدفع"
+              : "Confirm payment"}
+          </span>
+        </>
+      )}
+    </button>
+  </div>
+</div>
+</main>
+);
 }
