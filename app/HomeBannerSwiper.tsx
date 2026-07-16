@@ -1,13 +1,14 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type {
+  CSSProperties,
+} from "react";
 
 import Link from "next/link";
 
 import {
   ArrowLeft,
   ArrowRight,
-  ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 
@@ -144,15 +145,13 @@ export default function HomeBannerSwiper({
           : false
       }
       navigation={
-  hasMultipleBanners
-    ? {
-        prevEl:
-          ".kab-banner-prev",
-        nextEl:
-          ".kab-banner-next",
+        hasMultipleBanners
+          ? {
+              nextEl:
+                ".kab-banner-next",
+            }
+          : false
       }
-    : false
-}
       pagination={
         hasMultipleBanners
           ? {
@@ -160,7 +159,7 @@ export default function HomeBannerSwiper({
             }
           : false
       }
-      className="kab-campaign-swiper relative"
+      className="kab-campaign-swiper relative m-0 block w-full max-w-none overflow-hidden"
     >
       {banners.map(
         (slide) => {
@@ -192,6 +191,7 @@ export default function HomeBannerSwiper({
           return (
             <SwiperSlide
               key={slide.id}
+              className="w-full"
             >
               <article
                 dir={
@@ -199,7 +199,7 @@ export default function HomeBannerSwiper({
                     ? "rtl"
                     : "ltr"
                 }
-                className="relative min-h-[680px] overflow-hidden bg-[#f6f6f3] md:min-h-[560px] lg:min-h-[620px]"
+                className="relative min-h-[680px] w-full overflow-hidden bg-[#f6f6f3] md:min-h-[560px] lg:min-h-[620px]"
               >
                 {/* Mobile image */}
                 <div className="absolute inset-0 overflow-hidden md:hidden">
@@ -241,15 +241,21 @@ export default function HomeBannerSwiper({
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-transparent md:bg-gradient-to-r md:from-white/25 md:via-transparent md:to-transparent" />
 
                 {/* Campaign content */}
-                <div className="relative z-10 mx-auto flex min-h-[680px] max-w-[1440px] items-start px-5 py-10 sm:px-8 md:min-h-[560px] md:items-center md:px-12 lg:min-h-[620px] lg:px-16">
+                <div className="relative z-10 mx-auto flex min-h-[680px] w-full max-w-[1440px] items-start px-5 py-10 sm:px-8 md:min-h-[560px] md:items-center md:px-12 lg:min-h-[620px] lg:px-16">
                   <div
-                    className={`w-full max-w-[490px] md:ml-0 md:mr-auto md:w-[46%] ${
+                    className={`w-full max-w-[490px] md:w-[46%] ${
                       isArabic
-                        ? "text-right"
-                        : "text-left"
+                        ? "text-right md:ml-auto md:mr-0"
+                        : "text-left md:ml-0 md:mr-auto"
                     }`}
                   >
-                    <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#0a583b] sm:text-xs">
+                    <p
+                      className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
+                        isArabic
+                          ? "tracking-normal"
+                          : "tracking-[0.22em]"
+                      }`}
+                    >
                       KAB Pharma
                     </p>
 
@@ -286,15 +292,11 @@ export default function HomeBannerSwiper({
 
                       {isArabic ? (
                         <ArrowLeft
-                          size={
-                            17
-                          }
+                          size={17}
                         />
                       ) : (
                         <ArrowRight
-                          size={
-                            17
-                          }
+                          size={17}
                         />
                       )}
                     </Link>
@@ -306,31 +308,23 @@ export default function HomeBannerSwiper({
         }
       )}
 
-      {/* Desktop navigation arrows */}
+      {/* Desktop next banner button */}
       {hasMultipleBanners && (
-        <>
-          <button
-            type="button"
-            aria-label="Previous banner"
-            className="kab-banner-prev absolute left-5 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center text-[#142019]/70 transition duration-200 hover:text-[#0a583b] md:flex lg:left-7"
-          >
-            <ChevronLeft
-              size={31}
-              strokeWidth={1.35}
-            />
-          </button>
-
-          <button
-            type="button"
-            aria-label="Next banner"
-            className="kab-banner-next absolute right-5 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 items-center justify-center text-[#142019]/70 transition duration-200 hover:text-[#0a583b] md:flex lg:right-7"
-          >
-            <ChevronRight
-              size={31}
-              strokeWidth={1.35}
-            />
-          </button>
-        </>
+        <button
+          type="button"
+          aria-label={
+            isArabic
+              ? "عرض البانر التالي"
+              : "Show next banner"
+          }
+          className="kab-banner-next group absolute right-6 top-1/2 z-30 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/85 text-[#142019] shadow-[0_8px_30px_rgba(20,32,25,0.16)] backdrop-blur-md transition duration-300 hover:scale-105 hover:border-white hover:bg-white hover:text-[#0a583b] focus:outline-none focus:ring-4 focus:ring-white/40 md:flex lg:right-8"
+        >
+          <ChevronRight
+            size={25}
+            strokeWidth={1.8}
+            className="transition-transform duration-300 group-hover:translate-x-0.5"
+          />
+        </button>
       )}
     </Swiper>
   );

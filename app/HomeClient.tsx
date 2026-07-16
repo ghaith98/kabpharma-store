@@ -105,12 +105,10 @@ export default function HomeClient({
       dir={currentLang === "ar" ? "rtl" : "ltr"}
       className="min-h-screen overflow-hidden bg-white"
     >
-      {/* Main campaign hero */}
-      <section className="mx-auto max-w-[1600px] px-4 pb-2 pt-4 sm:px-6 sm:pb-4 sm:pt-6">
-        <HomeBannerSwiper
-          banners={banners || []}
-        />
-      </section>
+     {/* Main campaign hero */}
+<HomeBannerSwiper
+  banners={banners || []}
+/>
 
       {/* Bestselling products */}
       <ProductSection
