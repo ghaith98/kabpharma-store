@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  ArrowLeft,
-  ArrowRight,
   Minus,
   Plus,
 } from "lucide-react";
@@ -136,12 +134,6 @@ export default function Footer() {
     text[
       lang as "en" | "ar"
     ];
-
-  const ArrowIcon =
-    isArabic
-      ? ArrowLeft
-      : ArrowRight;
-
   const sections: FooterSection[] = [
     {
       key: "shop",
@@ -290,69 +282,10 @@ const socialIconClass =
       className="mt-auto border-t border-[#dfe4e0] bg-[#f2f3ef] text-[#142019]"
     >
       <div className="mx-auto max-w-[1600px] px-5 sm:px-6 lg:px-10">
-        {/* Editorial introduction */}
-        <section className="grid gap-10 border-b border-[#cfd6d1] py-14 sm:py-16 lg:grid-cols-[minmax(0,1.4fr)_minmax(300px,0.6fr)] lg:items-end lg:gap-20 lg:py-20">
-          <div>
-            <p
-              dir="ltr"
-              className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#0a583b]"
-            >
-              {t.eyebrow}
-            </p>
-
-            <h2
-              className={`mt-5 max-w-[950px] font-extrabold text-[#142019] ${
-                isArabic
-                  ? "text-[38px] leading-[1.22] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[48px] lg:text-[64px]"
-                  : "text-[42px] leading-[0.98] tracking-[-0.055em] sm:text-[58px] lg:text-[82px]"
-              }`}
-            >
-              {t.statement}
-            </h2>
-          </div>
-
-          <div
-            className={
-              isArabic
-                ? "text-right"
-                : "text-left"
-            }
-          >
-            <p className="max-w-lg text-[15px] leading-8 text-[#526057] sm:text-base">
-              {t.description}
-            </p>
-
-            <div className="mt-7">
-              <p className="text-sm text-[#7a857e]">
-                {t.guidance}
-              </p>
-
-              <Link
-                href="/contact"
-                className="group mt-2 inline-flex items-center gap-3 border-b border-[#142019] pb-1 text-sm font-extrabold text-[#142019] transition-colors hover:border-[#0a583b] hover:text-[#0a583b]"
-              >
-                <span>
-                  {t.contactTeam}
-                </span>
-
-                <ArrowIcon
-                  size={15}
-                  strokeWidth={2}
-                  className={`transition-transform duration-200 ${
-                    isArabic
-                      ? "group-hover:-translate-x-1"
-                      : "group-hover:translate-x-1"
-                  }`}
-                />
-              </Link>
-            </div>
-          </div>
-        </section>
-
         {/* Desktop navigation */}
         <section
           aria-label={t.navigation}
-          className="hidden grid-cols-5 gap-10 border-b border-[#cfd6d1] py-12 md:grid lg:gap-16"
+           className="hidden grid-cols-5 gap-10 border-b border-[#cfd6d1] py-12 md:grid lg:gap-16 lg:py-14"
         >
           {sections.map(
             (section) => (
@@ -456,11 +389,11 @@ const socialIconClass =
           </nav>
         </section>
 
-        {/* Mobile navigation */}
-        <section
-          aria-label={t.navigation}
-          className="border-b border-[#cfd6d1] md:hidden"
-        >
+       {/* Mobile navigation */}
+<section
+  aria-label={t.navigation}
+  className="border-b border-[#cfd6d1] pt-4 md:hidden"
+> 
           {sections.map(
             (section) => {
               const isOpen =
@@ -540,10 +473,13 @@ const socialIconClass =
                               {item.label}
                             </span>
 
-                            <ArrowIcon
-                              size={14}
-                              className="opacity-45"
-                            />
+                          <Link
+  key={item.href}
+  href={item.href}
+  className={mobileLinkClass}
+>
+  <span>{item.label}</span>
+</Link>
                           </Link>
                         )
                       )}
@@ -605,25 +541,6 @@ const socialIconClass =
             </div>
           </div>
         </section>
-
-        {/* Large brand signature */}
-        <Link
-          href="/"
-          dir="ltr"
-          aria-label="KAB Pharma home"
-          className="group block overflow-hidden border-b border-[#cfd6d1] py-9 sm:py-12 lg:py-14"
-        >
-          <div className="flex items-end whitespace-nowrap">
-            <span className="text-[clamp(3.1rem,10.7vw,10rem)] font-black leading-[0.78] tracking-[-0.075em] text-[#142019] transition-colors duration-300 group-hover:text-[#0a583b]">
-              KAB
-            </span>
-
-            <span className="ml-[0.07em] text-[clamp(3.1rem,10.7vw,10rem)] font-light leading-[0.78] tracking-[-0.075em] text-[#4f5d54] transition-colors duration-300 group-hover:text-[#0a583b]">
-              PHARMA
-            </span>
-          </div>
-        </Link>
-
         {/* Copyright */}
         <div className="flex flex-col gap-3 pt-6 text-xs text-[#7a857e] sm:flex-row sm:items-center sm:justify-between">
           <p>
