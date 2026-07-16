@@ -943,7 +943,7 @@ const [
             aria-label={
               t.mobileNavigation
             }
-            className="absolute inset-y-0 right-0 flex w-[88%] max-w-[390px] flex-col overflow-y-auto bg-white shadow-[-18px_0_60px_rgba(7,31,20,0.16)]"
+           className="absolute inset-y-0 left-0 flex w-[88%] max-w-[390px] flex-col overflow-y-auto bg-white shadow-[18px_0_60px_rgba(7,31,20,0.16)]"
           >
             {/* Menu header */}
             <div

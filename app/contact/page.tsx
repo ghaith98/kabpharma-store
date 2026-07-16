@@ -1,210 +1,513 @@
 "use client";
 
 import { useMemo } from "react";
+
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Headphones,
+  Mail,
+  MessageCircle,
+  PackageCheck,
+  Sparkles,
+} from "lucide-react";
 import {
   FaFacebookF,
   FaInstagram,
-  FaEnvelope,
-  FaWhatsapp,
-  FaCheckCircle,
 } from "react-icons/fa";
+
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function ContactPage() {
-  const { lang } = useLanguage();
+  const { lang } =
+    useLanguage();
 
-  const whatsappUrl = useMemo(() => {
-    const message =
-      lang === "ar"
-        ? `مرحباً فريق KAB Pharma 👋
+  const isArabic =
+    lang === "ar";
+
+  const ArrowIcon =
+    isArabic
+      ? ArrowLeft
+      : ArrowRight;
+
+  const text = {
+    ar: {
+      eyebrow:
+        "خدمة العملاء",
+
+      title:
+        "نحن هنا لمساعدتك.",
+
+      description:
+        "سواء كان لديك سؤال عن أحد منتجاتنا، أو احتجت إلى مساعدة بخصوص طلبك، يمكنك التواصل مباشرة مع فريق KAB Pharma.",
+
+      status:
+        "جاهزون لاستقبال رسالتك",
+
+      statusText:
+        "سنراجع رسالتك ونرد عليك في أقرب وقت ممكن.",
+
+      primaryLabel:
+        "الطريقة الأسرع",
+
+      whatsappTitle:
+        "تحدث معنا عبر واتساب",
+
+      whatsappText:
+        "ابدأ محادثة مباشرة مع فريق خدمة العملاء للحصول على مساعدة بخصوص المنتجات أو الطلبات.",
+
+      whatsappButton:
+        "بدء المحادثة",
+
+      otherChannels:
+        "قنوات التواصل",
+
+      otherChannelsText:
+        "يمكنك أيضاً التواصل معنا عبر إحدى القنوات التالية.",
+
+      instagramText:
+        "تابع آخر أخبارنا وأرسل لنا رسالة مباشرة.",
+
+      facebookText:
+        "تواصل معنا وتابع تحديثات KAB Pharma.",
+
+      emailTitle:
+        "البريد الإلكتروني",
+
+      emailText:
+        "للاستفسارات العامة والتعاون.",
+
+      prepareTitle:
+        "لمساعدتك بشكل أسرع",
+
+      orderHelpTitle:
+        "إذا كان سؤالك عن طلب",
+
+      orderHelpText:
+        "أرسل رقم الهاتف المرتبط بحسابك ورقم الطلب إن كان متوفراً.",
+
+      productHelpTitle:
+        "إذا كان سؤالك عن منتج",
+
+      productHelpText:
+        "اذكر اسم المنتج والسؤال أو المساعدة التي تحتاجها.",
+
+      note:
+        "خصوصيتك مهمة لنا. لا ترسل أي كلمات مرور أو رموز تحقق عبر الرسائل.",
+    },
+
+    en: {
+      eyebrow:
+        "Customer care",
+
+      title:
+        "We’re here to help.",
+
+      description:
+        "Whether you have a question about a product or need help with an order, you can contact the KAB Pharma team directly.",
+
+      status:
+        "Ready to receive your message",
+
+      statusText:
+        "We’ll review your message and respond as soon as possible.",
+
+      primaryLabel:
+        "Fastest option",
+
+      whatsappTitle:
+        "Chat with us on WhatsApp",
+
+      whatsappText:
+        "Start a direct conversation with our customer care team for help with products or orders.",
+
+      whatsappButton:
+        "Start conversation",
+
+      otherChannels:
+        "Contact channels",
+
+      otherChannelsText:
+        "You can also reach us through any of the following channels.",
+
+      instagramText:
+        "Follow our latest updates and send us a direct message.",
+
+      facebookText:
+        "Connect with us and follow KAB Pharma updates.",
+
+      emailTitle:
+        "Email",
+
+      emailText:
+        "For general questions and collaboration.",
+
+      prepareTitle:
+        "Help us assist you faster",
+
+      orderHelpTitle:
+        "For order questions",
+
+      orderHelpText:
+        "Include the phone number linked to your account and your order number if available.",
+
+      productHelpTitle:
+        "For product questions",
+
+      productHelpText:
+        "Tell us the product name and the information or help you need.",
+
+      note:
+        "Your privacy matters. Never send passwords or verification codes through messages.",
+    },
+  }[
+    lang as "ar" | "en"
+  ];
+
+  const whatsappUrl =
+    useMemo(() => {
+      const message =
+        isArabic
+          ? `مرحباً فريق KAB Pharma 👋
 أحتاج مساعدة بخصوص:
 
 `
-        : `Hello KAB Pharma team 👋
+          : `Hello KAB Pharma team 👋
 I need help regarding:
 
 `;
 
-    return `https://wa.me/963958088969?text=${encodeURIComponent(
-      message
-    )}`;
-  }, [lang]);
+      return `https://wa.me/963958088969?text=${encodeURIComponent(
+        message
+      )}`;
+    }, [isArabic]);
+
+  const channels = [
+    {
+      label: "Instagram",
+
+      text:
+        text.instagramText,
+
+      href:
+        "https://www.instagram.com/kabpharma?igsh=NHpuY2F1eHFlYWgw&utm_source=qr",
+
+      Icon: FaInstagram
+    },
+
+    {
+      label: "Facebook",
+
+      text:
+        text.facebookText,
+
+      href:
+        "https://www.facebook.com/share/17YjFUHZcR/?mibextid=wwXIfr",
+
+      Icon: FaFacebookF
+    },
+
+    {
+      label:
+        text.emailTitle,
+
+      text:
+        text.emailText,
+
+      href:
+        "mailto:kabpharma.sy@hotmail.com",
+
+      detail:
+        "kabpharma.sy@hotmail.com",
+
+      Icon:
+        Mail,
+    },
+  ];
 
   return (
     <main
-      dir={lang === "ar" ? "rtl" : "ltr"}
-      className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12"
+      dir={
+        isArabic
+          ? "rtl"
+          : "ltr"
+      }
+      className="min-h-screen bg-[#f7f8f6] pb-16 text-[#142019]"
     >
-      <div className="mx-auto max-w-4xl">
-        {/* Header */}
-        <section className="rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl text-green-700">
-            <FaWhatsapp />
+      {/* Hero */}
+      <header className="border-b border-[#dfe4e0] bg-white px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-24">
+        <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-end lg:gap-20">
+          <div>
+            <p
+              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+                isArabic
+                  ? "tracking-normal"
+                  : "tracking-[0.2em]"
+              }`}
+            >
+              {text.eyebrow}
+            </p>
+
+            <h1
+              className={`mt-5 max-w-4xl font-extrabold text-[#142019] ${
+                isArabic
+                  ? "text-[40px] leading-[1.2] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[54px] lg:text-[68px]"
+                  : "text-[46px] leading-[0.98] tracking-[-0.055em] sm:text-[64px] lg:text-[82px]"
+              }`}
+            >
+              {text.title}
+            </h1>
           </div>
 
-          <h1 className="mt-5 text-4xl font-extrabold text-gray-900">
-            {lang === "ar" ? "تواصل معنا" : "Contact Us"}
-          </h1>
+          <div>
+            <p className="text-[15px] leading-8 text-[#526057] sm:text-base">
+              {text.description}
+            </p>
 
-          <p className="mx-auto mt-3 max-w-xl leading-7 text-gray-600">
-            {lang === "ar"
-              ? "فريق خدمة العملاء جاهز لمساعدتك والإجابة عن استفساراتك المتعلقة بالمنتجات والطلبات."
-              : "Our customer service team is ready to help with your products, orders, and questions."}
-          </p>
+            <div className="mt-6 flex items-start gap-3 border-t border-[#dfe4e0] pt-5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <Check
+                  size={15}
+                  strokeWidth={2.5}
+                />
+              </div>
 
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-green-700">
-            <FaCheckCircle />
+              <div>
+                <p className="text-sm font-extrabold text-[#142019]">
+                  {text.status}
+                </p>
 
-            <span>
-              {lang === "ar"
-                ? "جاهزون لاستقبال رسالتك"
-                : "Ready to receive your message"}
-            </span>
+                <p className="mt-1 text-xs leading-5 text-[#7a857e]">
+                  {text.statusText}
+                </p>
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
+      </header>
 
-        <div className="mt-8 grid gap-4">
+      <div className="mx-auto max-w-[1320px] px-5 sm:px-6 lg:px-10">
+        {/* Contact methods */}
+        <section className="grid gap-6 py-10 sm:py-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-8 lg:py-20">
           {/* WhatsApp */}
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-between rounded-3xl bg-green-600 p-6 text-white shadow-md transition hover:-translate-y-1 hover:bg-green-700 hover:shadow-lg"
+            className="group relative flex min-h-[380px] flex-col justify-between overflow-hidden rounded-[1.75rem] bg-[#0a583b] p-6 text-white transition duration-300 hover:bg-[#073f2c] sm:p-9 lg:min-h-[480px] lg:p-11"
           >
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-3xl">
-                <FaWhatsapp />
+            <div>
+              <div className="flex items-center justify-between gap-5">
+                <span className="rounded-full border border-white/25 px-4 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/80">
+                  {text.primaryLabel}
+                </span>
+
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#0a583b]">
+                  <MessageCircle
+                    size={22}
+                  />
+                </div>
+              </div>
+
+              <h2
+                className={`mt-10 max-w-xl font-extrabold ${
+                  isArabic
+                    ? "text-3xl leading-[1.3] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl"
+                    : "text-4xl leading-[1.02] tracking-[-0.04em] sm:text-5xl"
+                }`}
+              >
+                {text.whatsappTitle}
+              </h2>
+
+              <p className="mt-5 max-w-lg text-sm leading-7 text-white/75 sm:text-base sm:leading-8">
+                {text.whatsappText}
+              </p>
+            </div>
+
+            <div className="mt-12 flex items-center justify-between border-t border-white/20 pt-6">
+              <span className="text-sm font-extrabold">
+                {text.whatsappButton}
+              </span>
+
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 transition group-hover:bg-white group-hover:text-[#0a583b]">
+                <ArrowIcon
+                  size={18}
+                  className={`transition-transform ${
+                    isArabic
+                      ? "group-hover:-translate-x-1"
+                      : "group-hover:translate-x-1"
+                  }`}
+                />
+              </span>
+            </div>
+          </a>
+
+          {/* Other contact channels */}
+          <div className="overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white">
+            <div className="border-b border-[#e7ebe8] p-6 sm:p-8">
+              <p
+                className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+                  isArabic
+                    ? "tracking-normal"
+                    : "tracking-[0.16em]"
+                }`}
+              >
+                KAB Pharma
+              </p>
+
+              <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-[#142019] sm:text-3xl">
+                {text.otherChannels}
+              </h2>
+
+              <p className="mt-3 text-sm leading-7 text-[#647168]">
+                {text.otherChannelsText}
+              </p>
+            </div>
+
+            <div>
+              {channels.map(
+                ({
+                  label,
+                  text: channelText,
+                  href,
+                  detail,
+                  Icon,
+                }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target={
+                      href.startsWith(
+                        "mailto:"
+                      )
+                        ? undefined
+                        : "_blank"
+                    }
+                    rel={
+                      href.startsWith(
+                        "mailto:"
+                      )
+                        ? undefined
+                        : "noopener noreferrer"
+                    }
+                    className="group flex items-center gap-4 border-b border-[#e7ebe8] p-5 transition last:border-b-0 hover:bg-[#f7f8f6] sm:p-6"
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#d5ddd7] bg-white text-[#0a583b] transition group-hover:border-[#0a583b] group-hover:bg-[#0a583b] group-hover:text-white">
+                      <Icon size={18} />
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-extrabold text-[#142019]">
+                        {label}
+                      </span>
+
+                      <span className="mt-1 block text-xs leading-5 text-[#7a857e]">
+                        {channelText}
+                      </span>
+
+                      {detail && (
+                        <span
+                          dir="ltr"
+                          className="mt-1 block truncate text-start text-xs font-bold text-[#0a583b]"
+                        >
+                          {detail}
+                        </span>
+                      )}
+                    </span>
+
+                    <ArrowIcon
+                      size={16}
+                      className={`shrink-0 text-[#8a948d] transition ${
+                        isArabic
+                          ? "group-hover:-translate-x-1"
+                          : "group-hover:translate-x-1"
+                      }`}
+                    />
+                  </a>
+                )
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Helpful information */}
+        <section className="border-y border-[#dfe4e0] py-10 sm:py-12">
+          <div className="mb-8">
+            <p
+              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+                isArabic
+                  ? "tracking-normal"
+                  : "tracking-[0.16em]"
+              }`}
+            >
+              {text.prepareTitle}
+            </p>
+          </div>
+
+          <div className="grid gap-8 sm:grid-cols-2 sm:gap-12">
+            <article className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <PackageCheck
+                  size={19}
+                />
               </div>
 
               <div>
-                <h2 className="text-lg font-bold">
-                  {lang === "ar"
-                    ? "خدمة العملاء عبر واتساب"
-                    : "WhatsApp Customer Service"}
+                <h2 className="font-extrabold text-[#142019]">
+                  {text.orderHelpTitle}
                 </h2>
 
-                <p className="mt-1 text-sm text-green-50">
-                  {lang === "ar"
-                    ? "اضغط هنا وابدأ المحادثة مباشرة."
-                    : "Tap here to start a conversation."}
+                <p className="mt-2 text-sm leading-7 text-[#647168]">
+                  {text.orderHelpText}
                 </p>
               </div>
-            </div>
+            </article>
 
-            <span
-              className={`text-2xl transition group-hover:translate-x-1 ${
-                lang === "ar"
-                  ? "rotate-180 group-hover:-translate-x-1"
-                  : ""
-              }`}
-            >
-              ›
-            </span>
-          </a>
+            <article className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <Sparkles
+                  size={19}
+                />
+              </div>
 
-          {/* Instagram */}
+              <div>
+                <h2 className="font-extrabold text-[#142019]">
+                  {text.productHelpTitle}
+                </h2>
+
+                <p className="mt-2 text-sm leading-7 text-[#647168]">
+                  {text.productHelpText}
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        {/* Privacy note */}
+        <section className="flex flex-col gap-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:py-12">
+          <div className="flex items-start gap-3">
+            <Headphones
+              size={18}
+              className="mt-0.5 shrink-0 text-[#0a583b]"
+            />
+
+            <p className="max-w-2xl text-xs leading-6 text-[#7a857e]">
+              {text.note}
+            </p>
+          </div>
+
           <a
-            href="https://www.instagram.com/kabpharma?igsh=NHpuY2F1eHFlYWgw&utm_source=qr"
+            href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-between rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100 transition hover:-translate-y-1 hover:shadow-md"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[#0a583b] px-5 text-xs font-extrabold text-[#0a583b] transition hover:bg-[#0a583b] hover:text-white"
           >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-xl text-pink-600">
-                <FaInstagram />
-              </div>
+            <MessageCircle size={15} />
 
-              <div>
-                <h2 className="font-bold text-gray-900">
-                  Instagram
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-600">
-                  {lang === "ar"
-                    ? "تابعنا وأرسل لنا رسالة عبر إنستغرام."
-                    : "Follow us and send us a message."}
-                </p>
-              </div>
-            </div>
-
-            <span
-              className={`text-xl text-gray-400 transition group-hover:text-green-700 ${
-                lang === "ar" ? "rotate-180" : ""
-              }`}
-            >
-              ›
-            </span>
+            {text.whatsappButton}
           </a>
-
-          {/* Facebook */}
-          <a
-            href="https://www.facebook.com/share/17YjFUHZcR/?mibextid=wwXIfr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center justify-between rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100 transition hover:-translate-y-1 hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-xl text-blue-600">
-                <FaFacebookF />
-              </div>
-
-              <div>
-                <h2 className="font-bold text-gray-900">
-                  Facebook
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-600">
-                  {lang === "ar"
-                    ? "تواصل معنا عبر فيسبوك."
-                    : "Connect with us on Facebook."}
-                </p>
-              </div>
-            </div>
-
-            <span
-              className={`text-xl text-gray-400 transition group-hover:text-green-700 ${
-                lang === "ar" ? "rotate-180" : ""
-              }`}
-            >
-              ›
-            </span>
-          </a>
-
-          {/* Email */}
-          <a
-            href="mailto:kabpharma.sy@hotmail.com"
-            className="group flex items-center justify-between rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-100 transition hover:-translate-y-1 hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-xl text-green-700">
-                <FaEnvelope />
-              </div>
-
-              <div>
-                <h2 className="font-bold text-gray-900">
-                  {lang === "ar"
-                    ? "البريد الإلكتروني"
-                    : "Email"}
-                </h2>
-
-                <p
-                  dir="ltr"
-                  className="mt-1 text-sm text-gray-600"
-                >
-                  kabpharma.sy@hotmail.com
-                </p>
-              </div>
-            </div>
-
-            <span
-              className={`text-xl text-gray-400 transition group-hover:text-green-700 ${
-                lang === "ar" ? "rotate-180" : ""
-              }`}
-            >
-              ›
-            </span>
-          </a>
-        </div>
+        </section>
       </div>
     </main>
   );

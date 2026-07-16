@@ -526,28 +526,29 @@ export default function ProductsClient({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            setFiltersOpen(true)
-          }
-          className="relative inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-6 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b]"
-        >
-          <FaFilter className="text-sm" />
+        <div className="flex w-full justify-start">
+  <button
+    type="button"
+    onClick={() =>
+      setFiltersOpen(true)
+    }
+    className="relative inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 text-xs font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] sm:min-h-12 sm:px-6 sm:text-sm"
+  >
+    <FaFilter className="text-xs sm:text-sm" />
 
-          <span>
-            {isArabic
-              ? "تصفية وترتيب"
-              : "Filter & sort"}
-          </span>
+    <span>
+      {isArabic
+        ? "تصفية وترتيب"
+        : "Filter & sort"}
+    </span>
 
-          {activeFiltersCount >
-            0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0a583b] px-1 text-[10px] font-extrabold text-white">
-              {activeFiltersCount}
-            </span>
-          )}
-        </button>
+    {activeFiltersCount > 0 && (
+      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0a583b] px-1 text-[10px] font-extrabold text-white">
+        {activeFiltersCount}
+      </span>
+    )}
+  </button>
+</div>
       </div>
 
       {filteredProducts.length ===
