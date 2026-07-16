@@ -644,7 +644,7 @@ const socialIconClass =
         {/* Language selector */}
         <div
           dir="ltr"
-          className="pb-[calc(7.25rem+env(safe-area-inset-bottom))] pt-8 text-center md:pb-7"
+          className="pb-[calc(9.5rem+env(safe-area-inset-bottom))] pt-8 text-center md:pb-7"
         >
           <p className="text-[9px] font-extrabold uppercase tracking-[0.22em] text-[#8a948d]">
             Language

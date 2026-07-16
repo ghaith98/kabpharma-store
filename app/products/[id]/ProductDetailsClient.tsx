@@ -35,8 +35,10 @@ export default function ProductDetailsClient({
   const [
   selectedVariantId,
   setSelectedVariantId,
-] = useState<number | null>(
-  null
+] = useState<number | null>(() =>
+  sortedVariants[0]?.id != null
+    ? Number(sortedVariants[0].id)
+    : null
 );
 
 const selectedVariant =
@@ -304,8 +306,10 @@ const selectedVariantLabel =
 
               image_url: finalImage,
 
-              variant_id:
-                selectedVariant?.id || null,
+             variant_id:
+  selectedVariant?.id != null
+    ? Number(selectedVariant.id)
+    : null,
 
               variant_label_ar:
   selectedVariantLabelAr ||

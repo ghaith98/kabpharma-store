@@ -394,8 +394,8 @@ export default function CheckoutPage() {
       className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-4 py-8 sm:px-6 sm:py-12"
     >
       <div className="mx-auto max-w-5xl">
-        {/* Checkout progress */}
-        <div className="mx-auto mb-10 max-w-xl">
+       {/* Checkout progress — mobile only */}
+<div className="mx-auto mb-8 max-w-xl lg:hidden">
           <div className="flex items-center" dir="ltr">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-sm font-extrabold text-white">
               1
