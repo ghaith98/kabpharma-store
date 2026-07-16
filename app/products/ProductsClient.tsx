@@ -59,9 +59,30 @@ export default function ProductsClient({
     useState(false);
 
   const [
-    selectedCategoryId,
-    setSelectedCategoryId,
-  ] = useState<number | null>(null);
+  selectedCategoryId,
+  setSelectedCategoryId,
+] = useState<number | null>(
+  () => {
+    const categoryParam =
+      searchParams.get(
+        "category"
+      );
+
+    if (!categoryParam) {
+      return null;
+    }
+
+    const parsedCategoryId =
+      Number(categoryParam);
+
+    return Number.isFinite(
+      parsedCategoryId
+    ) &&
+      parsedCategoryId > 0
+      ? parsedCategoryId
+      : null;
+  }
+);
 
   const [sortBy, setSortBy] =
     useState("default");
@@ -79,10 +100,29 @@ export default function ProductsClient({
     useState(false);
 
   useEffect(() => {
-    setSearch(
-      searchParams.get("search") || ""
+  setSearch(
+    searchParams.get("search") || ""
+  );
+
+  const categoryParam =
+    searchParams.get(
+      "category"
     );
-  }, [searchParams]);
+
+  const parsedCategoryId =
+    categoryParam
+      ? Number(categoryParam)
+      : NaN;
+
+  setSelectedCategoryId(
+    Number.isFinite(
+      parsedCategoryId
+    ) &&
+      parsedCategoryId > 0
+      ? parsedCategoryId
+      : null
+  );
+}, [searchParams]);
 
   useEffect(() => {
     setPriceRange((currentRange) => {

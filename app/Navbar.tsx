@@ -14,6 +14,7 @@ import {
 } from "next/navigation";
 
 import {
+  ChevronDown,
   Heart,
   Search,
   ShoppingBag,
@@ -23,8 +24,15 @@ import {
 
 import { getCart } from "@/lib/cart";
 import { getWishlist } from "@/lib/wishlist";
+import { supabase } from "@/lib/supabase";
 
 import { useLanguage } from "../context/LanguageContext";
+type Category = {
+  id: number;
+  name?: string | null;
+  name_ar?: string | null;
+  name_en?: string | null;
+};
 
 export default function Navbar() {
   const {
@@ -56,6 +64,13 @@ export default function Navbar() {
 
   const [scrolled, setScrolled] =
     useState(false);
+    const [categories, setCategories] =
+  useState<Category[]>([]);
+
+const [
+  productsOpen,
+  setProductsOpen,
+] = useState(false);
 
   const currentYear =
     new Date().getFullYear();
@@ -64,6 +79,7 @@ export default function Navbar() {
     en: {
       home: "Home",
       products: "Products",
+      allProducts: "All products",
       about: "About us",
       contact: "Contact us",
 
@@ -103,6 +119,7 @@ export default function Navbar() {
     ar: {
       home: "الرئيسية",
       products: "المنتجات",
+      allProducts: "جميع المنتجات",
       about: "عن الشركة",
       contact: "تواصل معنا",
 
@@ -236,9 +253,10 @@ export default function Navbar() {
     }
   }
 
-  function closeMenu() {
-    setMenuOpen(false);
-  }
+ function closeMenu() {
+  setMenuOpen(false);
+  setProductsOpen(false);
+}
 
   useEffect(() => {
     updateCartCount();
@@ -291,6 +309,51 @@ export default function Navbar() {
     فتح البحث بعد الانتقال
     من أي صفحة إلى المنتجات.
   */
+ useEffect(() => {
+  let cancelled = false;
+
+  async function loadCategories() {
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("categories")
+        .select(
+          "id, name, name_ar, name_en"
+        )
+        .order("id", {
+          ascending: true,
+        });
+
+      if (error) {
+        console.error(
+          "Failed to load categories:",
+          error
+        );
+
+        return;
+      }
+
+      if (!cancelled) {
+        setCategories(
+          (data || []) as Category[]
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Categories loading error:",
+        error
+      );
+    }
+  }
+
+  void loadCategories();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
   useEffect(() => {
     const params =
       new URLSearchParams(
@@ -370,9 +433,9 @@ export default function Navbar() {
     إغلاق القائمة بعد الانتقال.
   */
   useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
-
+  setMenuOpen(false);
+  setProductsOpen(false);
+}, [pathname]);
   /*
     تغيير شكل الـNavbar عند Scroll.
   */
@@ -515,11 +578,7 @@ export default function Navbar() {
             <Link
               href="/"
               aria-label="KAB Pharma home"
-              className={`shrink-0 items-center ${
-                searchOpen
-                  ? "hidden sm:flex"
-                  : "flex"
-              }`}
+              className="hidden shrink-0 items-center lg:flex"
             >
               <Image
                 src="/logo.png"
@@ -770,75 +829,80 @@ export default function Navbar() {
                   </Link>
                 </div>
 
-                {/* Mobile actions */}
-                <div
-                  dir="ltr"
-                  className="ms-auto flex shrink-0 items-center gap-0.5 lg:hidden"
-                >
-                  <button
-                    type="button"
-                    onClick={
-                      openSearch
-                    }
-                    aria-label={
-                      t.search
-                    }
-                    className={
-                      mobileIconClass
-                    }
-                  >
-                    <Search
-                      size={19}
-                      strokeWidth={1.8}
-                    />
-                  </button>
+                {/* Mobile header */}
+<div
+  dir="ltr"
+  className="absolute inset-0 flex items-center justify-center lg:hidden"
+>
+  {/* Hamburger - left */}
+  <button
+    type="button"
+    onClick={() =>
+      setMenuOpen(true)
+    }
+    aria-label={t.openMenu}
+    aria-expanded={menuOpen}
+    className="absolute left-4 flex h-11 w-11 items-center justify-start bg-transparent transition active:scale-95 sm:left-6"
+  >
+    <span className="flex w-6 flex-col items-start gap-[5px]">
+      <span className="block h-[2px] w-6 rounded-full bg-[#142019]" />
 
-                  <Link
-                    href="/wishlist"
-                    aria-label={
-                      t.wishlist
-                    }
-                    className={
-                      mobileIconClass
-                    }
-                  >
-                    <Heart
-                      size={19}
-                      strokeWidth={1.8}
-                    />
+      <span className="block h-[2px] w-[19px] rounded-full bg-[#142019]" />
 
-                    {wishlistCount >
-                      0 && (
-                      <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[#0a583b] px-1 text-[8px] font-extrabold leading-none text-white">
-                        {wishlistCount >
-                        99
-                          ? "99+"
-                          : wishlistCount}
-                      </span>
-                    )}
-                  </Link>
+      <span className="block h-[2px] w-[13px] rounded-full bg-[#142019]" />
+    </span>
+  </button>
 
-                  {/* Mobile-only hamburger */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setMenuOpen(true)
-                    }
-                    aria-label={
-                      t.openMenu
-                    }
-                    aria-expanded={
-                      menuOpen
-                    }
-                    className="flex h-10 w-11 shrink-0 flex-col items-center justify-center gap-[5px] bg-transparent transition active:scale-95"
-                  >
-                    <span className="block h-[2px] w-[22px] rounded-full bg-[#142019]" />
+  {/* Centered K logo */}
+  <Link
+    href="/"
+    aria-label="KAB Pharma home"
+    className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+  >
+    <Image
+      src="/apple-icon.png"
+      alt="KAB Pharma"
+      width={180}
+      height={180}
+      priority
+      className="h-[47px] w-[47px] object-contain sm:h-[50px] sm:w-[50px]"
+    />
+  </Link>
 
-                    <span className="block h-[2px] w-[17px] translate-x-[2.5px] rounded-full bg-[#142019]" />
+  {/* Search and wishlist - right */}
+  <div className="absolute right-4 flex items-center gap-0.5 sm:right-6">
+    <button
+      type="button"
+      onClick={openSearch}
+      aria-label={t.search}
+      className={mobileIconClass}
+    >
+      <Search
+        size={19}
+        strokeWidth={1.8}
+      />
+    </button>
 
-                    <span className="block h-[2px] w-[12px] translate-x-[5px] rounded-full bg-[#142019]" />
-                  </button>
-                </div>
+    <Link
+      href="/wishlist"
+      aria-label={t.wishlist}
+      className={mobileIconClass}
+    >
+      <Heart
+        size={19}
+        strokeWidth={1.8}
+      />
+
+      {wishlistCount > 0 && (
+        <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full border-2 border-white bg-[#0a583b] px-1 text-[8px] font-extrabold leading-none text-white">
+          {wishlistCount > 99
+            ? "99+"
+            : wishlistCount}
+        </span>
+      )}
+    </Link>
+  </div>
+</div>
               </>
             )}
           </div>
@@ -921,54 +985,190 @@ export default function Navbar() {
 
             <div className="flex flex-1 flex-col px-5">
               {/* Main links */}
-              <nav
-                aria-label={
-                  t.mobileNavigation
-                }
-                className="pt-3"
-              >
-                {navigationLinks.map(
-                  (item) => (
-                    <Link
-                      key={
-                        item.href
-                      }
-                      href={
-                        item.href
-                      }
-                      onClick={
-                        closeMenu
-                      }
-                      aria-current={
-                        isActive(
-                          item.href
-                        )
-                          ? "page"
-                          : undefined
-                      }
-                      className={`${mobilePrimaryLinkClass} ${
-                        isActive(
-                          item.href
-                        )
-                          ? "text-[#0a583b]"
-                          : ""
-                      }`}
-                    >
-                      <span>
-                        {
-                          item.label
-                        }
-                      </span>
+<nav
+  aria-label={
+    t.mobileNavigation
+  }
+  className="pt-3"
+>
+  {/* Home */}
+  <Link
+    href="/"
+    onClick={closeMenu}
+    aria-current={
+      pathname === "/"
+        ? "page"
+        : undefined
+    }
+    className={`${mobilePrimaryLinkClass} ${
+      pathname === "/"
+        ? "text-[#0a583b]"
+        : ""
+    }`}
+  >
+    <span>{t.home}</span>
 
-                      {isActive(
-                        item.href
-                      ) && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
-                      )}
-                    </Link>
-                  )
-                )}
-              </nav>
+    {pathname === "/" && (
+      <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
+    )}
+  </Link>
+
+  {/* Products + Categories */}
+  <div className="border-b border-[#e8ece9]">
+    <button
+      type="button"
+      onClick={() =>
+        setProductsOpen(
+          (current) => !current
+        )
+      }
+      aria-expanded={
+        productsOpen
+      }
+      aria-controls="mobile-product-categories"
+      className={`flex min-h-[62px] w-full items-center justify-between text-start text-lg font-extrabold transition ${
+        pathname.startsWith(
+          "/products"
+        )
+          ? "text-[#0a583b]"
+          : "text-[#142019]"
+      }`}
+    >
+      <span>{t.products}</span>
+
+      <ChevronDown
+        size={19}
+        strokeWidth={1.8}
+        className={`text-[#77837b] transition-transform duration-300 ${
+          productsOpen
+            ? "rotate-180"
+            : ""
+        }`}
+      />
+    </button>
+
+    <div
+      id="mobile-product-categories"
+      className={`grid transition-all duration-300 ease-in-out ${
+        productsOpen
+          ? "grid-rows-[1fr] pb-5 opacity-100"
+          : "grid-rows-[0fr] opacity-0"
+      }`}
+    >
+      <div className="overflow-hidden">
+        <div
+          className={`border-[#dce5df] ${
+            isArabic
+              ? "border-r pr-4"
+              : "border-l pl-4"
+          }`}
+        >
+          {/* All products */}
+          <Link
+            href="/products"
+            onClick={closeMenu}
+            className="flex min-h-11 items-center text-sm font-extrabold text-[#0a583b] transition hover:opacity-70"
+          >
+            {t.allProducts}
+          </Link>
+
+          {/* Dynamic categories */}
+          {categories.map(
+            (category) => {
+              const categoryLabel =
+                isArabic
+                  ? category.name_ar ||
+                    category.name ||
+                    category.name_en
+                  : category.name_en ||
+                    category.name ||
+                    category.name_ar;
+
+              if (
+                !categoryLabel
+              ) {
+                return null;
+              }
+
+              return (
+                <Link
+                  key={
+                    category.id
+                  }
+                  href={`/products?category=${category.id}`}
+                  onClick={closeMenu}
+                  className="flex min-h-11 items-center border-t border-[#edf0ed] text-sm font-bold text-[#647168] transition hover:text-[#0a583b]"
+                >
+                  {
+                    categoryLabel
+                  }
+                </Link>
+              );
+            }
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* About */}
+  <Link
+    href="/about"
+    onClick={closeMenu}
+    aria-current={
+      pathname.startsWith(
+        "/about"
+      )
+        ? "page"
+        : undefined
+    }
+    className={`${mobilePrimaryLinkClass} ${
+      pathname.startsWith(
+        "/about"
+      )
+        ? "text-[#0a583b]"
+        : ""
+    }`}
+  >
+    <span>{t.about}</span>
+
+    {pathname.startsWith(
+      "/about"
+    ) && (
+      <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
+    )}
+  </Link>
+
+  {/* Contact */}
+  <Link
+    href="/contact"
+    onClick={closeMenu}
+    aria-current={
+      pathname.startsWith(
+        "/contact"
+      )
+        ? "page"
+        : undefined
+    }
+    className={`${mobilePrimaryLinkClass} ${
+      pathname.startsWith(
+        "/contact"
+      )
+        ? "text-[#0a583b]"
+        : ""
+    }`}
+  >
+    <span>
+      {t.contact}
+    </span>
+
+    {pathname.startsWith(
+      "/contact"
+    ) && (
+      <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
+    )}
+  </Link>
+</nav>
 
               {/* Account links */}
               <section className="pt-8">
