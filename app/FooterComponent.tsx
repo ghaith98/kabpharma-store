@@ -267,8 +267,6 @@ export default function Footer() {
   const desktopLinkClass =
     "group inline-flex w-fit items-center gap-2 text-[15px] leading-6 text-[#4f5d54] transition-colors duration-200 hover:text-[#0a583b]";
 
-  const mobileLinkClass =
-    "group inline-flex w-full items-center justify-between gap-4 py-1 text-[15px] leading-7 text-[#4f5d54] transition-colors hover:text-[#0a583b]";
 
 const socialIconClass =
   "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#a9c1b2] bg-transparent text-[#0a583b] transition duration-300 hover:-translate-y-1 hover:border-[#0a583b] hover:bg-[#0a583b] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#dfeae3]";
@@ -389,158 +387,140 @@ const socialIconClass =
           </nav>
         </section>
 
-       {/* Mobile navigation */}
+      {/* Mobile navigation */}
 <section
   aria-label={t.navigation}
-  className="border-b border-[#cfd6d1] pt-4 md:hidden"
-> 
-          {sections.map(
-            (section) => {
-              const isOpen =
-                openSection ===
-                section.key;
-
-              const sectionId =
-                `footer-${section.key}`;
-
-              return (
-                <div
-                  key={
-                    section.key
-                  }
-                  className="border-b border-[#cfd6d1] last:border-b-0"
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleSection(
-                        section.key
-                      )
-                    }
-                    aria-expanded={
-                      isOpen
-                    }
-                    aria-controls={
-                      sectionId
-                    }
-                    className="flex min-h-[62px] w-full items-center justify-between gap-6 text-start"
-                  >
-                    <span
-                      className={`text-[12px] font-extrabold uppercase text-[#142019] ${
-                        isArabic
-                          ? "tracking-normal"
-                          : "tracking-[0.13em]"
-                      }`}
-                    >
-                      {section.title}
-                    </span>
-
-                    {isOpen ? (
-                      <Minus
-                        size={17}
-                        strokeWidth={1.5}
-                      />
-                    ) : (
-                      <Plus
-                        size={17}
-                        strokeWidth={1.5}
-                      />
-                    )}
-                  </button>
-
-                  {isOpen && (
-                    <nav
-                      id={sectionId}
-                      aria-label={
-                        section.title
-                      }
-                      className="space-y-2 pb-6"
-                    >
-                      {section.links.map(
-                        (item) => (
-                          <Link
-                            key={
-                              item.href
-                            }
-                            href={
-                              item.href
-                            }
-                            className={
-                              mobileLinkClass
-                            }
-                          >
-                            <span>
-                              {item.label}
-                            </span>
-
-                          <Link
-  key={item.href}
-  href={item.href}
-  className={mobileLinkClass}
+  className="border-b border-[#cfd6d1] pt-3 md:hidden"
 >
-  <span>{item.label}</span>
-</Link>
-                          </Link>
-                        )
-                      )}
-                    </nav>
-                  )}
-                </div>
-              );
-            }
-          )}
+  {sections.map((section) => {
+    const isOpen =
+      openSection === section.key;
 
-          {/* Mobile social */}
-          <div className="py-7">
-            <p
-              className={`text-[11px] font-extrabold uppercase text-[#142019] ${
-                isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.14em]"
-              }`}
+    const sectionId =
+      `footer-${section.key}`;
+
+    return (
+      <div
+        key={section.key}
+        className="border-b border-[#cfd6d1] last:border-b-0"
+      >
+        <button
+          type="button"
+          onClick={() =>
+            toggleSection(section.key)
+          }
+          aria-expanded={isOpen}
+          aria-controls={sectionId}
+          className="flex min-h-[64px] w-full items-center justify-between gap-5 text-start"
+        >
+          <span
+            className={`text-sm font-extrabold text-[#142019] ${
+              isArabic
+                ? "tracking-normal"
+                : "uppercase tracking-[0.12em]"
+            }`}
+          >
+            {section.title}
+          </span>
+
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center text-[#526057]">
+            {isOpen ? (
+              <Minus
+                size={18}
+                strokeWidth={1.5}
+              />
+            ) : (
+              <Plus
+                size={18}
+                strokeWidth={1.5}
+              />
+            )}
+          </span>
+        </button>
+
+        <div
+          id={sectionId}
+          className={`grid transition-all duration-300 ease-out ${
+            isOpen
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <nav
+              aria-label={section.title}
+              className="pb-5"
             >
-              {t.follow}
-            </p>
-
-            <div
-  dir="ltr"
-  className={`mt-5 flex w-full items-center gap-2.5 ${
-    isArabic
-      ? "justify-end"
-      : "justify-start"
-  }`}
->
-              {socialLinks.map(
-                ({
-                  label,
-                  href,
-                  Icon,
-                }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    title={label}
-                    className={
-                      socialIconClass
-                    }
+              {section.links.map(
+                (item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`block w-full py-2.5 text-[15px] font-medium leading-6 text-[#526057] transition-colors hover:text-[#0a583b] ${
+                      isArabic
+                        ? "text-right"
+                        : "text-left"
+                    }`}
                   >
-                    <Icon
-                      size={
-                        label ===
-                        "Instagram"
-                          ? 18
-                          : 16
-                      }
-                    />
-                  </a>
+                    {item.label}
+                  </Link>
                 )
               )}
-            </div>
+            </nav>
           </div>
-        </section>
+        </div>
+      </div>
+    );
+  })}
+
+  {/* Mobile social */}
+  <div className="py-7">
+    <p
+      className={`text-[11px] font-extrabold text-[#142019] ${
+        isArabic
+          ? "text-right tracking-normal"
+          : "text-left uppercase tracking-[0.14em]"
+      }`}
+    >
+      {t.follow}
+    </p>
+
+    <div
+      dir="ltr"
+      className={`mt-5 flex items-center gap-2.5 ${
+        isArabic
+          ? "justify-end"
+          : "justify-start"
+      }`}
+    >
+      {socialLinks.map(
+        ({
+          label,
+          href,
+          Icon,
+        }) => (
+          <a
+            key={label}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={label}
+            title={label}
+            className={socialIconClass}
+          >
+            <Icon
+              size={
+                label === "Instagram"
+                  ? 18
+                  : 16
+              }
+            />
+          </a>
+        )
+      )}
+    </div>
+  </div>
+</section>  
         {/* Copyright */}
         <div className="flex flex-col gap-3 pt-6 text-xs text-[#7a857e] sm:flex-row sm:items-center sm:justify-between">
           <p>
