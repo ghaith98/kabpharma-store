@@ -187,19 +187,6 @@ export default function ProfilePage() {
                   )}
                 </p>
               </div>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                aria-label={
-                  isArabic
-                    ? "تسجيل الخروج"
-                    : "Sign out"
-                }
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.08] text-sm text-white/75 transition active:scale-95 active:bg-white/15"
-              >
-                <FaSignOutAlt />
-              </button>
             </div>
           </section>
         ) : (
