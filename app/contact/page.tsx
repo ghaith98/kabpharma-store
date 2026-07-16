@@ -44,7 +44,7 @@ export default function ContactPage() {
       statusText:
         "سنراجع رسالتك ونرد عليك في أقرب وقت ممكن.",
 
-      primaryLabel: "الطريقة الأسرع",
+      primaryLabel: "خدمة العملاء",
 
       whatsappTitle:
         "تحدث معنا عبر واتساب",
@@ -109,8 +109,7 @@ export default function ContactPage() {
       statusText:
         "We’ll review your message and respond as soon as possible.",
 
-      primaryLabel:
-        "Fastest option",
+      primaryLabel: "Customer service",
 
       whatsappTitle:
         "Chat with us on WhatsApp",
@@ -341,22 +340,18 @@ I need help regarding:
               </div>
             </div>
 
-            <div
-              dir="ltr"
-              className="flex items-center justify-between gap-3 border-t border-[#e7ebe8] bg-[#f7f8f6] px-5 py-3 sm:px-6"
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="h-2 w-2 shrink-0 rounded-full bg-[#25d366]" />
+           <div
+  dir={isArabic ? "rtl" : "ltr"}
+  className="flex items-center border-t border-[#e7ebe8] bg-[#f7f8f6] px-5 py-3 sm:px-6"
+>
+  <div className="flex min-w-0 items-center gap-2">
+    <span className="h-2 w-2 shrink-0 rounded-full bg-[#25d366]" />
 
-                <span className="truncate text-[11px] font-bold text-[#647168]">
-                  {text.whatsappSupport}
-                </span>
-              </div>
-
-              <span className="shrink-0 text-[11px] font-bold text-[#7a857e]">
-                +963 958 088 969
-              </span>
-            </div>
+    <span className="truncate text-[11px] font-bold text-[#647168]">
+      {text.whatsappSupport}
+    </span>
+  </div>
+</div>
           </a>
 
           {/* WhatsApp — desktop */}
