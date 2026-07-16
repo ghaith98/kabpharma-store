@@ -60,6 +60,9 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] =
     useState(false);
 
+  const [isRefreshing, setIsRefreshing] =
+    useState(false);
+
   const [query, setQuery] =
     useState("");
 
@@ -259,12 +262,21 @@ const [
   setProductsOpen(false);
 }
 
-  function handleProductsNavigation(
-    event: ReactMouseEvent<HTMLAnchorElement>
+  function showRefreshIndicator() {
+    setIsRefreshing(true);
+
+    window.setTimeout(() => {
+      setIsRefreshing(false);
+    }, 850);
+  }
+
+  function handlePrimaryNavigation(
+    event: ReactMouseEvent<HTMLAnchorElement>,
+    href: string
   ) {
     closeMenu();
 
-    if (pathname !== "/products") {
+    if (pathname !== href) {
       return;
     }
 
@@ -272,11 +284,14 @@ const [
     setSearchOpen(false);
     setQuery("");
 
-    window.dispatchEvent(
-      new Event("productsResetRequested")
-    );
+    if (href === "/products") {
+      window.dispatchEvent(
+        new Event("productsResetRequested")
+      );
+    }
 
-    router.replace("/products", {
+    showRefreshIndicator();
+    router.replace(href, {
       scroll: false,
     });
     router.refresh();
@@ -286,6 +301,24 @@ const [
       behavior: "smooth",
     });
   }
+
+  useEffect(() => {
+    function handleRefreshStarted() {
+      showRefreshIndicator();
+    }
+
+    window.addEventListener(
+      "routeRefreshStarted",
+      handleRefreshStarted
+    );
+
+    return () => {
+      window.removeEventListener(
+        "routeRefreshStarted",
+        handleRefreshStarted
+      );
+    };
+  }, []);
 
   useEffect(() => {
     updateCartCount();
@@ -593,6 +626,20 @@ const [
 
   return (
     <>
+      {isRefreshing && (
+        <div
+          role="status"
+          aria-label={
+            isArabic
+              ? "جارٍ تحديث الصفحة"
+              : "Refreshing page"
+          }
+          className="fixed inset-x-0 top-0 z-[1200] h-[3px] overflow-hidden bg-[#dcebe2]"
+        >
+          <span className="block h-full w-1/2 animate-[pulse_0.55s_ease-in-out_infinite] rounded-r-full bg-[#0a583b] shadow-[0_0_12px_rgba(10,88,59,0.5)]" />
+        </div>
+      )}
+
       <header
         dir="ltr"
         className={`sticky top-0 z-50 bg-white/95 backdrop-blur-xl transition-shadow duration-300 ${
@@ -606,6 +653,12 @@ const [
             {/* Logo */}
             <Link
               href="/"
+              onClick={(event) =>
+                handlePrimaryNavigation(
+                  event,
+                  "/"
+                )
+              }
               aria-label="KAB Pharma home"
               className="hidden shrink-0 items-center lg:flex"
             >
@@ -727,9 +780,11 @@ const [
                               item.href
                             }
                             onClick={
-                              item.href === "/products"
-                                ? handleProductsNavigation
-                                : undefined
+                              (event) =>
+                                handlePrimaryNavigation(
+                                  event,
+                                  item.href
+                                )
                             }
                             aria-current={
                               active
@@ -890,6 +945,12 @@ const [
   {/* Centered K logo */}
   <Link
     href="/"
+    onClick={(event) =>
+      handlePrimaryNavigation(
+        event,
+        "/"
+      )
+    }
     aria-label="KAB Pharma home"
     className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center"
   >
@@ -1028,7 +1089,12 @@ const [
   {/* Home */}
   <Link
     href="/"
-    onClick={closeMenu}
+    onClick={(event) =>
+      handlePrimaryNavigation(
+        event,
+        "/"
+      )
+    }
     aria-current={
       pathname === "/"
         ? "page"
@@ -1100,7 +1166,12 @@ const [
           {/* All products */}
           <Link
             href="/products"
-            onClick={handleProductsNavigation}
+            onClick={(event) =>
+              handlePrimaryNavigation(
+                event,
+                "/products"
+              )
+            }
             className="flex min-h-11 items-center text-sm font-extrabold text-[#0a583b] transition hover:opacity-70"
           >
             {t.allProducts}
@@ -1148,7 +1219,12 @@ const [
   {/* About */}
   <Link
     href="/about"
-    onClick={closeMenu}
+    onClick={(event) =>
+      handlePrimaryNavigation(
+        event,
+        "/about"
+      )
+    }
     aria-current={
       pathname.startsWith(
         "/about"
@@ -1176,7 +1252,12 @@ const [
   {/* Contact */}
   <Link
     href="/contact"
-    onClick={closeMenu}
+    onClick={(event) =>
+      handlePrimaryNavigation(
+        event,
+        "/contact"
+      )
+    }
     aria-current={
       pathname.startsWith(
         "/contact"

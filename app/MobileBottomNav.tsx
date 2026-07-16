@@ -127,20 +127,23 @@ export default function MobileBottomNav() {
     event: ReactMouseEvent<HTMLAnchorElement>,
     href: string
   ) {
-    if (
-      href !== "/products" ||
-      pathname !== "/products"
-    ) {
+    if (!isActive(href)) {
       return;
     }
 
     event.preventDefault();
 
+    if (href === "/products") {
+      window.dispatchEvent(
+        new Event("productsResetRequested")
+      );
+    }
+
     window.dispatchEvent(
-      new Event("productsResetRequested")
+      new Event("routeRefreshStarted")
     );
 
-    router.replace("/products", {
+    router.replace(href, {
       scroll: false,
     });
     router.refresh();
