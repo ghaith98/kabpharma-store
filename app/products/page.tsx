@@ -7,8 +7,7 @@ import ProductsClient from "./ProductsClient";
 const SITE_URL =
   "https://www.kabpharma.com";
 
-export const dynamic =
-  "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title:
@@ -94,7 +93,6 @@ export default async function ProductsPage() {
   const [
     productsResult,
     orderItemsResult,
-    availableProductsResult,
   ] = await Promise.all([
    supabase
   .from("products")
@@ -120,13 +118,6 @@ export default async function ProductsPage() {
         "product_id, quantity"
       ),
 
-    supabase
-      .from("products")
-      .select("id")
-      .eq(
-        "is_out_of_stock",
-        false
-      ),
   ]);
 
   if (productsResult.error) {
@@ -161,30 +152,23 @@ export default async function ProductsPage() {
     );
   }
 
-  if (
-    availableProductsResult.error
-  ) {
-    console.error(
-      "Failed to load available products:",
-      availableProductsResult.error
-    );
-  }
-
   const products =
     productsResult.data || [];
 
   const orderItems =
     orderItemsResult.data || [];
 
-  const availableProductsForRanking =
-    availableProductsResult.data || [];
-
   const availableProductIds =
     new Set(
-      availableProductsForRanking.map(
+      products
+        .filter(
+          (product) =>
+            !product.is_out_of_stock
+        )
+        .map(
         (product) =>
           Number(product.id)
-      )
+        )
     );
 
   const salesByProduct =

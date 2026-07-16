@@ -1,30 +1,48 @@
 import HomeClient from "./HomeClient";
 import { supabase } from "@/lib/supabase";
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 
 export default async function Home() {
-  const { data: newProducts } = await supabase
-  .from("products")
-  .select("*")
-  .eq("is_new_arrival", true)
-  .order("id", { ascending: false })
-  .limit(6);
+  const [
+    newProductsResult,
+    featuredProductsResult,
+    orderItemsResult,
+    availableProductsResult,
+    bannersResult,
+  ] = await Promise.all([
+    supabase
+      .from("products")
+      .select("*")
+      .eq("is_new_arrival", true)
+      .order("id", { ascending: false })
+      .limit(6),
+    supabase
+      .from("products")
+      .select("*")
+      .eq("featured", true)
+      .order("id", { ascending: false })
+      .limit(8),
+    supabase
+      .from("order_items")
+      .select("product_id, quantity"),
+    supabase
+      .from("products")
+      .select("id")
+      .eq("is_out_of_stock", false),
+    supabase
+      .from("home_banners")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
+  ]);
 
-  const { data: featuredProducts } = await supabase
-    .from("products")
-    .select("*")
-    .eq("featured", true)
-    .order("id", { ascending: false })
-    .limit(8);
-
-  const { data: orderItems } = await supabase
-    .from("order_items")
-    .select("product_id, quantity");
-    const { data: availableProductsForRanking } = await supabase
-  .from("products")
-  .select("id")
-  .eq("is_out_of_stock", false);
+  const newProducts = newProductsResult.data || [];
+  const featuredProducts = featuredProductsResult.data || [];
+  const orderItems = orderItemsResult.data || [];
+  const availableProductsForRanking =
+    availableProductsResult.data || [];
+  const banners = bannersResult.data || [];
 
 const availableProductIds = new Set(
   (availableProductsForRanking || []).map((product) => product.id)
@@ -58,13 +76,7 @@ const availableProductIds = new Set(
       .filter(Boolean);
   }
 
-  const { data: banners } = await supabase
-    .from("home_banners")
-    .select("*")
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
-
-    return (
+  return (
   <HomeClient
     newProducts={newProducts || []}
     featuredProducts={featuredProducts || []}
@@ -73,4 +85,4 @@ const availableProductIds = new Set(
     banners={banners || []}
   />
 );
-  }
+}

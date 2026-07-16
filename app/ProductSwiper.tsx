@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 
@@ -102,10 +103,12 @@ export default function ProductSwiper({
                   className="flex h-full w-full items-center justify-center p-4"
                 >
                   {product.image_url ? (
-                    <img
+                    <Image
                       src={product.image_url}
                       alt={productName}
-                      loading="lazy"
+                      width={600}
+                      height={600}
+                      sizes="(max-width: 640px) 78vw, (max-width: 1024px) 38vw, 25vw"
                       className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.04] ${
                         product.is_out_of_stock
                           ? "opacity-60 grayscale-[20%]"

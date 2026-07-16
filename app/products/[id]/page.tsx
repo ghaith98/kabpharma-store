@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import ProductExtraClient from "./ProductExtraClient";
 import BackButton from "./BackButton";
@@ -9,6 +10,26 @@ import ShareProductButton from "./ShareProductButton";
 const SITE_URL = "https://www.kabpharma.com";
 const DEFAULT_SOCIAL_IMAGE =
   `${SITE_URL}/opengraph-image.jpg`;
+
+export const revalidate = 60;
+
+const getProduct = cache(async (id: string) =>
+  supabase
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle()
+);
+
+export async function generateStaticParams() {
+  const { data } = await supabase
+    .from("products")
+    .select("id");
+
+  return (data || []).map((product) => ({
+    id: String(product.id),
+  }));
+}
 
 type ProductPageProps = {
   params: Promise<{
@@ -105,20 +126,7 @@ export async function generateMetadata({
 }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
 
-  const { data: product } = await supabase
-    .from("products")
-    .select(`
-      id,
-      name,
-      name_ar,
-      name_en,
-      description,
-      description_ar,
-      description_en,
-      image_url
-    `)
-    .eq("id", id)
-    .maybeSingle();
+  const { data: product } = await getProduct(id);
 
   if (!product) {
     return {
@@ -220,11 +228,7 @@ export default async function ProductPage({
   const {
     data: product,
     error: productError,
-  } = await supabase
-    .from("products")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  } = await getProduct(id);
 
   if (productError) {
     console.error(
@@ -242,7 +246,6 @@ export default async function ProductPage({
     extraImagesResult,
     variantsResult,
     sameCategoryProductsResult,
-    orderItemsResult,
   ] = await Promise.all([
     supabase
      .from("product_reviews")
@@ -298,11 +301,6 @@ export default async function ProductPage({
         false
       ),
 
-    supabase
-      .from("order_items")
-      .select(
-        "product_id, quantity"
-      ),
   ]);
 
   if (reviewsResult.error) {
@@ -335,13 +333,6 @@ export default async function ProductPage({
     );
   }
 
-  if (orderItemsResult.error) {
-    console.error(
-      "Failed to load product sales:",
-      orderItemsResult.error
-    );
-  }
-
   const reviews =
     reviewsResult.data || [];
 
@@ -354,9 +345,6 @@ export default async function ProductPage({
   const sameCategoryProducts =
     sameCategoryProductsResult.data ||
     [];
-
-  const allOrderItems =
-    orderItemsResult.data || [];
 
   const variantIds = variants.map(
     (variant) => variant.id
@@ -428,42 +416,6 @@ export default async function ProductPage({
       };
     });
 
-  const salesCount =
-    allOrderItems.reduce(
-      (
-        accumulator: Record<
-          number,
-          number
-        >,
-        item: {
-          product_id:
-            | number
-            | null;
-
-          quantity:
-            | number
-            | null;
-        }
-      ) => {
-        if (!item.product_id) {
-          return accumulator;
-        }
-
-        accumulator[
-          item.product_id
-        ] =
-          (accumulator[
-            item.product_id
-          ] || 0) +
-          Number(
-            item.quantity || 0
-          );
-
-        return accumulator;
-      },
-      {}
-    );
-
   const relatedProducts =
     sameCategoryProducts
       .sort(
@@ -471,12 +423,10 @@ export default async function ProductPage({
           firstProduct,
           secondProduct
         ) =>
-          (salesCount[
-            secondProduct.id
-          ] || 0) -
-          (salesCount[
-            firstProduct.id
-          ] || 0)
+          Number(secondProduct.featured || 0) -
+            Number(firstProduct.featured || 0) ||
+          Number(secondProduct.id) -
+            Number(firstProduct.id)
       )
       .slice(0, 6);
 

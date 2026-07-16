@@ -143,3 +143,17 @@ img {
   border-color: #073f2c !important;
   box-shadow: 0 0 0 5px #edf5f0 !important;
 }
+/* Responsive banner crop: one image request, separate mobile/desktop framing. */
+.kab-banner-image {
+  object-position: var(--banner-mobile-x, 50%) var(--banner-mobile-y, 50%);
+  transform: scale(var(--banner-mobile-zoom, 1));
+  transform-origin: var(--banner-mobile-x, 50%) var(--banner-mobile-y, 50%);
+}
+
+@media (min-width: 768px) {
+  .kab-banner-image {
+    object-position: var(--banner-desktop-x, 50%) var(--banner-desktop-y, 50%);
+    transform: scale(var(--banner-desktop-zoom, 1));
+    transform-origin: var(--banner-desktop-x, 50%) var(--banner-desktop-y, 50%);
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   ChevronLeft,
   ChevronRight,
@@ -43,9 +44,12 @@ export default function ProductGallery({
     <div className="min-w-0">
      <div className="relative flex aspect-square min-h-[360px] items-center justify-center overflow-hidden bg-[#f6f7f5] sm:min-h-[480px] lg:aspect-[4/3] lg:min-h-0">
         {selectedImage ? (
-          <img
+          <Image
             src={selectedImage}
             alt={productName}
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 58vw"
             className="h-full w-full object-contain p-6 transition duration-500 sm:p-10 lg:p-10"
           />
         ) : (
@@ -105,9 +109,12 @@ export default function ProductGallery({
                     : "border-gray-200 hover:border-gray-400"
                 }`}
               >
-                <img
+                <Image
                   src={image}
                   alt={`${productName} ${index + 1}`}
+                  width={96}
+                  height={96}
+                  sizes="96px"
                   className="h-full w-full object-contain p-1.5"
                 />
               </button>

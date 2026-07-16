@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { useLanguage } from "../../../context/LanguageContext";
@@ -82,10 +83,12 @@ export default function RelatedProductsSwiper({
       >
         <div className="flex h-full w-full items-center justify-center p-5 sm:p-6">
           {item.image_url ? (
-            <img
+            <Image
               src={item.image_url}
               alt={name}
-              loading="lazy"
+              width={600}
+              height={600}
+              sizes="(max-width: 640px) 82vw, (max-width: 900px) 48vw, 33vw"
               className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.04] ${
                 isOutOfStock
                   ? "opacity-55 grayscale-[25%]"

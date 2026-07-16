@@ -19,8 +19,6 @@ import { useLanguage } from "../context/LanguageContext";
 import "swiper/css";
 import "swiper/css/pagination";
 
-type CropMode = "desktop" | "mobile";
-
 function clamp(
   value: unknown,
   minimum: number,
@@ -39,36 +37,38 @@ function clamp(
   );
 }
 
-function getCropStyle(
-  slide: any,
-  mode: CropMode
-): CSSProperties {
-  const positionX = clamp(
-    slide?.[`${mode}_position_x`],
-    0,
-    100,
-    50
+function getCropVariables(slide: any): CSSProperties {
+  const values = (["mobile", "desktop"] as const).reduce(
+    (variables, mode) => {
+      const positionX = clamp(
+        slide?.[`${mode}_position_x`],
+        0,
+        100,
+        50
+      );
+      const positionY = clamp(
+        slide?.[`${mode}_position_y`],
+        0,
+        100,
+        50
+      );
+      const zoom = clamp(
+        slide?.[`${mode}_zoom`],
+        1,
+        1.6,
+        1
+      );
+
+      variables[`--banner-${mode}-x`] = `${positionX}%`;
+      variables[`--banner-${mode}-y`] = `${positionY}%`;
+      variables[`--banner-${mode}-zoom`] = String(zoom);
+
+      return variables;
+    },
+    {} as Record<string, string>
   );
 
-  const positionY = clamp(
-    slide?.[`${mode}_position_y`],
-    0,
-    100,
-    50
-  );
-
-  const zoom = clamp(
-    slide?.[`${mode}_zoom`],
-    1,
-    1.6,
-    1
-  );
-
-  return {
-    objectPosition: `${positionX}% ${positionY}%`,
-    transform: `scale(${zoom})`,
-    transformOrigin: `${positionX}% ${positionY}%`,
-  };
+  return values as CSSProperties;
 }
 
 export default function HomeBannerSwiper({
@@ -115,7 +115,7 @@ export default function HomeBannerSwiper({
       }
       className="kab-campaign-swiper"
     >
-      {banners.map((slide) => {
+      {banners.map((slide, index) => {
         const title = isArabic
           ? slide.title_ar ||
             slide.title
@@ -148,36 +148,30 @@ export default function HomeBannerSwiper({
               }
               className="relative min-h-[680px] overflow-hidden bg-[#f6f6f3] md:min-h-[560px] lg:min-h-[620px]"
             >
-              {/* Mobile image */}
-              <div className="absolute inset-0 overflow-hidden md:hidden">
-                <img
-                  src={mobileImage}
-                  alt={
-                    title ||
-                    "KAB Pharma campaign"
-                  }
-                  className="absolute inset-0 h-full w-full object-cover will-change-transform"
-                  style={getCropStyle(
-                    slide,
-                    "mobile"
+              {/* One responsive image prevents downloading both versions. */}
+              <div
+                className="absolute inset-0 overflow-hidden"
+                style={getCropVariables(slide)}
+              >
+                <picture>
+                  {slide.image_url_mobile && (
+                    <source
+                      media="(max-width: 767px)"
+                      srcSet={mobileImage}
+                    />
                   )}
-                />
-              </div>
-
-              {/* Desktop image */}
-              <div className="absolute inset-0 hidden overflow-hidden md:block">
                 <img
                   src={slide.image_url}
                   alt={
                     title ||
                     "KAB Pharma campaign"
                   }
-                  className="absolute inset-0 h-full w-full object-cover will-change-transform"
-                  style={getCropStyle(
-                    slide,
-                    "desktop"
-                  )}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  decoding="async"
+                  className="kab-banner-image absolute inset-0 h-full w-full object-cover will-change-transform"
                 />
+                </picture>
               </div>
 
               {/* Readability layer */}

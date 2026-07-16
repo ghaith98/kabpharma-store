@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
 import {
@@ -647,14 +648,16 @@ export default function ProductsClient({
                       className="flex h-full w-full items-center justify-center p-3 sm:p-5"
                     >
                       {product.image_url ? (
-                        <img
+                        <Image
                           src={
                             product.image_url
                           }
                           alt={
                             productName
                           }
-                          loading="lazy"
+                          width={600}
+                          height={600}
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                           className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.04] ${
                             isOutOfStock
                               ? "opacity-55 grayscale-[25%]"
