@@ -753,11 +753,7 @@ const [
               <>
                 {/* Desktop navigation */}
                 <nav
-                  dir={
-                    isArabic
-                      ? "rtl"
-                      : "ltr"
-                  }
+  dir="ltr"
                   aria-label={
                     t.navigation
                   }
@@ -801,9 +797,11 @@ const [
                                 : "text-[#26352d] hover:text-[#0a583b]"
                             }`}
                           >
-                            {
-                              item.label
-                            }
+                            <span
+  dir={isArabic ? "rtl" : "ltr"}
+>
+  {item.label}
+</span>
 
                             <span
                               className={`absolute inset-x-0 bottom-0 h-[2px] origin-center bg-[#0a583b] transition-transform duration-300 ${
@@ -1030,11 +1028,7 @@ const [
           }}
         >
           <aside
-            dir={
-              isArabic
-                ? "rtl"
-                : "ltr"
-            }
+  dir="ltr"
             aria-label={
               t.mobileNavigation
             }

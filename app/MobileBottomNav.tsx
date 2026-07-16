@@ -156,11 +156,7 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      dir={
-        currentLang === "ar"
-          ? "rtl"
-          : "ltr"
-      }
+  dir="ltr"
       aria-label={
         currentLang === "ar"
           ? "التنقل الرئيسي"
@@ -229,9 +225,16 @@ export default function MobileBottomNav() {
                   )}
               </div>
 
-              <span className="leading-none">
-                {item.label}
-              </span>
+              <span
+  dir={
+    currentLang === "ar"
+      ? "rtl"
+      : "ltr"
+  }
+  className="leading-none"
+>
+  {item.label}
+</span>
             </Link>
           );
         })}

@@ -243,12 +243,13 @@ export default function HomeBannerSwiper({
                 {/* Campaign content */}
                 <div className="relative z-10 mx-auto flex min-h-[680px] w-full max-w-[1440px] items-start px-5 py-10 sm:px-8 md:min-h-[560px] md:items-center md:px-12 lg:min-h-[620px] lg:px-16">
                   <div
-                    className={`w-full max-w-[490px] md:w-[46%] ${
-                      isArabic
-                        ? "text-right md:ml-auto md:mr-0"
-                        : "text-left md:ml-0 md:mr-auto"
-                    }`}
-                  >
+  dir={isArabic ? "rtl" : "ltr"}
+  className={`w-full max-w-[490px] md:ml-0 md:mr-auto md:w-[46%] ${
+    isArabic
+      ? "text-right"
+      : "text-left"
+  }`}
+>
                     <p
                       className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
                         isArabic
