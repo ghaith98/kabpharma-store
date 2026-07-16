@@ -3,29 +3,39 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
-  FaBoxOpen,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaHeadset,
-  FaMoneyBillWave,
-  FaShippingFast,
-  FaUndoAlt,
-  FaWhatsapp,
-} from "react-icons/fa";
+  ArrowLeft,
+  ArrowRight,
+  Box,
+  CircleAlert,
+  Headphones,
+  MessageCircle,
+  ReceiptText,
+  RotateCcw,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
+
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function RefundPolicyPage() {
   const { lang } = useLanguage();
   const isArabic = lang === "ar";
+  const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
   const t = {
     en: {
-      badge: "Returns & Refunds",
-      title: "Refund Policy",
+      eyebrow: "Returns & refunds",
+      title: "A clear and considered return policy.",
       introduction:
-        "Please review the following conditions before submitting a return or refund request.",
-
-      returnTitle: "Return Conditions",
+        "We want every KAB Pharma order to arrive exactly as expected. Here you’ll find the conditions, timing, and support available for returns, replacements, and refunds.",
+      overview: "Policy overview",
+      returnWindow: "Return window",
+      returnWindowValue: "Within 3 days",
+      issueWindow: "Order issues",
+      issueWindowValue: "Report within 48 hours",
+      eligibility: "Product condition",
+      eligibilityValue: "Unopened and unused",
+      returnTitle: "Return conditions",
       returnText:
         "A return may be requested within 3 days of delivery, provided that the product is unopened, unused, in its original packaging, and in the same condition in which it was received.",
       hygieneText:
@@ -34,14 +44,12 @@ export default function RefundPolicyPage() {
         "Returns are not accepted solely because the customer changed their mind after receiving the order.",
       proofText:
         "A valid order number or proof of purchase may be required to process the request.",
-
-      issueTitle: "Missing, Damaged, or Incorrect Items",
+      issueTitle: "Missing, damaged, or incorrect items",
       issueText:
         "If an item is missing, damaged, defective, or different from the product ordered, please contact us within 48 hours of delivery.",
       replacementText:
         "After reviewing the request, KAB Pharma will arrange for the missing or replacement product to be sent at no additional delivery cost to the customer.",
-
-      shippingTitle: "Shipping and Delivery Costs",
+      shippingTitle: "Shipping and delivery costs",
       deliveryText:
         "Delivery fees are calculated according to the customer’s location and are communicated during the ordering process.",
       customerShippingText:
@@ -50,33 +58,35 @@ export default function RefundPolicyPage() {
         "If the product is damaged, defective, missing, or incorrectly supplied, KAB Pharma will cover the applicable return or replacement shipping costs.",
       originalFeesText:
         "Original delivery fees are non-refundable unless the return results from an error by KAB Pharma or a defective product.",
-
-      refundTitle: "Refund Processing",
+      refundTitle: "Refund processing",
       refundText:
         "Refunds are processed after the returned product has been received, inspected, and confirmed to meet the return conditions.",
       refundMethodText:
         "The refund method and expected processing time will be communicated to the customer after the request has been approved.",
-
-      importantTitle: "Important",
+      importantTitle: "Please note",
       importantText:
         "Submitting a request does not automatically guarantee approval. Every request is reviewed according to the conditions stated on this page.",
-
-      helpTitle: "Do you need help with an order?",
+      helpEyebrow: "Customer care",
+      helpTitle: "Need help with an order?",
       helpText:
-        "Contact our customer service team and include your name, order number, and a description of the issue.",
-      whatsappButton: "Contact Us on WhatsApp",
-      contactButton: "Other Contact Methods",
-
+        "Contact our customer care team and include your name, order number, and a clear description of the issue.",
+      whatsappButton: "Contact us on WhatsApp",
+      contactButton: "Other contact methods",
       whatsappMessage:
         "Hello KAB Pharma team 👋\nI would like to submit a return or refund request.\n\nOrder number:\nIssue:",
     },
-
     ar: {
-      badge: "الاسترجاع واسترداد المبلغ",
-      title: "سياسة الاسترجاع",
+      eyebrow: "الاسترجاع واسترداد المبلغ",
+      title: "سياسة استرجاع واضحة ومدروسة.",
       introduction:
-        "يرجى الاطلاع على الشروط التالية قبل تقديم طلب استرجاع المنتج أو استرداد المبلغ.",
-
+        "نحرص على أن يصلك كل طلب من KAB Pharma كما تتوقع. ستجد هنا شروط ومواعيد الاسترجاع والاستبدال واسترداد المبلغ، وكيفية الحصول على المساعدة.",
+      overview: "ملخص السياسة",
+      returnWindow: "مهلة الاسترجاع",
+      returnWindowValue: "خلال 3 أيام",
+      issueWindow: "مشكلات الطلب",
+      issueWindowValue: "الإبلاغ خلال 48 ساعة",
+      eligibility: "حالة المنتج",
+      eligibilityValue: "غير مفتوح وغير مستخدم",
       returnTitle: "شروط الاسترجاع",
       returnText:
         "يمكن طلب استرجاع المنتج خلال 3 أيام من تاريخ الاستلام، بشرط أن يكون غير مفتوح، وغير مستخدم، وضمن عبوته الأصلية، وبالحالة نفسها التي تم استلامه بها.",
@@ -86,13 +96,11 @@ export default function RefundPolicyPage() {
         "لا يتم قبول طلبات الاسترجاع لمجرد تغيير العميل لرأيه بعد استلام الطلب.",
       proofText:
         "قد يُطلب رقم الطلب أو ما يثبت عملية الشراء لإتمام طلب الاسترجاع.",
-
       issueTitle: "المنتجات الناقصة أو التالفة أو الخاطئة",
       issueText:
         "إذا كان أحد المنتجات ناقصاً من الطلب، أو وصل تالفاً أو معيباً أو مختلفاً عن المنتج المطلوب، يرجى التواصل معنا خلال 48 ساعة من تاريخ الاستلام.",
       replacementText:
         "بعد مراجعة الطلب، ستقوم KAB Pharma بإرسال المنتج الناقص أو البديل دون تحميل العميل أجور توصيل إضافية.",
-
       shippingTitle: "تكاليف الشحن والتوصيل",
       deliveryText:
         "يتم احتساب رسوم التوصيل حسب موقع العميل، ويتم توضيحها أثناء إتمام الطلب.",
@@ -102,247 +110,261 @@ export default function RefundPolicyPage() {
         "إذا كان المنتج تالفاً أو معيباً أو ناقصاً أو تم إرساله بالخطأ، تتحمل KAB Pharma تكاليف الشحن المتعلقة بالاستبدال أو الاسترجاع.",
       originalFeesText:
         "رسوم التوصيل الأصلية غير قابلة للاسترداد، إلا إذا كان الاسترجاع ناتجاً عن خطأ من KAB Pharma أو وجود عيب في المنتج.",
-
       refundTitle: "معالجة استرداد المبلغ",
       refundText:
         "تتم معالجة استرداد المبلغ بعد استلام المنتج المرتجع وفحصه والتأكد من مطابقته لشروط الاسترجاع.",
       refundMethodText:
         "سيتم إبلاغ العميل بطريقة استرداد المبلغ والمدة المتوقعة بعد قبول الطلب.",
-
       importantTitle: "ملاحظة مهمة",
       importantText:
         "تقديم طلب الاسترجاع لا يعني قبوله تلقائياً، حيث تتم مراجعة كل طلب وفقاً للشروط الموضحة في هذه الصفحة.",
-
+      helpEyebrow: "خدمة العملاء",
       helpTitle: "هل تحتاج إلى مساعدة بخصوص طلبك؟",
       helpText:
-        "تواصل مع فريق خدمة العملاء وأرسل اسمك ورقم الطلب مع توضيح المشكلة.",
+        "تواصل مع فريق خدمة العملاء وأرسل اسمك ورقم الطلب مع وصف واضح للمشكلة.",
       whatsappButton: "تواصل معنا عبر واتساب",
       contactButton: "طرق التواصل الأخرى",
-
       whatsappMessage:
         "مرحباً فريق KAB Pharma 👋\nأرغب بتقديم طلب استرجاع أو استرداد مبلغ.\n\nرقم الطلب:\nتفاصيل المشكلة:",
     },
   }[lang as "en" | "ar"];
 
-  const whatsappUrl = useMemo(() => {
-    return `https://wa.me/963958088969?text=${encodeURIComponent(
-      t.whatsappMessage
-    )}`;
-  }, [t.whatsappMessage]);
+  const whatsappUrl = useMemo(
+    () =>
+      `https://wa.me/963958088969?text=${encodeURIComponent(
+        t.whatsappMessage
+      )}`,
+    [t.whatsappMessage]
+  );
 
-  const sectionClass =
-    "rounded-[2rem] bg-white p-7 shadow-sm ring-1 ring-gray-100 md:p-9";
+  const overviewItems = [
+    {
+      label: t.returnWindow,
+      value: t.returnWindowValue,
+      Icon: RotateCcw,
+    },
+    {
+      label: t.issueWindow,
+      value: t.issueWindowValue,
+      Icon: CircleAlert,
+    },
+    {
+      label: t.eligibility,
+      value: t.eligibilityValue,
+      Icon: ShieldCheck,
+    },
+  ];
 
-  const pointClass = "flex items-start gap-3";
+  const sections = [
+    {
+      number: "01",
+      title: t.returnTitle,
+      Icon: Box,
+      paragraphs: [
+        t.returnText,
+        t.hygieneText,
+        t.changeMindText,
+        t.proofText,
+      ],
+    },
+    {
+      number: "02",
+      title: t.issueTitle,
+      Icon: CircleAlert,
+      paragraphs: [t.issueText, t.replacementText],
+    },
+    {
+      number: "03",
+      title: t.shippingTitle,
+      Icon: Truck,
+      paragraphs: [
+        t.deliveryText,
+        t.customerShippingText,
+        t.companyShippingText,
+        t.originalFeesText,
+      ],
+    },
+    {
+      number: "04",
+      title: t.refundTitle,
+      Icon: ReceiptText,
+      paragraphs: [t.refundText, t.refundMethodText],
+    },
+  ];
 
   return (
     <main
       dir={isArabic ? "rtl" : "ltr"}
-      className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-16"
+      className="min-h-screen bg-[#f7f8f6] pb-24 text-[#142019] md:pb-16"
     >
-      <div className="mx-auto max-w-5xl">
-        {/* Header */}
-        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-green-600 to-green-800 px-7 py-12 text-center text-white shadow-lg md:px-12">
-          <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-white/10" />
-          <div className="absolute -bottom-20 -left-16 h-60 w-60 rounded-full bg-white/5" />
-
-          <div className="relative">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-3xl ring-1 ring-white/20">
-              <FaUndoAlt />
+      {/* Editorial hero */}
+      <header className="border-b border-[#dfe4e0] bg-white px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-24">
+        <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)] lg:items-end lg:gap-20">
+          <div>
+            <div className="flex items-center gap-3 text-[#0a583b]">
+              <RotateCcw size={18} strokeWidth={1.8} />
+              <p
+                className={`text-[11px] font-extrabold uppercase ${
+                  isArabic ? "tracking-normal" : "tracking-[0.2em]"
+                }`}
+              >
+                {t.eyebrow}
+              </p>
             </div>
 
-            <div className="mx-auto mt-5 w-fit rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-green-50">
-              {t.badge}
-            </div>
-
-            <h1 className="mt-5 text-4xl font-extrabold md:text-5xl">
+            <h1
+              className={`mt-6 max-w-4xl font-extrabold text-[#142019] ${
+                isArabic
+                  ? "text-[38px] leading-[1.24] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[52px] lg:text-[66px]"
+                  : "text-[44px] leading-[0.98] tracking-[-0.055em] sm:text-[62px] lg:text-[78px]"
+              }`}
+            >
               {t.title}
             </h1>
+          </div>
 
-            <p className="mx-auto mt-5 max-w-2xl leading-8 text-green-50">
+          <div className="lg:pb-1">
+            <p className="text-[15px] leading-8 text-[#526057] sm:text-base">
               {t.introduction}
             </p>
+
+            <div className="mt-7 flex items-center gap-3 border-t border-[#dfe4e0] pt-5">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <ShieldCheck size={17} />
+              </span>
+              <p className="text-xs font-bold leading-6 text-[#647168]">
+                KAB Pharma · {t.eyebrow}
+              </p>
+            </div>
           </div>
-        </section>
-
-        <div className="mt-8 grid gap-6">
-          {/* Return conditions */}
-          <section className={sectionClass}>
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl text-green-700">
-                <FaBoxOpen />
-              </div>
-
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                {t.returnTitle}
-              </h2>
-            </div>
-
-            <div className="mt-7 space-y-5">
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">{t.returnText}</p>
-              </div>
-
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">{t.hygieneText}</p>
-              </div>
-
-              <div className={pointClass}>
-                <FaExclamationTriangle className="mt-1 shrink-0 text-amber-500" />
-                <p className="leading-8 text-gray-600">{t.changeMindText}</p>
-              </div>
-
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">{t.proofText}</p>
-              </div>
-            </div>
-          </section>
-
-          {/* Missing or damaged products */}
-          <section className={sectionClass}>
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-2xl text-amber-600">
-                <FaExclamationTriangle />
-              </div>
-
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                {t.issueTitle}
-              </h2>
-            </div>
-
-            <div className="mt-7 space-y-5">
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">{t.issueText}</p>
-              </div>
-
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">
-                  {t.replacementText}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Shipping */}
-          <section className={sectionClass}>
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-2xl text-blue-600">
-                <FaShippingFast />
-              </div>
-
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                {t.shippingTitle}
-              </h2>
-            </div>
-
-            <div className="mt-7 space-y-5">
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">{t.deliveryText}</p>
-              </div>
-
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">
-                  {t.customerShippingText}
-                </p>
-              </div>
-
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">
-                  {t.companyShippingText}
-                </p>
-              </div>
-
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">
-                  {t.originalFeesText}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Refund processing */}
-          <section className={sectionClass}>
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-green-50 text-2xl text-green-700">
-                <FaMoneyBillWave />
-              </div>
-
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                {t.refundTitle}
-              </h2>
-            </div>
-
-            <div className="mt-7 space-y-5">
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">{t.refundText}</p>
-              </div>
-
-              <div className={pointClass}>
-                <FaCheckCircle className="mt-1 shrink-0 text-green-600" />
-                <p className="leading-8 text-gray-600">
-                  {t.refundMethodText}
-                </p>
-              </div>
-            </div>
-          </section>
         </div>
+      </header>
 
-        {/* Important note */}
-        <section className="mt-6 rounded-[2rem] border border-amber-200 bg-amber-50 p-7 md:p-8">
-          <div className="flex items-start gap-4">
-            <FaExclamationTriangle className="mt-1 shrink-0 text-2xl text-amber-600" />
-
-            <div>
-              <h2 className="text-lg font-extrabold text-gray-900">
-                {t.importantTitle}
-              </h2>
-
-              <p className="mt-2 leading-8 text-gray-700">{t.importantText}</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Customer service */}
-        <section className="mt-8 rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-gray-100 md:p-10">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50 text-3xl text-green-700">
-            <FaHeadset />
-          </div>
-
-          <h2 className="mt-5 text-2xl font-extrabold text-gray-900">
-            {t.helpTitle}
-          </h2>
-
-          <p className="mx-auto mt-3 max-w-2xl leading-8 text-gray-600">
-            {t.helpText}
+      <div className="mx-auto max-w-[1320px] px-5 sm:px-6 lg:px-10">
+        {/* Quick overview */}
+        <section className="border-b border-[#dfe4e0] py-10 sm:py-12">
+          <p
+            className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+              isArabic ? "tracking-normal" : "tracking-[0.16em]"
+            }`}
+          >
+            {t.overview}
           </p>
 
-          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+          <div className="mt-7 grid gap-px overflow-hidden rounded-[1.5rem] border border-[#dfe4e0] bg-[#dfe4e0] sm:grid-cols-3">
+            {overviewItems.map(({ label, value, Icon }) => (
+              <article key={label} className="bg-white p-5 sm:p-6">
+                <Icon size={19} className="text-[#0a583b]" />
+                <p className="mt-5 text-xs font-bold text-[#7a857e]">
+                  {label}
+                </p>
+                <p className="mt-1 text-sm font-extrabold text-[#142019] sm:text-base">
+                  {value}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* Policy sections */}
+        <div className="divide-y divide-[#dfe4e0]">
+          {sections.map(({ number, title, Icon, paragraphs }) => (
+            <section
+              key={number}
+              className="grid gap-7 py-11 sm:py-14 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-16"
+            >
+              <div>
+                <p className="text-xs font-extrabold text-[#9aa39d]">
+                  {number}
+                </p>
+                <div className="mt-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                    <Icon size={18} strokeWidth={1.8} />
+                  </span>
+                  <h2 className="text-lg font-extrabold leading-7 text-[#142019]">
+                    {title}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="divide-y divide-[#e7ebe8] border-t border-[#e7ebe8] lg:border-t-0">
+                {paragraphs.map((paragraph, index) => (
+                  <div
+                    key={`${number}-${index}`}
+                    className="flex items-start gap-4 py-5 first:pt-6 lg:first:pt-0"
+                  >
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0a583b]" />
+                    <p className="text-[15px] leading-8 text-[#526057]">
+                      {paragraph}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        {/* Important notice */}
+        <section className="border-y border-[#d8cba7] bg-[#f5f0e3] px-5 py-7 sm:px-7 sm:py-8">
+          <div className="flex items-start gap-4">
+            <CircleAlert
+              size={21}
+              className="mt-1 shrink-0 text-[#866c2f]"
+            />
+            <div>
+              <h2 className="font-extrabold text-[#342d1d]">
+                {t.importantTitle}
+              </h2>
+              <p className="mt-2 max-w-4xl text-sm leading-7 text-[#655a40]">
+                {t.importantText}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Customer-care CTA */}
+        <section className="grid gap-10 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16 lg:py-20">
+          <div>
+            <p
+              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+                isArabic ? "tracking-normal" : "tracking-[0.16em]"
+              }`}
+            >
+              {t.helpEyebrow}
+            </p>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-[#142019] sm:text-4xl">
+              {t.helpTitle}
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-8 text-[#647168] sm:text-base">
+              {t.helpText}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 rounded-2xl bg-green-600 px-6 py-3.5 font-bold text-white transition hover:-translate-y-0.5 hover:bg-green-700"
+              className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg"
             >
-              <FaWhatsapp className="text-xl" />
+              <MessageCircle size={17} />
               <span>{t.whatsappButton}</span>
             </a>
 
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center gap-3 rounded-2xl border border-gray-300 px-6 py-3.5 font-bold text-gray-700 transition hover:-translate-y-0.5 hover:border-green-600 hover:text-green-700"
+              className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#bfc9c2] bg-white px-6 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
             >
-              <FaHeadset />
+              <Headphones size={17} />
               <span>{t.contactButton}</span>
+              <ArrowIcon
+                size={15}
+                className={`transition-transform ${
+                  isArabic
+                    ? "group-hover:-translate-x-1"
+                    : "group-hover:translate-x-1"
+                }`}
+              />
             </Link>
           </div>
         </section>
