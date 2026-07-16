@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useMemo } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { IconType } from "react-icons";
 import {
@@ -194,7 +195,7 @@ export default function AdminShell({
       <aside className="fixed inset-y-0 left-0 z-50 hidden w-[278px] flex-col border-r border-gray-200 bg-[#0b1511] text-white lg:flex">
         {/* Brand */}
         <div className="border-b border-white/10 px-5 py-6">
-          <a
+          <Link
             href="/admin"
             className="flex items-center gap-3"
           >
@@ -211,7 +212,7 @@ export default function AdminShell({
                 Administration
               </p>
             </div>
-          </a>
+          </Link>
         </div>
 
         {/* Admin profile */}
@@ -257,7 +258,7 @@ export default function AdminShell({
                     const Icon = link.icon;
 
                     return (
-                      <a
+                      <Link
                         key={link.href}
                         href={link.href}
                         className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
@@ -281,7 +282,7 @@ export default function AdminShell({
                         {active && (
                           <FiChevronRight className="shrink-0 text-sm" />
                         )}
-                      </a>
+                      </Link>
                     );
                   })}
                 </div>
@@ -346,7 +347,7 @@ export default function AdminShell({
 
         {/* Mobile admin bar */}
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
-          <a
+          <Link
             href="/admin-mobile"
             className="flex items-center gap-3"
           >
@@ -363,14 +364,14 @@ export default function AdminShell({
                 {currentPageTitle}
               </p>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin-mobile"
             className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-extrabold text-gray-700"
           >
             Menu
-          </a>
+          </Link>
         </header>
 
         <div className="min-w-0">{children}</div>

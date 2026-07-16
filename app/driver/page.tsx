@@ -55,7 +55,7 @@ export default function DriverPage() {
     const savedName = localStorage.getItem("driver_name");
 
     if (!savedName) {
-      window.location.href = "/driver/login";
+      router.replace("/driver/login");
       return;
     }
 
@@ -106,20 +106,32 @@ export default function DriverPage() {
     localStorage.removeItem("driver_id");
     localStorage.removeItem("driver_name");
     localStorage.removeItem("driver_username");
-    window.location.href = "/driver/login";
+    router.replace("/driver/login");
   }
 
   useEffect(() => {
     const savedName = localStorage.getItem("driver_name");
 
     if (!savedName) {
-      window.location.href = "/driver/login";
+      router.replace("/driver/login");
       return;
     }
 
-    setDriverName(savedName);
-    checkActiveOrder(savedName);
+    const authenticatedDriverName = savedName;
+
+    setDriverName(authenticatedDriverName);
+    checkActiveOrder(authenticatedDriverName);
     loadOrders();
+
+    function refreshOrders() {
+      checkActiveOrder(authenticatedDriverName);
+      loadOrders();
+    }
+
+    window.addEventListener(
+      "driverRefreshRequested",
+      refreshOrders
+    );
 
     const channel = supabase
       .channel("orders-driver-realtime")
@@ -127,13 +139,17 @@ export default function DriverPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
         () => {
-          checkActiveOrder(savedName);
+          checkActiveOrder(authenticatedDriverName);
           loadOrders();
         }
       )
       .subscribe();
 
     return () => {
+      window.removeEventListener(
+        "driverRefreshRequested",
+        refreshOrders
+      );
       supabase.removeChannel(channel);
     };
   }, []);

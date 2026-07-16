@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -131,19 +132,19 @@ export default function AdminCategoriesPage() {
         <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
 
         <div className="mb-6 flex gap-2">
-          <a
+          <Link
             href="/admin"
             className="hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:inline-flex"
           >
             ← Desktop Dashboard
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin-mobile"
             className="inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:hidden"
           >
             ← Dashboard
-          </a>
+          </Link>
         </div>
       </div>
 

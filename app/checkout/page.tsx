@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   ArrowLeft,
@@ -59,6 +60,7 @@ type BanCheckResult = {
 export default function CheckoutPage() {
   const { lang } =
     useLanguage();
+  const router = useRouter();
 
   const isArabic =
     lang === "ar";
@@ -146,8 +148,9 @@ export default function CheckoutPage() {
         "/checkout"
       );
 
-      window.location.href =
-        "/profile?account_required=1";
+      router.replace(
+        "/profile?account_required=1"
+      );
 
       return;
     }
@@ -168,8 +171,7 @@ export default function CheckoutPage() {
         "/checkout"
       );
 
-      window.location.href =
-        "/login";
+      router.replace("/login");
 
       return;
     }
@@ -184,8 +186,7 @@ export default function CheckoutPage() {
         "/checkout"
       );
 
-      window.location.href =
-        "/login";
+      router.replace("/login");
 
       return;
     }
@@ -644,8 +645,9 @@ export default function CheckoutPage() {
         "/checkout"
       );
 
-      window.location.href =
-        "/profile?account_required=1";
+      router.replace(
+        "/profile?account_required=1"
+      );
 
       return;
     }
@@ -668,8 +670,7 @@ export default function CheckoutPage() {
         "/checkout"
       );
 
-      window.location.href =
-        "/login";
+      router.replace("/login");
 
       return;
     }
@@ -690,8 +691,7 @@ export default function CheckoutPage() {
         "/checkout"
       );
 
-      window.location.href =
-        "/login";
+      router.replace("/login");
 
       return;
     }
@@ -757,8 +757,7 @@ export default function CheckoutPage() {
         })
       );
 
-      window.location.href =
-        "/payment";
+      router.push("/payment");
     } catch (error) {
       console.error(
         "Checkout error:",
@@ -966,8 +965,9 @@ export default function CheckoutPage() {
                     );
 
                   if (!savedUser) {
-                    window.location.href =
-                      "/login";
+                    router.replace(
+                      "/login"
+                    );
 
                     return;
                   }

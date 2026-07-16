@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -98,12 +99,12 @@ export default function OrdersSearchClient() {
               {lang === "ar" ? "يرجى تسجيل الدخول أولاً" : "Please sign in first"}
             </h2>
 
-            <a
+            <Link
               href="/login"
               className="mt-4 inline-block rounded-2xl bg-green-600 px-6 py-3 font-bold text-white"
             >
               {lang === "ar" ? "تسجيل الدخول" : "Sign In"}
-            </a>
+            </Link>
           </div>
         )}
 
@@ -115,7 +116,7 @@ export default function OrdersSearchClient() {
 
         <div className="mt-8 space-y-4">
           {orders.map((order) => (
-            <a
+            <Link
               key={order.id}
               href={`/orders/${order.id}`}
               className="block rounded-3xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
@@ -161,7 +162,7 @@ export default function OrdersSearchClient() {
                   ? "اضغط لعرض تفاصيل الطلب"
                   : "Click to view order details"}
               </p>
-            </a>
+            </Link>
           ))}
 
           {user && !loading && orders.length === 0 && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -119,19 +120,19 @@ export default function AdminDeliveryCompaniesPage() {
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex gap-2">
-          <a
+          <Link
             href="/admin"
             className="hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:inline-flex"
           >
             ← Desktop Dashboard
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin-mobile"
             className="inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:hidden"
           >
             ← Dashboard
-          </a>
+          </Link>
         </div>
 
         <section className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100">

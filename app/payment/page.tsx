@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import type {
   ChangeEvent,
@@ -85,6 +86,7 @@ type BanCheckResult = {
 export default function PaymentPage() {
   const { lang } =
     useLanguage();
+  const router = useRouter();
 
   const isArabic =
     lang === "ar";
@@ -162,8 +164,9 @@ export default function PaymentPage() {
         "/payment"
       );
 
-      window.location.href =
-        "/profile?account_required=1";
+      router.replace(
+        "/profile?account_required=1"
+      );
 
       return;
     }
@@ -174,8 +177,7 @@ export default function PaymentPage() {
       );
 
     if (!savedCheckout) {
-      window.location.href =
-        "/checkout";
+      router.replace("/checkout");
 
       return;
     }
@@ -205,8 +207,7 @@ export default function PaymentPage() {
         "checkout"
       );
 
-      window.location.href =
-        "/checkout";
+      router.replace("/checkout");
 
       return;
     }
@@ -625,8 +626,9 @@ export default function PaymentPage() {
         "/payment"
       );
 
-      window.location.href =
-        "/profile?account_required=1";
+      router.replace(
+        "/profile?account_required=1"
+      );
 
       return;
     }
@@ -648,8 +650,7 @@ export default function PaymentPage() {
         "/payment"
       );
 
-      window.location.href =
-        "/login";
+      router.replace("/login");
 
       return;
     }
@@ -670,8 +671,7 @@ export default function PaymentPage() {
         "/payment"
       );
 
-      window.location.href =
-        "/login";
+      router.replace("/login");
 
       return;
     }
@@ -721,8 +721,7 @@ export default function PaymentPage() {
           : "This account cannot place new orders at the moment. Please contact us for assistance."
       );
 
-      window.location.href =
-        "/checkout";
+      router.replace("/checkout");
 
       return;
     }
@@ -739,8 +738,7 @@ export default function PaymentPage() {
           : "Checkout information is missing. Please enter it again."
       );
 
-      window.location.href =
-        "/checkout";
+      router.replace("/checkout");
 
       return;
     }
@@ -763,8 +761,7 @@ export default function PaymentPage() {
           : "Checkout information could not be read. Please enter it again."
       );
 
-      window.location.href =
-        "/checkout";
+      router.replace("/checkout");
 
       return;
     }
@@ -790,8 +787,7 @@ export default function PaymentPage() {
           : "Checkout information is incomplete."
       );
 
-      window.location.href =
-        "/checkout";
+      router.replace("/checkout");
 
       return;
     }
@@ -806,8 +802,7 @@ export default function PaymentPage() {
           : "Your cart is empty."
       );
 
-      window.location.href =
-        "/products";
+      router.replace("/products");
 
       return;
     }
@@ -1077,8 +1072,9 @@ export default function PaymentPage() {
         "checkout"
       );
 
-      window.location.href =
-        `/orders/${order.id}`;
+      router.replace(
+        `/orders/${order.id}`
+      );
     } catch (
       error: unknown
     ) {

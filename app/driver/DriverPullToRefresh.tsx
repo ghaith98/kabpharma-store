@@ -25,7 +25,9 @@ export default function DriverPullToRefresh() {
 
     function onTouchEnd() {
       if (pulling) {
-        window.location.reload();
+        window.dispatchEvent(
+          new Event("driverRefreshRequested")
+        );
       }
 
       setPulling(false);
@@ -48,7 +50,7 @@ export default function DriverPullToRefresh() {
 
   return (
     <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm font-bold text-white shadow">
-      Refreshing...
+      Refreshing…
     </div>
   );
 }

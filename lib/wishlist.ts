@@ -53,8 +53,7 @@ export function toggleWishlist(item: WishlistItem) {
   const key = getWishlistKey();
 
   if (!key) {
-    window.location.href = "/login";
-    return;
+    return false;
   }
 
   const wishlist = getWishlist();
@@ -68,4 +67,5 @@ export function toggleWishlist(item: WishlistItem) {
   saveWishlist(updated);
 
   window.dispatchEvent(new Event("wishlistUpdated"));
+  return true;
 }

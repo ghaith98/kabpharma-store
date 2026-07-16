@@ -9,6 +9,7 @@ import {
   FaHeart,
   FaRegHeart,
 } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 import {
   isInWishlist,
@@ -27,6 +28,7 @@ export default function WishlistButton({
   product: WishlistItem;
 }) {
   const { lang } = useLanguage();
+  const router = useRouter();
   const isArabic = lang === "ar";
 
   const [saved, setSaved] =
@@ -70,17 +72,21 @@ export default function WishlistButton({
     event.preventDefault();
     event.stopPropagation();
 
-    toggleWishlist(product);
+    const updated = toggleWishlist(product);
+
+    if (!updated) {
+      localStorage.setItem(
+        "redirect_after_login",
+        `${window.location.pathname}${window.location.search}`
+      );
+      router.push("/login");
+      return;
+    }
 
     setSaved(
       isInWishlist(product.id)
     );
 
-    window.dispatchEvent(
-      new Event(
-        "wishlistUpdated"
-      )
-    );
   }
 
   const label = saved

@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   FiBox,
@@ -501,7 +502,7 @@ export default function AdminDashboardPage() {
     <main className="min-h-[calc(100vh-74px)] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       {/* Live notification */}
       {notification && (
-        <a
+        <Link
           href="/admin/payment-proofs"
           className="fixed right-5 top-20 z-[100] w-[calc(100%-2.5rem)] max-w-sm rounded-2xl border border-yellow-200 bg-white p-5 shadow-2xl transition hover:-translate-y-0.5 lg:top-24"
         >
@@ -524,7 +525,7 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           </div>
-        </a>
+        </Link>
       )}
 
       <div className="mx-auto max-w-[1500px]">
@@ -592,7 +593,7 @@ export default function AdminDashboardPage() {
         <OnlineUsersCard />
 
         {/* Payment proof notification */}
-        <a
+        <Link
           href="/admin/payment-proofs"
           className={`mt-6 flex flex-col justify-between gap-4 rounded-[1.5rem] border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center ${
             paymentProofCount > 0
@@ -643,7 +644,7 @@ export default function AdminDashboardPage() {
               Review →
             </span>
           </div>
-        </a>
+        </Link>
 
         {/* Statistics */}
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
@@ -687,12 +688,12 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
 
-              <a
+              <Link
                 href="/admin/orders"
                 className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-extrabold text-gray-700 transition hover:bg-green-50 hover:text-green-700"
               >
                 View all
-              </a>
+              </Link>
             </div>
 
             {recentOrders.length === 0 ? (
@@ -739,12 +740,12 @@ export default function AdminDashboardPage() {
                           className="transition hover:bg-gray-50"
                         >
                           <td className="px-6 py-4">
-                            <a
+                            <Link
                               href={`/admin/orders/${order.id}`}
                               className="font-extrabold text-green-700 hover:text-green-800"
                             >
                               #{order.id}
-                            </a>
+                            </Link>
                           </td>
 
                           <td className="px-6 py-4">
@@ -796,7 +797,7 @@ export default function AdminDashboardPage() {
                 {/* Mobile list */}
                 <div className="divide-y divide-gray-100 md:hidden">
                   {recentOrders.map((order) => (
-                    <a
+                    <Link
                       key={order.id}
                       href={`/admin/orders/${order.id}`}
                       className="block p-5 transition hover:bg-gray-50"
@@ -838,7 +839,7 @@ export default function AdminDashboardPage() {
                           </span>
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </>
@@ -860,7 +861,7 @@ export default function AdminDashboardPage() {
                 const Icon = action.icon;
 
                 return (
-                  <a
+                  <Link
                     key={action.href}
                     href={action.href}
                     className={`flex items-center gap-4 rounded-2xl p-4 ring-1 transition hover:-translate-y-0.5 hover:shadow-sm ${action.classes}`}
@@ -878,7 +879,7 @@ export default function AdminDashboardPage() {
                         {action.description}
                       </p>
                     </div>
-                  </a>
+                  </Link>
                 );
               })}
             </div>

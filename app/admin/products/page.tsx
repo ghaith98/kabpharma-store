@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -779,19 +780,19 @@ export default function AdminProductsPage() {
       <div className="mx-auto max-w-6xl">
         <section className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100">
           <div className="mb-6 flex gap-2">
-            <a
+            <Link
               href="/admin"
               className="hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:inline-flex"
             >
               ← Desktop Dashboard
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin-mobile"
               className="inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:hidden"
             >
               ← Dashboard
-            </a>
+            </Link>
           </div>
 
           <h1 className="mt-5 text-4xl font-extrabold text-gray-900">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -334,26 +335,26 @@ export default function AdminOrdersPage() {
         </h1>
 
         <div className="flex flex-wrap gap-2">
-          <a
+          <Link
             href="/admin/payment-proofs"
             className="rounded-xl bg-yellow-100 px-4 py-2 font-semibold text-yellow-800 transition hover:bg-yellow-200"
           >
             Payment Proof Inbox
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin"
             className="hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:inline-flex"
           >
             ← Desktop Dashboard
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/admin-mobile"
             className="inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 lg:hidden"
           >
             ← Dashboard
-          </a>
+          </Link>
         </div>
       </div>
 

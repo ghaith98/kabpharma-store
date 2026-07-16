@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function DriverLoginPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -38,7 +40,7 @@ export default function DriverLoginPage() {
     localStorage.setItem("driver_name", data.name);
     localStorage.setItem("driver_id", data.id);
 
-    window.location.href = "/driver";
+    router.replace("/driver");
   }
 
   return (

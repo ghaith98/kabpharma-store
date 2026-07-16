@@ -65,19 +65,34 @@ export default function DriverMyOrdersPage() {
       return;
     }
 
-    setDriverName(savedName);
-    loadMyOrders(savedName);
+    const authenticatedDriverName = savedName;
+
+    setDriverName(authenticatedDriverName);
+    loadMyOrders(authenticatedDriverName);
+
+    function refreshOrders() {
+      loadMyOrders(authenticatedDriverName);
+    }
+
+    window.addEventListener(
+      "driverRefreshRequested",
+      refreshOrders
+    );
 
     const channel = supabase
       .channel("my-orders-driver-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
-        () => loadMyOrders(savedName)
+        () => loadMyOrders(authenticatedDriverName)
       )
       .subscribe();
 
     return () => {
+      window.removeEventListener(
+        "driverRefreshRequested",
+        refreshOrders
+      );
       supabase.removeChannel(channel);
     };
   }, [router]);

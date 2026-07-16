@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import CancelOrderClient from "../CancelOrderClient";
 import { useLanguage } from "../../../context/LanguageContext";
 
@@ -31,12 +32,12 @@ export default function OrderDetailsLanguageClient({
               : "Please check the order link and try again."}
           </p>
 
-          <a
+          <Link
             href="/products"
             className="mt-6 inline-block rounded-2xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700"
           >
             {lang === "ar" ? "العودة للمنتجات" : "Back to Products"}
-          </a>
+          </Link>
         </div>
       </main>
     );
@@ -252,19 +253,19 @@ export default function OrderDetailsLanguageClient({
           )}
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <a
+            <Link
               href="/products"
               className="rounded-2xl bg-green-600 px-5 py-3 text-center font-bold text-white transition hover:bg-green-700"
             >
               {lang === "ar" ? "العودة للمنتجات" : "Back to Products"}
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/"
               className="rounded-2xl border border-gray-300 px-5 py-3 text-center font-bold text-gray-700 transition hover:bg-gray-50"
             >
               {lang === "ar" ? "الصفحة الرئيسية" : "Home Page"}
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 export default function PaymentSettingsPage() {
@@ -100,20 +101,20 @@ export default function PaymentSettingsPage() {
         <section className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100 md:p-8">
           <div className="mb-6 flex gap-2">
   {/* Desktop */}
-  <a
+  <Link
     href="/admin"
     className="hidden lg:inline-flex rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
   >
     ← Desktop Dashboard
-  </a>
+  </Link>
 
   {/* Mobile */}
-  <a
+  <Link
     href="/admin-mobile"
     className="inline-flex lg:hidden rounded-xl border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
   >
     ← Dashboard
-  </a>
+  </Link>
 </div>
 
           <div className="mt-6">

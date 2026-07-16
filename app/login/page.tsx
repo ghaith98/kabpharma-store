@@ -2,11 +2,13 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function LoginPage() {
   const { lang } = useLanguage();
+  const router = useRouter();
 
   const [phone, setPhone] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
@@ -194,18 +196,23 @@ export default function LoginPage() {
         "redirect_after_login"
       );
 
-    if (redirectAfterLogin) {
+    if (
+      redirectAfterLogin?.startsWith("/") &&
+      !redirectAfterLogin.startsWith("//")
+    ) {
       localStorage.removeItem(
         "redirect_after_login"
       );
 
-      window.location.href =
-        redirectAfterLogin;
+      router.replace(redirectAfterLogin);
 
       return;
     }
 
-        window.location.href = "/profile";
+    localStorage.removeItem(
+      "redirect_after_login"
+    );
+    router.replace("/profile");
   } catch {
     setErrorMessage(
       t(

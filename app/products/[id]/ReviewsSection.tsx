@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   FiCheck,
@@ -44,6 +45,7 @@ export default function ReviewsSection({
   productId: number;
   initialReviews: Review[];
 }) {
+  const router = useRouter();
   const { lang } = useLanguage();
   const isArabic = lang === "ar";
 
@@ -275,7 +277,7 @@ export default function ReviewsSection({
         `${window.location.pathname}${window.location.search}`
       );
 
-      window.location.href = "/login";
+      router.push("/login");
       return;
     }
 
@@ -340,7 +342,7 @@ export default function ReviewsSection({
           `${window.location.pathname}${window.location.search}`
         );
 
-        window.location.href = "/login";
+        router.push("/login");
         return;
       }
 

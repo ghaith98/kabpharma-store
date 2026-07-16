@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useState,
@@ -50,6 +51,7 @@ type CartItemWithVariant =
 export default function CartPage() {
   const { lang } =
     useLanguage();
+  const router = useRouter();
 
   const isArabic =
     lang === "ar";
@@ -339,8 +341,7 @@ export default function CartPage() {
       "/checkout"
     );
 
-    window.location.href =
-      path;
+    router.push(path);
   }
 
   return (

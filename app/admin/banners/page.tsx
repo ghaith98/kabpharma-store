@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -1054,19 +1055,19 @@ export default function AdminBannersPage() {
       <div className="mx-auto max-w-6xl">
         <section className="mb-8 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
           <div className="mb-6 flex gap-2">
-            <a
+            <Link
               href="/admin"
               className="hidden rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-green-50 hover:text-green-700 lg:inline-flex"
             >
               ← Desktop Dashboard
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/admin-mobile"
               className="inline-flex rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-green-50 hover:text-green-700 lg:hidden"
             >
               ← Dashboard
-            </a>
+            </Link>
           </div>
 
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#0a583b]">

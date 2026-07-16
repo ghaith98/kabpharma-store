@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function CancelOrderClient({ orderId }: { orderId: number }) {
   const { lang } = useLanguage();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [cancelled, setCancelled] = useState(false);
@@ -37,7 +39,7 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
     setShowConfirm(false);
 
     setTimeout(() => {
-      window.location.reload();
+      router.refresh();
     }, 900);
   }
 

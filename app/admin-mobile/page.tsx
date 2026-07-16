@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -336,7 +337,7 @@ export default function AdminMobilePage() {
       className="min-h-screen bg-gradient-to-b from-gray-50 to-green-50 px-4 py-6"
     >
       {notification && (
-        <a
+        <Link
           href="/admin/payment-proofs"
           className="fixed left-4 right-4 top-4 z-[100] rounded-2xl border border-yellow-200 bg-white p-4 shadow-2xl"
         >
@@ -359,7 +360,7 @@ export default function AdminMobilePage() {
               </p>
             </div>
           </div>
-        </a>
+        </Link>
       )}
 
       <div className="mx-auto max-w-md">
@@ -386,7 +387,7 @@ export default function AdminMobilePage() {
         </section>
 
         {/* Payment proof inbox */}
-        <a
+        <Link
           href="/admin/payment-proofs"
           className={`relative mb-5 flex items-center justify-between rounded-[2rem] border p-5 shadow-sm transition active:scale-[0.98] ${
             paymentProofs > 0
@@ -427,7 +428,7 @@ export default function AdminMobilePage() {
           >
             {paymentProofs}
           </span>
-        </a>
+        </Link>
 
         {/* Stats */}
         <section className="mb-5 grid grid-cols-2 gap-3">
@@ -459,7 +460,7 @@ export default function AdminMobilePage() {
 
           <div className="grid grid-cols-2 gap-3">
             {links.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className={`relative rounded-3xl border p-4 text-center transition active:scale-95 ${
@@ -487,7 +488,7 @@ export default function AdminMobilePage() {
                       {paymentProofs}
                     </span>
                   )}
-              </a>
+              </Link>
             ))}
           </div>
 

@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -394,12 +395,12 @@ export default function AdminPaymentProofsPage() {
                   : "Refresh"}
               </button>
 
-              <a
+              <Link
                 href="/admin"
                 className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
               >
                 Dashboard
-              </a>
+              </Link>
             </div>
           </div>
         </section>

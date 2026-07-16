@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import ProductExtraClient from "./ProductExtraClient";
 import BackButton from "./BackButton";
@@ -233,20 +234,7 @@ export default async function ProductPage({
   }
 
   if (!product) {
-    return (
-      <main className="min-h-screen bg-gray-50 px-6 py-16 text-center">
-        <h1 className="text-2xl font-extrabold text-gray-900">
-          Product not found
-        </h1>
-
-        <a
-          href="/products"
-          className="mt-5 inline-flex rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
-        >
-          Back to Products
-        </a>
-      </main>
-    );
+    notFound();
   }
 
   const [
