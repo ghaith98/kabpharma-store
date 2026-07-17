@@ -411,7 +411,7 @@ try {
                 {loading ? (
                   <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /><span>{t("Please wait...", "يرجى الانتظار...")}</span></>
                 ) : (
-                  <><span>{otpSent ? t("Create account", "إنشاء الحساب") : t("Continue with WhatsApp", "المتابعة عبر واتساب")}</span><ArrowIcon size={16} /></>
+                  <><span>{otpSent ? t("Create account", "إنشاء الحساب") : t("Sign up", "إنشاء الحساب")}</span><ArrowIcon size={16} /></>
                 )}
               </button>
             </form>

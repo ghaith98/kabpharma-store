@@ -410,7 +410,7 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                <span>{otpSent ? t("Verify & Sign In", "تأكيد وتسجيل الدخول") : t("Continue with WhatsApp", "المتابعة عبر واتساب")}</span>
+                <span>{otpSent ? t("Verify & Sign In", "تأكيد وتسجيل الدخول") : t("Login", "تسجيل الدخول")}</span>
                 <ArrowIcon size={16} />
               </>
             )}

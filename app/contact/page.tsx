@@ -117,9 +117,6 @@ export default function ContactPage() {
       whatsappText:
         "Start a direct conversation with our customer care team for help with products or orders.",
 
-      whatsappButton:
-        "Start conversation",
-
       whatsappSupport:
         "Product and order support",
 
@@ -156,8 +153,6 @@ export default function ContactPage() {
       productHelpText:
         "Tell us the product name and the information or help you need.",
 
-      note:
-        "Your privacy matters. Never send passwords or verification codes through messages.",
     },
   }[lang as "ar" | "en"];
 
@@ -537,31 +532,6 @@ I need help regarding:
               </div>
             </article>
           </div>
-        </section>
-
-        {/* Privacy note */}
-        <section className="flex flex-col gap-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:py-12">
-          <div className="flex items-start gap-3">
-            <Headphones
-              size={18}
-              className="mt-0.5 shrink-0 text-[#0a583b]"
-            />
-
-            <p className="max-w-2xl text-xs leading-6 text-[#7a857e]">
-              {text.note}
-            </p>
-          </div>
-
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[#0a583b] px-5 text-xs font-extrabold text-[#0a583b] transition hover:bg-[#0a583b] hover:text-white"
-          >
-            <FaWhatsapp size={15} />
-
-            {text.whatsappButton}
-          </a>
         </section>
       </div>
     </main>

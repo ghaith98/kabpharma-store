@@ -761,15 +761,6 @@ export default function AboutPage() {
                 }`}
               />
             </Link>
-
-            <Link
-              href="/contact"
-              className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-full border border-[#cbd3cd] bg-white px-6 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
-            >
-              <Headphones size={16} />
-
-              {t.contactButton}
-            </Link>
           </div>
         </div>
       </section>
