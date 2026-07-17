@@ -3,6 +3,14 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  MessageCircle,
+  ShieldCheck,
+  UserPlus,
+} from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function SignupPage() {
@@ -45,6 +53,29 @@ export default function SignupPage() {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
+  }
+
+  function handleOtpPaste(
+    e: React.ClipboardEvent<HTMLInputElement>
+  ) {
+    const pastedCode = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+
+    if (!pastedCode) return;
+
+    e.preventDefault();
+    setOtpDigits(
+      Array.from(
+        { length: 6 },
+        (_, index) => pastedCode[index] || ""
+      )
+    );
+
+    inputRefs.current[
+      Math.min(pastedCode.length, 6) - 1
+    ]?.focus();
   }
 
   async function sendOtp() {
@@ -239,106 +270,165 @@ try {
     await createAccountAfterVerify();
   }
 
+  const isArabic = lang === "ar";
+  const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
+
   return (
     <main
-      dir="ltr"
-      className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-12 pb-28 md:pb-12"
+      dir={isArabic ? "rtl" : "ltr"}
+      className="min-h-screen bg-[#f5f6f3] px-5 py-10 pb-28 text-[#142019] sm:px-6 md:pb-12 lg:py-16"
     >
-      <div className="mx-auto max-w-md rounded-[2rem] bg-white p-8 shadow-sm ring-1 ring-gray-100">
-        <h1 className="text-3xl font-extrabold text-gray-900">
-          {t("Create Account", "إنشاء حساب")}
-        </h1>
-
-        <p className="mt-2 text-gray-600">
-          {t(
-            "Sign up using your Syrian mobile number.",
-            "سجّل باستخدام رقم الموبايل السوري."
-          )}
-        </p>
-
-        <form onSubmit={handleSignup} className="mt-8 space-y-4">
-          <input
-            type="text"
-            placeholder={t("Full name", "الاسم الكامل")}
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            disabled={otpSent}
-            className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-black outline-none focus:border-green-600 disabled:bg-gray-100"
-          />
-
-          <div className="flex overflow-hidden rounded-2xl border border-gray-200 bg-white focus-within:border-green-600">
-            <div className="flex items-center gap-2 border-r border-gray-200 bg-gray-50 px-4 font-bold text-gray-800">
-              <span>🇸🇾</span>
-              <span>+963</span>
-            </div>
-
-            <input
-              type="tel"
-              placeholder="9xxxxxxxx"
-              value={phone}
-              disabled={otpSent}
-              onChange={(e) => {
-                setPhone(e.target.value.replace(/\D/g, ""));
-                setErrorMessage("");
-              }}
-              maxLength={9}
-              className="min-w-0 flex-1 px-4 py-3 text-black outline-none disabled:bg-gray-100"
-            />
+      <div className="mx-auto grid max-w-[1120px] overflow-hidden border border-[#dfe4e0] bg-white lg:min-h-[650px] lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="relative hidden overflow-hidden bg-[#0a583b] p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
+          <div className="absolute -right-28 -top-28 h-80 w-80 rounded-full border border-white/10" />
+          <div className="relative">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-white/60">KAB Pharma</p>
+            <h2 className={isArabic ? "mt-8 text-[45px] font-extrabold leading-[1.25] [font-family:Tahoma,Arial,sans-serif]" : "mt-8 text-[58px] font-extrabold leading-[0.98] tracking-[-0.055em]"}>
+              {t("Begin your personal care journey.", "ابدأ رحلة عنايتك الشخصية.")}
+            </h2>
           </div>
 
-          {otpSent && (
-            <div className="rounded-2xl bg-green-50 p-4 text-center">
-              <p className="mb-4 text-sm font-bold text-green-800">
-                {t(
-                  `Enter the 6-digit code sent to WhatsApp ${fullPhone}`,
-                  `أدخل رمز التحقق المرسل إلى واتساب ${fullPhone}`
-                )}
-              </p>
-
-              <div className="flex justify-center gap-2" dir="ltr">
-                {otpDigits.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="h-12 w-11 rounded-xl border border-gray-300 text-center text-xl font-extrabold text-gray-900 outline-none focus:border-green-600"
-                  />
-                ))}
+          <div className="relative space-y-4 border-t border-white/20 pt-7">
+            {[
+              t("Track every order", "متابعة جميع الطلبات"),
+              t("Save your favourites", "حفظ المنتجات المفضلة"),
+              t("Secure password-free access", "دخول آمن بدون كلمة مرور"),
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <Check size={15} />
+                <span className="text-sm font-bold text-white/80">{item}</span>
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="flex items-center p-6 sm:p-10 lg:p-14 xl:p-20">
+          <div className="w-full">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e8f1eb] text-[#0a583b]">
+              {otpSent ? <MessageCircle size={19} /> : <UserPlus size={19} />}
             </div>
-          )}
 
-          {errorMessage && (
-            <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-              {errorMessage}
+            <p className={isArabic ? "mt-7 text-[11px] font-extrabold uppercase text-[#0a583b]" : "mt-7 text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#0a583b]"}>
+              {otpSent ? t("Verification", "التحقق") : t("Create your account", "إنشاء حسابك")}
             </p>
-          )}
 
-          <button
-            disabled={loading}
-            className="w-full rounded-2xl bg-green-600 py-3 font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
-          >
-            {loading
-              ? t("Please wait...", "يرجى الانتظار...")
-              : otpSent
-                ? t("Create Account", "إنشاء الحساب")
-                : t("Create Account", "إنشاء الحساب")}
-          </button>
-        </form>
+            <h1 className={isArabic ? "mt-3 text-[34px] font-extrabold leading-[1.25] [font-family:Tahoma,Arial,sans-serif] sm:text-[40px]" : "mt-3 text-[40px] font-extrabold leading-[1.04] tracking-[-0.045em] sm:text-[46px]"}>
+              {otpSent ? t("Enter your code.", "أدخل رمز التحقق.") : t("Join KAB Pharma.", "انضم إلى KAB Pharma.")}
+            </h1>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          {t("Already have an account?", "لديك حساب مسبقاً؟")}{" "}
-          <Link href="/login" className="font-bold text-green-700">
-            {t("Sign in", "تسجيل الدخول")}
-          </Link>
-        </p>
+            <p className="mt-3 max-w-md text-sm leading-7 text-[#647168]">
+              {otpSent
+                ? t("We sent a one-time verification code to your WhatsApp number.", "أرسلنا رمز تحقق لمرة واحدة إلى رقم واتساب الخاص بك.")
+                : t("Create your account using your name and Syrian mobile number.", "أنشئ حسابك باستخدام اسمك ورقم الموبايل السوري.")}
+            </p>
+
+            <form onSubmit={handleSignup} className="mt-8">
+              {!otpSent && (
+                <div className="space-y-5">
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Full name", "الاسم الكامل")}</span>
+                    <input
+                      type="text"
+                      autoComplete="name"
+                      value={fullName}
+                      onChange={(e) => { setFullName(e.target.value); setErrorMessage(""); }}
+                      className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                      placeholder={t("Enter your full name", "أدخل اسمك الكامل")}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Mobile number", "رقم الموبايل")}</span>
+                    <div dir="ltr" className="flex min-h-[56px] overflow-hidden rounded-2xl border border-[#cfd6d1] bg-white transition focus-within:border-[#0a583b] focus-within:ring-4 focus-within:ring-[#e7f0ea]">
+                      <div className="flex items-center gap-2 border-r border-[#dfe4e0] bg-[#f6f7f5] px-4 text-sm font-extrabold text-[#26352d]">
+                        <span>🇸🇾</span><span>+963</span>
+                      </div>
+                      <input
+                        type="tel"
+                        placeholder="9xxxxxxxx"
+                        value={phone}
+                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setErrorMessage(""); }}
+                        maxLength={9}
+                        inputMode="numeric"
+                        autoComplete="tel-national"
+                        className="min-w-0 flex-1 bg-transparent px-4 text-base font-bold text-[#142019] outline-none placeholder:text-[#a2aaa4]"
+                      />
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {otpSent && (
+                <div>
+                  <div className="mb-5 flex items-center justify-between gap-4 border-y border-[#dfe4e0] py-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-[#26352d]">{fullName}</p>
+                      <p dir="ltr" className="mt-1 text-start text-xs font-bold text-[#7a857e]">+{fullPhone}</p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => { setOtpSent(false); setOtpDigits(["", "", "", "", "", ""]); setErrorMessage(""); }}
+                      className="shrink-0 text-xs font-extrabold text-[#0a583b] disabled:opacity-50"
+                    >
+                      {t("Edit details", "تعديل البيانات")}
+                    </button>
+                  </div>
+
+                  <p className="mb-4 text-sm font-bold leading-6 text-[#647168]">
+                    {t("Enter the 6-digit code sent to WhatsApp.", "أدخل رمز التحقق المكوّن من 6 أرقام والمرسل إلى واتساب.")}
+                  </p>
+                  <div className="grid grid-cols-6 gap-2 sm:gap-3" dir="ltr">
+                    {otpDigits.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => { inputRefs.current[index] = el; }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        onPaste={handleOtpPaste}
+                        autoComplete={index === 0 ? "one-time-code" : "off"}
+                        aria-label={t(`Verification digit ${index + 1}`, `رقم التحقق ${index + 1}`)}
+                        className="aspect-square min-w-0 rounded-xl border border-[#cfd6d1] text-center text-xl font-extrabold outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {errorMessage && (
+                <p role="alert" className="mt-5 border-s-2 border-red-500 bg-red-50 px-4 py-3 text-sm font-bold leading-6 text-red-700">{errorMessage}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-7 flex min-h-[54px] w-full items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#aeb8b1]"
+              >
+                {loading ? (
+                  <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /><span>{t("Please wait...", "يرجى الانتظار...")}</span></>
+                ) : (
+                  <><span>{otpSent ? t("Create account", "إنشاء الحساب") : t("Continue with WhatsApp", "المتابعة عبر واتساب")}</span><ArrowIcon size={16} /></>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-7 flex items-start gap-3 border-t border-[#dfe4e0] pt-6">
+              <ShieldCheck size={17} className="mt-0.5 shrink-0 text-[#0a583b]" />
+              <p className="text-xs leading-6 text-[#7a857e]">
+                {t("We use your number only to verify and secure your account.", "نستخدم رقمك فقط للتحقق من حسابك وحمايته.")}
+              </p>
+            </div>
+
+            <p className="mt-7 text-center text-sm text-[#647168] sm:text-start">
+              {t("Already have an account?", "لديك حساب مسبقاً؟")}{" "}
+              <Link href="/login" className="font-extrabold text-[#0a583b] hover:underline">{t("Sign in", "تسجيل الدخول")}</Link>
+            </p>
+          </div>
+        </section>
       </div>
     </main>
   );
