@@ -1,370 +1,276 @@
 "use client";
 
-import { useMemo } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  Box,
-  CircleAlert,
+  Check,
   Headphones,
-  MessageCircle,
-  ReceiptText,
-  RotateCcw,
+  Package,
+  RefreshCcw,
   ShieldCheck,
   Truck,
+  WalletCards,
 } from "lucide-react";
-
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function RefundPolicyPage() {
   const { lang } = useLanguage();
-  const isArabic = lang === "ar";
-  const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
 
-  const t = {
+  const isArabic = lang === "ar";
+  const ContinueArrow = isArabic ? ArrowLeft : ArrowRight;
+
+  const content = {
     en: {
       eyebrow: "Returns & refunds",
-      title: "A clear and considered return policy.",
+      title: "Refund Policy",
       introduction:
-        "We want every KAB Pharma order to arrive exactly as expected. Here you’ll find the conditions, timing, and support available for returns, replacements, and refunds.",
-      overview: "Policy overview",
-      returnWindow: "Return window",
-      returnWindowValue: "Within 3 days",
-      issueWindow: "Order issues",
-      issueWindowValue: "Report within 48 hours",
-      eligibility: "Product condition",
-      eligibilityValue: "Unopened and unused",
-      returnTitle: "Return conditions",
-      returnText:
-        "A return may be requested within 3 days of delivery, provided that the product is unopened, unused, in its original packaging, and in the same condition in which it was received.",
-      hygieneText:
-        "For health and hygiene reasons, opened, used, or unsealed personal care products cannot be returned unless they are damaged, defective, or incorrectly supplied.",
-      changeMindText:
-        "Returns are not accepted solely because the customer changed their mind after receiving the order.",
-      proofText:
-        "A valid order number or proof of purchase may be required to process the request.",
-      issueTitle: "Missing, damaged, or incorrect items",
-      issueText:
-        "If an item is missing, damaged, defective, or different from the product ordered, please contact us within 48 hours of delivery.",
-      replacementText:
-        "After reviewing the request, KAB Pharma will arrange for the missing or replacement product to be sent at no additional delivery cost to the customer.",
-      shippingTitle: "Shipping and delivery costs",
-      deliveryText:
-        "Delivery fees are calculated according to the customer’s location and are communicated during the ordering process.",
-      customerShippingText:
-        "If an eligible, non-defective product is approved for return, the customer is responsible for the return shipping costs.",
-      companyShippingText:
-        "If the product is damaged, defective, missing, or incorrectly supplied, KAB Pharma will cover the applicable return or replacement shipping costs.",
-      originalFeesText:
-        "Original delivery fees are non-refundable unless the return results from an error by KAB Pharma or a defective product.",
-      refundTitle: "Refund processing",
-      refundText:
-        "Refunds are processed after the returned product has been received, inspected, and confirmed to meet the return conditions.",
-      refundMethodText:
-        "The refund method and expected processing time will be communicated to the customer after the request has been approved.",
-      importantTitle: "Please note",
+        "Please review the return and refund conditions before submitting a request.",
+
+      sections: [
+        {
+          icon: Package,
+          title: "Return conditions",
+          points: [
+            "A return may be requested within 3 days of delivery.",
+            "The product must be unopened, unused, and kept in its original packaging and condition.",
+            "For hygiene reasons, opened or unsealed personal care products cannot be returned unless they are damaged, defective, or incorrectly supplied.",
+            "A valid order number or proof of purchase may be required.",
+          ],
+        },
+        {
+          icon: AlertTriangle,
+          title: "Missing, damaged, or incorrect items",
+          points: [
+            "Please contact us within 48 hours if an item is missing, damaged, defective, or different from the product ordered.",
+            "After reviewing the request, KAB Pharma may arrange a replacement without additional delivery charges.",
+          ],
+        },
+        {
+          icon: Truck,
+          title: "Delivery and return costs",
+          points: [
+            "Delivery fees are calculated according to the customer’s location and are displayed during checkout.",
+            "For an approved return of a non-defective product, the customer is responsible for the return delivery cost.",
+            "KAB Pharma covers return or replacement delivery costs when the product is damaged, defective, missing, or incorrectly supplied.",
+            "Original delivery fees are non-refundable unless the return resulted from an error by KAB Pharma.",
+          ],
+        },
+        {
+          icon: WalletCards,
+          title: "Refund processing",
+          points: [
+            "Refunds are processed after the returned product has been received and inspected.",
+            "The refund method and expected processing time will be communicated after the request is approved.",
+          ],
+        },
+      ],
+
+      importantTitle: "Important information",
       importantText:
-        "Submitting a request does not automatically guarantee approval. Every request is reviewed according to the conditions stated on this page.",
-      helpEyebrow: "Customer care",
+        "Submitting a return or refund request does not guarantee approval. Every request is reviewed according to the conditions described on this page.",
+
       helpTitle: "Need help with an order?",
       helpText:
-        "Contact our customer care team and include your name, order number, and a clear description of the issue.",
-      whatsappButton: "Contact us on WhatsApp",
-      contactButton: "Other contact methods",
-      whatsappMessage:
-        "Hello KAB Pharma team 👋\nI would like to submit a return or refund request.\n\nOrder number:\nIssue:",
+        "Contact our customer service team and include your name, order number, and a description of the issue.",
+
+      contactButton: "Contact customer service",
+      ordersButton: "View my orders",
     },
+
     ar: {
       eyebrow: "الاسترجاع واسترداد المبلغ",
-      title: "سياسة استرجاع واضحة ومدروسة.",
+      title: "سياسة الاسترجاع",
       introduction:
-        "نحرص على أن يصلك كل طلب من KAB Pharma كما تتوقع. ستجد هنا شروط ومواعيد الاسترجاع والاستبدال واسترداد المبلغ، وكيفية الحصول على المساعدة.",
-      overview: "ملخص السياسة",
-      returnWindow: "مهلة الاسترجاع",
-      returnWindowValue: "خلال 3 أيام",
-      issueWindow: "مشكلات الطلب",
-      issueWindowValue: "الإبلاغ خلال 48 ساعة",
-      eligibility: "حالة المنتج",
-      eligibilityValue: "غير مفتوح وغير مستخدم",
-      returnTitle: "شروط الاسترجاع",
-      returnText:
-        "يمكن طلب استرجاع المنتج خلال 3 أيام من تاريخ الاستلام، بشرط أن يكون غير مفتوح، وغير مستخدم، وضمن عبوته الأصلية، وبالحالة نفسها التي تم استلامه بها.",
-      hygieneText:
-        "لأسباب تتعلق بالصحة والنظافة، لا يمكن استرجاع منتجات العناية الشخصية التي تم فتحها أو استخدامها أو إزالة ختمها، إلا إذا كانت تالفة، معيبة، أو تم إرسالها بالخطأ.",
-      changeMindText:
-        "لا يتم قبول طلبات الاسترجاع لمجرد تغيير العميل لرأيه بعد استلام الطلب.",
-      proofText:
-        "قد يُطلب رقم الطلب أو ما يثبت عملية الشراء لإتمام طلب الاسترجاع.",
-      issueTitle: "المنتجات الناقصة أو التالفة أو الخاطئة",
-      issueText:
-        "إذا كان أحد المنتجات ناقصاً من الطلب، أو وصل تالفاً أو معيباً أو مختلفاً عن المنتج المطلوب، يرجى التواصل معنا خلال 48 ساعة من تاريخ الاستلام.",
-      replacementText:
-        "بعد مراجعة الطلب، ستقوم KAB Pharma بإرسال المنتج الناقص أو البديل دون تحميل العميل أجور توصيل إضافية.",
-      shippingTitle: "تكاليف الشحن والتوصيل",
-      deliveryText:
-        "يتم احتساب رسوم التوصيل حسب موقع العميل، ويتم توضيحها أثناء إتمام الطلب.",
-      customerShippingText:
-        "إذا تمت الموافقة على استرجاع منتج غير تالف ومستوفٍ لشروط الاسترجاع، يتحمل العميل تكاليف إعادة المنتج.",
-      companyShippingText:
-        "إذا كان المنتج تالفاً أو معيباً أو ناقصاً أو تم إرساله بالخطأ، تتحمل KAB Pharma تكاليف الشحن المتعلقة بالاستبدال أو الاسترجاع.",
-      originalFeesText:
-        "رسوم التوصيل الأصلية غير قابلة للاسترداد، إلا إذا كان الاسترجاع ناتجاً عن خطأ من KAB Pharma أو وجود عيب في المنتج.",
-      refundTitle: "معالجة استرداد المبلغ",
-      refundText:
-        "تتم معالجة استرداد المبلغ بعد استلام المنتج المرتجع وفحصه والتأكد من مطابقته لشروط الاسترجاع.",
-      refundMethodText:
-        "سيتم إبلاغ العميل بطريقة استرداد المبلغ والمدة المتوقعة بعد قبول الطلب.",
-      importantTitle: "ملاحظة مهمة",
+        "يرجى مراجعة شروط الاسترجاع واسترداد المبلغ قبل تقديم أي طلب.",
+
+      sections: [
+        {
+          icon: Package,
+          title: "شروط الاسترجاع",
+          points: [
+            "يمكن طلب استرجاع المنتج خلال 3 أيام من تاريخ الاستلام.",
+            "يجب أن يكون المنتج غير مفتوح وغير مستخدم وضمن عبوته الأصلية وبالحالة نفسها التي تم استلامه بها.",
+            "لأسباب صحية، لا يمكن استرجاع منتجات العناية الشخصية المفتوحة أو المستخدمة إلا إذا كانت تالفة أو معيبة أو تم إرسالها بالخطأ.",
+            "قد يُطلب رقم الطلب أو ما يثبت عملية الشراء.",
+          ],
+        },
+        {
+          icon: AlertTriangle,
+          title: "المنتجات الناقصة أو التالفة أو الخاطئة",
+          points: [
+            "يرجى التواصل معنا خلال 48 ساعة إذا كان المنتج ناقصاً أو تالفاً أو معيباً أو مختلفاً عن المنتج المطلوب.",
+            "بعد مراجعة الطلب، يمكن لـ KAB Pharma إرسال منتج بديل دون تحميل العميل أجور توصيل إضافية.",
+          ],
+        },
+        {
+          icon: Truck,
+          title: "تكاليف التوصيل والاسترجاع",
+          points: [
+            "يتم احتساب رسوم التوصيل حسب موقع العميل وتظهر أثناء إتمام الطلب.",
+            "عند الموافقة على استرجاع منتج غير تالف، يتحمل العميل تكاليف إعادة المنتج.",
+            "تتحمل KAB Pharma تكاليف الاسترجاع أو الاستبدال إذا كان المنتج تالفاً أو معيباً أو ناقصاً أو تم إرساله بالخطأ.",
+            "رسوم التوصيل الأصلية غير قابلة للاسترداد إلا إذا كان الاسترجاع ناتجاً عن خطأ من KAB Pharma.",
+          ],
+        },
+        {
+          icon: WalletCards,
+          title: "معالجة استرداد المبلغ",
+          points: [
+            "تتم معالجة استرداد المبلغ بعد استلام المنتج المرتجع وفحصه.",
+            "سيتم إبلاغ العميل بطريقة استرداد المبلغ والمدة المتوقعة بعد قبول الطلب.",
+          ],
+        },
+      ],
+
+      importantTitle: "معلومات مهمة",
       importantText:
-        "تقديم طلب الاسترجاع لا يعني قبوله تلقائياً، حيث تتم مراجعة كل طلب وفقاً للشروط الموضحة في هذه الصفحة.",
-      helpEyebrow: "خدمة العملاء",
+        "تقديم طلب استرجاع أو استرداد مبلغ لا يعني قبوله تلقائياً. تتم مراجعة كل حالة وفقاً للشروط الموضحة في هذه الصفحة.",
+
       helpTitle: "هل تحتاج إلى مساعدة بخصوص طلبك؟",
       helpText:
         "تواصل مع فريق خدمة العملاء وأرسل اسمك ورقم الطلب مع وصف واضح للمشكلة.",
-      whatsappButton: "تواصل معنا عبر واتساب",
-      contactButton: "طرق التواصل الأخرى",
-      whatsappMessage:
-        "مرحباً فريق KAB Pharma 👋\nأرغب بتقديم طلب استرجاع أو استرداد مبلغ.\n\nرقم الطلب:\nتفاصيل المشكلة:",
-    },
-  }[lang as "en" | "ar"];
 
-  const whatsappUrl = useMemo(
-    () =>
-      `https://wa.me/963958088969?text=${encodeURIComponent(
-        t.whatsappMessage
-      )}`,
-    [t.whatsappMessage]
-  );
-
-  const overviewItems = [
-    {
-      label: t.returnWindow,
-      value: t.returnWindowValue,
-      Icon: RotateCcw,
+      contactButton: "التواصل مع خدمة العملاء",
+      ordersButton: "عرض طلباتي",
     },
-    {
-      label: t.issueWindow,
-      value: t.issueWindowValue,
-      Icon: CircleAlert,
-    },
-    {
-      label: t.eligibility,
-      value: t.eligibilityValue,
-      Icon: ShieldCheck,
-    },
-  ];
-
-  const sections = [
-    {
-      number: "01",
-      title: t.returnTitle,
-      Icon: Box,
-      paragraphs: [
-        t.returnText,
-        t.hygieneText,
-        t.changeMindText,
-        t.proofText,
-      ],
-    },
-    {
-      number: "02",
-      title: t.issueTitle,
-      Icon: CircleAlert,
-      paragraphs: [t.issueText, t.replacementText],
-    },
-    {
-      number: "03",
-      title: t.shippingTitle,
-      Icon: Truck,
-      paragraphs: [
-        t.deliveryText,
-        t.customerShippingText,
-        t.companyShippingText,
-        t.originalFeesText,
-      ],
-    },
-    {
-      number: "04",
-      title: t.refundTitle,
-      Icon: ReceiptText,
-      paragraphs: [t.refundText, t.refundMethodText],
-    },
-  ];
+  }[isArabic ? "ar" : "en"];
 
   return (
     <main
       dir={isArabic ? "rtl" : "ltr"}
-      className="min-h-screen bg-[#f7f8f6] pb-24 text-[#142019] md:pb-16"
+      className="min-h-screen bg-[#f7f8f6] px-4 py-8 pb-28 sm:px-6 sm:py-12 md:pb-16"
     >
-      {/* Editorial hero */}
-      <header className="border-b border-[#dfe4e0] bg-white px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-24">
-        <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)] lg:items-end lg:gap-20">
-          <div>
-            <div className="flex items-center gap-3 text-[#0a583b]">
-              <RotateCcw size={18} strokeWidth={1.8} />
-              <p
-                className={`text-[11px] font-extrabold uppercase ${
-                  isArabic ? "tracking-normal" : "tracking-[0.2em]"
-                }`}
-              >
-                {t.eyebrow}
-              </p>
-            </div>
-
-            <h1
-              className={`mt-6 max-w-4xl font-extrabold text-[#142019] ${
-                isArabic
-                  ? "text-[38px] leading-[1.24] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[52px] lg:text-[66px]"
-                  : "text-[44px] leading-[0.98] tracking-[-0.055em] sm:text-[62px] lg:text-[78px]"
-              }`}
-            >
-              {t.title}
-            </h1>
+      <div className="mx-auto max-w-5xl">
+        {/* Header */}
+        <header className="border-b border-[#dfe4e0] pb-8 sm:pb-10">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+            <RefreshCcw size={21} />
           </div>
 
-          <div className="lg:pb-1">
-            <p className="text-[15px] leading-8 text-[#526057] sm:text-base">
-              {t.introduction}
-            </p>
-
-            <div className="mt-7 flex items-center gap-3 border-t border-[#dfe4e0] pt-5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-                <ShieldCheck size={17} />
-              </span>
-              <p className="text-xs font-bold leading-6 text-[#647168]">
-                KAB Pharma · {t.eyebrow}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-[1320px] px-5 sm:px-6 lg:px-10">
-        {/* Quick overview */}
-        <section className="border-b border-[#dfe4e0] py-10 sm:py-12">
           <p
-            className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+            className={`mt-6 text-[11px] font-extrabold uppercase text-[#0a583b] ${
               isArabic ? "tracking-normal" : "tracking-[0.16em]"
             }`}
           >
-            {t.overview}
+            {content.eyebrow}
           </p>
 
-          <div className="mt-7 grid gap-px overflow-hidden rounded-[1.5rem] border border-[#dfe4e0] bg-[#dfe4e0] sm:grid-cols-3">
-            {overviewItems.map(({ label, value, Icon }) => (
-              <article key={label} className="bg-white p-5 sm:p-6">
-                <Icon size={19} className="text-[#0a583b]" />
-                <p className="mt-5 text-xs font-bold text-[#7a857e]">
-                  {label}
-                </p>
-                <p className="mt-1 text-sm font-extrabold text-[#142019] sm:text-base">
-                  {value}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
+          <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-[#142019] sm:text-5xl">
+            {content.title}
+          </h1>
+
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
+            {content.introduction}
+          </p>
+        </header>
 
         {/* Policy sections */}
-        <div className="divide-y divide-[#dfe4e0]">
-          {sections.map(({ number, title, Icon, paragraphs }) => (
-            <section
-              key={number}
-              className="grid gap-7 py-11 sm:py-14 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-16"
-            >
-              <div>
-                <p className="text-xs font-extrabold text-[#9aa39d]">
-                  {number}
-                </p>
-                <div className="mt-4 flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-                    <Icon size={18} strokeWidth={1.8} />
-                  </span>
-                  <h2 className="text-lg font-extrabold leading-7 text-[#142019]">
-                    {title}
-                  </h2>
+        <section className="mt-8 overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white">
+          {content.sections.map((section, sectionIndex) => {
+            const Icon = section.icon;
+
+            return (
+              <article
+                key={section.title}
+                className={`grid gap-5 p-6 sm:grid-cols-[52px_minmax(0,1fr)] sm:p-8 ${
+                  sectionIndex !== content.sections.length - 1
+                    ? "border-b border-[#e7ebe8]"
+                    : ""
+                }`}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf5f0] text-[#0a583b]">
+                  <Icon size={20} />
                 </div>
-              </div>
 
-              <div className="divide-y divide-[#e7ebe8] border-t border-[#e7ebe8] lg:border-t-0">
-                {paragraphs.map((paragraph, index) => (
-                  <div
-                    key={`${number}-${index}`}
-                    className="flex items-start gap-4 py-5 first:pt-6 lg:first:pt-0"
-                  >
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0a583b]" />
-                    <p className="text-[15px] leading-8 text-[#526057]">
-                      {paragraph}
-                    </p>
+                <div>
+                  <h2 className="text-lg font-extrabold text-[#142019] sm:text-xl">
+                    {section.title}
+                  </h2>
+
+                  <div className="mt-5 space-y-4">
+                    {section.points.map((point) => (
+                      <div key={point} className="flex items-start gap-3">
+                        <div className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                          <Check size={12} strokeWidth={3} />
+                        </div>
+
+                        <p className="text-sm leading-7 text-[#647168] sm:text-base sm:leading-8">
+                          {point}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+                </div>
+              </article>
+            );
+          })}
+        </section>
 
-        {/* Important notice */}
-        <section className="border-y border-[#d8cba7] bg-[#f5f0e3] px-5 py-7 sm:px-7 sm:py-8">
+        {/* Important note */}
+        <section className="mt-6 rounded-[1.75rem] border border-amber-200 bg-amber-50 p-6 sm:p-8">
           <div className="flex items-start gap-4">
-            <CircleAlert
+            <AlertTriangle
               size={21}
-              className="mt-1 shrink-0 text-[#866c2f]"
+              className="mt-0.5 shrink-0 text-amber-600"
             />
+
             <div>
-              <h2 className="font-extrabold text-[#342d1d]">
-                {t.importantTitle}
+              <h2 className="font-extrabold text-[#142019]">
+                {content.importantTitle}
               </h2>
-              <p className="mt-2 max-w-4xl text-sm leading-7 text-[#655a40]">
-                {t.importantText}
+
+              <p className="mt-2 text-sm leading-7 text-[#526057]">
+                {content.importantText}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Customer-care CTA */}
-        <section className="grid gap-10 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-16 lg:py-20">
-          <div>
-            <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-                isArabic ? "tracking-normal" : "tracking-[0.16em]"
-              }`}
-            >
-              {t.helpEyebrow}
-            </p>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-[#142019] sm:text-4xl">
-              {t.helpTitle}
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-8 text-[#647168] sm:text-base">
-              {t.helpText}
-            </p>
+        {/* Help section */}
+        <section className="mt-8 rounded-[1.75rem] border border-[#dfe4e0] bg-white p-6 sm:p-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <Headphones size={20} />
+              </div>
+
+              <div>
+                <h2 className="text-lg font-extrabold text-[#142019] sm:text-xl">
+                  {content.helpTitle}
+                </h2>
+
+                <p className="mt-2 max-w-xl text-sm leading-7 text-[#647168]">
+                  {content.helpText}
+                </p>
+              </div>
+            </div>
+
+            <ShieldCheck
+              size={30}
+              className="hidden shrink-0 text-[#c5d7cc] sm:block"
+            />
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg"
-            >
-              <MessageCircle size={17} />
-              <span>{t.whatsappButton}</span>
-            </a>
-
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/contact"
-              className="group inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-[#bfc9c2] bg-white px-6 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
+              className="group flex min-h-[50px] items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#073f2c]"
             >
-              <Headphones size={17} />
-              <span>{t.contactButton}</span>
-              <ArrowIcon
+              <span>{content.contactButton}</span>
+
+              <ContinueArrow
                 size={15}
-                className={`transition-transform ${
-                  isArabic
-                    ? "group-hover:-translate-x-1"
-                    : "group-hover:translate-x-1"
-                }`}
+                className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1"
               />
+            </Link>
+
+            <Link
+              href="/orders"
+              className="flex min-h-[50px] items-center justify-center rounded-full border border-[#cbd3cd] bg-white px-6 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
+            >
+              {content.ordersButton}
             </Link>
           </div>
         </section>
