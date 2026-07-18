@@ -4,17 +4,6 @@ import { Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 
 import ProductsClient from "./ProductsClient";
-import NewArrivalsBanner from "../NewArrivalsBanner";
-import {
-  redirect,
-} from "next/navigation";
-import type {
-  ComponentProps,
-} from "react";
-type NewArrivalsBannerData =
-  ComponentProps<
-    typeof NewArrivalsBanner
-  >["banner"];
 
 const SITE_URL =
   "https://www.kabpharma.com";
@@ -100,33 +89,7 @@ export const metadata: Metadata = {
   },
 };
 
-type ProductsPageProps = {
-  searchParams: Promise<{
-    new?: string | string[];
-  }>;
-};
-
-export default async function ProductsPage({
-  searchParams,
-}: ProductsPageProps) {
-  const resolvedSearchParams =
-    await searchParams;
-
-  const newParam =
-    Array.isArray(
-      resolvedSearchParams.new
-    )
-      ? resolvedSearchParams.new[0]
-      : resolvedSearchParams.new;
-
-  const showNewArrivalsOnly =
-    newParam === "1";
-    if (showNewArrivalsOnly) {
-  redirect(
-    "/new-arrivals"
-  );
-}
-
+export default async function ProductsPage() {
   const [
     productsResult,
     orderItemsResult,
@@ -188,54 +151,11 @@ export default async function ProductsPage({
     );
   }
 
- let newArrivalsBanner:
-  | NewArrivalsBannerData
-  | null = null;
-    
-
-  if (showNewArrivalsOnly) {
-    const {
-      data,
-      error,
-    } = await supabase
-      .from("home_banners")
-      .select("*")
-      .eq(
-        "placement",
-        "new_arrivals"
-      )
-      .eq(
-        "is_active",
-        true
-      )
-      .order("id", {
-        ascending: false,
-      })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      console.error(
-        "Failed to load New Arrivals banner:",
-        error
-      );
-    } else {
-      newArrivalsBanner =
-        data;
-    }
-  }
-
   const allProducts =
     productsResult.data || [];
 
   const products =
-    showNewArrivalsOnly
-      ? allProducts.filter(
-          (product) =>
-            product.is_new_arrival ===
-            true
-        )
-      : allProducts;
+    allProducts;
 
   const orderItems =
     orderItemsResult.data || [];
@@ -307,15 +227,6 @@ export default async function ProductsPage({
 
   return (
     <main className="min-h-screen bg-white pb-24 md:pb-16">
-      {showNewArrivalsOnly &&
-        newArrivalsBanner && (
-          <NewArrivalsBanner
-            banner={
-              newArrivalsBanner
-            }
-          />
-        )}
-
       {products.length === 0 ? (
         <section className="mx-auto flex min-h-[65vh] max-w-xl items-center px-4 py-16 sm:px-6">
           <div className="w-full rounded-[1.5rem] border border-[#e7ebe8] bg-[#f7f8f6] px-6 py-14 text-center">
@@ -328,9 +239,7 @@ export default async function ProductsPage({
             </p>
 
             <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-[#142019]">
-              {showNewArrivalsOnly
-                ? "لا توجد منتجات جديدة حالياً"
-                : "لا توجد منتجات حالياً"}
+              لا توجد منتجات حالياً
             </h1>
 
             <p className="mt-3 text-sm leading-7 text-[#647168]">
@@ -354,9 +263,6 @@ export default async function ProductsPage({
   products={products}
   bestSellerIds={
     bestSellerIds
-  }
-  showHeader={
-    !showNewArrivalsOnly
   }
 />
         </Suspense>
