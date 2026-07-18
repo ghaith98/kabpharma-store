@@ -366,7 +366,7 @@ export default function HomeBannerSwiper({
                     ? "rtl"
                     : "ltr"
                 }
-                className="relative min-h-[680px] w-full overflow-hidden bg-[#f6f6f3] md:min-h-[560px] lg:min-h-[620px]"
+                className="relative h-[calc(100svh-150px)] min-h-[520px] max-h-[600px] w-full overflow-hidden bg-[#f6f6f3] md:h-auto md:min-h-[560px] md:max-h-none lg:min-h-[620px]"
               >
                 <picture className="absolute inset-0 block h-full w-full overflow-hidden">
                   <source
@@ -396,7 +396,7 @@ export default function HomeBannerSwiper({
 
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-transparent md:bg-gradient-to-r md:from-white/25 md:via-transparent md:to-transparent" />
 
-                <div className="relative z-10 mx-auto flex min-h-[680px] w-full max-w-[1440px] items-start px-5 py-10 sm:px-8 md:min-h-[560px] md:items-center md:px-12 lg:min-h-[620px] lg:px-16">
+                <div className="relative z-10 mx-auto flex h-full w-full max-w-[1440px] items-start px-5 pb-8 pt-7 sm:px-8 md:h-auto md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
                   <div
                     dir={
                       isArabic
