@@ -4,10 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+type DriverOrder = {
+  id: number;
+  customer_name?: string | null;
+  phone?: string | null;
+  delivery_area?: string | null;
+  address?: string | null;
+};
+
 export default function DriverMyOrdersPage() {
   const router = useRouter();
 
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<DriverOrder[]>([]);
   const [driverName, setDriverName] = useState("");
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
 
@@ -58,7 +66,10 @@ export default function DriverMyOrdersPage() {
   }
 
   useEffect(() => {
-    const savedName = localStorage.getItem("driver_name");
+    let cleanupRealtime: (() => void) | undefined;
+
+    const initializationTimer = window.setTimeout(() => {
+      const savedName = localStorage.getItem("driver_name");
 
     if (!savedName) {
       router.push("/driver/login");
@@ -88,12 +99,18 @@ export default function DriverMyOrdersPage() {
       )
       .subscribe();
 
+      cleanupRealtime = () => {
+        window.removeEventListener(
+          "driverRefreshRequested",
+          refreshOrders
+        );
+        void supabase.removeChannel(channel);
+      };
+    }, 0);
+
     return () => {
-      window.removeEventListener(
-        "driverRefreshRequested",
-        refreshOrders
-      );
-      supabase.removeChannel(channel);
+      window.clearTimeout(initializationTimer);
+      cleanupRealtime?.();
     };
   }, [router]);
 

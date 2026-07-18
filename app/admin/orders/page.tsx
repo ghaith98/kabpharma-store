@@ -238,7 +238,7 @@ export default function AdminOrdersPage() {
       إذا المتصفح منع النافذة الجديدة، منفتح الرابط
       بنفس الصفحة كحل احتياطي.
     */
-    window.location.href = data.signedUrl;
+    window.location.assign(data.signedUrl);
   }
 
   async function updateOrderStatus(

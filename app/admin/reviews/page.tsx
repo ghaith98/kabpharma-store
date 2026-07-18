@@ -5,8 +5,19 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { FaStar, FaTrash } from "react-icons/fa";
 
+type Review = {
+  id: number;
+  customer_name: string;
+  rating: number;
+  review: string;
+  created_at: string;
+  products?: {
+    name?: string | null;
+  } | null;
+};
+
 export default function AdminReviewsPage() {
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function loadReviews() {
@@ -45,7 +56,9 @@ export default function AdminReviewsPage() {
   }
 
   useEffect(() => {
-    loadReviews();
+    window.queueMicrotask(() => {
+      void loadReviews();
+    });
   }, []);
 
   return (

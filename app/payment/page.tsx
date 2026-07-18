@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import type {
@@ -20,14 +21,12 @@ import {
   Check,
   Copy,
   FileCheck2,
-  FileText,
   LockKeyhole,
   Package,
   QrCode,
   ShieldCheck,
   Truck,
   UploadCloud,
-  X,
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
@@ -153,10 +152,11 @@ export default function PaymentPage() {
       : ArrowLeft;
 
   useEffect(() => {
-    const savedUser =
-      localStorage.getItem(
-        "kab_user"
-      );
+    const initializationTimer = window.setTimeout(() => {
+      const savedUser =
+        localStorage.getItem(
+          "kab_user"
+        );
 
     if (!savedUser) {
       localStorage.setItem(
@@ -269,8 +269,13 @@ export default function PaymentPage() {
       }
     }
 
-    void loadPaymentSettings();
-  }, []);
+      void loadPaymentSettings();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(initializationTimer);
+    };
+  }, [router]);
 
   function formatPrice(
     value: number
@@ -372,26 +377,6 @@ export default function PaymentPage() {
       0,
       availableBaseLength
     )}...${extension}`;
-  }
-
-  function getFileSizeLabel(
-    size: number
-  ) {
-    if (
-      size < 1024 * 1024
-    ) {
-      return `${Math.max(
-        1,
-        Math.round(
-          size / 1024
-        )
-      )} KB`;
-    }
-
-    return `${(
-      size /
-      (1024 * 1024)
-    ).toFixed(1)} MB`;
   }
 
   function isImageOrPdf(
@@ -1292,13 +1277,16 @@ export default function PaymentPage() {
             <div className="grid gap-7 p-5 sm:p-7 md:grid-cols-[270px_minmax(0,1fr)] md:items-center">
               <div className="flex aspect-square w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[1.5rem] border border-[#dfe4e0] bg-[#f7f8f6] p-4">
                 {qrUrl ? (
-                  <img
+                  <Image
                     src={qrUrl}
                     alt={
                       isArabic
                         ? "رمز QR للدفع"
                         : "Payment QR code"
                     }
+                    width={600}
+                    height={600}
+                    sizes="(max-width: 768px) 90vw, 300px"
                     className="h-full w-full object-contain"
                   />
                 ) : (
@@ -1635,9 +1623,12 @@ export default function PaymentPage() {
           >
             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#f7f8f6] p-2">
               {item.image_url ? (
-                <img
+                <Image
                   src={item.image_url}
                   alt={displayName}
+                  width={128}
+                  height={128}
+                  sizes="64px"
                   className="h-full w-full object-contain"
                 />
               ) : (

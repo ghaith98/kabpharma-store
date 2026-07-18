@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -24,19 +24,9 @@ export default function AdminDeliveryCompaniesPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [lastRefreshAt, setLastRefreshAt] = useState(0);
 
-  async function checkAdmin() {
-    const { data } = await supabase.auth.getUser();
-
-    if (!data.user) {
-      router.push("/admin/login");
-      return;
-    }
-
-    loadCompanies();
-  }
-
-  async function loadCompanies() {
+  const loadCompanies = useCallback(async () => {
     const { data, error } = await supabase
       .from("delivery_companies")
       .select("*")
@@ -48,7 +38,19 @@ export default function AdminDeliveryCompaniesPage() {
     }
 
     setCompanies(data || []);
-  }
+    setLastRefreshAt(new Date().getTime());
+  }, []);
+
+  const checkAdmin = useCallback(async () => {
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      router.replace("/admin/login");
+      return;
+    }
+
+    await loadCompanies();
+  }, [loadCompanies, router]);
 
   async function addCompany(e: React.FormEvent) {
     e.preventDefault();
@@ -102,19 +104,21 @@ export default function AdminDeliveryCompaniesPage() {
   function isCompanyOnline(company: DeliveryCompany) {
     if (!company.last_seen || !company.is_active) return false;
 
-    const diff = Date.now() - new Date(company.last_seen).getTime();
+    const diff = lastRefreshAt - new Date(company.last_seen).getTime();
     return diff < 2 * 60 * 1000;
   }
 
  useEffect(() => {
-  checkAdmin();
+  window.queueMicrotask(() => {
+    void checkAdmin();
+  });
 
   const interval = setInterval(() => {
-    loadCompanies();
+    void loadCompanies();
   }, 30000);
 
   return () => clearInterval(interval);
-}, []);
+}, [checkAdmin, loadCompanies]);
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">

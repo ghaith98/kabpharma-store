@@ -2,9 +2,11 @@
 
 import {
   useEffect,
+  useEffectEvent,
   useState,
 } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import {
@@ -57,6 +59,29 @@ type BanCheckResult = {
   reason?: string | null;
 };
 
+type Governorate = {
+  id: number | string;
+  governorate: string;
+  governorate_ar?: string | null;
+  governorate_en?: string | null;
+};
+
+type DeliveryArea = {
+  id: number | string;
+  governorate: string;
+  area_name: string;
+  area_name_ar?: string | null;
+  area_name_en?: string | null;
+  delivery_fee?: number | string | null;
+};
+
+type StoredCheckout = {
+  name?: string;
+  governorate?: string;
+  delivery_area?: string;
+  address?: string;
+};
+
 export default function CheckoutPage() {
   const { lang } =
     useLanguage();
@@ -78,12 +103,12 @@ export default function CheckoutPage() {
   const [
     governorates,
     setGovernorates,
-  ] = useState<any[]>([]);
+  ] = useState<Governorate[]>([]);
 
   const [
     deliveryAreas,
     setDeliveryAreas,
-  ] = useState<any[]>([]);
+  ] = useState<DeliveryArea[]>([]);
 
   const [
     freeShippingThreshold,
@@ -129,18 +154,24 @@ export default function CheckoutPage() {
     setAccountCheckError,
   ] = useState("");
 
-  useEffect(() => {
-    setCart(
-      getCart() as
-        CartItemWithVariant[]
+  const checkBanOnInitialization =
+    useEffectEvent(
+      (accountPhone: string) =>
+        checkCurrentUserBan(
+          accountPhone
+        )
     );
 
-    void loadDeliveryData();
-
-    const savedUser =
-      localStorage.getItem(
-        "kab_user"
+  useEffect(() => {
+    const initializationTimer = window.setTimeout(() => {
+      setCart(
+        getCart() as CartItemWithVariant[]
       );
+
+      void loadDeliveryData();
+
+      const savedUser =
+        localStorage.getItem("kab_user");
 
     if (!savedUser) {
       localStorage.setItem(
@@ -206,9 +237,7 @@ export default function CheckoutPage() {
     if (savedCheckout) {
       try {
         const checkout =
-          JSON.parse(
-            savedCheckout
-          );
+          JSON.parse(savedCheckout) as StoredCheckout;
 
         setName(
           checkout.name ||
@@ -254,12 +283,17 @@ export default function CheckoutPage() {
       );
     }
 
-    void checkCurrentUserBan(
+    void checkBanOnInitialization(
       accountPhone
     ).finally(() => {
       setCheckingBan(false);
     });
-  }, []);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(initializationTimer);
+    };
+  }, [router]);
 
   useEffect(() => {
     const savedCheckout =
@@ -276,9 +310,7 @@ export default function CheckoutPage() {
 
     try {
       const checkout =
-        JSON.parse(
-          savedCheckout
-        );
+        JSON.parse(savedCheckout) as StoredCheckout;
 
       const matchedArea =
         deliveryAreas.find(
@@ -290,11 +322,11 @@ export default function CheckoutPage() {
         );
 
       if (matchedArea) {
-        setDeliveryArea(
-          String(
-            matchedArea.id
-          )
-        );
+        window.queueMicrotask(() => {
+          setDeliveryArea(
+            String(matchedArea.id)
+          );
+        });
       }
     } catch {
       localStorage.removeItem(
@@ -1397,13 +1429,16 @@ export default function CheckoutPage() {
                       >
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#f7f8f6] p-2">
                           {item.image_url ? (
-                            <img
+                            <Image
                               src={
                                 item.image_url
                               }
                               alt={
                                 displayName
                               }
+                              width={128}
+                              height={128}
+                              sizes="64px"
                               className="h-full w-full object-contain"
                             />
                           ) : (

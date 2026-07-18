@@ -1,15 +1,24 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+
+type DriverOrder = {
+  id: number;
+  customer_name?: string | null;
+  phone?: string | null;
+  delivery_area?: string | null;
+  address?: string | null;
+  total_price?: number | string | null;
+};
 
 export default function DriverPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<DriverOrder[]>([]);
   const [driverName, setDriverName] = useState("");
   const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from("orders")
       .select(`
@@ -31,9 +40,9 @@ export default function DriverPage() {
     }
 
     setOrders(data || []);
-  }
+  }, []);
 
-  async function checkActiveOrder(name: string) {
+  const checkActiveOrder = useCallback(async (name: string) => {
     const { data, error } = await supabase
       .from("orders")
       .select("id")
@@ -49,7 +58,7 @@ export default function DriverPage() {
     if (data && data.length > 0) {
       router.push("/driver/my-orders");
     }
-  }
+  }, [router]);
 
   async function acceptOrder(id: number) {
     const savedName = localStorage.getItem("driver_name");
@@ -110,7 +119,10 @@ export default function DriverPage() {
   }
 
   useEffect(() => {
-    const savedName = localStorage.getItem("driver_name");
+    let cleanupRealtime: (() => void) | undefined;
+
+    const initializationTimer = window.setTimeout(() => {
+      const savedName = localStorage.getItem("driver_name");
 
     if (!savedName) {
       router.replace("/driver/login");
@@ -120,12 +132,12 @@ export default function DriverPage() {
     const authenticatedDriverName = savedName;
 
     setDriverName(authenticatedDriverName);
-    checkActiveOrder(authenticatedDriverName);
-    loadOrders();
+    void checkActiveOrder(authenticatedDriverName);
+    void loadOrders();
 
     function refreshOrders() {
-      checkActiveOrder(authenticatedDriverName);
-      loadOrders();
+      void checkActiveOrder(authenticatedDriverName);
+      void loadOrders();
     }
 
     window.addEventListener(
@@ -139,20 +151,26 @@ export default function DriverPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
         () => {
-          checkActiveOrder(authenticatedDriverName);
-          loadOrders();
+          void checkActiveOrder(authenticatedDriverName);
+          void loadOrders();
         }
       )
       .subscribe();
 
+      cleanupRealtime = () => {
+        window.removeEventListener(
+          "driverRefreshRequested",
+          refreshOrders
+        );
+        void supabase.removeChannel(channel);
+      };
+    }, 0);
+
     return () => {
-      window.removeEventListener(
-        "driverRefreshRequested",
-        refreshOrders
-      );
-      supabase.removeChannel(channel);
+      window.clearTimeout(initializationTimer);
+      cleanupRealtime?.();
     };
-  }, []);
+  }, [checkActiveOrder, loadOrders, router]);
 
   return (
     <main dir="rtl" className="min-h-screen bg-gradient-to-b from-gray-50 to-green-50 p-4">

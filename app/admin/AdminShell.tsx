@@ -182,7 +182,6 @@ export default function AdminShell({
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace("/admin/login");
-    router.refresh();
   }
 
   if (isLoginPage) {

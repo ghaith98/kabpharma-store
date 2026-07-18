@@ -1,9 +1,6 @@
 "use client";
 
-import Link from "next/link";
 import {
-  ArrowLeft,
-  ArrowRight,
   Database,
   Eye,
   FileCheck2,
@@ -18,7 +15,6 @@ export default function PrivacyPolicyPage() {
   const { lang } = useLanguage();
 
   const isArabic = lang === "ar";
-  const ContinueArrow = isArabic ? ArrowLeft : ArrowRight;
 
   const sections = [
     {

@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  Headphones,
   Mail,
   MessageCircle,
   PackageCheck,

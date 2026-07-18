@@ -12,6 +12,7 @@ import {
 
 import { addToCart } from "@/lib/cart";
 import { useLanguage } from "../../../context/LanguageContext";
+import type { ProductDetailVariant } from "./ProductDetailsClient";
 
 type Product = {
   id: number;
@@ -38,7 +39,7 @@ export default function ProductDetailsAddToCart({
   finalPrice: number;
   originalPrice: number;
   salePercent: number;
-  selectedVariant?: any;
+  selectedVariant?: ProductDetailVariant | null;
 }) {
   const { lang } = useLanguage();
   const isArabic = lang === "ar";

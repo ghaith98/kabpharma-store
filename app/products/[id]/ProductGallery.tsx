@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
   ChevronLeft,
@@ -16,10 +16,6 @@ export default function ProductGallery({
 }) {
   const [selectedIndex, setSelectedIndex] =
     useState(0);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [images]);
 
   const selectedImage =
     images[selectedIndex] || images[0];

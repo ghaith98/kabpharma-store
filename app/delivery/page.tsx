@@ -3,8 +3,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+type DeliveryOrder = {
+  id: number;
+  customer_name?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  total_price?: number | string | null;
+  status: string;
+};
+
 export default function DeliveryPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<DeliveryOrder[]>([]);
 
   async function loadOrders() {
     const { data } = await supabase
@@ -26,7 +35,9 @@ export default function DeliveryPage() {
   }
 
   useEffect(() => {
-    loadOrders();
+    window.queueMicrotask(() => {
+      void loadOrders();
+    });
   }, []);
 
   return (

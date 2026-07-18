@@ -5,6 +5,7 @@ import type {
 } from "react";
 
 import Link from "next/link";
+import { getImageProps } from "next/image";
 
 import {
   ArrowLeft,
@@ -317,6 +318,43 @@ export default function HomeBannerSwiper({
             slide.image_url_mobile ||
             slide.image_url;
 
+          const mobileCrop = getCropStyle(slide, "mobile");
+          const desktopCrop = getCropStyle(slide, "desktop");
+
+          const cropVariables = {
+            "--mobile-object-position": mobileCrop.objectPosition,
+            "--mobile-transform": mobileCrop.transform,
+            "--mobile-transform-origin": mobileCrop.transformOrigin,
+            "--desktop-object-position": desktopCrop.objectPosition,
+            "--desktop-transform": desktopCrop.transform,
+            "--desktop-transform-origin": desktopCrop.transformOrigin,
+          } as CSSProperties;
+
+          const {
+            props: {
+              srcSet: desktopSrcSet,
+            },
+          } = getImageProps({
+            src: slide.image_url,
+            alt: title,
+            width: 1600,
+            height: 620,
+            sizes: "100vw",
+          });
+
+          const {
+            props: {
+              srcSet: mobileSrcSet,
+              ...responsiveImageProps
+            },
+          } = getImageProps({
+            src: mobileImage,
+            alt: title,
+            width: 393,
+            height: 680,
+            sizes: "100vw",
+          });
+
           return (
             <SwiperSlide
               key={slide.id}
@@ -330,57 +368,31 @@ export default function HomeBannerSwiper({
                 }
                 className="relative min-h-[680px] w-full overflow-hidden bg-[#f6f6f3] md:min-h-[560px] lg:min-h-[620px]"
               >
-                {/* Mobile image */}
-                <div className="absolute inset-0 overflow-hidden md:hidden">
-                  <img
-                    src={
-                      mobileImage
-                    }
-                    alt={title}
-                    loading={
-                      index === 0
-                        ? "eager"
-                        : "lazy"
-                    }
-                    fetchPriority={
-                      index === 0
-                        ? "high"
-                        : "auto"
-                    }
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover will-change-transform"
-                    style={getCropStyle(
-                      slide,
-                      "mobile"
-                    )}
+                <picture className="absolute inset-0 block h-full w-full overflow-hidden">
+                  <source
+                    media="(min-width: 768px)"
+                    srcSet={desktopSrcSet}
                   />
-                </div>
 
-                {/* Desktop image */}
-                <div className="absolute inset-0 hidden overflow-hidden md:block">
-                  <img
-                    src={
-                      slide.image_url
-                    }
-                    alt={title}
-                    loading={
-                      index === 0
-                        ? "eager"
-                        : "lazy"
-                    }
-                    fetchPriority={
-                      index === 0
-                        ? "high"
-                        : "auto"
-                    }
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover will-change-transform"
-                    style={getCropStyle(
-                      slide,
-                      "desktop"
-                    )}
+                  <source
+                    media="(max-width: 767px)"
+                    srcSet={mobileSrcSet}
                   />
-                </div>
+
+                  <img
+                    {...responsiveImageProps}
+                    alt={
+                      title ||
+                      "KAB Pharma campaign"
+                    }
+                    loading={index === 0 ? "eager" : "lazy"}
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                    decoding="async"
+                    draggable={false}
+                    style={cropVariables}
+                    className="kab-home-banner-image absolute inset-0 h-full w-full select-none object-cover will-change-transform"
+                  />
+                </picture>
 
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-transparent md:bg-gradient-to-r md:from-white/25 md:via-transparent md:to-transparent" />
 
@@ -447,6 +459,22 @@ export default function HomeBannerSwiper({
                   </div>
                 </div>
               </article>
+
+              <style jsx>{`
+                :global(.kab-home-banner-image) {
+                  object-position: var(--mobile-object-position);
+                  transform: var(--mobile-transform);
+                  transform-origin: var(--mobile-transform-origin);
+                }
+
+                @media (min-width: 768px) {
+                  :global(.kab-home-banner-image) {
+                    object-position: var(--desktop-object-position);
+                    transform: var(--desktop-transform);
+                    transform-origin: var(--desktop-transform-origin);
+                  }
+                }
+              `}</style>
             </SwiperSlide>
           );
         }

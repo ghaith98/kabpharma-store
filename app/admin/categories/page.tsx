@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -25,7 +25,7 @@ export default function AdminCategoriesPage() {
 
   const [loading, setLoading] = useState(false);
 
-  async function loadCategories() {
+  const loadCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from("categories")
       .select("*")
@@ -37,9 +37,9 @@ export default function AdminCategoriesPage() {
     }
 
     setCategories(data || []);
-  }
+  }, []);
 
-  async function checkAdmin() {
+  const checkAdmin = useCallback(async () => {
     const { data } = await supabase.auth.getUser();
 
     if (!data.user) {
@@ -47,8 +47,8 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    loadCategories();
-  }
+    await loadCategories();
+  }, [loadCategories, router]);
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
@@ -123,8 +123,10 @@ export default function AdminCategoriesPage() {
   }
 
   useEffect(() => {
-    checkAdmin();
-  }, []);
+    window.queueMicrotask(() => {
+      void checkAdmin();
+    });
+  }, [checkAdmin]);
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">

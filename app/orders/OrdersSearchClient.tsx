@@ -14,6 +14,11 @@ type Order = {
   status: string;
 };
 
+type StoredUser = {
+  phone: string;
+  full_name?: string;
+};
+
 const statusMap = {
   en: {
     pending: "Payment under review",
@@ -46,7 +51,7 @@ export default function OrdersSearchClient() {
   const { lang } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<StoredUser | null>(null);
 
   useEffect(() => {
     async function loadOrders() {
@@ -57,7 +62,7 @@ export default function OrdersSearchClient() {
         return;
       }
 
-      const parsedUser = JSON.parse(savedUser);
+      const parsedUser = JSON.parse(savedUser) as StoredUser;
       setUser(parsedUser);
 
       const { data } = await supabase

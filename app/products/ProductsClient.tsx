@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -18,14 +19,23 @@ import "rc-slider/assets/index.css";
 
 import { useLanguage } from "../../context/LanguageContext";
 import ProductCard from "./ProductCard";
+import type { ProductCardProduct } from "./ProductCard";
 
 type ProductsClientProps = {
-  products: any[];
+  products: ProductCardProduct[];
   showSearch?: boolean;
   showCategories?: boolean;
   bestSellerIds?: number[];
   showHeader?: boolean;
 };
+
+function parseCategoryId(value: string | null) {
+  const categoryId = value ? Number(value) : Number.NaN;
+
+  return Number.isFinite(categoryId) && categoryId > 0
+    ? categoryId
+    : null;
+}
 
 export default function ProductsClient({
   products,
@@ -47,47 +57,32 @@ export default function ProductsClient({
     );
   }, [products]);
 
-  const [search, setSearch] = useState(
-    searchParams.get("search") || ""
+  const search = searchParams.get("search") || "";
+  const selectedCategoryId = parseCategoryId(
+    searchParams.get("category")
   );
 
   const [filtersOpen, setFiltersOpen] =
     useState(false);
 
-  const [
-  selectedCategoryId,
-  setSelectedCategoryId,
-] = useState<number | null>(
-  () => {
-    const categoryParam =
-      searchParams.get(
-        "category"
-      );
-
-    if (!categoryParam) {
-      return null;
-    }
-
-    const parsedCategoryId =
-      Number(categoryParam);
-
-    return Number.isFinite(
-      parsedCategoryId
-    ) &&
-      parsedCategoryId > 0
-      ? parsedCategoryId
-      : null;
-  }
-);
-
   const [sortBy, setSortBy] =
     useState("default");
 
-  const [priceRange, setPriceRange] =
+  const [storedPriceRange, setPriceRange] =
     useState<number[]>([
       0,
       maxProductPrice,
     ]);
+
+  const priceRange = useMemo(
+    () => [
+      Math.min(storedPriceRange[0] || 0, maxProductPrice),
+      storedPriceRange[1] === 0
+        ? maxProductPrice
+        : Math.min(storedPriceRange[1], maxProductPrice),
+    ],
+    [storedPriceRange, maxProductPrice]
+  );
 
   const [inStockOnly, setInStockOnly] =
     useState(false);
@@ -95,47 +90,42 @@ export default function ProductsClient({
   const [onSaleOnly, setOnSaleOnly] =
     useState(false);
 
-  useEffect(() => {
-  setSearch(
-    searchParams.get("search") || ""
-  );
+  const replaceProductParams = useCallback((
+    updates: {
+      search?: string | null;
+      categoryId?: number | null;
+    }
+  ) => {
+    const params = new URLSearchParams(searchParams.toString());
 
-  const categoryParam =
-    searchParams.get(
-      "category"
-    );
+    if ("search" in updates) {
+      const nextSearch = updates.search?.trim();
 
-  const parsedCategoryId =
-    categoryParam
-      ? Number(categoryParam)
-      : NaN;
-
-  setSelectedCategoryId(
-    Number.isFinite(
-      parsedCategoryId
-    ) &&
-      parsedCategoryId > 0
-      ? parsedCategoryId
-      : null
-  );
-}, [searchParams]);
-
-  useEffect(() => {
-    setPriceRange((currentRange) => {
-      if (
-        currentRange[1] === 0 ||
-        currentRange[1] >
-          maxProductPrice
-      ) {
-        return [
-          0,
-          maxProductPrice,
-        ];
+      if (nextSearch) {
+        params.set("search", nextSearch);
+      } else {
+        params.delete("search");
       }
+    }
 
-      return currentRange;
-    });
-  }, [maxProductPrice]);
+    if ("categoryId" in updates) {
+      if (updates.categoryId) {
+        params.set("category", String(updates.categoryId));
+      } else {
+        params.delete("category");
+      }
+    }
+
+    const queryString = params.toString();
+
+    window.history.replaceState(
+      null,
+      "",
+      queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname
+    );
+  }, [searchParams]);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -172,8 +162,10 @@ export default function ProductsClient({
 
   useEffect(() => {
     function resetProductsView() {
-      setSearch("");
-      setSelectedCategoryId(null);
+      replaceProductParams({
+        search: null,
+        categoryId: null,
+      });
       setSortBy("default");
       setPriceRange([
         0,
@@ -195,16 +187,16 @@ export default function ProductsClient({
         resetProductsView
       );
     };
-  }, [maxProductPrice]);
+  }, [maxProductPrice, replaceProductParams]);
 
   const categories = useMemo(() => {
     const categoryMap = new Map<
       number,
       {
         id: number;
-        name?: string;
-        name_ar?: string;
-        name_en?: string;
+        name?: string | null;
+        name_ar?: string | null;
+        name_en?: string | null;
       }
     >();
 
@@ -238,7 +230,7 @@ export default function ProductsClient({
   }, [products]);
 
   function getFinalPrice(
-    product: any
+    product: ProductCardProduct
   ) {
     const salePercent = Math.min(
       100,
@@ -262,7 +254,9 @@ export default function ProductsClient({
   }
 
   function clearFilters() {
-    setSelectedCategoryId(null);
+    replaceProductParams({
+      categoryId: null,
+    });
     setSortBy("default");
 
     setPriceRange([
@@ -496,9 +490,9 @@ export default function ProductsClient({
                     type="search"
                     value={search}
                     onChange={(event) =>
-                      setSearch(
-                        event.target.value
-                      )
+                      replaceProductParams({
+                        search: event.target.value,
+                      })
                     }
                     placeholder={
                       isArabic
@@ -693,9 +687,9 @@ export default function ProductsClient({
                       <button
                         type="button"
                         onClick={() =>
-                          setSelectedCategoryId(
-                            null
-                          )
+                          replaceProductParams({
+                            categoryId: null,
+                          })
                         }
                         className={`rounded-full border px-4 py-2.5 text-sm font-bold transition ${
                           selectedCategoryId ===
@@ -733,9 +727,9 @@ export default function ProductsClient({
                               }
                               type="button"
                               onClick={() =>
-                                setSelectedCategoryId(
-                                  category.id
-                                )
+                                replaceProductParams({
+                                  categoryId: category.id,
+                                })
                               }
                               className={`rounded-full border px-4 py-2.5 text-sm font-bold transition ${
                                 isSelected

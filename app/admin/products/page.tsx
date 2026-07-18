@@ -13,14 +13,88 @@ type VariantInput = {
   existingImageUrls?: string[];
 };
 
+type AdminProduct = {
+  id: number;
+  name?: string | null;
+  name_ar?: string | null;
+  name_en?: string | null;
+  description?: string | null;
+  description_ar?: string | null;
+  description_en?: string | null;
+  ingredients?: string | null;
+  ingredients_ar?: string | null;
+  ingredients_en?: string | null;
+  price?: number | string | null;
+  sale_percent?: number | string | null;
+  image_url?: string | null;
+  category_id?: number | null;
+  featured?: boolean | null;
+  is_new_arrival?: boolean | null;
+  is_out_of_stock?: boolean | null;
+};
+
+type Category = {
+  id: number;
+  name: string;
+};
+
+type ProductImage = {
+  id: number;
+  product_id: number;
+  image_url: string;
+  sort_order?: number | null;
+};
+
+type ProductVariant = {
+  id: number;
+  product_id: number;
+  label_ar?: string | null;
+  label_en?: string | null;
+  price?: number | string | null;
+  image_url?: string | null;
+  sort_order?: number | null;
+};
+
+type ProductVariantImage = {
+  id: number;
+  variant_id: number;
+  image_url: string;
+  sort_order?: number | null;
+};
+
+type UploadedVariant = {
+  label_ar: string;
+  label_en: string;
+  price: number;
+  image_url: string;
+  image_urls: string[];
+  sort_order: number;
+};
+
+type ProductUpdateData = {
+  name: string;
+  description: string;
+  ingredients: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string;
+  description_en: string;
+  ingredients_ar: string;
+  ingredients_en: string;
+  category_id: number;
+  price: number;
+  sale_percent: number;
+  image_url?: string;
+};
+
 export default function AdminProductsPage() {
   const router = useRouter();
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [productImages, setProductImages] = useState<any[]>([]);
-  const [productVariants, setProductVariants] = useState<any[]>([]);
-  const [productVariantImages, setProductVariantImages] = useState<any[]>([]);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
+  const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
+  const [productVariantImages, setProductVariantImages] = useState<ProductVariantImage[]>([]);
 
   const [categoryId, setCategoryId] = useState("");
 
@@ -153,9 +227,7 @@ export default function AdminProductsPage() {
 
   async function uploadProductImage(file: File) {
     const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-    const filePath = `${Date.now()}-${Math.random()
-      .toString(36)
-      .slice(2)}-${safeFileName}`;
+    const filePath = `${crypto.randomUUID()}-${safeFileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("product-images")
@@ -277,7 +349,7 @@ export default function AdminProductsPage() {
     return productVariants.filter((variant) => variant.product_id === productId);
   }
 
-  function getImagesForVariant(variant: any) {
+  function getImagesForVariant(variant: ProductVariant) {
     const images = productVariantImages
       .filter((img) => img.variant_id === variant.id)
       .sort((a, b) => Number(a.sort_order) - Number(b.sort_order))
@@ -331,7 +403,7 @@ export default function AdminProductsPage() {
     try {
       let productImageUrl = "";
       let basePrice = Number(price);
-      const uploadedVariants: any[] = [];
+      const uploadedVariants: UploadedVariant[] = [];
 
       if (cleanedVariants.length > 0) {
         for (let index = 0; index < cleanedVariants.length; index++) {
@@ -445,14 +517,18 @@ export default function AdminProductsPage() {
       await loadProducts();
       await loadProductVariants();
       await loadProductVariantImages();
-    } catch (err: any) {
-      alert(err.message || "Something went wrong");
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  function startEdit(product: any) {
+  function startEdit(product: AdminProduct) {
     setEditingId(product.id);
 
     setEditNameAr(product.name_ar || "");
@@ -524,7 +600,7 @@ export default function AdminProductsPage() {
         normalProductImageUrl = await uploadProductImage(editImageFile);
       }
 
-      const uploadedEditVariants: any[] = [];
+      const uploadedEditVariants: UploadedVariant[] = [];
 
       if (cleanedEditVariants.length > 0) {
         for (let index = 0; index < cleanedEditVariants.length; index++) {
@@ -562,7 +638,7 @@ export default function AdminProductsPage() {
         finalProductImageUrl = cheapestVariant.image_url;
       }
 
-      const updateData: any = {
+      const updateData: ProductUpdateData = {
         name: editNameEn || editNameAr,
         description: editDescriptionEn || editDescriptionAr,
         ingredients: editIngredientsEn || editIngredientsAr,
@@ -647,12 +723,16 @@ export default function AdminProductsPage() {
       await loadProducts();
       await loadProductVariants();
       await loadProductVariantImages();
-    } catch (err: any) {
-      alert(err.message || "Something went wrong");
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+      );
     }
   }
 
-  async function toggleFeatured(product: any) {
+  async function toggleFeatured(product: AdminProduct) {
     setUpdatingFeaturedId(product.id);
 
     const { error } = await supabase
@@ -670,7 +750,7 @@ export default function AdminProductsPage() {
     setUpdatingFeaturedId(null);
   }
 
-  async function toggleNewArrival(product: any) {
+  async function toggleNewArrival(product: AdminProduct) {
     setUpdatingNewArrivalId(product.id);
 
     const { error } = await supabase
@@ -690,7 +770,7 @@ export default function AdminProductsPage() {
     setUpdatingNewArrivalId(null);
   }
 
-  async function toggleStockStatus(product: any) {
+  async function toggleStockStatus(product: AdminProduct) {
     const { error } = await supabase
       .from("products")
       .update({ is_out_of_stock: !product.is_out_of_stock })
@@ -746,8 +826,12 @@ export default function AdminProductsPage() {
       }
 
       await loadProductImages();
-    } catch (err: any) {
-      alert(err.message || "Something went wrong");
+    } catch (error: unknown) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong"
+      );
     } finally {
       setUploadingImageProductId(null);
     }
@@ -1023,7 +1107,7 @@ export default function AdminProductsPage() {
                     {product.image_url && (
                       <img
                         src={product.image_url}
-                        alt={product.name}
+                        alt={product.name || "Product"}
                         className="h-44 w-full rounded-3xl bg-gray-50 object-cover"
                       />
                     )}
@@ -1122,7 +1206,7 @@ export default function AdminProductsPage() {
                                 {images[0] && (
                                   <img
                                     src={images[0]}
-                                    alt={variant.label_en}
+                                    alt={variant.label_en || "Product option"}
                                     className="h-10 w-10 rounded-xl object-cover"
                                   />
                                 )}

@@ -297,9 +297,18 @@ function useFilePreview(
   ] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!file) {
-      setPreviewUrl("");
-      return;
+      window.queueMicrotask(() => {
+        if (!cancelled) {
+          setPreviewUrl("");
+        }
+      });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     const objectUrl =
@@ -307,11 +316,14 @@ function useFilePreview(
         file
       );
 
-    setPreviewUrl(
-      objectUrl
-    );
+    window.queueMicrotask(() => {
+      if (!cancelled) {
+        setPreviewUrl(objectUrl);
+      }
+    });
 
     return () => {
+      cancelled = true;
       URL.revokeObjectURL(
         objectUrl
       );
@@ -1005,7 +1017,7 @@ export default function AdminNewArrivalsBannersPage() {
 
       try {
         await loadBanners();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(
           "Could not load New Arrivals banners:",
           error
@@ -1177,7 +1189,7 @@ export default function AdminNewArrivalsBannersPage() {
         mode,
         selectedFile
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       input.value = "";
 
       updateFile(
@@ -1192,7 +1204,9 @@ export default function AdminNewArrivalsBannersPage() {
           type: "error",
 
           message:
-            error?.message ||
+            (error instanceof Error
+              ? error.message
+              : null) ||
             "The selected image is not valid.",
         }
       );
@@ -1225,7 +1239,7 @@ export default function AdminNewArrivalsBannersPage() {
     file: File
   ): Promise<UploadedImage> {
     const filePath =
-      `${placement}/${mode}/${Date.now()}-${crypto.randomUUID()}-${createSafeFileName(
+      `${placement}/${mode}/${crypto.randomUUID()}-${createSafeFileName(
         file.name
       )}`;
 
@@ -1690,7 +1704,7 @@ export default function AdminNewArrivalsBannersPage() {
             `${config.adminTitle} saved successfully.`,
         }
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       await removeFiles(
         [
           desktopUpload
@@ -1709,7 +1723,9 @@ export default function AdminNewArrivalsBannersPage() {
           type: "error",
 
           message:
-            error?.message ||
+            (error instanceof Error
+              ? error.message
+              : null) ||
             "Could not save the banner.",
         }
       );
@@ -1843,14 +1859,16 @@ export default function AdminNewArrivalsBannersPage() {
             `${config.adminTitle} deleted successfully.`,
         }
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       setNotice(
         placement,
         {
           type: "error",
 
           message:
-            error?.message ||
+            (error instanceof Error
+              ? error.message
+              : null) ||
             "Could not delete the banner.",
         }
       );

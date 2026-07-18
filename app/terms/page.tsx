@@ -1,10 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowLeft,
-  ArrowRight,
   BadgeCheck,
   Boxes,
   ClipboardCheck,
@@ -19,7 +16,6 @@ export default function TermsPage() {
   const { lang } = useLanguage();
 
   const isArabic = lang === "ar";
-  const ContinueArrow = isArabic ? ArrowLeft : ArrowRight;
 
   const sections = [
     {

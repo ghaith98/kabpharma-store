@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   ArrowRight,
@@ -183,9 +184,12 @@ export default function WishlistPage() {
                       )}
 
                       {product.image_url ? (
-                        <img
+                        <Image
                           src={product.image_url}
                           alt={product.name}
+                          width={500}
+                          height={500}
+                          sizes="(max-width: 640px) 42vw, 240px"
                           className="h-full w-full object-contain transition duration-500 hover:scale-105"
                         />
                       ) : (

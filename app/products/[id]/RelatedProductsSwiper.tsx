@@ -5,13 +5,14 @@ import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { useLanguage } from "../../../context/LanguageContext";
+import type { ProductCardProduct } from "../ProductCard";
 
 import "swiper/css";
 
 export default function RelatedProductsSwiper({
   products,
 }: {
-  products: any[];
+  products: ProductCardProduct[];
 }) {
   const { lang } = useLanguage();
   const isArabic = lang === "ar";
@@ -43,9 +44,10 @@ export default function RelatedProductsSwiper({
       className="!overflow-visible"
     >
       {products.map((item) => {
-        const name = isArabic
+        const name = (isArabic
           ? item.name_ar || item.name || item.name_en
-          : item.name_en || item.name || item.name_ar;
+          : item.name_en || item.name || item.name_ar) ||
+          (isArabic ? "منتج كاب فارما" : "KAB Pharma product");
 
         const description = isArabic
           ? item.description_ar ||

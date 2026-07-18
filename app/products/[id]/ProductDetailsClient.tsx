@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -10,15 +9,40 @@ import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductGallery from "./ProductGallery";
 import { useLanguage } from "../../../context/LanguageContext";
 
+export type ProductDetail = {
+  id: number;
+  name?: string | null;
+  name_ar?: string | null;
+  name_en?: string | null;
+  description?: string | null;
+  description_ar?: string | null;
+  description_en?: string | null;
+  price?: number | string | null;
+  image_url?: string | null;
+  is_out_of_stock?: boolean | null;
+};
+
+export type ProductDetailVariant = {
+  id: number | string;
+  price: number | string;
+  label?: string | null;
+  label_ar?: string | null;
+  label_en?: string | null;
+  name?: string | null;
+  name_ar?: string | null;
+  name_en?: string | null;
+  images?: string[] | null;
+};
+
 export default function ProductDetailsClient({
   product,
   normalGalleryImages,
   productVariants,
   salePercent,
 }: {
-  product: any;
+  product: ProductDetail;
   normalGalleryImages: string[];
-  productVariants: any[];
+  productVariants: ProductDetailVariant[];
   salePercent: number;
 }) {
   const { lang } = useLanguage();
@@ -69,32 +93,6 @@ const selectedVariant =
     selectedVariantId,
   ]);
 
-useEffect(() => {
-  if (
-    sortedVariants.length === 0
-  ) {
-    setSelectedVariantId(null);
-    return;
-  }
-
-  const selectedStillExists =
-    sortedVariants.some(
-      (variant) =>
-        Number(variant.id) ===
-        Number(selectedVariantId)
-    );
-
-  if (!selectedStillExists) {
-    setSelectedVariantId(
-      Number(
-        sortedVariants[0].id
-      )
-    );
-  }
-}, [
-  sortedVariants,
-  selectedVariantId,
-]);
 const selectedVariantLabelAr =
   selectedVariant
     ? selectedVariant.label_ar ||
@@ -120,25 +118,25 @@ const selectedVariantLabel =
     ? selectedVariantLabelAr
     : selectedVariantLabelEn;
 
-  const productName = isArabic
-    ? product.name_ar ||
-      product.name ||
-      product.name_en
-    : product.name_en ||
-      product.name ||
-      product.name_ar;
+  const productName =
+    (isArabic
+      ? product.name_ar || product.name || product.name_en
+      : product.name_en || product.name || product.name_ar) ||
+    (isArabic ? "منتج كاب فارما" : "KAB Pharma product");
 
-  const productDescription = isArabic
+  const productDescription = (isArabic
     ? product.description_ar ||
       product.description ||
       product.description_en
     : product.description_en ||
       product.description ||
-      product.description_ar;
+      product.description_ar) || "";
+
+  const selectedVariantImages = selectedVariant?.images || [];
 
   const galleryImages =
-    selectedVariant?.images?.length > 0
-      ? selectedVariant.images
+    selectedVariantImages.length > 0
+      ? selectedVariantImages
       : normalGalleryImages;
 
   const originalPrice = selectedVariant
@@ -153,11 +151,13 @@ const selectedVariantLabel =
 
   const finalImage =
     galleryImages[0] ||
-    product.image_url;
+    product.image_url ||
+    null;
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.12fr)_minmax(360px,0.88fr)] lg:gap-14">
       <ProductGallery
+        key={galleryImages.join("|")}
         images={galleryImages}
         productName={productName}
       />
@@ -214,7 +214,7 @@ const selectedVariantLabel =
 
             <div className="flex flex-wrap gap-2.5">
              {sortedVariants.map(
-  (variant: any) => {
+  (variant) => {
     const labelAr =
       variant.label_ar ||
       variant.name_ar ||

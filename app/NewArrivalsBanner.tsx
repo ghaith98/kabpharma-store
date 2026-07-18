@@ -5,6 +5,7 @@ import type {
 } from "react";
 
 import Link from "next/link";
+import { getImageProps } from "next/image";
 import {
   ChevronRight,
 } from "lucide-react";
@@ -176,6 +177,31 @@ export default function NewArrivalsBanner({
       mobileCrop.zoom,
   } as CSSProperties;
 
+  const {
+    props: {
+      srcSet: desktopSrcSet,
+    },
+  } = getImageProps({
+    src: desktopImage,
+    alt: title,
+    width: 1600,
+    height: 620,
+    sizes: "100vw",
+  });
+
+  const {
+    props: {
+      srcSet: mobileSrcSet,
+      ...responsiveImageProps
+    },
+  } = getImageProps({
+    src: mobileImage,
+    alt: title,
+    width: 393,
+    height: 680,
+    sizes: "100vw",
+  });
+
   return (
     <section
       aria-labelledby="new-arrivals-title"
@@ -195,15 +221,21 @@ export default function NewArrivalsBanner({
         {/* Responsive LCP image */}
         <picture className="absolute inset-0 block h-full w-full overflow-hidden">
           <source
+            media="(min-width: 768px)"
+            srcSet={desktopSrcSet}
+          />
+
+          <source
             media="(max-width: 767px)"
-            srcSet={mobileImage}
+            srcSet={mobileSrcSet}
           />
 
           <img
-            src={desktopImage}
-            alt={title}
-            width={1600}
-            height={620}
+            {...responsiveImageProps}
+            alt={
+              title ||
+              "KAB Pharma new arrivals"
+            }
             loading="eager"
             fetchPriority="high"
             decoding="async"

@@ -37,6 +37,12 @@ type ProductPageProps = {
   }>;
 };
 
+type VariantImageRecord = {
+  variant_id: number | string;
+  image_url: string;
+  sort_order?: number | string | null;
+};
+
 function cleanMetaDescription(
   value: string,
   maxLength = 160
@@ -350,7 +356,7 @@ export default async function ProductPage({
     (variant) => variant.id
   );
 
-  let variantImages: any[] = [];
+  let variantImages: VariantImageRecord[] = [];
 
   if (variantIds.length > 0) {
     const {
@@ -376,7 +382,7 @@ export default async function ProductPage({
       );
     }
 
-    variantImages = data || [];
+    variantImages = (data || []) as VariantImageRecord[];
   }
 
   const productVariants =

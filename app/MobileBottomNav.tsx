@@ -1,17 +1,10 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
 import Link from "next/link";
 
-import {
-  usePathname,
-  useRouter,
-} from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import {
   Home,
@@ -20,61 +13,17 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { getCart } from "@/lib/cart";
-
 import { useLanguage } from "../context/LanguageContext";
+import { useCartCount } from "./useStoreCounts";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
   const { lang } = useLanguage();
 
   const currentLang =
     lang as "en" | "ar";
 
-  const [count, setCount] =
-    useState(0);
-
-  function updateCount() {
-    const cart = getCart();
-
-    const total = cart.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.quantity || 0
-        ),
-      0
-    );
-
-    setCount(total);
-  }
-
-  useEffect(() => {
-    updateCount();
-
-    window.addEventListener(
-      "cartUpdated",
-      updateCount
-    );
-
-    window.addEventListener(
-      "storage",
-      updateCount
-    );
-
-    return () => {
-      window.removeEventListener(
-        "cartUpdated",
-        updateCount
-      );
-
-      window.removeEventListener(
-        "storage",
-        updateCount
-      );
-    };
-  }, []);
+  const count = useCartCount();
 
   const items = [
     {
@@ -138,15 +87,6 @@ export default function MobileBottomNav() {
         new Event("productsResetRequested")
       );
     }
-
-    window.dispatchEvent(
-      new Event("routeRefreshStarted")
-    );
-
-    router.replace(href, {
-      scroll: false,
-    });
-    router.refresh();
 
     window.scrollTo({
       top: 0,

@@ -4,13 +4,23 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+type DeliveryOrder = {
+  id: number;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  from_address?: string | null;
+  to_address?: string | null;
+  price?: number | string | null;
+  driver_name?: string | null;
+  status: string;
+  created_at?: string | null;
+};
+
 export default function ManageDeliveryOrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function loadOrders() {
-    setLoading(true);
-
     const { data, error } = await supabase
       .from("delivery_orders")
       .select("*")
@@ -27,7 +37,9 @@ export default function ManageDeliveryOrdersPage() {
   }
 
  useEffect(() => {
-  loadOrders();
+  window.queueMicrotask(() => {
+    void loadOrders();
+  });
 
   const channel = supabase
     .channel("delivery-orders-realtime")

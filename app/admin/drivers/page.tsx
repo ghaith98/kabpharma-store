@@ -4,8 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+type Driver = {
+  id: string;
+  name: string;
+  password: string;
+  is_active: boolean;
+  created_at?: string | null;
+};
+
 export default function AdminDriversPage() {
-  const [drivers, setDrivers] = useState<any[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
 
@@ -43,7 +51,7 @@ export default function AdminDriversPage() {
     loadDrivers();
   }
 
-  async function toggleActive(driver: any) {
+  async function toggleActive(driver: Driver) {
     const { error } = await supabase
       .from("delivery_drivers")
       .update({ is_active: !driver.is_active })
@@ -78,7 +86,9 @@ export default function AdminDriversPage() {
   }
 
   useEffect(() => {
-    loadDrivers();
+    window.queueMicrotask(() => {
+      void loadDrivers();
+    });
   }, []);
 
   return (

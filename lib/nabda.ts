@@ -33,7 +33,7 @@ export async function getNabdaInstanceToken() {
 
   const text = await response.text();
 
-  let result: any = null;
+  let result: unknown = null;
 
   try {
     result = JSON.parse(text);
@@ -53,11 +53,21 @@ export async function getNabdaInstanceToken() {
     );
   }
 
+  const resultRecord =
+    result && typeof result === "object"
+      ? (result as Record<string, unknown>)
+      : null;
+
+  const nestedData =
+    resultRecord?.data && typeof resultRecord.data === "object"
+      ? (resultRecord.data as Record<string, unknown>)
+      : null;
+
   const accessToken =
-    result?.accessToken ||
-    result?.data?.accessToken ||
-    result?.token ||
-    result?.data?.token;
+    resultRecord?.accessToken ||
+    nestedData?.accessToken ||
+    resultRecord?.token ||
+    nestedData?.token;
 
   if (!accessToken) {
     console.error(

@@ -195,7 +195,7 @@ export default async function Home() {
       );
 
   let topSellerProducts:
-    any[] = [];
+    typeof newProducts = [];
 
   if (
     topSellerIds.length > 0

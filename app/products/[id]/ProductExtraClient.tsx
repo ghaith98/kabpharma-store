@@ -1,5 +1,7 @@
 "use client";
 
+import type { ComponentProps } from "react";
+
 import {
   ChevronDown,
   FlaskConical,
@@ -8,15 +10,27 @@ import {
 import RelatedProductsSwiper from "./RelatedProductsSwiper";
 import ReviewsSection from "./ReviewsSection";
 import { useLanguage } from "../../../context/LanguageContext";
+import type { ProductCardProduct } from "../ProductCard";
+
+type ProductExtra = {
+  id: number;
+  ingredients?: string | null;
+  ingredients_ar?: string | null;
+  ingredients_en?: string | null;
+};
+
+type ProductReviews = ComponentProps<
+  typeof ReviewsSection
+>["initialReviews"];
 
 export default function ProductExtraClient({
   product,
   relatedProducts,
   reviews = [],
 }: {
-  product: any;
-  relatedProducts: any[];
-  reviews?: any[];
+  product: ProductExtra;
+  relatedProducts: ProductCardProduct[];
+  reviews?: ProductReviews;
 }) {
   const { lang } = useLanguage();
   const isArabic = lang === "ar";

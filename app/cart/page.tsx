@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useEffect,
@@ -84,11 +85,48 @@ export default function CartPage() {
       : ArrowRight;
 
   useEffect(() => {
-    setCart(
-      getCart() as CartItemWithVariant[]
-    );
+    let cancelled = false;
 
-    void loadFreeShippingThreshold();
+    window.queueMicrotask(() => {
+      if (!cancelled) {
+        setCart(
+          getCart() as CartItemWithVariant[]
+        );
+      }
+    });
+
+    async function loadThreshold() {
+      const { data, error } =
+        await supabase
+          .from("settings")
+          .select("value")
+          .eq(
+            "key",
+            "free_shipping_threshold"
+          )
+          .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Failed to load free shipping threshold:",
+          error
+        );
+
+        return;
+      }
+
+      if (!cancelled) {
+        setFreeShippingThreshold(
+          Number(data?.value || 0)
+        );
+      }
+    }
+
+    void loadThreshold();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -129,31 +167,6 @@ export default function CartPage() {
       );
     };
   }, [showAccountModal]);
-
-  async function loadFreeShippingThreshold() {
-    const { data, error } =
-      await supabase
-        .from("settings")
-        .select("value")
-        .eq(
-          "key",
-          "free_shipping_threshold"
-        )
-        .maybeSingle();
-
-    if (error) {
-      console.error(
-        "Failed to load free shipping threshold:",
-        error
-      );
-
-      return;
-    }
-
-    setFreeShippingThreshold(
-      Number(data?.value || 0)
-    );
-  }
 
   function formatPrice(
     value: number
@@ -650,13 +663,16 @@ export default function CartPage() {
                             className="flex aspect-square items-center justify-center overflow-hidden rounded-[1.25rem] bg-[#f7f8f6] p-3 sm:p-4"
                           >
                             {item.image_url ? (
-                              <img
+                              <Image
                                 src={
                                   item.image_url
                                 }
                                 alt={
                                   displayName
                                 }
+                                width={300}
+                                height={300}
+                                sizes="(max-width: 640px) 104px, 148px"
                                 className="h-full w-full object-contain transition duration-500 hover:scale-105"
                               />
                             ) : (

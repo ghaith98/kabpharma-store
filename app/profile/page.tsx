@@ -45,8 +45,9 @@ export default function ProfilePage() {
   const isArabic = lang === "ar";
 
   useEffect(() => {
-    const savedUser =
-      localStorage.getItem("kab_user");
+    const initializationTimer = window.setTimeout(() => {
+      const savedUser =
+        localStorage.getItem("kab_user");
 
     if (savedUser) {
       try {
@@ -68,7 +69,12 @@ export default function ProfilePage() {
       }
     }
 
-    setPageReady(true);
+      setPageReady(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(initializationTimer);
+    };
   }, []);
 
   function handleLogout() {

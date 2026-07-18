@@ -23,11 +23,13 @@ import {
   X,
 } from "lucide-react";
 
-import { getCart } from "@/lib/cart";
-import { getWishlist } from "@/lib/wishlist";
 import { supabase } from "@/lib/supabase";
 
 import { useLanguage } from "../context/LanguageContext";
+import {
+  useCartCount,
+  useWishlistCount,
+} from "./useStoreCounts";
 type Category = {
   id: number;
   name?: string | null;
@@ -46,21 +48,13 @@ export default function Navbar() {
 
   const isArabic = lang === "ar";
 
-  const [cartCount, setCartCount] =
-    useState(0);
-
-  const [
-    wishlistCount,
-    setWishlistCount,
-  ] = useState(0);
+  const cartCount = useCartCount();
+  const wishlistCount = useWishlistCount();
 
   const [searchOpen, setSearchOpen] =
     useState(false);
 
   const [menuOpen, setMenuOpen] =
-    useState(false);
-
-  const [isRefreshing, setIsRefreshing] =
     useState(false);
 
   const [query, setQuery] =
@@ -189,30 +183,6 @@ const [
     },
   ];
 
-  function updateCartCount() {
-    const cart = getCart();
-
-    const total = cart.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.quantity || 0
-        ),
-      0
-    );
-
-    setCartCount(total);
-  }
-
-  function updateWishlistCount() {
-    const wishlist =
-      getWishlist();
-
-    setWishlistCount(
-      wishlist.length
-    );
-  }
-
   function isActive(
     href: string
   ) {
@@ -231,9 +201,9 @@ const [
     if (
       pathname !== "/products"
     ) {
-      router.push(
-        "/products?openSearch=1"
-      );
+      setQuery("");
+      setSearchOpen(true);
+      router.push("/products");
 
       return;
     }
@@ -257,7 +227,11 @@ const [
     if (
       pathname === "/products"
     ) {
-      router.replace("/products");
+      window.history.replaceState(
+        null,
+        "",
+        "/products"
+      );
     }
   }
 
@@ -266,19 +240,12 @@ const [
   setProductsOpen(false);
 }
 
-  function showRefreshIndicator() {
-    setIsRefreshing(true);
-
-    window.setTimeout(() => {
-      setIsRefreshing(false);
-    }, 850);
-  }
-
   function handlePrimaryNavigation(
     event: ReactMouseEvent<HTMLAnchorElement>,
     href: string
   ) {
     closeMenu();
+    setSearchOpen(false);
 
     if (pathname !== href) {
       return;
@@ -294,82 +261,11 @@ const [
       );
     }
 
-    showRefreshIndicator();
-    router.replace(href, {
-      scroll: false,
-    });
-    router.refresh();
-
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
   }
-
-  useEffect(() => {
-    function handleRefreshStarted() {
-      showRefreshIndicator();
-    }
-
-    window.addEventListener(
-      "routeRefreshStarted",
-      handleRefreshStarted
-    );
-
-    return () => {
-      window.removeEventListener(
-        "routeRefreshStarted",
-        handleRefreshStarted
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    updateCartCount();
-    updateWishlistCount();
-
-    window.addEventListener(
-      "cartUpdated",
-      updateCartCount
-    );
-
-    window.addEventListener(
-      "wishlistUpdated",
-      updateWishlistCount
-    );
-
-    window.addEventListener(
-      "storage",
-      updateCartCount
-    );
-
-    window.addEventListener(
-      "storage",
-      updateWishlistCount
-    );
-
-    return () => {
-      window.removeEventListener(
-        "cartUpdated",
-        updateCartCount
-      );
-
-      window.removeEventListener(
-        "wishlistUpdated",
-        updateWishlistCount
-      );
-
-      window.removeEventListener(
-        "storage",
-        updateCartCount
-      );
-
-      window.removeEventListener(
-        "storage",
-        updateWishlistCount
-      );
-    };
-  }, []);
 
   /*
     فتح البحث بعد الانتقال
@@ -420,40 +316,6 @@ const [
     cancelled = true;
   };
 }, []);
-  useEffect(() => {
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
-
-    if (
-      pathname === "/products" &&
-      params.get(
-        "openSearch"
-      ) === "1"
-    ) {
-      setQuery(
-        params.get("search") || ""
-      );
-
-      setSearchOpen(true);
-
-      params.delete(
-        "openSearch"
-      );
-
-      const cleanUrl =
-        params.toString()
-          ? `/products?${params.toString()}`
-          : "/products";
-
-      router.replace(cleanUrl);
-    }
-  }, [
-    pathname,
-    router,
-  ]);
-
   /*
     البحث مع تأخير بسيط.
   */
@@ -471,13 +333,17 @@ const [
           query.trim();
 
         if (cleanQuery) {
-          router.replace(
+          window.history.replaceState(
+            null,
+            "",
             `/products?search=${encodeURIComponent(
               cleanQuery
             )}`
           );
         } else {
-          router.replace(
+          window.history.replaceState(
+            null,
+            "",
             "/products"
           );
         }
@@ -492,16 +358,7 @@ const [
     query,
     searchOpen,
     pathname,
-    router,
   ]);
-
-  /*
-    إغلاق القائمة بعد الانتقال.
-  */
-  useEffect(() => {
-  setMenuOpen(false);
-  setProductsOpen(false);
-}, [pathname]);
   /*
     تغيير شكل الـNavbar عند Scroll.
   */
@@ -573,7 +430,9 @@ const [
         if (
           pathname === "/products"
         ) {
-          router.replace(
+          window.history.replaceState(
+            null,
+            "",
             "/products"
           );
         }
@@ -613,7 +472,6 @@ const [
   }, [
     searchOpen,
     pathname,
-    router,
   ]);
 
   const desktopIconClass =
@@ -630,20 +488,6 @@ const [
 
   return (
     <>
-      {isRefreshing && (
-        <div
-          role="status"
-          aria-label={
-            isArabic
-              ? "جارٍ تحديث الصفحة"
-              : "Refreshing page"
-          }
-          className="fixed inset-x-0 top-0 z-[1200] h-[3px] overflow-hidden bg-[#dcebe2]"
-        >
-          <span className="block h-full w-1/2 animate-[pulse_0.55s_ease-in-out_infinite] rounded-r-full bg-[#0a583b] shadow-[0_0_12px_rgba(10,88,59,0.5)]" />
-        </div>
-      )}
-
       <header
         dir="ltr"
         className={`sticky top-0 z-50 bg-white/95 backdrop-blur-xl transition-shadow duration-300 ${
@@ -692,7 +536,9 @@ const [
                     if (
                       cleanQuery
                     ) {
-                      router.replace(
+                      window.history.replaceState(
+                        null,
+                        "",
                         `/products?search=${encodeURIComponent(
                           cleanQuery
                         )}`

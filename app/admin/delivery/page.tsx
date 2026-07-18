@@ -1,19 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+type Governorate = {
+  id: number;
+  governorate: string;
+  governorate_ar?: string | null;
+  governorate_en?: string | null;
+  is_active: boolean;
+};
+
+type DeliveryArea = {
+  id: number;
+  governorate: string;
+  area_name: string;
+  area_name_ar?: string | null;
+  area_name_en?: string | null;
+  delivery_fee: number | string;
+  newFee?: number | string;
+  is_active: boolean;
+};
+
 export default function AdminDeliveryPage() {
   const router = useRouter();
 
-  const [governorates, setGovernorates] = useState<any[]>([]);
-  const [areas, setAreas] = useState<any[]>([]);
-  const [settings, setSettings] = useState<any[]>([]);
-
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [areas, setAreas] = useState<DeliveryArea[]>([]);
   const [selectedGovernorate, setSelectedGovernorate] = useState("Damascus");
-  const [areaName, setAreaName] = useState("");
   const [areaFee, setAreaFee] = useState("");
   const [areaNameAr, setAreaNameAr] = useState("");
 const [areaNameEn, setAreaNameEn] = useState("");
@@ -24,26 +40,7 @@ const [areaNameEn, setAreaNameEn] = useState("");
   const [loadingArea, setLoadingArea] = useState(false);
   const [savingThreshold, setSavingThreshold] = useState(false);
 
-  async function checkAdmin() {
-    const { data } = await supabase.auth.getUser();
-
-    if (!data.user) {
-      router.push("/admin/login");
-      return;
-    }
-
-    await loadAll();
-  }
-
-  async function loadAll() {
-    await Promise.all([
-      loadGovernorates(),
-      loadAreas(),
-      loadSettings(),
-    ]);
-  }
-
-  async function loadGovernorates() {
+  const loadGovernorates = useCallback(async () => {
     const { data, error } = await supabase
       .from("delivery_fees")
       .select("*")
@@ -55,9 +52,9 @@ const [areaNameEn, setAreaNameEn] = useState("");
     }
 
     setGovernorates(data || []);
-  }
+  }, []);
 
-  async function loadAreas() {
+  const loadAreas = useCallback(async () => {
     const { data, error } = await supabase
       .from("delivery_areas")
       .select("*")
@@ -70,9 +67,9 @@ const [areaNameEn, setAreaNameEn] = useState("");
     }
 
     setAreas(data || []);
-  }
+  }, []);
 
-  async function loadSettings() {
+  const loadSettings = useCallback(async () => {
     const { data, error } = await supabase
       .from("settings")
       .select("*")
@@ -83,14 +80,31 @@ const [areaNameEn, setAreaNameEn] = useState("");
       return;
     }
 
-    setSettings(data || []);
-
     if (data && data[0]?.value) {
       setFreeShippingThreshold(data[0].value);
     }
-  }
+  }, []);
 
-  async function toggleGovernorateActive(item: any) {
+  const loadAll = useCallback(async () => {
+    await Promise.all([
+      loadGovernorates(),
+      loadAreas(),
+      loadSettings(),
+    ]);
+  }, [loadAreas, loadGovernorates, loadSettings]);
+
+  const checkAdmin = useCallback(async () => {
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      router.replace("/admin/login");
+      return;
+    }
+
+    await loadAll();
+  }, [loadAll, router]);
+
+  async function toggleGovernorateActive(item: Governorate) {
     setUpdatingId(item.id);
 
     const { error } = await supabase
@@ -133,7 +147,6 @@ const [areaNameEn, setAreaNameEn] = useState("");
       return;
     }
 
-   setAreaName("");
 setAreaNameAr("");
 setAreaNameEn("");
 setAreaFee("");
@@ -159,7 +172,7 @@ setAreaFee("");
     setUpdatingId(null);
   }
 
-  async function toggleAreaActive(area: any) {
+  async function toggleAreaActive(area: DeliveryArea) {
     setUpdatingId(area.id);
 
     const { error } = await supabase
@@ -215,10 +228,10 @@ setAreaFee("");
   }
 
   useEffect(() => {
-    checkAdmin();
-  }, []);
-
-  const activeGovernorates = governorates.filter((item) => item.is_active);
+    window.queueMicrotask(() => {
+      void checkAdmin();
+    });
+  }, [checkAdmin]);
 
   return (
   <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-10">

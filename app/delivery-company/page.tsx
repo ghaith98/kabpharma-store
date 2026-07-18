@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -24,10 +24,16 @@ type Order = {
   order_items?: OrderItem[];
 };
 
+type DeliveryCompany = {
+  id: number;
+  company_name: string;
+  is_active?: boolean;
+};
+
 export default function DeliveryCompanyPage() {
   const router = useRouter();
 
-  const [company, setCompany] = useState<any>(null);
+  const [company, setCompany] = useState<DeliveryCompany | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -35,7 +41,7 @@ export default function DeliveryCompanyPage() {
     "accepted"
   );
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from("orders")
       .select(`
@@ -58,9 +64,9 @@ export default function DeliveryCompanyPage() {
 
     setOrders(data || []);
     setLoading(false);
-  }
+  }, []);
 
-  async function updateOnlineStatus(companyId: number) {
+  const updateOnlineStatus = useCallback(async (companyId: number) => {
     await supabase
       .from("delivery_companies")
       .update({
@@ -68,9 +74,9 @@ export default function DeliveryCompanyPage() {
         last_seen: new Date().toISOString(),
       })
       .eq("id", companyId);
-  }
+  }, []);
 
-  async function checkCompanyStillActive(companyId: number) {
+  const checkCompanyStillActive = useCallback(async (companyId: number) => {
     const { data } = await supabase
       .from("delivery_companies")
       .select("*")
@@ -85,15 +91,15 @@ export default function DeliveryCompanyPage() {
 
     setCompany(data);
     return true;
-  }
+  }, [router]);
 
-  async function refreshAll(companyId: number) {
+  const refreshAll = useCallback(async (companyId: number) => {
     const active = await checkCompanyStillActive(companyId);
     if (!active) return;
 
     await updateOnlineStatus(companyId);
     await loadOrders();
-  }
+  }, [checkCompanyStillActive, loadOrders, updateOnlineStatus]);
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
     setUpdatingId(orderId);
@@ -133,24 +139,34 @@ export default function DeliveryCompanyPage() {
   }
 
   useEffect(() => {
-    const savedCompany = localStorage.getItem("delivery_company");
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const initializationTimer = window.setTimeout(() => {
+      const savedCompany = localStorage.getItem("delivery_company");
 
     if (!savedCompany) {
       router.push("/delivery-company/login");
       return;
     }
 
-    const parsedCompany = JSON.parse(savedCompany);
+    const parsedCompany = JSON.parse(savedCompany) as DeliveryCompany;
     setCompany(parsedCompany);
 
-    refreshAll(parsedCompany.id);
+    void refreshAll(parsedCompany.id);
 
-    const interval = setInterval(() => {
-      refreshAll(parsedCompany.id);
+    interval = setInterval(() => {
+      void refreshAll(parsedCompany.id);
     }, 30000);
+    }, 0);
 
-    return () => clearInterval(interval);
-  }, [router]);
+    return () => {
+      window.clearTimeout(initializationTimer);
+
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [refreshAll, router]);
 
   const filteredOrders = orders.filter((order) => order.status === filter);
 

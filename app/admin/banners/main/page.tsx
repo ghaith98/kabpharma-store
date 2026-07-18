@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -184,9 +185,18 @@ function useFilePreview(
   ] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!file) {
-      setPreviewUrl("");
-      return;
+      window.queueMicrotask(() => {
+        if (!cancelled) {
+          setPreviewUrl("");
+        }
+      });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     const objectUrl =
@@ -194,11 +204,14 @@ function useFilePreview(
         file
       );
 
-    setPreviewUrl(
-      objectUrl
-    );
+    window.queueMicrotask(() => {
+      if (!cancelled) {
+        setPreviewUrl(objectUrl);
+      }
+    });
 
     return () => {
+      cancelled = true;
       URL.revokeObjectURL(
         objectUrl
       );
@@ -558,7 +571,7 @@ export default function AdminMainBannersPage() {
       mobileImageFile
     );
 
-  async function loadBanners() {
+  const loadBanners = useCallback(async () => {
     const {
       data,
       error,
@@ -605,11 +618,9 @@ export default function AdminMainBannersPage() {
     setCropDrafts(
       drafts
     );
-  }
+  }, []);
 
-  async function checkAdmin() {
-    setInitialLoading(true);
-
+  const checkAdmin = useCallback(async () => {
     const {
       data,
       error,
@@ -630,7 +641,7 @@ export default function AdminMainBannersPage() {
     await loadBanners();
 
     setInitialLoading(false);
-  }
+  }, [loadBanners, router]);
 
   function createSafeFileName(
     fileName: string
@@ -990,7 +1001,7 @@ export default function AdminMainBannersPage() {
       alert(
         "Main banner added successfully"
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       const uploadedPaths = [
         uploadedDesktopPath,
         uploadedMobilePath,
@@ -1003,7 +1014,9 @@ export default function AdminMainBannersPage() {
       );
 
       alert(
-        error?.message ||
+        (error instanceof Error
+          ? error.message
+          : null) ||
           "Something went wrong while adding the banner"
       );
     } finally {
@@ -1239,8 +1252,10 @@ export default function AdminMainBannersPage() {
   }
 
   useEffect(() => {
-    void checkAdmin();
-  }, []);
+    window.queueMicrotask(() => {
+      void checkAdmin();
+    });
+  }, [checkAdmin]);
 
   if (initialLoading) {
     return (

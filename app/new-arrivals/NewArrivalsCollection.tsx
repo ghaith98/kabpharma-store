@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getImageProps } from "next/image";
 
 import EditorialProductCard from "./EditorialProductCard";
 
@@ -115,6 +116,34 @@ function DiscoveryTile({
     return null;
   }
 
+  const {
+    props: {
+      srcSet: desktopSrcSet,
+      ...desktopImageProps
+    },
+  } = getImageProps({
+    src: imageUrl,
+    alt: title,
+    width: 1080,
+    height: 700,
+    sizes:
+      "(max-width: 1023px) 100vw, 50vw",
+    quality: 82,
+  });
+
+  const {
+    props: {
+      srcSet: mobileSrcSet,
+    },
+  } = getImageProps({
+    src: mobileImage || imageUrl,
+    alt: title,
+    width: 800,
+    height: 620,
+    sizes: "100vw",
+    quality: 82,
+  });
+
   return (
     <article className="h-full">
       <Link
@@ -131,18 +160,22 @@ function DiscoveryTile({
       >
         <div className="relative h-[220px] shrink-0 overflow-hidden bg-[#f4f5f3] sm:h-[285px] lg:h-[335px]">
           <picture>
-            {mobileImage && (
-              <source
-                media="(max-width: 767px)"
-                srcSet={
-                  mobileImage
-                }
-              />
-            )}   
-            <img
-              src={
-                imageUrl
+            <source
+              media="(max-width: 767px)"
+              srcSet={
+                mobileSrcSet
               }
+            />
+
+            <source
+              media="(min-width: 768px)"
+              srcSet={
+                desktopSrcSet
+              }
+            />
+
+            <img
+              {...desktopImageProps}
               alt={title}
               loading="lazy"
               decoding="async"
