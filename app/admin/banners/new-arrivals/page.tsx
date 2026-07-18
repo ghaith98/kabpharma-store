@@ -118,8 +118,8 @@ const BANNER_CONFIGS: BannerConfig[] = [
     desktopWidth: 1600,
     desktopHeight: 620,
 
-    mobileWidth: 400,
-    mobileHeight: 800,
+    mobileWidth: 800,
+    mobileHeight: 400,
 
     sortOrder: 1,
     type: "hero",
