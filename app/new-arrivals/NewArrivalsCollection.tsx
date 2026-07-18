@@ -163,9 +163,9 @@ function DiscoveryTile({
             ? "rtl"
             : "ltr"
         }
-        className="group flex h-full min-h-[430px] flex-col overflow-hidden border border-[#dfe4e0] bg-white transition sm:min-h-[500px] lg:min-h-[570px]"
+        className="group flex h-full min-h-[430px] flex-col overflow-hidden bg-white transition sm:min-h-[500px] lg:min-h-[570px]"
       >
-        <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-[#f4f5f3] md:aspect-[5/3]">
+        <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-[#f4f5f3] md:aspect-[5/3] lg:aspect-auto lg:h-[calc((100%_-_2rem)/2)]">
           <picture>
             <source
               media="(max-width: 767px)"
