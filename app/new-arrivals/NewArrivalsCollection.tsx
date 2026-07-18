@@ -165,7 +165,7 @@ function DiscoveryTile({
         }
         className="group flex h-full min-h-[430px] flex-col overflow-hidden border border-[#dfe4e0] bg-white transition sm:min-h-[500px] lg:min-h-[570px]"
       >
-        <div className="relative h-[220px] shrink-0 overflow-hidden bg-[#f4f5f3] sm:h-[275px] lg:h-[315px]">
+        <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-[#f4f5f3] md:aspect-[5/3]">
           <picture>
             <source
               media="(max-width: 767px)"
@@ -182,7 +182,7 @@ function DiscoveryTile({
               alt={title}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.02]"
+              className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.02]"
             />
           </picture>
         </div>
