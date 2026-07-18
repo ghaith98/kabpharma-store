@@ -77,7 +77,7 @@ export default function ProductSwiper({
       <Swiper
         dir="ltr"
         spaceBetween={14}
-        slidesPerView={1.22}
+        slidesPerView={1.55}
         slidesPerGroup={1}
         watchOverflow
         onSwiper={(swiper) => {
@@ -102,7 +102,7 @@ export default function ProductSwiper({
         }}
         breakpoints={{
           480: {
-            slidesPerView: 1.65,
+            slidesPerView: 1.8,
             spaceBetween: 14,
           },
           640: {
@@ -114,7 +114,7 @@ export default function ProductSwiper({
             spaceBetween: 18,
           },
           1024: {
-            slidesPerView: 3,
+            slidesPerView: 3.25,
             spaceBetween: 20,
           },
           1280: {
@@ -132,7 +132,7 @@ export default function ProductSwiper({
             <EditorialProductCard
               product={product}
               headingLevel={3}
-              imageSizes="(max-width: 640px) 78vw, (max-width: 1024px) 38vw, 25vw"
+              imageSizes="(max-width: 640px) 65vw, (max-width: 1024px) 38vw, 25vw"
             />
           </SwiperSlide>
         ))}
