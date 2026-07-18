@@ -118,8 +118,8 @@ const BANNER_CONFIGS: BannerConfig[] = [
     desktopWidth: 1600,
     desktopHeight: 620,
 
-    mobileWidth: 393,
-    mobileHeight: 680,
+    mobileWidth: 400,
+    mobileHeight: 800,
 
     sortOrder: 1,
     type: "hero",
@@ -562,63 +562,79 @@ function HeroPreview({
 
       <div>
         <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.15em] text-[#647168]">
-          Mobile preview
-        </p>
+  Mobile preview — 800 × 400 px
+</p>
 
-        <div className="relative mx-auto aspect-[393/680] w-full max-w-[300px] overflow-hidden rounded-2xl bg-[#eef1ee]">
-          <PreviewImage
-            file={
-              files.mobile
-            }
-            storedUrl={
-              banner
-                ?.image_url_mobile
-            }
-            alt={title}
-          />
+<div className="mx-auto w-full max-w-[300px] overflow-hidden rounded-2xl border border-[#e7ebe8] bg-white">
+  {/* Compact mobile image */}
+  <div className="relative aspect-[2/1] w-full overflow-hidden bg-[#eef1ee]">
+    <PreviewImage
+      file={files.mobile}
+      storedUrl={
+        banner?.image_url_mobile
+      }
+      alt={title}
+    />
 
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/95 via-white/55 to-transparent" />
+    {/* Breadcrumb readability */}
+    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/80 via-white/15 to-transparent" />
 
-          <div
-            dir="ltr"
-            className="absolute inset-x-0 top-0 px-5 pt-7"
-          >
-            <div
-              dir={
-                isArabic
-                  ? "rtl"
-                  : "ltr"
-              }
-              className={
-                isArabic
-                  ? "text-right"
-                  : "text-left"
-              }
-            >
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#0a583b]">
-                KAB Pharma
-              </p>
+    {/* Mobile breadcrumb */}
+    <div
+      dir="ltr"
+      className="absolute inset-x-0 top-0 flex items-center gap-1.5 px-4 py-4 text-[9px] font-semibold text-[#718078]"
+    >
+      <span>
+        {isArabic
+          ? "الرئيسية"
+          : "Home"}
+      </span>
 
-              <h3 className="mt-2 line-clamp-3 text-2xl font-extrabold leading-[1.15] text-[#142019]">
-                {title}
-              </h3>
+      <span
+        aria-hidden="true"
+        className="text-[#9aa59e]"
+      >
+        ›
+      </span>
 
-              <p className="mt-3 line-clamp-3 text-[11px] leading-5 text-[#526058]">
-                {description}
-              </p>
+      <span className="font-extrabold text-[#26352d]">
+        {isArabic
+          ? "وصل حديثاً"
+          : "New Arrivals"}
+      </span>
+    </div>
 
-              <span className="mt-4 inline-flex rounded-full bg-[#0a583b] px-4 py-2 text-[10px] font-extrabold text-white">
-                {buttonText}
-              </span>
-            </div>
-          </div>
+    <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10" />
+  </div>
 
-          <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10" />
+  {/* Title and description below image */}
+  <div
+    dir={
+      isArabic
+        ? "rtl"
+        : "ltr"
+    }
+    className={`bg-white px-5 pb-6 pt-5 ${
+      isArabic
+        ? "text-right"
+        : "text-left"
+    }`}
+  >
+    <h3 className="text-[24px] font-extrabold leading-[1.15] tracking-[-0.03em] text-[#142019]">
+      {title}
+    </h3>
+
+    {description && (
+      <p className="mt-3 line-clamp-3 text-[11px] leading-5 text-[#526058]">
+        {description}
+      </p>
+    )}
+  </div>
+</div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 function DiscoverPreview({
   banner,
