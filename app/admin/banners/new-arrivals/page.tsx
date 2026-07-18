@@ -161,7 +161,7 @@ const BANNER_CONFIGS: BannerConfig[] = [
       "Displayed on the right side beside the first two New Arrivals products.",
 
     desktopWidth: 1200,
-    desktopHeight: 567,
+    desktopHeight: 576,
 
     mobileWidth: 800,
     mobileHeight: 1000,
@@ -206,7 +206,7 @@ const BANNER_CONFIGS: BannerConfig[] = [
       "Displayed on the left side beside the next two New Arrivals products.",
 
     desktopWidth: 1200,
-    desktopHeight: 720,
+    desktopHeight: 576,
 
     mobileWidth: 800,
     mobileHeight: 1000,
