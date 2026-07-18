@@ -363,10 +363,23 @@ export default function EditorialProductCard({
 
         <div
           dir="ltr"
-          className="mt-4 border-t border-[#dedfdd] pt-4 sm:mt-5 sm:pt-5"
+          className="mt-3 border-t border-[#dedfdd] pt-3 sm:mt-4 sm:pt-4"
         >
-          <div className="flex min-h-[44px] items-end justify-between gap-2 sm:gap-4">
+          <div className="flex min-h-[52px] items-end justify-between gap-2 sm:gap-4">
             <div className="shrink-0 text-left">
+              <p
+                aria-hidden={
+                  salePercent <= 0
+                }
+                className={`mb-1 h-4 whitespace-nowrap text-[10px] leading-4 text-[#8c948e] line-through sm:text-xs ${
+                  salePercent > 0
+                    ? "visible"
+                    : "invisible"
+                }`}
+              >
+                {originalPrice.toLocaleString()} SYP
+              </p>
+
               <p
                 className={`whitespace-nowrap text-sm font-bold sm:text-base ${
                   salePercent > 0
@@ -378,12 +391,6 @@ export default function EditorialProductCard({
                   finalPrice
                 ).toLocaleString()} SYP
               </p>
-
-              {salePercent > 0 && (
-                <p className="mt-1 text-[10px] text-[#8c948e] line-through sm:text-xs">
-                  {originalPrice.toLocaleString()} SYP
-                </p>
-              )}
             </div>
 
             {variants.length > 0 && (
