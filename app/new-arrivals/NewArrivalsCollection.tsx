@@ -131,8 +131,8 @@ function DiscoveryTile({
   } = getImageProps({
     src: imageUrl,
     alt: title,
-    width: 1080,
-    height: 700,
+    width: 1200,
+    height: 576,
     sizes:
       "(max-width: 1023px) 100vw, 50vw",
     quality: 82,
@@ -146,7 +146,7 @@ function DiscoveryTile({
     src: mobileImage || imageUrl,
     alt: title,
     width: 800,
-    height: 620,
+    height: 1000,
     sizes: "100vw",
     quality: 82,
   });
