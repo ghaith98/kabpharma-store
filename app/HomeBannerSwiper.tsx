@@ -33,6 +33,93 @@ type CropMode =
   | "desktop"
   | "mobile";
 
+export type HomeBanner = {
+  id: number | string;
+
+  image_url?:
+    | string
+    | null;
+
+  image_url_mobile?:
+    | string
+    | null;
+
+  title?:
+    | string
+    | null;
+
+  title_ar?:
+    | string
+    | null;
+
+  title_en?:
+    | string
+    | null;
+
+  text?:
+    | string
+    | null;
+
+  text_ar?:
+    | string
+    | null;
+
+  text_en?:
+    | string
+    | null;
+
+  button_text?:
+    | string
+    | null;
+
+  button_text_ar?:
+    | string
+    | null;
+
+  button_text_en?:
+    | string
+    | null;
+
+  link_url?:
+    | string
+    | null;
+
+  desktop_position_x?:
+    | number
+    | string
+    | null;
+
+  desktop_position_y?:
+    | number
+    | string
+    | null;
+
+  desktop_zoom?:
+    | number
+    | string
+    | null;
+
+  mobile_position_x?:
+    | number
+    | string
+    | null;
+
+  mobile_position_y?:
+    | number
+    | string
+    | null;
+
+  mobile_zoom?:
+    | number
+    | string
+    | null;
+};
+
+type RenderableHomeBanner =
+  HomeBanner & {
+    image_url: string;
+  };
+
 function clamp(
   value: unknown,
   minimum: number,
@@ -43,7 +130,9 @@ function clamp(
     Number(value);
 
   if (
-    !Number.isFinite(numberValue)
+    !Number.isFinite(
+      numberValue
+    )
   ) {
     return fallback;
   }
@@ -58,35 +147,38 @@ function clamp(
 }
 
 function getCropStyle(
-  slide: any,
+  slide: HomeBanner,
   mode: CropMode
 ): CSSProperties {
-  const positionX = clamp(
-    slide?.[
-      `${mode}_position_x`
-    ],
-    0,
-    100,
-    50
-  );
+  const positionX =
+    clamp(
+      mode === "desktop"
+        ? slide.desktop_position_x
+        : slide.mobile_position_x,
+      0,
+      100,
+      50
+    );
 
-  const positionY = clamp(
-    slide?.[
-      `${mode}_position_y`
-    ],
-    0,
-    100,
-    50
-  );
+  const positionY =
+    clamp(
+      mode === "desktop"
+        ? slide.desktop_position_y
+        : slide.mobile_position_y,
+      0,
+      100,
+      50
+    );
 
-  const zoom = clamp(
-    slide?.[
-      `${mode}_zoom`
-    ],
-    1,
-    1.6,
-    1
-  );
+  const zoom =
+    clamp(
+      mode === "desktop"
+        ? slide.desktop_zoom
+        : slide.mobile_zoom,
+      1,
+      1.6,
+      1
+    );
 
   return {
     objectPosition:
@@ -100,11 +192,13 @@ function getCropStyle(
   };
 }
 
+type HomeBannerSwiperProps = {
+  banners: HomeBanner[];
+};
+
 export default function HomeBannerSwiper({
   banners,
-}: {
-  banners: any[];
-}) {
+}: HomeBannerSwiperProps) {
   const { lang } =
     useLanguage();
 
@@ -114,10 +208,25 @@ export default function HomeBannerSwiper({
   const isArabic =
     currentLang === "ar";
 
-  const hasMultipleBanners =
-    banners?.length > 1;
+  const renderableBanners =
+    banners.filter(
+      (
+        banner
+      ): banner is RenderableHomeBanner =>
+        typeof banner.image_url ===
+          "string" &&
+        banner.image_url.trim()
+          .length > 0
+    );
 
-  if (!banners?.length) {
+  const hasMultipleBanners =
+    renderableBanners.length >
+    1;
+
+  if (
+    renderableBanners.length ===
+    0
+  ) {
     return null;
   }
 
@@ -130,7 +239,9 @@ export default function HomeBannerSwiper({
         Pagination,
       ]}
       slidesPerView={1}
-      loop={hasMultipleBanners}
+      loop={
+        hasMultipleBanners
+      }
       autoplay={
         hasMultipleBanners
           ? {
@@ -161,27 +272,45 @@ export default function HomeBannerSwiper({
       }
       className="kab-campaign-swiper relative m-0 block w-full max-w-none overflow-hidden"
     >
-      {banners.map(
-        (slide) => {
+      {renderableBanners.map(
+        (
+          slide,
+          index
+        ) => {
           const title =
-            isArabic
-              ? slide.title_ar ||
-                slide.title
-              : slide.title_en ||
-                slide.title;
+            (
+              isArabic
+                ? slide.title_ar ||
+                  slide.title ||
+                  slide.title_en
+                : slide.title_en ||
+                  slide.title ||
+                  slide.title_ar
+            ) ||
+            (
+              isArabic
+                ? "كاب فارما"
+                : "KAB Pharma"
+            );
 
           const description =
-            isArabic
-              ? slide.text_ar ||
-                slide.text
-              : slide.text_en ||
-                slide.text;
+            (
+              isArabic
+                ? slide.text_ar ||
+                  slide.text ||
+                  slide.text_en
+                : slide.text_en ||
+                  slide.text ||
+                  slide.text_ar
+            ) || "";
 
           const buttonText =
             isArabic
               ? slide.button_text_ar ||
+                slide.button_text ||
                 "اكتشف المنتج"
-              : slide.button_text ||
+              : slide.button_text_en ||
+                slide.button_text ||
                 "Discover product";
 
           const mobileImage =
@@ -207,10 +336,18 @@ export default function HomeBannerSwiper({
                     src={
                       mobileImage
                     }
-                    alt={
-                      title ||
-                      "KAB Pharma campaign"
+                    alt={title}
+                    loading={
+                      index === 0
+                        ? "eager"
+                        : "lazy"
                     }
+                    fetchPriority={
+                      index === 0
+                        ? "high"
+                        : "auto"
+                    }
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-cover will-change-transform"
                     style={getCropStyle(
                       slide,
@@ -225,10 +362,18 @@ export default function HomeBannerSwiper({
                     src={
                       slide.image_url
                     }
-                    alt={
-                      title ||
-                      "KAB Pharma campaign"
+                    alt={title}
+                    loading={
+                      index === 0
+                        ? "eager"
+                        : "lazy"
                     }
+                    fetchPriority={
+                      index === 0
+                        ? "high"
+                        : "auto"
+                    }
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-cover will-change-transform"
                     style={getCropStyle(
                       slide,
@@ -237,19 +382,21 @@ export default function HomeBannerSwiper({
                   />
                 </div>
 
-                {/* Readability layer */}
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-transparent md:bg-gradient-to-r md:from-white/25 md:via-transparent md:to-transparent" />
 
-                {/* Campaign content */}
                 <div className="relative z-10 mx-auto flex min-h-[680px] w-full max-w-[1440px] items-start px-5 py-10 sm:px-8 md:min-h-[560px] md:items-center md:px-12 lg:min-h-[620px] lg:px-16">
                   <div
-  dir={isArabic ? "rtl" : "ltr"}
-  className={`w-full max-w-[490px] md:ml-0 md:mr-auto md:w-[46%] ${
-    isArabic
-      ? "text-right"
-      : "text-left"
-  }`}
->
+                    dir={
+                      isArabic
+                        ? "rtl"
+                        : "ltr"
+                    }
+                    className={`w-full max-w-[490px] md:ml-0 md:mr-auto md:w-[46%] ${
+                      isArabic
+                        ? "text-right"
+                        : "text-left"
+                    }`}
+                  >
                     <p
                       className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
                         isArabic
@@ -272,9 +419,7 @@ export default function HomeBannerSwiper({
 
                     {description && (
                       <p className="mt-4 max-w-[430px] text-sm leading-7 text-[#526058] sm:text-base sm:leading-8">
-                        {
-                          description
-                        }
+                        {description}
                       </p>
                     )}
 
@@ -286,9 +431,7 @@ export default function HomeBannerSwiper({
                       className="mt-6 inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg"
                     >
                       <span>
-                        {
-                          buttonText
-                        }
+                        {buttonText}
                       </span>
 
                       {isArabic ? (
@@ -309,24 +452,22 @@ export default function HomeBannerSwiper({
         }
       )}
 
-      {/* Desktop next banner button */}
-      {hasMultipleBanners && (
-        <button
-          type="button"
-          aria-label={
-            isArabic
-              ? "عرض البانر التالي"
-              : "Show next banner"
-          }
-          className="kab-banner-next group absolute right-6 top-1/2 z-30 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-white/85 text-[#142019] shadow-[0_8px_30px_rgba(20,32,25,0.16)] backdrop-blur-md transition duration-300 hover:scale-105 hover:border-white hover:bg-white hover:text-[#0a583b] focus:outline-none focus:ring-4 focus:ring-white/40 md:flex lg:right-8"
-        >
-          <ChevronRight
-            size={25}
-            strokeWidth={1.8}
-            className="transition-transform duration-300 group-hover:translate-x-0.5"
-          />
-        </button>
-      )}
+     {hasMultipleBanners && (
+  <button
+    type="button"
+    aria-label={
+      isArabic
+        ? "عرض البانر التالي"
+        : "Show next banner"
+    }
+    className="kab-banner-next absolute right-3 top-1/2 z-30 hidden h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#dfe5e1] bg-white text-[#142019] shadow-[0_8px_24px_rgba(20,32,25,0.12)] transition hover:border-[#cdd6d0] hover:bg-white md:flex lg:right-8"
+  >
+    <ChevronRight
+      aria-hidden="true"
+      className="h-6 w-6 stroke-[1.8]"
+    />
+  </button>
+)}
     </Swiper>
   );
 }

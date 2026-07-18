@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
 import { addToCart } from "@/lib/cart";
+
 import { useLanguage } from "../../context/LanguageContext";
 
 type ProductVariant = {
@@ -34,74 +36,99 @@ type Product = {
 export default function AddToCartButton({
   product,
   productVariants = [],
+  selectedVariantId = null,
+  disabled = false,
 }: {
   product: Product;
   productVariants?: ProductVariant[];
+  selectedVariantId?: number | string | null;
+  disabled?: boolean;
 }) {
   const { lang } = useLanguage();
-  const [added, setAdded] = useState(false);
+
+  const [added, setAdded] =
+    useState(false);
 
   function handleAdd() {
+    if (disabled) {
+      return;
+    }
+
+    const selectedVariant =
+      selectedVariantId != null
+        ? productVariants.find(
+            (variant) =>
+              String(variant.id) ===
+              String(selectedVariantId)
+          ) || null
+        : null;
+
     /*
-      أرخص variant هو الخيار الافتراضي،
-      مثل 50g في Glucoflex.
+      إذا لم يصل selectedVariantId،
+      نستخدم أرخص variant كخيار احتياطي.
     */
-    const defaultVariant =
+    const fallbackVariant =
       [...productVariants].sort(
         (first, second) =>
           Number(first.price) -
           Number(second.price)
       )[0] || null;
 
-    const variantLabelAr = defaultVariant
-      ? defaultVariant.label_ar ||
-        defaultVariant.name_ar ||
-        defaultVariant.label ||
-        defaultVariant.name ||
-        defaultVariant.label_en ||
-        defaultVariant.name_en ||
-        null
-      : null;
+    const finalVariant =
+      selectedVariant ||
+      fallbackVariant;
 
-    const variantLabelEn = defaultVariant
-      ? defaultVariant.label_en ||
-        defaultVariant.name_en ||
-        defaultVariant.label ||
-        defaultVariant.name ||
-        defaultVariant.label_ar ||
-        defaultVariant.name_ar ||
-        null
-      : null;
+    const variantLabelAr =
+      finalVariant
+        ? finalVariant.label_ar ||
+          finalVariant.name_ar ||
+          finalVariant.label ||
+          finalVariant.name ||
+          finalVariant.label_en ||
+          finalVariant.name_en ||
+          null
+        : null;
+
+    const variantLabelEn =
+      finalVariant
+        ? finalVariant.label_en ||
+          finalVariant.name_en ||
+          finalVariant.label ||
+          finalVariant.name ||
+          finalVariant.label_ar ||
+          finalVariant.name_ar ||
+          null
+        : null;
 
     const selectedLabel =
       lang === "ar"
         ? variantLabelAr
         : variantLabelEn;
 
-    const salePercent = Number(
-      product.sale_percent || 0
+    const salePercent = Math.min(
+      100,
+      Math.max(
+        0,
+        Number(
+          product.sale_percent || 0
+        )
+      )
     );
 
-    /*
-      إذا المنتج عنده variants:
-      السعر الأساسي يأتي من أرخص variant.
-      
-      إذا ما عنده variants:
-      منحتفظ بالسعر المرسل من Product Card.
-    */
     const variantOriginalPrice =
-      defaultVariant != null
-        ? Number(defaultVariant.price)
+      finalVariant
+        ? Number(finalVariant.price)
         : Number(
             product.original_price ??
               product.price
           );
 
     const finalPrice =
-      defaultVariant != null
+      finalVariant
         ? salePercent > 0
           ? variantOriginalPrice *
-            (1 - salePercent / 100)
+            (1 -
+              salePercent / 100)
           : variantOriginalPrice
         : Number(product.price);
 
@@ -117,19 +144,18 @@ export default function AddToCartButton({
       price: Math.round(finalPrice),
 
       original_price:
-        defaultVariant != null
-          ? variantOriginalPrice
-          : product.original_price,
+        variantOriginalPrice,
 
-      sale_percent: salePercent,
+      sale_percent:
+        salePercent,
 
       image_url:
-        defaultVariant?.images?.[0] ||
+        finalVariant?.images?.[0] ||
         product.image_url,
 
       variant_id:
-        defaultVariant?.id != null
-          ? Number(defaultVariant.id)
+        finalVariant?.id != null
+          ? Number(finalVariant.id)
           : null,
 
       variant_label_ar:
@@ -145,7 +171,7 @@ export default function AddToCartButton({
 
     setAdded(true);
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       setAdded(false);
     }, 1400);
   }
@@ -154,19 +180,26 @@ export default function AddToCartButton({
     <button
       type="button"
       onClick={handleAdd}
+      disabled={disabled}
       className={`w-full rounded-2xl py-3 font-semibold transition duration-300 ${
-        added
-          ? "bg-green-50 text-green-700 ring-1 ring-green-600"
-          : "bg-green-600 text-white hover:bg-green-700"
+        disabled
+          ? "cursor-not-allowed bg-[#f1f3f1] text-[#98a099]"
+          : added
+            ? "bg-green-50 text-green-700 ring-1 ring-green-600"
+            : "bg-green-600 text-white hover:bg-green-700"
       }`}
     >
-      {added
+      {disabled
         ? lang === "ar"
-          ? "✓ تمت الإضافة"
-          : "✓ Added"
-        : lang === "ar"
-          ? "أضف إلى السلة"
-          : "Add to Cart"}
+          ? "غير متوفر"
+          : "Out of stock"
+        : added
+          ? lang === "ar"
+            ? "✓ تمت الإضافة"
+            : "✓ Added"
+          : lang === "ar"
+            ? "أضف إلى السلة"
+            : "Add to Cart"}
     </button>
   );
 }

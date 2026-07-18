@@ -1,7 +1,8 @@
 import HomeClient from "./HomeClient";
-import { supabase } from "@/lib/supabase";
-export const revalidate = 60;
 
+import { supabase } from "@/lib/supabase";
+
+export const revalidate = 60;
 
 export default async function Home() {
   const [
@@ -14,75 +15,239 @@ export default async function Home() {
     supabase
       .from("products")
       .select("*")
-      .eq("is_new_arrival", true)
-      .order("id", { ascending: false })
+      .eq(
+        "is_new_arrival",
+        true
+      )
+      .order("id", {
+        ascending: false,
+      })
       .limit(6),
+
     supabase
       .from("products")
       .select("*")
-      .eq("featured", true)
-      .order("id", { ascending: false })
+      .eq(
+        "featured",
+        true
+      )
+      .order("id", {
+        ascending: false,
+      })
       .limit(8),
+
     supabase
       .from("order_items")
-      .select("product_id, quantity"),
+      .select(
+        "product_id, quantity"
+      ),
+
     supabase
       .from("products")
       .select("id")
-      .eq("is_out_of_stock", false),
+      .eq(
+        "is_out_of_stock",
+        false
+      ),
+
     supabase
       .from("home_banners")
       .select("*")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
+      .eq(
+        "placement",
+        "main"
+      )
+      .eq(
+        "is_active",
+        true
+      )
+      .order("sort_order", {
+        ascending: true,
+      }),
   ]);
 
-  const newProducts = newProductsResult.data || [];
-  const featuredProducts = featuredProductsResult.data || [];
-  const orderItems = orderItemsResult.data || [];
+  if (
+    newProductsResult.error
+  ) {
+    console.error(
+      "Failed to load new products:",
+      newProductsResult.error
+    );
+  }
+
+  if (
+    featuredProductsResult.error
+  ) {
+    console.error(
+      "Failed to load featured products:",
+      featuredProductsResult.error
+    );
+  }
+
+  if (
+    orderItemsResult.error
+  ) {
+    console.error(
+      "Failed to load order items:",
+      orderItemsResult.error
+    );
+  }
+
+  if (
+    availableProductsResult.error
+  ) {
+    console.error(
+      "Failed to load available products:",
+      availableProductsResult.error
+    );
+  }
+
+  if (
+    bannersResult.error
+  ) {
+    console.error(
+      "Failed to load main banners:",
+      bannersResult.error
+    );
+  }
+
+  const newProducts =
+    newProductsResult.data ||
+    [];
+
+  const featuredProducts =
+    featuredProductsResult.data ||
+    [];
+
+  const orderItems =
+    orderItemsResult.data ||
+    [];
+
   const availableProductsForRanking =
-    availableProductsResult.data || [];
-  const banners = bannersResult.data || [];
+    availableProductsResult.data ||
+    [];
 
-const availableProductIds = new Set(
-  (availableProductsForRanking || []).map((product) => product.id)
-);
+  const banners =
+    bannersResult.data ||
+    [];
 
- const topSellerIds = Object.entries(
-  (orderItems || []).reduce((acc: Record<string, number>, item: any) => {
-    if (!item.product_id) return acc;
+  const availableProductIds =
+    new Set(
+      availableProductsForRanking.map(
+        (product) =>
+          Number(product.id)
+      )
+    );
 
-    acc[item.product_id] =
-      (acc[item.product_id] || 0) + Number(item.quantity || 0);
+  const salesByProduct =
+    orderItems.reduce(
+      (
+        accumulator: Record<
+          string,
+          number
+        >,
+        item
+      ) => {
+        if (!item.product_id) {
+          return accumulator;
+        }
 
-    return acc;
-  }, {})
-)
-  .filter(([productId]) => availableProductIds.has(Number(productId)))
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 5)
-  .map(([productId]) => Number(productId));
+        const productId =
+          String(
+            item.product_id
+          );
 
-  let topSellerProducts: any[] = [];
+        accumulator[productId] =
+          (accumulator[
+            productId
+          ] || 0) +
+          Number(
+            item.quantity || 0
+          );
 
-  if (topSellerIds.length > 0) {
-    const { data } = await supabase
+        return accumulator;
+      },
+      {}
+    );
+
+  const topSellerIds =
+    Object.entries(
+      salesByProduct
+    )
+      .filter(
+        ([productId]) =>
+          availableProductIds.has(
+            Number(productId)
+          )
+      )
+      .sort(
+        (
+          firstProduct,
+          secondProduct
+        ) =>
+          secondProduct[1] -
+          firstProduct[1]
+      )
+      .slice(0, 5)
+      .map(
+        ([productId]) =>
+          Number(productId)
+      );
+
+  let topSellerProducts:
+    any[] = [];
+
+  if (
+    topSellerIds.length > 0
+  ) {
+    const {
+      data,
+      error,
+    } = await supabase
       .from("products")
       .select("*")
-      .in("id", topSellerIds);
+      .in(
+        "id",
+        topSellerIds
+      );
 
-    topSellerProducts = topSellerIds
-      .map((id) => data?.find((product) => product.id === id))
-      .filter(Boolean);
+    if (error) {
+      console.error(
+        "Failed to load bestseller products:",
+        error
+      );
+    }
+
+    topSellerProducts =
+      topSellerIds
+        .map((id) =>
+          data?.find(
+            (product) =>
+              Number(
+                product.id
+              ) === id
+          )
+        )
+        .filter(Boolean);
   }
 
   return (
-  <HomeClient
-    newProducts={newProducts || []}
-    featuredProducts={featuredProducts || []}
-    topSellerProducts={topSellerProducts || []}
-    topSellerIds={topSellerIds}
-    banners={banners || []}
-  />
-);
+    <HomeClient
+      newProducts={
+        newProducts
+      }
+      featuredProducts={
+        featuredProducts
+      }
+      topSellerProducts={
+        topSellerProducts
+      }
+      topSellerIds={
+        topSellerIds
+      }
+      banners={
+        banners
+      }
+    />
+  );
 }

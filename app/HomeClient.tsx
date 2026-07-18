@@ -1,22 +1,45 @@
 "use client";
 
 import Link from "next/link";
+
 import ProductSwiper from "./ProductSwiper";
 import HomeBannerSwiper from "./HomeBannerSwiper";
+
+import type {
+  HomeBanner,
+} from "./HomeBannerSwiper";
+
+import type {
+  ProductCardProduct,
+} from "./products/ProductCard";
+
 import { useLanguage } from "../context/LanguageContext";
+
+type ProductSectionProps = {
+  title: string;
+
+  products:
+    ProductCardProduct[];
+
+  bestSellerIds?: number[];
+
+  lang:
+    | "en"
+    | "ar";
+
+  viewAllHref?: string;
+};
 
 function ProductSection({
   title,
   products,
   bestSellerIds = [],
   lang,
-}: {
-  title: string;
-  products: any[];
-  bestSellerIds?: number[];
-  lang: "en" | "ar";
-}) {
-  if (!products || products.length === 0) {
+  viewAllHref,
+}: ProductSectionProps) {
+  if (
+    products.length === 0
+  ) {
     return null;
   }
 
@@ -24,7 +47,11 @@ function ProductSection({
     <section className="py-7 sm:py-9 lg:py-10">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <div
-          dir={lang === "ar" ? "rtl" : "ltr"}
+          dir={
+            lang === "ar"
+              ? "rtl"
+              : "ltr"
+          }
           className="mb-6 flex items-end justify-between gap-4 sm:mb-8"
         >
           <h2
@@ -37,36 +64,59 @@ function ProductSection({
             {title}
           </h2>
 
-          <Link
-            href="/products"
-            className="group flex shrink-0 items-center gap-2 pb-1 text-xs font-extrabold text-[#0a583b] transition hover:text-[#073f2c] sm:text-sm"
-          >
-            <span>
-              {lang === "ar"
-                ? "عرض الكل"
-                : "View all"}
-            </span>
-
-            <span
-              className={`transition-transform ${
-                lang === "ar"
-                  ? "group-hover:-translate-x-1"
-                  : "group-hover:translate-x-1"
-              }`}
+          {viewAllHref && (
+            <Link
+              href={viewAllHref}
+              className="group flex shrink-0 items-center gap-2 pb-1 text-xs font-extrabold text-[#0a583b] transition hover:text-[#073f2c] sm:text-sm"
             >
-              {lang === "ar" ? "←" : "→"}
-            </span>
-          </Link>
+              <span>
+                {lang === "ar"
+                  ? "عرض الكل"
+                  : "View all"}
+              </span>
+
+              <span
+                className={`transition-transform ${
+                  lang === "ar"
+                    ? "group-hover:-translate-x-1"
+                    : "group-hover:translate-x-1"
+                }`}
+              >
+                {lang === "ar"
+                  ? "←"
+                  : "→"}
+              </span>
+            </Link>
+          )}
         </div>
 
         <ProductSwiper
-          products={products}
-          bestSellerIds={bestSellerIds}
+          products={
+            products
+          }
+          bestSellerIds={
+            bestSellerIds
+          }
         />
       </div>
     </section>
   );
 }
+
+type HomeClientProps = {
+  newProducts:
+    ProductCardProduct[];
+
+  featuredProducts:
+    ProductCardProduct[];
+
+  topSellerProducts:
+    ProductCardProduct[];
+
+  topSellerIds: number[];
+
+  banners: HomeBanner[];
+};
 
 export default function HomeClient({
   newProducts,
@@ -74,78 +124,110 @@ export default function HomeClient({
   topSellerProducts,
   topSellerIds,
   banners,
-}: {
-  newProducts: any[];
-  featuredProducts: any[];
-  topSellerProducts: any[];
-  topSellerIds: number[];
-  banners: any[];
-}) {
-  const { lang } = useLanguage();
-  const currentLang = lang as "en" | "ar";
+}: HomeClientProps) {
+  const { lang } =
+    useLanguage();
+
+  const currentLang =
+    lang as "en" | "ar";
 
   const text = {
     en: {
-      topSellers: "Bestsellers",
-      newArrivals: "New Arrivals",
-      featuredProducts: "Featured Products",
+      topSellers:
+        "Bestsellers",
+
+      newArrivals:
+        "New Arrivals",
+
+      featuredProducts:
+        "Featured Products",
     },
 
     ar: {
-      topSellers: "الأكثر مبيعاً",
-      newArrivals: "منتجات جديدة",
-      featuredProducts: "منتجات مميزة",
+      topSellers:
+        "الأكثر مبيعاً",
+
+      newArrivals:
+        "منتجات جديدة",
+
+      featuredProducts:
+        "منتجات مميزة",
     },
   };
 
-  const t = text[currentLang];
+  const t =
+    text[currentLang];
 
   return (
     <main
-      dir={currentLang === "ar" ? "rtl" : "ltr"}
+      dir={
+        currentLang === "ar"
+          ? "rtl"
+          : "ltr"
+      }
       className="min-h-screen overflow-hidden bg-white"
     >
-     {/* Main campaign hero */}
-<HomeBannerSwiper
-  banners={banners || []}
-/>
-
-      {/* Bestselling products */}
-      <ProductSection
-        title={t.topSellers}
-        products={topSellerProducts || []}
-        bestSellerIds={topSellerIds || []}
-        lang={currentLang}
+      <HomeBannerSwiper
+        banners={
+          banners
+        }
       />
 
-      {/* Divider */}
-      {topSellerProducts?.length > 0 &&
-        newProducts?.length > 0 && (
+      <ProductSection
+        title={
+          t.newArrivals
+        }
+        products={
+          newProducts
+        }
+        lang={
+          currentLang
+        }
+        viewAllHref="/new-arrivals"
+      />
+
+      {newProducts.length > 0 &&
+        topSellerProducts.length >
+          0 && (
           <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
             <div className="h-px bg-[#edf0ed]" />
           </div>
         )}
 
-      {/* New products */}
       <ProductSection
-        title={t.newArrivals}
-        products={newProducts || []}
-        lang={currentLang}
+        title={
+          t.topSellers
+        }
+        products={
+          topSellerProducts
+        }
+        bestSellerIds={
+          topSellerIds
+        }
+        lang={
+          currentLang
+        }
       />
 
-      {/* Divider */}
-      {newProducts?.length > 0 &&
-        featuredProducts?.length > 0 && (
+      {topSellerProducts.length >
+        0 &&
+        featuredProducts.length >
+          0 && (
           <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
             <div className="h-px bg-[#edf0ed]" />
           </div>
         )}
 
-      {/* Featured products */}
       <ProductSection
-        title={t.featuredProducts}
-        products={featuredProducts || []}
-        lang={currentLang}
+        title={
+          t.featuredProducts
+        }
+        products={
+          featuredProducts
+        }
+        lang={
+          currentLang
+        }
       />
 
       <div className="h-10 sm:h-16" />

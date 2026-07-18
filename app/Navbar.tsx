@@ -75,6 +75,10 @@ const [
   productsOpen,
   setProductsOpen,
 ] = useState(false);
+const [
+  desktopProductsOpen,
+  setDesktopProductsOpen,
+] = useState(false);
 
   const currentYear =
     new Date().getFullYear();
@@ -760,62 +764,222 @@ const [
                   className="hidden min-w-0 flex-1 items-center justify-center lg:flex"
                 >
                   <div className="flex items-center gap-7 xl:gap-10">
-                    {navigationLinks.map(
-                      (item) => {
-                        const active =
-                          isActive(
-                            item.href
-                          );
+                      {navigationLinks.map((item) => {
+  const active = isActive(
+    item.href
+  );
 
-                        return (
-                          <Link
-                            key={
-                              item.href
-                            }
-                            href={
-                              item.href
-                            }
-                            onClick={
-                              (event) =>
-                                handlePrimaryNavigation(
-                                  event,
-                                  item.href
-                                )
-                            }
-                            aria-current={
-                              active
-                                ? "page"
-                                : undefined
-                            }
-                            className={`group relative flex h-[74px] items-center whitespace-nowrap text-[12px] font-extrabold transition-colors duration-200 ${
-                              isArabic
-                                ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
-                                : "uppercase tracking-[0.1em]"
-                            } ${
-                              active
-                                ? "text-[#0a583b]"
-                                : "text-[#26352d] hover:text-[#0a583b]"
-                            }`}
-                          >
-                            <span
-  dir={isArabic ? "rtl" : "ltr"}
->
-  {item.label}
-</span>
+  const linkClass = `group relative flex h-[74px] items-center whitespace-nowrap text-[12px] font-extrabold transition-colors duration-200 ${
+    isArabic
+      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+      : "uppercase tracking-[0.1em]"
+  } ${
+    active
+      ? "text-[#0a583b]"
+      : "text-[#26352d] hover:text-[#0a583b]"
+  }`;
 
-                            <span
-                              className={`absolute inset-x-0 bottom-0 h-[2px] origin-center bg-[#0a583b] transition-transform duration-300 ${
-                                active
-                                  ? "scale-x-100"
-                                  : "scale-x-0 group-hover:scale-x-100"
-                              }`}
-                            />
-                          </Link>
-                        );
-                      }
-                    )}
-                  </div>
-                </nav>
+  /* Products dropdown */
+  if (
+    item.href === "/products"
+  ) {
+    return (
+      <div
+        key={item.href}
+        className="relative flex h-[74px] items-center"
+        onMouseEnter={() =>
+          setDesktopProductsOpen(
+            true
+          )
+        }
+        onMouseLeave={() =>
+          setDesktopProductsOpen(
+            false
+          )
+        }
+        onFocus={() =>
+          setDesktopProductsOpen(
+            true
+          )
+        }
+        onBlur={(event) => {
+          if (
+            !event.currentTarget.contains(
+              event.relatedTarget as Node
+            )
+          ) {
+            setDesktopProductsOpen(
+              false
+            );
+          }
+        }}
+      >
+        <Link
+          href="/products"
+          onClick={(event) => {
+            setDesktopProductsOpen(
+              false
+            );
+
+            handlePrimaryNavigation(
+              event,
+              "/products"
+            );
+          }}
+          aria-current={
+            active
+              ? "page"
+              : undefined
+          }
+          aria-haspopup="menu"
+          aria-expanded={
+            desktopProductsOpen
+          }
+          className={`${linkClass} gap-1.5`}
+        >
+          <span
+            dir={
+              isArabic
+                ? "rtl"
+                : "ltr"
+            }
+          >
+            {item.label}
+          </span>
+
+          <ChevronDown
+            size={14}
+            strokeWidth={2}
+            className={`transition-transform duration-200 ${
+              desktopProductsOpen
+                ? "rotate-180"
+                : ""
+            }`}
+          />
+
+          <span
+            className={`absolute inset-x-0 bottom-0 h-[2px] origin-center bg-[#0a583b] transition-transform duration-300 ${
+              active ||
+              desktopProductsOpen
+                ? "scale-x-100"
+                : "scale-x-0 group-hover:scale-x-100"
+            }`}
+          />
+        </Link>
+
+        {/* Dropdown */}
+        <div
+          dir={
+            isArabic
+              ? "rtl"
+              : "ltr"
+          }
+          className={`absolute ${
+            isArabic
+              ? "right-0"
+              : "left-0"
+          } top-full z-[100] w-[260px] origin-top overflow-hidden rounded-b-2xl border border-t-0 border-[#e2e9e4] bg-white shadow-[0_18px_45px_rgba(20,32,25,0.14)] transition-all duration-200 ${
+            desktopProductsOpen
+              ? "visible translate-y-0 opacity-100"
+              : "invisible -translate-y-2 opacity-0"
+          }`}
+        >
+          <div className="p-2">
+            <Link
+              href="/products"
+              onClick={() => {
+                setDesktopProductsOpen(
+                  false
+                );
+              }}
+              className="flex min-h-12 items-center rounded-xl px-4 text-sm font-extrabold text-[#0a583b] transition hover:bg-[#f1f6f3]"
+            >
+              {t.allProducts}
+            </Link>
+
+            {categories.map(
+              (category) => {
+                const categoryLabel =
+                  isArabic
+                    ? category.name_ar ||
+                      category.name ||
+                      category.name_en
+                    : category.name_en ||
+                      category.name ||
+                      category.name_ar;
+
+                if (
+                  !categoryLabel
+                ) {
+                  return null;
+                }
+
+                return (
+                  <Link
+                    key={
+                      category.id
+                    }
+                    href={`/products?category=${category.id}`}
+                    onClick={() =>
+                      setDesktopProductsOpen(
+                        false
+                      )
+                    }
+                    className="flex min-h-11 items-center rounded-xl border-t border-[#edf1ee] px-4 text-sm font-bold text-[#59675e] transition hover:bg-[#f4f7f5] hover:text-[#0a583b]"
+                  >
+                    {
+                      categoryLabel
+                    }
+                  </Link>
+                );
+              }
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* Other navigation links */
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={(event) =>
+        handlePrimaryNavigation(
+          event,
+          item.href
+        )
+      }
+      aria-current={
+        active
+          ? "page"
+          : undefined
+      }
+      className={linkClass}
+    >
+      <span
+        dir={
+          isArabic
+            ? "rtl"
+            : "ltr"
+        }
+      >
+        {item.label}
+      </span>
+
+      <span
+        className={`absolute inset-x-0 bottom-0 h-[2px] origin-center bg-[#0a583b] transition-transform duration-300 ${
+          active
+            ? "scale-x-100"
+            : "scale-x-0 group-hover:scale-x-100"
+        }`}
+      />
+    </Link>
+  );
+})}
+                    </div>
+                  </nav>
 
                 {/* Desktop icons */}
                 <div

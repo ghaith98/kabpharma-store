@@ -894,8 +894,8 @@ export default function CartPage() {
                     <div className="flex items-center justify-between gap-4 text-[#0a583b]">
                       <span>
                         {isArabic
-                          ? "التوفير"
-                          : "Savings"}
+                          ? "تخفيض"
+                          : "Discount"}
                       </span>
 
                       <span className="font-extrabold">

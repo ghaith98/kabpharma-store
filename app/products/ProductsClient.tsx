@@ -5,9 +5,6 @@ import {
   useMemo,
   useState,
 } from "react";
-
-import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
 import {
@@ -19,10 +16,8 @@ import {
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
-import AddToCartButton from "./AddToCartButton";
-import WishlistButton from "./WishlistButton";
-
 import { useLanguage } from "../../context/LanguageContext";
+import ProductCard from "./ProductCard";
 
 type ProductsClientProps = {
   products: any[];
@@ -427,440 +422,200 @@ export default function ProductsClient({
                 );
               }
 
-              return 0;
-            }
-          );
-      }, [
-        products,
-        search,
-        isArabic,
-        selectedCategoryId,
-        priceRange,
-        inStockOnly,
-        onSaleOnly,
-        sortBy,
-      ]);
+                return 0;
+              }
+            );
+        }, [
+          products,
+          search,
+          isArabic,
+          selectedCategoryId,
+          priceRange,
+          inStockOnly,
+          onSaleOnly,
+          sortBy,
+        ]);
 
-    return (
-      <div
-        dir={isArabic ? "rtl" : "ltr"}
-        className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8"
-      >
-        {showHeader && (
-          <header
-            className={`border-b border-[#e7ebe8] pb-8 sm:pb-10 ${
-              isArabic
-                ? "text-right"
-                : "text-left"
-            }`}
-          >
-            <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
+      return (
+        <div
+          dir={isArabic ? "rtl" : "ltr"}
+          className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8"
+        >
+          {showHeader && (
+            <header
+              className={`border-b border-[#e7ebe8] pb-8 sm:pb-10 ${
                 isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.2em]"
+                  ? "text-right"
+                  : "text-left"
               }`}
             >
-              {isArabic
-                ? "مجموعة كاب فارما"
-                : "KAB Pharma collection"}
-            </p>
+              <p
+                className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
+                  isArabic
+                    ? "tracking-normal"
+                    : "tracking-[0.2em]"
+                }`}
+              >
+                {isArabic
+                  ? "مجموعة كاب فارما"
+                  : "KAB Pharma collection"}
+              </p>
 
-            <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h1
-                  className={`text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-5xl ${
-                    isArabic
-                      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
-                      : "tracking-[-0.04em]"
-                  }`}
-                >
-                  {isArabic
-                    ? "اكتشف منتجاتنا"
-                    : "Discover our products"}
-                </h1>
-
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
-                  {isArabic
-                    ? "منتجات مختارة للعناية اليومية بالبشرة والجسم والشعر."
-                    : "Explore skincare, body care and personal care products selected for your everyday routine."}
-                </p>
-              </div>
-
-              {showSearch && (
-                <div className="relative w-full lg:max-w-md">
-                  <FaSearch
-                    className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-sm text-[#7a857e] ${
+              <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h1
+                    className={`text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-5xl ${
                       isArabic
-                        ? "right-4"
-                        : "left-4"
+                        ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                        : "tracking-[-0.04em]"
+                    }`}
+                  >
+                    {isArabic
+                      ? "اكتشف منتجاتنا"
+                      : "Discover our products"}
+                  </h1>
+
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
+                    {isArabic
+                      ? "منتجات مختارة للعناية اليومية بالبشرة والجسم والشعر."
+                      : "Explore skincare, body care and personal care products selected for your everyday routine."}
+                  </p>
+                </div>
+
+                {showSearch && (
+                  <div className="relative w-full lg:max-w-md">
+                    <FaSearch
+                      className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-sm text-[#7a857e] ${
+                        isArabic
+                          ? "right-4"
+                          : "left-4"
+                      }`}
+                    />
+
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) =>
+                      setSearch(
+                        event.target.value
+                      )
+                    }
+                    placeholder={
+                      isArabic
+                        ? "ابحث عن منتج..."
+                        : "Search products..."
+                    }
+                    className={`h-13 w-full rounded-full border border-[#dfe4e0] bg-white text-base text-[#142019] outline-none transition placeholder:text-[#99a29c] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0] ${
+                      isArabic
+                        ? "pr-11 pl-5"
+                        : "pl-11 pr-5"
                     }`}
                   />
+                </div>
+              )}
+            </div>
+          </header>
+        )}
 
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(event) =>
-                    setSearch(
-                      event.target.value
-                    )
-                  }
-                  placeholder={
-                    isArabic
-                      ? "ابحث عن منتج..."
-                      : "Search products..."
-                  }
-                  className={`h-13 w-full rounded-full border border-[#dfe4e0] bg-white text-base text-[#142019] outline-none transition placeholder:text-[#99a29c] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0] ${
-                    isArabic
-                      ? "pr-11 pl-5"
-                      : "pl-11 pr-5"
-                  }`}
-                />
-              </div>
+        <div className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-[#526057]">
+              {isArabic
+                ? `${filteredProducts.length} ${
+                    filteredProducts.length ===
+                    1
+                      ? "منتج"
+                      : "منتجات"
+                  }`
+                : `${filteredProducts.length} ${
+                    filteredProducts.length ===
+                    1
+                      ? "product"
+                      : "products"
+                  } found`}
+            </p>
+
+            {activeFiltersCount >
+              0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-1 text-xs font-extrabold text-[#0a583b] underline decoration-[#b9d3c3] underline-offset-4 transition hover:text-[#073f2c]"
+              >
+                {isArabic
+                  ? "مسح جميع الفلاتر"
+                  : "Clear all filters"}
+              </button>
             )}
           </div>
-        </header>
+
+          <div className="flex w-full justify-start">
+    <button
+      type="button"
+      onClick={() =>
+        setFiltersOpen(true)
+      }
+      className="relative inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 text-xs font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] sm:min-h-12 sm:px-6 sm:text-sm"
+    >
+      <FaFilter className="text-xs sm:text-sm" />
+
+      <span>
+        {isArabic
+          ? "تصفية وترتيب"
+          : "Filter & sort"}
+      </span>
+
+      {activeFiltersCount > 0 && (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0a583b] px-1 text-[10px] font-extrabold text-white">
+          {activeFiltersCount}
+        </span>
       )}
+    </button>
+  </div>
+        </div>
 
-      <div className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-bold text-[#526057]">
-            {isArabic
-              ? `${filteredProducts.length} ${
-                  filteredProducts.length ===
-                  1
-                    ? "منتج"
-                    : "منتجات"
-                }`
-              : `${filteredProducts.length} ${
-                  filteredProducts.length ===
-                  1
-                    ? "product"
-                    : "products"
-                } found`}
-          </p>
+        {filteredProducts.length ===
+        0 ? (
+          <section className="flex min-h-[360px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#dce3de] bg-[#fafbfa] px-6 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+              <FaSearch />
+            </div>
 
-          {activeFiltersCount >
-            0 && (
+            <h2 className="mt-6 text-xl font-extrabold text-[#142019] sm:text-2xl">
+              {isArabic
+                ? "لم يتم العثور على منتجات"
+                : "No products found"}
+            </h2>
+
+            <p className="mt-2 max-w-md text-sm leading-7 text-[#647168]">
+              {isArabic
+                ? "جرّب تغيير البحث أو إزالة بعض خيارات التصفية."
+                : "Try changing your search or removing some filters."}
+            </p>
+
             <button
               type="button"
               onClick={clearFilters}
-              className="mt-1 text-xs font-extrabold text-[#0a583b] underline decoration-[#b9d3c3] underline-offset-4 transition hover:text-[#073f2c]"
+              className="mt-6 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
             >
               {isArabic
-                ? "مسح جميع الفلاتر"
-                : "Clear all filters"}
+                ? "مسح الفلاتر"
+                : "Clear filters"}
             </button>
-          )}
-        </div>
-
-        <div className="flex w-full justify-start">
-  <button
-    type="button"
-    onClick={() =>
-      setFiltersOpen(true)
-    }
-    className="relative inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 text-xs font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] sm:min-h-12 sm:px-6 sm:text-sm"
-  >
-    <FaFilter className="text-xs sm:text-sm" />
-
-    <span>
-      {isArabic
-        ? "تصفية وترتيب"
-        : "Filter & sort"}
-    </span>
-
-    {activeFiltersCount > 0 && (
-      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0a583b] px-1 text-[10px] font-extrabold text-white">
-        {activeFiltersCount}
-      </span>
-    )}
-  </button>
+          </section>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+  {filteredProducts.map(
+    (product) => (
+      <ProductCard
+        key={product.id}
+        product={product}
+        headingLevel={2}
+        imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+      />
+    )
+  )}
 </div>
-      </div>
-
-      {filteredProducts.length ===
-      0 ? (
-        <section className="flex min-h-[360px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#dce3de] bg-[#fafbfa] px-6 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-            <FaSearch />
-          </div>
-
-          <h2 className="mt-6 text-xl font-extrabold text-[#142019] sm:text-2xl">
-            {isArabic
-              ? "لم يتم العثور على منتجات"
-              : "No products found"}
-          </h2>
-
-          <p className="mt-2 max-w-md text-sm leading-7 text-[#647168]">
-            {isArabic
-              ? "جرّب تغيير البحث أو إزالة بعض خيارات التصفية."
-              : "Try changing your search or removing some filters."}
-          </p>
-
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="mt-6 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
-          >
-            {isArabic
-              ? "مسح الفلاتر"
-              : "Clear filters"}
-          </button>
-        </section>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredProducts.map(
-            (product) => {
-              const salePercent =
-                Math.min(
-                  100,
-                  Math.max(
-                    0,
-                    Number(
-                      product.sale_percent ||
-                        0
-                    )
-                  )
-                );
-
-              const originalPrice =
-                Number(
-                  product.price || 0
-                );
-
-              const finalPrice =
-                getFinalPrice(product);
-
-              const productName =
-                isArabic
-                  ? product.name_ar ||
-                    product.name ||
-                    product.name_en
-                  : product.name_en ||
-                    product.name ||
-                    product.name_ar;
-
-              const categoryName =
-                isArabic
-                  ? product.categories
-                      ?.name_ar ||
-                    product.categories
-                      ?.name ||
-                    product.categories
-                      ?.name_en
-                  : product.categories
-                      ?.name_en ||
-                    product.categories
-                      ?.name ||
-                    product.categories
-                      ?.name_ar;
-
-              const isOutOfStock =
-                Boolean(
-                  product.is_out_of_stock
-                );
-
-              return (
-                <article
-                  key={product.id}
-                  className="group flex min-h-[390px] flex-col overflow-hidden rounded-[1.4rem] border border-[#e7ebe8] bg-white transition duration-300 hover:-translate-y-1 hover:border-[#d7e5dc] hover:shadow-xl hover:shadow-[#073f2c]/[0.06] sm:min-h-[430px] sm:rounded-[1.5rem]"
-                >
-                  <div className="relative h-[185px] shrink-0 overflow-hidden bg-[#f7f8f6] sm:h-[225px]">
-                    <Link
-                      href={`/products/${product.id}`}
-                      aria-label={
-                        productName
-                      }
-                      className="flex h-full w-full items-center justify-center p-3 sm:p-5"
-                    >
-                      {product.image_url ? (
-                        <Image
-                          src={
-                            product.image_url
-                          }
-                          alt={
-                            productName
-                          }
-                          width={600}
-                          height={600}
-                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                          className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.04] ${
-                            isOutOfStock
-                              ? "opacity-55 grayscale-[25%]"
-                              : ""
-                          }`}
-                        />
-                      ) : (
-                        <span className="text-xs font-bold text-[#99a29c] sm:text-sm">
-                          {isArabic
-                            ? "لا توجد صورة"
-                            : "No image"}
-                        </span>
-                      )}
-                    </Link>
-
-                    <div
-                      dir="ltr"
-                      className="absolute right-3 top-3 z-20"
-                      onClick={(
-                        event
-                      ) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                      }}
-                    >
-                      <WishlistButton
-                        product={{
-                          id:
-                            product.id,
-
-                          name:
-                            productName,
-
-                          price:
-                            Math.round(
-                              finalPrice
-                            ),
-
-                          original_price:
-                            originalPrice,
-
-                          sale_percent:
-                            salePercent,
-
-                          image_url:
-                            product.image_url,
-                        }}
-                      />
-                    </div>
-
-                    <div className="absolute left-3 top-3 z-10">
-                      {isOutOfStock ? (
-                        <span className="inline-flex rounded-full border border-[#dfe4e0] bg-white/95 px-2.5 py-1.5 text-[9px] font-extrabold text-[#526057] shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
-                          {isArabic
-                            ? "غير متوفر"
-                            : "Out of stock"}
-                        </span>
-                      ) : salePercent >
-                        0 ? (
-                        <span className="inline-flex rounded-full border border-red-100 bg-white/95 px-2.5 py-1.5 text-[9px] font-extrabold text-red-600 shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
-                          -
-                          {
-                            salePercent
-                          }
-                          %
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div
-                    className={`flex flex-1 flex-col p-3.5 sm:p-5 ${
-                      isArabic
-                        ? "text-right"
-                        : "text-left"
-                    }`}
-                  >
-                    <p
-  className={`min-h-4 truncate text-[9px] font-extrabold text-[#0a583b] sm:text-[10px] ${
-    isArabic
-      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
-      : "uppercase tracking-[0.12em]"
-  }`}
->
-  {categoryName || "KAB Pharma"}
-</p>
-
-                    <Link
-                      href={`/products/${product.id}`}
-                    >
-                      <h2 className="mt-2 line-clamp-2 min-h-[44px] text-sm font-extrabold leading-[22px] text-[#142019] transition group-hover:text-[#0a583b] sm:min-h-[48px] sm:text-base sm:leading-6">
-                        {
-                          productName
-                        }
-                      </h2>
-                    </Link>
-
-                    <div className="mt-3 flex min-h-[45px] flex-col justify-end">
-                      <p
-                        className={`whitespace-nowrap text-sm font-extrabold sm:text-base ${
-                          salePercent >
-                          0
-                            ? "text-red-600"
-                            : "text-[#0a583b]"
-                        }`}
-                      >
-                        {Math.round(
-                          finalPrice
-                        ).toLocaleString()}{" "}
-                        SYP
-                      </p>
-
-                      <p
-                        aria-hidden={
-                          salePercent <=
-                          0
-                        }
-                        className={`mt-1 whitespace-nowrap text-[10px] font-bold text-[#99a29c] line-through sm:text-[11px] ${
-                          salePercent >
-                          0
-                            ? "visible"
-                            : "invisible"
-                        }`}
-                      >
-                        {originalPrice.toLocaleString()}{" "}
-                        SYP
-                      </p>
-                    </div>
-
-                    <div className="mt-auto pt-3">
-                      {isOutOfStock ? (
-                        <button
-                          type="button"
-                          disabled
-                          className="min-h-11 w-full cursor-not-allowed rounded-full border border-[#dfe4e0] bg-[#f3f5f3] px-3 text-xs font-extrabold text-[#99a29c] sm:text-sm"
-                        >
-                          {isArabic
-                            ? "غير متوفر"
-                            : "Out of stock"}
-                        </button>
-                      ) : (
-                        <div className="[&_button]:!min-h-11 [&_button]:!w-full [&_button]:!rounded-full [&_button]:!bg-[#0a583b] [&_button]:!px-3 [&_button]:!py-2.5 [&_button]:!text-xs [&_button]:!font-extrabold [&_button]:!text-white [&_button]:!shadow-none [&_button]:hover:!bg-[#073f2c] sm:[&_button]:!text-sm">
-  <AddToCartButton
-    product={{
-      id: product.id,
-
-      name: productName,
-
-      price: Math.round(
-        finalPrice
-      ),
-
-      original_price:
-        originalPrice,
-
-      sale_percent:
-        salePercent,
-
-      image_url:
-        product.image_url,
-    }}
-
-    productVariants={
-      product.product_variants ||
-      []
-    }
-  />
-</div>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              );
-            }
-          )}
-        </div>
       )}
 
       {filtersOpen && (
