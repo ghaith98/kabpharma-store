@@ -18,11 +18,13 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
 import { useLanguage } from "../../context/LanguageContext";
-import ProductCard from "./ProductCard";
-import type { ProductCardProduct } from "./ProductCard";
+import EditorialProductCard from "./EditorialProductCard";
+import type {
+  EditorialProduct,
+} from "./EditorialProductCard";
 
 type ProductsClientProps = {
-  products: ProductCardProduct[];
+  products: EditorialProduct[];
   showSearch?: boolean;
   showCategories?: boolean;
   bestSellerIds?: number[];
@@ -229,9 +231,9 @@ export default function ProductsClient({
     );
   }, [products]);
 
-  function getFinalPrice(
-    product: ProductCardProduct
-  ) {
+ function getFinalPrice(
+  product: EditorialProduct
+) {
     const salePercent = Math.min(
       100,
       Math.max(
@@ -433,7 +435,7 @@ export default function ProductsClient({
       return (
         <div
           dir={isArabic ? "rtl" : "ltr"}
-          className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8"
+          className="mx-auto w-full max-w-[1720px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8"
         >
           {showHeader && (
             <header
@@ -598,10 +600,10 @@ export default function ProductsClient({
             </button>
           </section>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+         <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
   {filteredProducts.map(
     (product) => (
-      <ProductCard
+      <EditorialProductCard
         key={product.id}
         product={product}
         headingLevel={2}

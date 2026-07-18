@@ -9,12 +9,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 
-import AddToCartButton from "../products/AddToCartButton";
-import WishlistButton from "../products/WishlistButton";
+import AddToCartButton from "./AddToCartButton";
+import WishlistButton from "./WishlistButton";
 
 import type {
   ProductCardProduct,
-} from "../products/ProductCard";
+} from "./ProductCard";
 
 import { useLanguage } from "../../context/LanguageContext";
 

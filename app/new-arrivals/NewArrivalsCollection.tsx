@@ -18,11 +18,11 @@ import {
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
-import EditorialProductCard from "./EditorialProductCard";
+import EditorialProductCard from "../products/EditorialProductCard";
 
 import type {
   EditorialProduct,
-} from "./EditorialProductCard";
+} from "../products/EditorialProductCard";
 
 import { useLanguage } from "../../context/LanguageContext";
 
