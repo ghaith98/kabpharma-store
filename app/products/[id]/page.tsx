@@ -3,9 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import ProductExtraClient from "./ProductExtraClient";
-import BackButton from "./BackButton";
 import ProductDetailsClient from "./ProductDetailsClient";
-import ShareProductButton from "./ShareProductButton";
 
 const SITE_URL = "https://www.kabpharma.com";
 const DEFAULT_SOCIAL_IMAGE =
@@ -16,7 +14,15 @@ export const revalidate = 60;
 const getProduct = cache(async (id: string) =>
   supabase
     .from("products")
-    .select("*")
+    .select(`
+      *,
+      categories (
+        id,
+        name,
+        name_ar,
+        name_en
+      )
+    `)
     .eq("id", id)
     .maybeSingle()
 );
@@ -254,23 +260,28 @@ export default async function ProductPage({
     sameCategoryProductsResult,
   ] = await Promise.all([
     supabase
-     .from("product_reviews")
-.select(`
-  id,
-  product_id,
-  customer_name,
-  rating,
-  review,
-  created_at,
-  is_anonymous
-`)
-      .eq(
-        "product_id",
-        product.id
-      )
-      .order("created_at", {
-        ascending: false,
-      }),
+  .from("products")
+  .select(`
+    *,
+    categories (
+      id,
+      name,
+      name_ar,
+      name_en
+    ),
+    product_variants (
+      *
+    )
+  `)
+  .eq(
+    "category_id",
+    product.category_id
+  )
+  .neq("id", product.id)
+  .eq(
+    "is_out_of_stock",
+    false
+  ),
 
     supabase
       .from("product_images")
@@ -795,7 +806,7 @@ export default async function ProductPage({
   };
 
   return (
-  <main className="min-h-screen bg-white px-4 pb-32 pt-5 sm:px-6 sm:pb-16 sm:pt-8">
+  <main className="min-h-screen bg-white px-4 pb-20 pt-0 sm:px-6 sm:pb-20 sm:pt-6 lg:px-8">
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
@@ -805,20 +816,7 @@ export default async function ProductPage({
       }}
     />
 
-    <div className="mx-auto max-w-[1200px]">
-      <div
-        dir="ltr"
-        className="mb-5 flex items-center justify-between gap-3 border-b border-gray-100 pb-5"
-      >
-        <BackButton />
-
-        <ShareProductButton
-          productId={product.id}
-          productNameAr={product.name_ar}
-          productNameEn={product.name_en}
-          fallbackName={product.name}
-        />
-      </div>
+    <div className="mx-auto max-w-[1400px]">
 
       <ProductDetailsClient
         product={product}

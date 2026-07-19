@@ -425,7 +425,7 @@ export default function ReviewsSection({
   return (
     <section
       dir={isArabic ? "rtl" : "ltr"}
-      className="mt-12 border-t border-[#edf0ed] pt-9 sm:mt-16 sm:pt-14"
+      className="mt-8 sm:mt-10"
     >
       {/* Section heading */}
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
@@ -465,7 +465,7 @@ export default function ReviewsSection({
           type="button"
           onClick={openReviewModal}
           disabled={authLoading}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[#0a583b] bg-white px-6 text-sm font-extrabold text-[#0a583b] transition duration-200 hover:bg-[#0a583b] hover:text-white active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 sm:min-h-12 sm:w-auto"
+         className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-none border border-[#0a583b] bg-white px-6 text-sm font-semibold text-[#0a583b] transition duration-200 hover:bg-[#0a583b] hover:text-white disabled:cursor-wait disabled:opacity-60 sm:min-h-12 sm:w-auto"
         >
           <FiStar className="text-base" />
 
@@ -475,7 +475,7 @@ export default function ReviewsSection({
 
       <div className="grid gap-6 lg:grid-cols-[290px_minmax(0,1fr)] lg:items-start lg:gap-10 xl:gap-12">
         {/* Rating summary */}
-        <aside className="h-fit overflow-hidden rounded-[1.4rem] border border-[#e1e8e3] bg-[linear-gradient(145deg,#fbfcfb_0%,#f1f6f3_100%)] p-5 shadow-[0_18px_50px_rgba(10,88,59,0.055)] lg:sticky lg:top-28 lg:rounded-[1.75rem] lg:p-7">
+       <aside className="h-fit overflow-hidden border border-[#dedfdd] bg-[#f7f8f6] p-5 lg:sticky lg:top-28 lg:p-7">
           {reviews.length > 0 ? (
             <>
               {/* Mobile compact row / desktop stack */}
@@ -645,7 +645,7 @@ export default function ReviewsSection({
         {/* Reviews list */}
         <div className="min-w-0">
           {reviews.length === 0 ? (
-            <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#dce3de] bg-[#fbfcfb] px-6 text-center sm:min-h-[280px]">
+           <div className="flex min-h-[240px] flex-col items-center justify-center border border-dashed border-[#dce3de] bg-[#fbfcfb] px-6 text-center sm:min-h-[280px]">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
                 <FiStar className="text-xl" />
               </div>
@@ -666,7 +666,7 @@ export default function ReviewsSection({
                 type="button"
                 onClick={openReviewModal}
                 disabled={authLoading}
-                className="mt-6 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-wait disabled:opacity-60"
+                className="mt-6 rounded-none bg-[#0a583b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#073f2c] disabled:cursor-wait disabled:opacity-60"
               >
                 {authLoading
                   ? isArabic
@@ -682,7 +682,7 @@ export default function ReviewsSection({
               </button>
             </div>
           ) : (
-            <div className="space-y-3 sm:space-y-4">
+            <div>
               {paginatedReviews.map(
                 (item) => {
                   const displayedName =
@@ -691,7 +691,7 @@ export default function ReviewsSection({
                   return (
                     <article
                       key={item.id}
-                      className="rounded-[1.35rem] border border-[#e4e9e5] bg-white p-4 shadow-[0_10px_35px_rgba(20,32,25,0.025)] transition duration-200 hover:border-[#cfdcd3] hover:shadow-[0_16px_45px_rgba(10,88,59,0.055)] sm:rounded-[1.6rem] sm:p-6"
+                     className="border-b border-[#dedfdd] bg-white py-5 transition duration-200 hover:bg-[#fbfcfb] sm:py-6"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-3">
@@ -737,7 +737,7 @@ export default function ReviewsSection({
                         </div>
                       </div>
 
-                      <div className="mt-4 border-t border-[#edf0ed] pt-4 sm:mt-5 sm:pt-5">
+                      <div className="mt-3">
                         <p className="whitespace-pre-line text-sm leading-6 text-[#4f5d54] sm:text-[15px] sm:leading-7">
                           {item.review}
                         </p>
@@ -839,7 +839,7 @@ export default function ReviewsSection({
             role="dialog"
             aria-modal="true"
             aria-labelledby="review-modal-title"
-            className="max-h-[92vh] w-full overflow-y-auto rounded-t-[2rem] bg-white p-6 shadow-2xl sm:max-w-lg sm:rounded-[2rem] sm:p-8"
+            className="max-h-[92vh] w-full overflow-y-auto bg-white p-6 shadow-2xl sm:max-w-lg sm:border sm:border-[#dedfdd] sm:p-8"
           >
             <div className="flex items-start justify-between gap-5">
               <div>
@@ -882,7 +882,7 @@ export default function ReviewsSection({
                     ? "إغلاق"
                     : "Close"
                 }
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f3f5f3] text-[#526057] transition hover:bg-[#e7ebe8] disabled:opacity-50"
+               className="flex h-10 w-10 shrink-0 items-center justify-center border border-[#dfe4e0] bg-white text-[#526057] transition hover:border-[#0a583b] hover:text-[#0a583b] disabled:opacity-50"
               >
                 <FiX className="text-xl" />
               </button>
@@ -952,7 +952,7 @@ export default function ReviewsSection({
                   }
                   rows={5}
                   maxLength={1500}
-                  className="w-full resize-none rounded-2xl border border-[#dfe4e0] bg-white px-4 py-3.5 text-base leading-7 text-[#142019] outline-none transition placeholder:text-[#99a29c] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
+                 className="w-full resize-none rounded-none border border-[#dfe4e0] bg-white px-4 py-3.5 text-base leading-7 text-[#142019] outline-none transition placeholder:text-[#99a29c] focus:border-[#0a583b] focus:ring-1 focus:ring-[#0a583b]"
                 />
 
                 <p className="mt-1.5 text-end text-xs text-[#99a29c]">
@@ -977,7 +977,7 @@ export default function ReviewsSection({
                   : "Post this review anonymously"}
               </label>
 
-              <div className="flex items-center gap-3 rounded-2xl bg-[#edf5f0] px-4 py-3 text-sm font-bold text-[#0a583b]">
+              <div className="flex items-center gap-3 bg-[#edf5f0] px-4 py-3 text-sm font-semibold text-[#0a583b]">
                 <FiCheck className="shrink-0 text-lg" />
 
                 <span>
@@ -997,7 +997,7 @@ export default function ReviewsSection({
                   loading ||
                   reviewText.trim().length < 2
                 }
-                className="flex min-h-13 w-full items-center justify-center rounded-full bg-[#0a583b] px-6 py-3.5 font-extrabold text-white shadow-sm transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:opacity-50"
+               className="flex min-h-13 w-full items-center justify-center rounded-none bg-[#0a583b] px-6 py-3.5 font-semibold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading
                   ? isArabic

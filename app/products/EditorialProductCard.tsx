@@ -330,42 +330,48 @@ export default function EditorialProductCard({
       </div>
 
       <div
-        className={`flex flex-1 flex-col pt-4 sm:pt-5 ${
+        className={`flex flex-1 flex-col pt-3 sm:pt-4 ${
           isArabic
             ? "text-right"
             : "text-left"
         }`}
       >
-        <p
-          className={`min-h-4 text-[9px] font-bold text-[#0a583b] sm:text-[10px] ${
-            isArabic
-              ? "tracking-normal"
-              : "uppercase tracking-[0.12em]"
-          }`}
-        >
-          {categoryName || "\u00a0"}
-        </p>
+        {categoryName && (
+          <p
+            className={`text-[9px] font-bold leading-4 text-[#0a583b] sm:text-[10px] ${
+              isArabic
+                ? "tracking-normal"
+                : "uppercase tracking-[0.12em]"
+            }`}
+          >
+            {categoryName}
+          </p>
+        )}
 
         <Link
           href={`/products/${product.id}`}
-          className="mt-2 sm:mt-3"
+          className={
+            categoryName
+              ? "mt-1.5 sm:mt-2"
+              : ""
+          }
         >
-          <Heading className="line-clamp-2 min-h-[46px] text-[15px] font-medium leading-[23px] text-[#142019] transition group-hover:text-[#0a583b] sm:min-h-[50px] sm:text-[17px] sm:leading-6">
+          <Heading className="line-clamp-2 min-h-[40px] text-[15px] font-medium leading-5 text-[#142019] transition group-hover:text-[#0a583b] sm:min-h-[44px] sm:text-[17px] sm:leading-[22px]">
             {productName}
           </Heading>
         </Link>
 
         {productDescription && (
-          <p className="mt-2 line-clamp-1 min-h-[20px] text-xs leading-5 text-[#536158] sm:mt-3 sm:min-h-[22px] sm:text-sm sm:leading-[22px]">
+          <p className="mt-1 line-clamp-1 min-h-[18px] text-xs leading-[18px] text-[#536158] sm:mt-1.5 sm:min-h-5 sm:text-sm sm:leading-5">
             {productDescription}
           </p>
         )}
 
         <div
           dir="ltr"
-          className="mt-3 border-t border-[#dedfdd] pt-3 sm:mt-4 sm:pt-4"
+          className="mt-2 border-t border-[#dedfdd] pt-2 sm:mt-3 sm:pt-3"
         >
-          <div className="flex min-h-[52px] items-end justify-between gap-2 sm:gap-4">
+          <div className="flex items-end justify-between gap-2 sm:gap-4">
             <div className="shrink-0 text-left">
               <p
                 aria-hidden={
@@ -396,7 +402,7 @@ export default function EditorialProductCard({
             {variants.length > 0 && (
               <>
                 {/* Mobile: one compact selector with an arrow. */}
-                <div className="relative min-w-0 max-w-[92px] translate-y-2 md:hidden">
+                <div className="relative min-w-0 max-w-[92px] md:hidden">
                   <select
                     aria-label={
                       isArabic
@@ -503,7 +509,7 @@ export default function EditorialProductCard({
           </div>
         </div>
 
-        <div className="mt-5 md:mt-4 [&_button]:!min-h-11 [&_button]:!w-full [&_button]:!rounded-none [&_button]:!border-0 [&_button]:!bg-[#0a583b] [&_button]:!px-3 [&_button]:!py-2.5 [&_button]:!text-xs [&_button]:!font-extrabold [&_button]:!text-white [&_button]:!ring-0 [&_button]:hover:!bg-[#073f2c] sm:[&_button]:!text-sm disabled:[&_button]:!cursor-not-allowed disabled:[&_button]:!bg-[#e4e8e5] disabled:[&_button]:!text-[#8d9891]">
+        <div className="mt-3 md:mt-3 [&_button]:!min-h-11 [&_button]:!w-full [&_button]:!rounded-none [&_button]:!border-0 [&_button]:!bg-[#0a583b] [&_button]:!px-3 [&_button]:!py-2.5 [&_button]:!text-xs [&_button]:!font-extrabold [&_button]:!text-white [&_button]:!ring-0 [&_button]:hover:!bg-[#073f2c] sm:[&_button]:!text-sm disabled:[&_button]:!cursor-not-allowed disabled:[&_button]:!bg-[#e4e8e5] disabled:[&_button]:!text-[#8d9891]">
           <AddToCartButton
             product={cartProduct}
             productVariants={variants}

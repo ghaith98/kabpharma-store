@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+
 import {
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -10,9 +13,11 @@ import {
 export default function ProductGallery({
   images,
   productName,
+  backLabel,
 }: {
   images: string[];
   productName: string;
+  backLabel: string;
 }) {
   const [selectedIndex, setSelectedIndex] =
     useState(0);
@@ -38,18 +43,28 @@ export default function ProductGallery({
 
   return (
     <div className="min-w-0">
-     <div className="relative flex aspect-square min-h-[360px] items-center justify-center overflow-hidden bg-[#f6f7f5] sm:min-h-[480px] lg:aspect-[4/3] lg:min-h-0">
+      <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-[#f7f8f6]">
+        <Link
+  href="/products"
+  aria-label={backLabel}
+  className="absolute left-3 top-3 z-20 flex h-10 w-10 items-center justify-center border border-[#dfe4e0] bg-white/95 text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b] sm:left-4 sm:top-4 sm:h-11 sm:w-11"
+>
+  <ArrowLeft
+    size={19}
+    strokeWidth={1.8}
+  />
+</Link>
         {selectedImage ? (
           <Image
             src={selectedImage}
             alt={productName}
             fill
             priority
-            sizes="(max-width: 1024px) 100vw, 58vw"
-            className="h-full w-full object-contain p-6 transition duration-500 sm:p-10 lg:p-10"
+            sizes="(max-width: 1024px) 100vw, 56vw"
+            className="h-full w-full object-contain p-4 transition duration-500 sm:p-8 lg:p-10"
           />
         ) : (
-          <div className="flex h-full min-h-[400px] items-center justify-center text-sm font-bold text-gray-400">
+          <div className="flex h-full w-full items-center justify-center text-sm font-medium text-[#909991]">
             No image
           </div>
         )}
@@ -60,7 +75,7 @@ export default function ProductGallery({
               type="button"
               onClick={goPrevious}
               aria-label="Previous image"
-              className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-700 shadow-sm backdrop-blur transition hover:border-green-200 hover:text-green-700"
+              className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center border border-[#dfe4e0] bg-white/95 text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b] sm:left-4 sm:h-11 sm:w-11"
             >
               <ChevronLeft size={19} />
             </button>
@@ -69,7 +84,7 @@ export default function ProductGallery({
               type="button"
               onClick={goNext}
               aria-label="Next image"
-              className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-700 shadow-sm backdrop-blur transition hover:border-green-200 hover:text-green-700"
+              className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center border border-[#dfe4e0] bg-white/95 text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b] sm:right-4 sm:h-11 sm:w-11"
             >
               <ChevronRight size={19} />
             </button>
@@ -77,7 +92,7 @@ export default function ProductGallery({
         )}
 
         {images.length > 1 && (
-          <span className="absolute bottom-4 right-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-extrabold text-gray-700 shadow-sm backdrop-blur">
+          <span className="absolute bottom-3 right-3 border border-[#dfe4e0] bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#526057] sm:bottom-4 sm:right-4">
             {selectedIndex + 1} / {images.length}
           </span>
         )}
@@ -99,10 +114,10 @@ export default function ProductGallery({
                 aria-label={`View product image ${
                   index + 1
                 }`}
-                className={`h-[76px] w-[76px] shrink-0 overflow-hidden border bg-[#f6f7f5] transition sm:h-20 sm:w-20 ${
+                className={`h-[72px] w-[72px] shrink-0 overflow-hidden border bg-[#f7f8f6] transition sm:h-20 sm:w-20 ${
                   selected
                     ? "border-[#0a583b] ring-1 ring-[#0a583b]"
-                    : "border-gray-200 hover:border-gray-400"
+                    : "border-[#dfe4e0] hover:border-[#8c978f]"
                 }`}
               >
                 <Image
