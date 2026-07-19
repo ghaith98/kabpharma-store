@@ -45,48 +45,97 @@ export default function ProfilePage() {
   const isArabic = lang === "ar";
 
   useEffect(() => {
-    const initializationTimer = window.setTimeout(() => {
-      const savedUser =
-        localStorage.getItem("kab_user");
+    let cancelled = false;
 
-    if (savedUser) {
+    async function loadProfile() {
       try {
-        const parsedUser =
-          JSON.parse(
-            savedUser
-          ) as KabUser;
-
-        setUser(parsedUser);
-      } catch (error) {
-        console.error(
-          "Failed to read saved user:",
-          error
+        const response = await fetch(
+          "/api/customer/me",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
         );
 
-        localStorage.removeItem(
-          "kab_user"
+        if (!response.ok) {
+          localStorage.removeItem("kab_user");
+          return;
+        }
+
+        const result = await response.json();
+
+        if (!result.authenticated || !result.user) {
+          localStorage.removeItem("kab_user");
+          return;
+        }
+
+        const verifiedUser: KabUser = {
+          full_name: result.user.full_name,
+          phone: result.user.phone,
+        };
+
+        localStorage.setItem(
+          "kab_user",
+          JSON.stringify({
+            id: result.user.id,
+            ...verifiedUser,
+          })
         );
+
+        if (!cancelled) {
+          setUser(verifiedUser);
+        }
+      } catch {
+        if (!cancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setPageReady(true);
+        }
       }
     }
 
-      setPageReady(true);
-    }, 0);
+    void loadProfile();
 
     return () => {
-      window.clearTimeout(initializationTimer);
+      cancelled = true;
     };
   }, []);
 
-  function handleLogout() {
-    localStorage.removeItem(
-      "kab_user"
-    );
+  async function handleLogout() {
+    try {
+      const response = await fetch(
+        "/api/customer/logout",
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
 
-    setUser(null);
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
 
-    window.dispatchEvent(
-      new Event("cartUpdated")
-    );
+      localStorage.removeItem(
+        "kab_user"
+      );
+
+      setUser(null);
+
+      window.dispatchEvent(
+        new Event("cartUpdated")
+      );
+      window.dispatchEvent(
+        new Event("wishlistUpdated")
+      );
+    } catch {
+      window.alert(
+        isArabic
+          ? "تعذر تسجيل الخروج. يرجى المحاولة مرة أخرى."
+          : "Could not sign out. Please try again."
+      );
+    }
   }
 
   const profileInitial =

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Admin crop previews use blob/object URLs and must reflect raw source pixels. */
 "use client";
 
 import {

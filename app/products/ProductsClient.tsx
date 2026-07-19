@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useSearchParams } from "next/navigation";
@@ -18,6 +19,7 @@ import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import EditorialProductCard from "./EditorialProductCard";
 import type {
   EditorialProduct,
@@ -66,6 +68,11 @@ export default function ProductsClient({
 
   const [filtersOpen, setFiltersOpen] =
     useState(false);
+
+  const filtersDialogRef =
+    useRef<HTMLElement>(null);
+
+  useDialogFocus(filtersOpen, filtersDialogRef);
 
   const [sortBy, setSortBy] =
     useState("default");
@@ -551,6 +558,8 @@ export default function ProductsClient({
       onClick={() =>
         setFiltersOpen(true)
       }
+      aria-expanded={filtersOpen}
+      aria-controls="product-filters"
       className="relative inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 text-xs font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] sm:min-h-12 sm:px-6 sm:text-sm"
     >
       <FaFilter className="text-xs sm:text-sm" />
@@ -627,6 +636,12 @@ export default function ProductsClient({
           }}
         >
           <aside
+  ref={filtersDialogRef}
+  id="product-filters"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="product-filters-title"
+  tabIndex={-1}
   dir={
     isArabic
       ? "rtl"
@@ -651,7 +666,10 @@ export default function ProductsClient({
                     KAB Pharma
                   </p>
 
-                  <h2 className="mt-1 text-xl font-extrabold text-[#142019]">
+                  <h2
+                    id="product-filters-title"
+                    className="mt-1 text-xl font-extrabold text-[#142019]"
+                  >
                     {isArabic
                       ? "تصفية المنتجات"
                       : "Filter products"}

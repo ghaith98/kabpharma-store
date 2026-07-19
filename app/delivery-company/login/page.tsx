@@ -2,45 +2,49 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function DeliveryCompanyLoginPage() {
   const router = useRouter();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleLogin(event: React.FormEvent) {
+    event.preventDefault();
+    setError("");
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("delivery_companies")
-      .select("*")
-      .eq("username", username.trim())
-      .eq("password", password.trim())
-      .eq("is_active", true)
-      .single();
+    try {
+      const response = await fetch("/api/staff/login", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role: "delivery_company",
+          identifier: username.trim(),
+          password,
+        }),
+      });
 
-    setLoading(false);
+      if (!response.ok) {
+        setError(
+          response.status === 429
+            ? "Too many attempts. Please try again later."
+            : "Invalid username or password, or this account is inactive."
+        );
+        return;
+      }
 
-    if (error || !data) {
-      alert("Invalid username or password, or this account is inactive.");
-      return;
+      router.replace("/delivery-company");
+      router.refresh();
+    } catch {
+      setError("Could not sign in. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem("delivery_company", JSON.stringify(data));
-
-    await supabase
-      .from("delivery_companies")
-      .update({
-        is_online: true,
-        last_seen: new Date().toISOString(),
-      })
-      .eq("id", data.id);
-
-    router.push("/delivery-company");
   }
 
   return (
@@ -59,29 +63,60 @@ export default function DeliveryCompanyLoginPage() {
           </p>
 
           <div className="mt-8 space-y-4">
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-[16px] text-black outline-none focus:border-green-600"
-            />
+            <div>
+              <label
+                htmlFor="company-username"
+                className="mb-2 block text-sm font-bold text-gray-700"
+              >
+                Username
+              </label>
+              <input
+                id="company-username"
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(event) =>
+                  setUsername(event.target.value)
+                }
+                required
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-[16px] text-black outline-none focus:border-green-600 focus:ring-4 focus:ring-green-50"
+              />
+            </div>
 
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-[16px] text-black outline-none focus:border-green-600"
-            />
+            <div>
+              <label
+                htmlFor="company-password"
+                className="mb-2 block text-sm font-bold text-gray-700"
+              >
+                Password
+              </label>
+              <input
+                id="company-password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
+                required
+                className="w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-[16px] text-black outline-none focus:border-green-600 focus:ring-4 focus:ring-green-50"
+              />
+            </div>
           </div>
+
+          {error && (
+            <p
+              role="alert"
+              className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700"
+            >
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-6 w-full rounded-2xl bg-green-600 py-4 font-bold text-white transition hover:bg-green-700 disabled:bg-gray-400"
+            className="mt-6 w-full rounded-2xl bg-green-700 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-wait disabled:bg-gray-400"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>

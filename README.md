@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KAB Pharma Store
 
-## Getting Started
+Production e-commerce storefront and operations dashboard for KAB Pharma, built with Next.js 16, React 19, Supabase, and Tailwind CSS.
 
-First, run the development server:
+## Local setup
+
+Requirements: Node.js 20.9 or newer and npm.
 
 ```bash
+npm ci
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configure every value in `.env.local` before testing authenticated or data-backed flows. Server-only keys must never be exposed through `NEXT_PUBLIC_` variables or committed to source control.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Quality checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
 
-## Learn More
+Run all three with `npm run check`. A successful production build requires the environment variables listed in `.env.example`.
 
-To learn more about Next.js, take a look at the following resources:
+## Critical production configuration
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Enforce Row Level Security on every Supabase table and storage bucket. The service-role key is used only in server routes.
+- Restrict the `payment-proofs` bucket to authorized staff if receipts contain personal or financial information.
+- Use separate development, staging, and production Supabase projects and OTP credentials.
+- Configure the public site URL and allowed redirect origins in the deployment platform.
+- Keep database migrations, RLS policies, and a tested rollback procedure under version control before changing schema.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment smoke test
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+After deployment, verify both Arabic and English on mobile and desktop, then test product search/filtering, variants, cart, wishlist, OTP login/signup/logout, checkout, order history/detail/cancellation, and staff-only areas with non-production test data.

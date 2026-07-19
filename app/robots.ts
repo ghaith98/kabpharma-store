@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const SITE_URL =
-  "https://www.kabpharma.com";
+import { SITE_URL } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -15,6 +13,17 @@ export default function robots(): MetadataRoute.Robots {
         */
         disallow: [
           "/api/",
+          "/admin/",
+          "/admin-mobile/",
+          "/driver/",
+          "/delivery/",
+          "/delivery-company/",
+          "/checkout/",
+          "/payment/",
+          "/orders/",
+          "/profile/",
+          "/cart/",
+          "/wishlist/",
         ],
       },
     ],

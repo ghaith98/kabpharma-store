@@ -3,12 +3,10 @@ import type {
 } from "next";
 
 import { supabase } from "@/lib/supabase";
+import { SITE_URL } from "@/lib/site";
 
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import NewArrivalsCollection from "./NewArrivalsCollection";
-
-const SITE_URL =
-  "https://www.kabpharma.com";
 
 export const revalidate = 60;
 

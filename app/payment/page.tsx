@@ -77,11 +77,6 @@ type StoredUser = {
   phone?: string;
 };
 
-type BanCheckResult = {
-  is_banned?: boolean;
-  reason?: string | null;
-};
-
 export default function PaymentPage() {
   const { lang } =
     useLanguage();
@@ -152,65 +147,7 @@ export default function PaymentPage() {
       : ArrowLeft;
 
   useEffect(() => {
-    const initializationTimer = window.setTimeout(() => {
-      const savedUser =
-        localStorage.getItem(
-          "kab_user"
-        );
-
-    if (!savedUser) {
-      localStorage.setItem(
-        "redirect_after_login",
-        "/payment"
-      );
-
-      router.replace(
-        "/profile?account_required=1"
-      );
-
-      return;
-    }
-
-    const savedCheckout =
-      localStorage.getItem(
-        "checkout"
-      );
-
-    if (!savedCheckout) {
-      router.replace("/checkout");
-
-      return;
-    }
-
-    try {
-      const parsedCheckout =
-        JSON.parse(
-          savedCheckout
-        ) as CheckoutData;
-
-      setCheckout(
-        parsedCheckout
-      );
-
-      setCart(
-        getCart() as CartItemWithVariant[]
-      );
-
-      setPageReady(true);
-    } catch (error) {
-      console.error(
-        "Failed to read checkout information:",
-        error
-      );
-
-      localStorage.removeItem(
-        "checkout"
-      );
-
-      router.replace("/checkout");
-
-      return;
-    }
+    let cancelled = false;
 
     async function loadPaymentSettings() {
       const [
@@ -269,10 +206,79 @@ export default function PaymentPage() {
       }
     }
 
-      void loadPaymentSettings();
-    }, 0);
+    async function initializePayment() {
+      try {
+        const response = await fetch(
+          "/api/customer/me",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+
+        if (response.status === 401) {
+          localStorage.removeItem("kab_user");
+          localStorage.setItem(
+            "redirect_after_login",
+            "/payment"
+          );
+          router.replace(
+            "/profile?account_required=1"
+          );
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Account check failed");
+        }
+
+        const result = (await response.json()) as {
+          user?: StoredUser;
+        };
+
+        localStorage.setItem(
+          "kab_user",
+          JSON.stringify(result.user || {})
+        );
+
+        const savedCheckout =
+          localStorage.getItem("checkout");
+
+        if (!savedCheckout) {
+          router.replace("/checkout");
+          return;
+        }
+
+        const parsedCheckout = JSON.parse(
+          savedCheckout
+        ) as CheckoutData;
+
+        if (cancelled) return;
+
+        setCheckout(parsedCheckout);
+        setCart(
+          getCart() as CartItemWithVariant[]
+        );
+        setPageReady(true);
+
+        await loadPaymentSettings();
+      } catch (error) {
+        console.error(
+          "Failed to initialize payment:",
+          error
+        );
+        localStorage.removeItem("checkout");
+        router.replace("/checkout");
+      }
+    }
+
+    const initializationTimer = window.setTimeout(
+      () => void initializePayment(),
+      0
+    );
 
     return () => {
+      cancelled = true;
       window.clearTimeout(initializationTimer);
     };
   }, [router]);
@@ -600,117 +606,6 @@ export default function PaymentPage() {
 
     setFileError("");
 
-    const savedUser =
-      localStorage.getItem(
-        "kab_user"
-      );
-
-    if (!savedUser) {
-      localStorage.setItem(
-        "redirect_after_login",
-        "/payment"
-      );
-
-      router.replace(
-        "/profile?account_required=1"
-      );
-
-      return;
-    }
-
-    let currentUser: StoredUser;
-
-    try {
-      currentUser =
-        JSON.parse(
-          savedUser
-        ) as StoredUser;
-    } catch {
-      localStorage.removeItem(
-        "kab_user"
-      );
-
-      localStorage.setItem(
-        "redirect_after_login",
-        "/payment"
-      );
-
-      router.replace("/login");
-
-      return;
-    }
-
-    const accountPhone =
-      String(
-        currentUser.phone ||
-          ""
-      ).trim();
-
-    if (!accountPhone) {
-      localStorage.removeItem(
-        "kab_user"
-      );
-
-      localStorage.setItem(
-        "redirect_after_login",
-        "/payment"
-      );
-
-      router.replace("/login");
-
-      return;
-    }
-
-    const {
-      data: banData,
-      error: banError,
-    } = await supabase.rpc(
-      "check_user_ban",
-      {
-        p_phone:
-          accountPhone,
-      }
-    );
-
-    if (banError) {
-      console.error(
-        "Failed to check account restriction:",
-        banError
-      );
-
-      alert(
-        isArabic
-          ? "تعذر التحقق من حالة الحساب. يرجى المحاولة مرة أخرى."
-          : "Could not verify your account status. Please try again."
-      );
-
-      return;
-    }
-
-    const banResult:
-      | BanCheckResult
-      | null =
-      Array.isArray(banData)
-        ? (banData[0] as
-            | BanCheckResult
-            | undefined) ||
-          null
-        : (banData as BanCheckResult | null);
-
-    if (
-      banResult?.is_banned
-    ) {
-      alert(
-        isArabic
-          ? "لا يمكن إرسال طلبات جديدة من هذا الحساب حالياً. يرجى التواصل معنا للمساعدة."
-          : "This account cannot place new orders at the moment. Please contact us for assistance."
-      );
-
-      router.replace("/checkout");
-
-      return;
-    }
-
     const savedCheckout =
       localStorage.getItem(
         "checkout"
@@ -754,12 +649,6 @@ export default function PaymentPage() {
     const currentCart =
       getCart() as CartItemWithVariant[];
 
-    const currentDeliveryFee =
-      Number(
-        currentCheckout.delivery_fee ||
-          0
-      );
-
     if (
       !currentCheckout.name ||
       !currentCheckout.governorate ||
@@ -794,254 +683,57 @@ export default function PaymentPage() {
 
     setLoading(true);
 
-    let createdOrderId:
-      | number
-      | null = null;
-
-    let uploadedProofPath:
-      | string
-      | null = null;
-
     try {
-      const currentProductsTotal =
-        currentCart.reduce(
-          (sum, item) =>
-            sum +
-            Number(
-              item.price || 0
-            ) *
-              Number(
-                item.quantity ||
-                  0
-              ),
-          0
-        );
+      const formData = new FormData();
 
-      const orderTotal =
-        currentProductsTotal +
-        currentDeliveryFee;
-
-      const originalExtension =
-        file.name
-          .split(".")
-          .pop()
-          ?.trim()
-          .toLowerCase() ||
-        "";
-
-      const safeBaseName =
-        file.name
-          .replace(
-            /\.[^/.]+$/,
-            ""
-          )
-          .trim()
-          .replace(
-            /[^a-zA-Z0-9._-]/g,
-            "-"
-          )
-          .replace(
-            /-+/g,
-            "-"
-          )
-          .replace(
-            /^-|-$/g,
-            ""
-          )
-          .slice(0, 80);
-
-      const safeFileName =
-        originalExtension
-          ? `${
-              safeBaseName ||
-              "payment-proof"
-            }.${originalExtension}`
-          : safeBaseName ||
-            "payment-proof";
-
-      const uniqueFileId =
-        typeof crypto !==
-          "undefined" &&
-        typeof crypto.randomUUID ===
-          "function"
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random()
-              .toString(36)
-              .slice(2)}`;
-
-      const filePath =
-        `orders/${Date.now()}-` +
-        `${uniqueFileId}-${safeFileName}`;
-
-      const {
-        error: uploadError,
-      } = await supabase.storage
-        .from(
-          "payment-proofs"
-        )
-        .upload(
-          filePath,
-          file,
-          {
-            cacheControl:
-              "3600",
-
-            contentType:
-              file.type ||
-              (originalExtension ===
-              "pdf"
-                ? "application/pdf"
-                : undefined),
-
-            upsert: false,
-          }
-        );
-
-      if (uploadError) {
-        throw new Error(
-          isArabic
-            ? `تعذر رفع إثبات الدفع: ${uploadError.message}`
-            : `Could not upload payment proof: ${uploadError.message}`
-        );
-      }
-
-      uploadedProofPath =
-        filePath;
-
-      const {
-        data: publicUrlData,
-      } = supabase.storage
-        .from(
-          "payment-proofs"
-        )
-        .getPublicUrl(
-          filePath
-        );
-
-      const {
-        data: order,
-        error: orderError,
-      } = await supabase
-        .from("orders")
-        .insert({
-          customer_name:
-            currentCheckout.name.trim(),
-
-          phone:
-            accountPhone,
-
+      formData.set(
+        "checkout",
+        JSON.stringify({
+          name: currentCheckout.name,
           governorate:
             currentCheckout.governorate,
-
           delivery_area:
             currentCheckout.delivery_area,
-
-          address:
-            currentCheckout.address.trim(),
-
-          delivery_fee:
-            currentDeliveryFee,
-
-          total_price:
-            orderTotal,
-
-          status:
-            "pending",
-
-          payment_proof_url:
-            publicUrlData.publicUrl,
-
-          payment_proof_path:
-            filePath,
-
-          payment_proof_reviewed_at:
-            null,
-
-          delivered_at:
-            null,
-
-          payment_proof_deleted_at:
-            null,
+          address: currentCheckout.address,
         })
-        .select()
-        .single();
-
-      if (
-        orderError ||
-        !order
-      ) {
-        throw new Error(
-          isArabic
-            ? `تعذر إنشاء الطلب: ${
-                orderError?.message ||
-                "Unknown error"
-              }`
-            : `Could not create the order: ${
-                orderError?.message ||
-                "Unknown error"
-              }`
-        );
-      }
-
-      createdOrderId =
-        Number(order.id);
-
-      const orderItems =
-        currentCart.map(
-          (item) => ({
-            order_id:
-              order.id,
-
-            product_id:
-              item.id,
-
-            product_name:
-              item.product_name ||
-              item.name,
-
+      );
+      formData.set(
+        "cart",
+        JSON.stringify(
+          currentCart.map((item) => ({
+            id: item.id,
             variant_id:
-              item.variant_id ||
-              null,
-
-            variant_label_ar:
-              item.variant_label_ar ||
-              null,
-
-            variant_label_en:
-              item.variant_label_en ||
-              null,
-
-            image_url:
-              item.image_url ||
-              null,
-
-            quantity:
-              Number(
-                item.quantity
-              ),
-
-            unit_price:
-              Number(
-                item.price
-              ),
-          })
-        );
-
-      const {
-        error: itemsError,
-      } = await supabase
-        .from(
-          "order_items"
+              item.variant_id ?? null,
+            quantity: item.quantity,
+          }))
         )
-        .insert(
-          orderItems
-        );
+      );
+      formData.set("proof", file);
 
-      if (itemsError) {
+      const response = await fetch(
+        "/api/customer/orders",
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }
+      );
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        if (response.status === 401) {
+          localStorage.setItem(
+            "redirect_after_login",
+            "/payment"
+          );
+          router.replace("/login");
+          return;
+        }
+
         throw new Error(
           isArabic
-            ? `تعذر حفظ منتجات الطلب: ${itemsError.message}`
-            : `Could not save order items: ${itemsError.message}`
+            ? "تعذر إنشاء الطلب. تم تحديث الأسعار والتوفر؛ يرجى مراجعة السلة والمحاولة مجدداً."
+            : "The order could not be created. Prices or availability may have changed; review your cart and try again."
         );
       }
 
@@ -1058,60 +750,11 @@ export default function PaymentPage() {
       );
 
       router.replace(
-        `/orders/${order.id}`
+        `/orders/${result.orderId}`
       );
     } catch (
       error: unknown
     ) {
-      if (
-        createdOrderId !==
-        null
-      ) {
-        const {
-          error:
-            deleteOrderError,
-        } = await supabase
-          .from("orders")
-          .delete()
-          .eq(
-            "id",
-            createdOrderId
-          );
-
-        if (
-          deleteOrderError
-        ) {
-          console.error(
-            "Failed to delete incomplete order:",
-            deleteOrderError
-          );
-        }
-      }
-
-      if (
-        uploadedProofPath
-      ) {
-        const {
-          error:
-            deleteProofError,
-        } = await supabase.storage
-          .from(
-            "payment-proofs"
-          )
-          .remove([
-            uploadedProofPath,
-          ]);
-
-        if (
-          deleteProofError
-        ) {
-          console.error(
-            "Failed to delete incomplete payment proof:",
-            deleteProofError
-          );
-        }
-      }
-
       const message =
         error instanceof Error
           ? error.message

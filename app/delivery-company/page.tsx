@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 type OrderItem = {
   id: number;
@@ -11,8 +10,13 @@ type OrderItem = {
   unit_price: number;
 };
 
+type OrderStatus =
+  | "accepted"
+  | "out_for_delivery"
+  | "delivered";
+
 type Order = {
-  id: string;
+  id: number;
   customer_name: string;
   phone: string;
   governorate: string;
@@ -20,161 +24,153 @@ type Order = {
   address: string;
   delivery_fee: number;
   total_price: number;
-  status: string;
+  status: OrderStatus;
   order_items?: OrderItem[];
 };
 
 type DeliveryCompany = {
   id: number;
   company_name: string;
-  is_active?: boolean;
 };
 
 export default function DeliveryCompanyPage() {
   const router = useRouter();
-
-  const [company, setCompany] = useState<DeliveryCompany | null>(null);
+  const [company, setCompany] =
+    useState<DeliveryCompany | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"accepted" | "out_for_delivery" | "delivered">(
-    "accepted"
-  );
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] =
+    useState<number | null>(null);
+  const [filter, setFilter] =
+    useState<OrderStatus>("accepted");
 
   const loadOrders = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("orders")
-      .select(`
-        *,
-        order_items (
-          id,
-          product_name,
-          quantity,
-          unit_price
-        )
-      `)
-      .in("status", ["accepted", "out_for_delivery", "delivered"])
-      .order("id", { ascending: false });
+    try {
+      const response = await fetch(
+        "/api/staff/delivery-company/orders",
+        {
+          credentials: "include",
+          cache: "no-store",
+        }
+      );
 
-    if (error) {
-      alert(error.message);
+      if (response.status === 401) {
+        router.replace("/delivery-company/login");
+        return;
+      }
+
+      const result = (await response.json()) as {
+        error?: string;
+        company?: DeliveryCompany;
+        orders?: Order[];
+      };
+
+      if (!response.ok) {
+        setError(result.error || "تعذر تحميل الطلبات");
+        return;
+      }
+
+      setError("");
+      setCompany(result.company || null);
+      setOrders(result.orders || []);
+    } catch {
+      setError("تعذر الاتصال بالخادم. حاول مجدداً.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setOrders(data || []);
-    setLoading(false);
-  }, []);
-
-  const updateOnlineStatus = useCallback(async (companyId: number) => {
-    await supabase
-      .from("delivery_companies")
-      .update({
-        is_online: true,
-        last_seen: new Date().toISOString(),
-      })
-      .eq("id", companyId);
-  }, []);
-
-  const checkCompanyStillActive = useCallback(async (companyId: number) => {
-    const { data } = await supabase
-      .from("delivery_companies")
-      .select("*")
-      .eq("id", companyId)
-      .single();
-
-    if (!data || !data.is_active) {
-      localStorage.removeItem("delivery_company");
-      router.push("/delivery-company/login");
-      return false;
-    }
-
-    setCompany(data);
-    return true;
   }, [router]);
 
-  const refreshAll = useCallback(async (companyId: number) => {
-    const active = await checkCompanyStillActive(companyId);
-    if (!active) return;
-
-    await updateOnlineStatus(companyId);
-    await loadOrders();
-  }, [checkCompanyStillActive, loadOrders, updateOnlineStatus]);
-
-  async function updateOrderStatus(orderId: string, newStatus: string) {
+  async function updateOrderStatus(
+    orderId: number,
+    status: Exclude<OrderStatus, "accepted">
+  ) {
     setUpdatingId(orderId);
+    setError("");
 
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: newStatus })
-      .eq("id", orderId);
+    try {
+      const response = await fetch(
+        "/api/staff/delivery-company/orders",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ orderId, status }),
+        }
+      );
 
-    setUpdatingId(null);
+      const result = (await response.json()) as {
+        error?: string;
+      };
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (response.status === 401) {
+        router.replace("/delivery-company/login");
+        return;
+      }
+
+      if (!response.ok) {
+        setError(
+          response.status === 409
+            ? "تغيّرت حالة الطلب. تم تحديث القائمة."
+            : result.error || "تعذر تحديث الطلب"
+        );
+        await loadOrders();
+        return;
+      }
+
+      setOrders((current) =>
+        current.map((order) =>
+          order.id === orderId
+            ? { ...order, status }
+            : order
+        )
+      );
+    } catch {
+      setError("تعذر تحديث الطلب. حاول مجدداً.");
+    } finally {
+      setUpdatingId(null);
     }
-
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
   }
 
   async function logout() {
-    if (company?.id) {
-      await supabase
-        .from("delivery_companies")
-        .update({
-          is_online: false,
-          last_seen: new Date().toISOString(),
-        })
-        .eq("id", company.id);
-    }
-
-    localStorage.removeItem("delivery_company");
-    router.push("/delivery-company/login");
+    await fetch("/api/staff/logout", {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => null);
+    router.replace("/delivery-company/login");
+    router.refresh();
   }
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-
-    const initializationTimer = window.setTimeout(() => {
-      const savedCompany = localStorage.getItem("delivery_company");
-
-    if (!savedCompany) {
-      router.push("/delivery-company/login");
-      return;
-    }
-
-    const parsedCompany = JSON.parse(savedCompany) as DeliveryCompany;
-    setCompany(parsedCompany);
-
-    void refreshAll(parsedCompany.id);
-
-    interval = setInterval(() => {
-      void refreshAll(parsedCompany.id);
-    }, 30000);
-    }, 0);
-
+    const initializationTimer = window.setTimeout(
+      () => void loadOrders(),
+      0
+    );
+    const interval = window.setInterval(
+      () => void loadOrders(),
+      30_000
+    );
     return () => {
       window.clearTimeout(initializationTimer);
-
-      if (interval) {
-        clearInterval(interval);
-      }
+      window.clearInterval(interval);
     };
-  }, [refreshAll, router]);
+  }, [loadOrders]);
 
-  const filteredOrders = orders.filter((order) => order.status === filter);
-
+  const filteredOrders = orders.filter(
+    (order) => order.status === filter
+  );
   const counts = {
-    accepted: orders.filter((order) => order.status === "accepted").length,
-    out_for_delivery: orders.filter((order) => order.status === "out_for_delivery")
-      .length,
-    delivered: orders.filter((order) => order.status === "delivered").length,
+    accepted: orders.filter(
+      (order) => order.status === "accepted"
+    ).length,
+    out_for_delivery: orders.filter(
+      (order) => order.status === "out_for_delivery"
+    ).length,
+    delivered: orders.filter(
+      (order) => order.status === "delivered"
+    ).length,
   };
 
   return (
@@ -186,94 +182,107 @@ export default function DeliveryCompanyPage() {
               <h1 className="text-3xl font-extrabold text-gray-900">
                 لوحة شركة التوصيل
               </h1>
-
               <p className="mt-2 text-gray-600">
-                مسجل الدخول باسم:{" "}
+                مسجل الدخول باسم: {" "}
                 <span className="font-bold text-green-700">
                   {company?.company_name || "..."}
                 </span>
               </p>
-
               <p className="mt-1 text-sm text-gray-500">
                 يتم تحديث الطلبات تلقائياً كل 30 ثانية.
               </p>
             </div>
 
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void loadOrders()}
+                disabled={loading}
+                className="rounded-2xl border border-green-700 px-5 py-3 font-bold text-green-800 disabled:opacity-50"
+              >
+                تحديث
+              </button>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+              >
+                تسجيل الخروج
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section
+          aria-label="تصفية الطلبات حسب الحالة"
+          className="mb-6 grid grid-cols-3 gap-3"
+        >
+          {(
+            [
+              ["accepted", "بانتظار الاستلام"],
+              ["out_for_delivery", "قيد التوصيل"],
+              ["delivered", "تم التسليم"],
+            ] as const
+          ).map(([status, label]) => (
             <button
-              onClick={logout}
-              className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+              key={status}
+              type="button"
+              onClick={() => setFilter(status)}
+              aria-pressed={filter === status}
+              className={`rounded-2xl px-3 py-4 text-sm font-extrabold transition ${
+                filter === status
+                  ? status === "accepted"
+                    ? "bg-green-700 text-white"
+                    : status === "out_for_delivery"
+                      ? "bg-blue-700 text-white"
+                      : "bg-gray-900 text-white"
+                  : "bg-white text-gray-700 shadow-sm"
+              }`}
             >
-              تسجيل الخروج
+              {label}
+              <span className="mt-1 block text-xs">
+                ({counts[status]})
+              </span>
             </button>
-          </div>
+          ))}
         </section>
 
-        <section className="mb-6 grid grid-cols-3 gap-3">
-          <button
-            onClick={() => setFilter("accepted")}
-            className={`rounded-2xl px-3 py-4 text-sm font-extrabold transition ${
-              filter === "accepted"
-                ? "bg-green-600 text-white"
-                : "bg-white text-gray-700 shadow-sm"
-            }`}
+        {error && (
+          <p
+            role="alert"
+            className="mb-5 rounded-2xl bg-red-50 p-4 font-bold text-red-700"
           >
-            بانتظار الاستلام
-            <span className="mt-1 block text-xs">({counts.accepted})</span>
-          </button>
-
-          <button
-            onClick={() => setFilter("out_for_delivery")}
-            className={`rounded-2xl px-3 py-4 text-sm font-extrabold transition ${
-              filter === "out_for_delivery"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 shadow-sm"
-            }`}
-          >
-            قيد التوصيل
-            <span className="mt-1 block text-xs">
-              ({counts.out_for_delivery})
-            </span>
-          </button>
-
-          <button
-            onClick={() => setFilter("delivered")}
-            className={`rounded-2xl px-3 py-4 text-sm font-extrabold transition ${
-              filter === "delivered"
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-700 shadow-sm"
-            }`}
-          >
-            تم التسليم
-            <span className="mt-1 block text-xs">({counts.delivered})</span>
-          </button>
-        </section>
-
-        {loading ? (
-          <div className="rounded-3xl bg-white p-8 text-center font-bold text-gray-700 shadow-sm">
-            جاري تحميل الطلبات...
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
-            <h2 className="text-2xl font-extrabold text-gray-900">
-              لا توجد طلبات حالياً
-            </h2>
-
-            <p className="mt-2 text-gray-600">
-              ستظهر الطلبات هنا حسب الفلتر المحدد.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                updatingId={updatingId}
-                onUpdateStatus={updateOrderStatus}
-              />
-            ))}
-          </div>
+            {error}
+          </p>
         )}
+
+        <div aria-live="polite">
+          {loading ? (
+            <div className="rounded-3xl bg-white p-8 text-center font-bold text-gray-700 shadow-sm">
+              جاري تحميل الطلبات...
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
+              <h2 className="text-2xl font-extrabold text-gray-900">
+                لا توجد طلبات حالياً
+              </h2>
+              <p className="mt-2 text-gray-600">
+                ستظهر الطلبات هنا حسب الفلتر المحدد.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  updatingId={updatingId}
+                  onUpdateStatus={updateOrderStatus}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
@@ -285,36 +294,31 @@ function OrderCard({
   onUpdateStatus,
 }: {
   order: Order;
-  updatingId: string | null;
-  onUpdateStatus: (orderId: string, newStatus: string) => void;
+  updatingId: number | null;
+  onUpdateStatus: (
+    orderId: number,
+    status: Exclude<OrderStatus, "accepted">
+  ) => void;
 }) {
   const productsTotal =
-    Number(order.total_price || 0) - Number(order.delivery_fee || 0);
+    Number(order.total_price || 0) -
+    Number(order.delivery_fee || 0);
 
   return (
-    <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-gray-100">
+    <article className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-gray-100">
       <div className="mb-5 flex flex-col gap-3 border-b border-gray-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-bold text-gray-500">رقم الطلب</p>
-          <h3 className="mt-1 text-2xl font-extrabold text-gray-900">
+          <h2 className="mt-1 text-2xl font-extrabold text-gray-900">
             #{order.id}
-          </h3>
+          </h2>
         </div>
-
-        <span
-          className={`w-fit rounded-full px-4 py-2 text-sm font-extrabold ${
-            order.status === "accepted"
-              ? "bg-green-50 text-green-700"
-              : order.status === "out_for_delivery"
-              ? "bg-blue-50 text-blue-700"
-              : "bg-gray-100 text-gray-700"
-          }`}
-        >
+        <span className="w-fit rounded-full bg-gray-100 px-4 py-2 text-sm font-extrabold text-gray-700">
           {order.status === "accepted"
             ? "بانتظار الاستلام"
             : order.status === "out_for_delivery"
-            ? "قيد التوصيل"
-            : "تم التسليم"}
+              ? "قيد التوصيل"
+              : "تم التسليم"}
         </span>
       </div>
 
@@ -328,13 +332,12 @@ function OrderCard({
       <div className="mt-4 rounded-2xl bg-gray-50 p-4">
         <p className="text-sm font-bold text-gray-500">تفاصيل العنوان</p>
         <p className="mt-1 font-bold leading-7 text-gray-900">
-          {order.address}
+          {order.address || "-"}
         </p>
       </div>
 
       <div className="mt-5 rounded-2xl border border-gray-100 p-4">
-        <h4 className="mb-3 font-extrabold text-gray-900">المنتجات</h4>
-
+        <h3 className="mb-3 font-extrabold text-gray-900">المنتجات</h3>
         <div className="space-y-3">
           {(order.order_items || []).map((item) => (
             <div
@@ -342,12 +345,18 @@ function OrderCard({
               className="flex items-center justify-between gap-4 rounded-xl bg-gray-50 p-3 text-sm"
             >
               <div>
-                <p className="font-bold text-gray-900">{item.product_name}</p>
-                <p className="mt-1 text-gray-600">الكمية: {item.quantity}</p>
+                <p className="font-bold text-gray-900">
+                  {item.product_name}
+                </p>
+                <p className="mt-1 text-gray-600">
+                  الكمية: {item.quantity}
+                </p>
               </div>
-
               <p className="font-bold text-green-700">
-                {(Number(item.unit_price) * item.quantity).toLocaleString()} SYP
+                {(
+                  Number(item.unit_price) * item.quantity
+                ).toLocaleString()} {" "}
+                SYP
               </p>
             </div>
           ))}
@@ -359,12 +368,12 @@ function OrderCard({
           <span>قيمة المنتجات</span>
           <span>{productsTotal.toLocaleString()} SYP</span>
         </div>
-
         <div className="mt-2 flex justify-between text-sm font-bold text-gray-700">
           <span>أجرة التوصيل</span>
-          <span>{Number(order.delivery_fee || 0).toLocaleString()} SYP</span>
+          <span>
+            {Number(order.delivery_fee || 0).toLocaleString()} SYP
+          </span>
         </div>
-
         <div className="mt-3 flex justify-between border-t border-green-100 pt-3 text-lg font-extrabold text-gray-900">
           <span>المبلغ الكامل</span>
           <span className="text-green-700">
@@ -376,35 +385,47 @@ function OrderCard({
       <div className="mt-5">
         {order.status === "accepted" && (
           <button
-            onClick={() => onUpdateStatus(order.id, "out_for_delivery")}
-            disabled={updatingId === order.id}
-            className="w-full rounded-2xl bg-blue-600 py-4 font-extrabold text-white transition hover:bg-blue-700 disabled:bg-gray-400"
+            type="button"
+            onClick={() =>
+              onUpdateStatus(order.id, "out_for_delivery")
+            }
+            disabled={updatingId !== null}
+            className="w-full rounded-2xl bg-blue-700 py-4 font-extrabold text-white transition hover:bg-blue-800 disabled:bg-gray-400"
           >
             {updatingId === order.id ? "جاري التحديث..." : "قبول الطلب"}
           </button>
         )}
-
         {order.status === "out_for_delivery" && (
           <button
-            onClick={() => onUpdateStatus(order.id, "delivered")}
-            disabled={updatingId === order.id}
-            className="w-full rounded-2xl bg-green-600 py-4 font-extrabold text-white transition hover:bg-green-700 disabled:bg-gray-400"
+            type="button"
+            onClick={() =>
+              onUpdateStatus(order.id, "delivered")
+            }
+            disabled={updatingId !== null}
+            className="w-full rounded-2xl bg-green-700 py-4 font-extrabold text-white transition hover:bg-green-800 disabled:bg-gray-400"
           >
-            {updatingId === order.id ? "جاري التحديث..." : "تم تسليم الطلب"}
+            {updatingId === order.id
+              ? "جاري التحديث..."
+              : "تم تسليم الطلب"}
           </button>
         )}
-
         {order.status === "delivered" && (
           <div className="rounded-2xl bg-gray-100 py-4 text-center font-extrabold text-gray-700">
             تم تسليم هذا الطلب
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-2xl border border-gray-100 p-4">
       <p className="text-sm font-bold text-gray-500">{label}</p>

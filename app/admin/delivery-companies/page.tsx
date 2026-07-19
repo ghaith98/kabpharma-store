@@ -9,7 +9,6 @@ type DeliveryCompany = {
   id: number;
   company_name: string;
   username: string;
-  password: string;
   is_active: boolean;
   is_online: boolean;
   last_seen: string | null;
@@ -29,7 +28,9 @@ export default function AdminDeliveryCompaniesPage() {
   const loadCompanies = useCallback(async () => {
     const { data, error } = await supabase
       .from("delivery_companies")
-      .select("*")
+      .select(
+        "id, company_name, username, is_active, is_online, last_seen"
+      )
       .order("id", { ascending: false });
 
     if (error) {
@@ -177,8 +178,9 @@ export default function AdminDeliveryCompaniesPage() {
             />
 
             <input
-              type="text"
+              type="password"
               placeholder="Password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

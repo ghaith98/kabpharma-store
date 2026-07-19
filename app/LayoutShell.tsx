@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import Footer from "./FooterComponent";
 import MobileBottomNav from "./MobileBottomNav";
 import OnlinePresenceTracker from "./OnlinePresenceTracker";
+import NavigationProgress from "./NavigationProgress";
 
 export default function LayoutShell({
   children,
@@ -54,13 +55,19 @@ export default function LayoutShell({
 
   return (
     <>
+      <NavigationProgress />
+
       {shouldTrackPresence && (
         <OnlinePresenceTracker />
       )}
 
       <Navbar />
 
-      <div className="flex-1">
+      <div
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 outline-none"
+      >
         {children}
       </div>
 

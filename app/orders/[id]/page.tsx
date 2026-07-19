@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabase";
+import { getCustomerSession } from "@/lib/customer-session";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import OrderDetailsLanguageClient from "./OrderDetailsLanguageClient";
 
 const statusMap = {
@@ -93,12 +94,19 @@ export default async function OrderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session =
+    await getCustomerSession();
 
-  const { data: order, error } = await supabase
+  if (!session) {
+    return <OrderDetailsLanguageClient order={null} />;
+  }
+
+  const { data: order, error } = await supabaseAdmin
     .from("orders")
     .select("*")
     .eq("id", id)
-    .single();
+    .eq("phone", session.phone)
+    .maybeSingle();
 
   if (error || !order) {
     return <OrderDetailsLanguageClient order={null} />;

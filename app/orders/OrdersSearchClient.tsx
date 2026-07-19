@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { useLanguage } from "../../context/LanguageContext";
 
 type Order = {
@@ -55,24 +54,31 @@ export default function OrdersSearchClient() {
 
   useEffect(() => {
     async function loadOrders() {
-      const savedUser = localStorage.getItem("kab_user");
+      try {
+        const response = await fetch(
+          "/api/customer/orders",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
 
-      if (!savedUser) {
+        if (!response.ok) {
+          setUser(null);
+          setOrders([]);
+          return;
+        }
+
+        const result = await response.json();
+
+        setUser(result.user || null);
+        setOrders(result.orders || []);
+      } catch {
+        setUser(null);
+        setOrders([]);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const parsedUser = JSON.parse(savedUser) as StoredUser;
-      setUser(parsedUser);
-
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("phone", parsedUser.phone)
-        .order("id", { ascending: false });
-
-      setOrders(data || []);
-      setLoading(false);
     }
 
     loadOrders();

@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  hasTrustedOrigin,
+  jsonError,
+} from "@/lib/http";
+import {
+  getRequestIp,
+  takeRateLimit,
+} from "@/lib/rate-limit";
 
 import {
   CUSTOMER_SESSION_COOKIE,
@@ -14,6 +22,10 @@ type VerificationMode = "login" | "signup";
 
 export async function POST(request: Request) {
   try {
+    if (!hasTrustedOrigin(request)) {
+      return jsonError("Invalid request origin", 403);
+    }
+
     const body = await request.json();
 
     const phone = String(body?.phone || "").trim();
@@ -87,6 +99,31 @@ export async function POST(request: Request) {
       );
     }
 
+    const verificationLimit = takeRateLimit({
+      key: `verify-otp:${getRequestIp(request)}:${phone}`,
+      limit: 10,
+      windowMs: 10 * 60 * 1000,
+    });
+
+    if (!verificationLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Too many verification attempts. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              verificationLimit.retryAfterSeconds
+            ),
+            "Cache-Control": "no-store",
+          },
+        }
+      );
+    }
+
     /*
       NABDA credentials.
 
@@ -142,20 +179,12 @@ export async function POST(request: Request) {
       }
     );
 
-    const providerResponse =
-      await otpResponse.text();
-
-    console.log(
-      "NABDA OTP verify response:",
-      otpResponse.status,
-      providerResponse
-    );
+    await otpResponse.text();
 
     if (!otpResponse.ok) {
       console.error(
         "NABDA OTP verification failed:",
-        otpResponse.status,
-        providerResponse
+        otpResponse.status
       );
 
       return NextResponse.json(

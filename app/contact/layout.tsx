@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-
-const SITE_URL = "https://www.kabpharma.com";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "تواصل معنا",

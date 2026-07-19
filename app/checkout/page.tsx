@@ -163,137 +163,106 @@ export default function CheckoutPage() {
     );
 
   useEffect(() => {
-    const initializationTimer = window.setTimeout(() => {
+    let cancelled = false;
+
+    async function initializeCheckout() {
       setCart(
         getCart() as CartItemWithVariant[]
       );
 
       void loadDeliveryData();
 
-      const savedUser =
-        localStorage.getItem("kab_user");
-
-    if (!savedUser) {
-      localStorage.setItem(
-        "redirect_after_login",
-        "/checkout"
-      );
-
-      router.replace(
-        "/profile?account_required=1"
-      );
-
-      return;
-    }
-
-    let user: StoredUser;
-
-    try {
-      user = JSON.parse(
-        savedUser
-      ) as StoredUser;
-    } catch {
-      localStorage.removeItem(
-        "kab_user"
-      );
-
-      localStorage.setItem(
-        "redirect_after_login",
-        "/checkout"
-      );
-
-      router.replace("/login");
-
-      return;
-    }
-
-    if (!user.phone) {
-      localStorage.removeItem(
-        "kab_user"
-      );
-
-      localStorage.setItem(
-        "redirect_after_login",
-        "/checkout"
-      );
-
-      router.replace("/login");
-
-      return;
-    }
-
-    const accountPhone =
-      String(
-        user.phone
-      ).trim();
-
-    setPhone(accountPhone);
-
-    const savedCheckout =
-      localStorage.getItem(
-        "checkout"
-      );
-
-    if (savedCheckout) {
       try {
-        const checkout =
-          JSON.parse(savedCheckout) as StoredCheckout;
-
-        setName(
-          checkout.name ||
-            user.full_name ||
-            ""
+        const response = await fetch(
+          "/api/customer/me",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
         );
 
-        setGovernorate(
-          checkout.governorate ||
-            ""
+        if (response.status === 401) {
+          localStorage.removeItem("kab_user");
+          localStorage.setItem(
+            "redirect_after_login",
+            "/checkout"
+          );
+          router.replace(
+            "/profile?account_required=1"
+          );
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Account check failed");
+        }
+
+        const result = (await response.json()) as {
+          user?: StoredUser;
+        };
+        const user = result.user;
+        const accountPhone = String(
+          user?.phone || ""
+        ).trim();
+
+        if (!accountPhone || cancelled) return;
+
+        localStorage.setItem(
+          "kab_user",
+          JSON.stringify(user)
         );
 
-        setAddress(
-          checkout.address ||
-            ""
-        );
+        setPhone(accountPhone);
 
-        setPhone(
-          accountPhone
-        );
+        const savedCheckout =
+          localStorage.getItem("checkout");
+
+        if (savedCheckout) {
+          try {
+            const checkout = JSON.parse(
+              savedCheckout
+            ) as StoredCheckout;
+            setName(
+              checkout.name || user?.full_name || ""
+            );
+            setGovernorate(
+              checkout.governorate || ""
+            );
+            setAddress(checkout.address || "");
+          } catch {
+            localStorage.removeItem("checkout");
+            setName(user?.full_name || "");
+          }
+        } else {
+          setName(user?.full_name || "");
+        }
+
+        await checkBanOnInitialization(accountPhone);
       } catch {
-        localStorage.removeItem(
-          "checkout"
-        );
-
-        setName(
-          user.full_name ||
-            ""
-        );
-
-        setPhone(
-          accountPhone
-        );
+        if (!cancelled) {
+          setAccountCheckError(
+            isArabic
+              ? "تعذر التحقق من حسابك. يرجى المحاولة مرة أخرى."
+              : "Could not verify your account. Please try again."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingBan(false);
+        }
       }
-    } else {
-      setName(
-        user.full_name ||
-          ""
-      );
-
-      setPhone(
-        accountPhone
-      );
     }
 
-    void checkBanOnInitialization(
-      accountPhone
-    ).finally(() => {
-      setCheckingBan(false);
-    });
-    }, 0);
+    const initializationTimer = window.setTimeout(
+      () => void initializeCheckout(),
+      0
+    );
 
     return () => {
+      cancelled = true;
       window.clearTimeout(initializationTimer);
     };
-  }, [router]);
+  }, [isArabic, router]);
 
   useEffect(() => {
     const savedCheckout =
@@ -666,58 +635,10 @@ export default function CheckoutPage() {
       return;
     }
 
-    const savedUser =
-      localStorage.getItem(
-        "kab_user"
-      );
-
-    if (!savedUser) {
-      localStorage.setItem(
-        "redirect_after_login",
-        "/checkout"
-      );
-
-      router.replace(
-        "/profile?account_required=1"
-      );
-
-      return;
-    }
-
-    let currentUser:
-      StoredUser;
-
-    try {
-      currentUser =
-        JSON.parse(
-          savedUser
-        ) as StoredUser;
-    } catch {
-      localStorage.removeItem(
-        "kab_user"
-      );
-
-      localStorage.setItem(
-        "redirect_after_login",
-        "/checkout"
-      );
-
-      router.replace("/login");
-
-      return;
-    }
-
     const accountPhone =
-      String(
-        currentUser.phone ||
-          ""
-      ).trim();
+      String(phone || "").trim();
 
     if (!accountPhone) {
-      localStorage.removeItem(
-        "kab_user"
-      );
-
       localStorage.setItem(
         "redirect_after_login",
         "/checkout"
@@ -990,31 +911,9 @@ export default function CheckoutPage() {
                   setCheckingBan(
                     true
                   );
-
-                  const savedUser =
-                    localStorage.getItem(
-                      "kab_user"
-                    );
-
-                  if (!savedUser) {
-                    router.replace(
-                      "/login"
-                    );
-
-                    return;
-                  }
-
                   try {
-                    const user =
-                      JSON.parse(
-                        savedUser
-                      ) as StoredUser;
-
                     await checkCurrentUserBan(
-                      String(
-                        user.phone ||
-                          ""
-                      ).trim()
+                      phone
                     );
                   } finally {
                     setCheckingBan(

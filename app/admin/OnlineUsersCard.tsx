@@ -183,11 +183,6 @@ export default function OnlineUsersCard() {
       const presenceState =
         rawPresenceState as unknown as PresenceState;
 
-      console.log(
-        "[Admin Presence] State:",
-        presenceState
-      );
-
       /*
         كل key يمثل متصفحاً أو جهازاً واحداً.
 
@@ -294,10 +289,6 @@ export default function OnlineUsersCard() {
           event: "sync",
         },
         () => {
-          console.log(
-            "[Admin Presence] Sync"
-          );
-
           updatePresenceState();
         }
       )
@@ -306,12 +297,7 @@ export default function OnlineUsersCard() {
         {
           event: "join",
         },
-        (payload) => {
-          console.log(
-            "[Admin Presence] Join:",
-            payload
-          );
-
+        () => {
           updatePresenceState();
         }
       )
@@ -320,23 +306,12 @@ export default function OnlineUsersCard() {
         {
           event: "leave",
         },
-        (payload) => {
-          console.log(
-            "[Admin Presence] Leave:",
-            payload
-          );
-
+        () => {
           updatePresenceState();
         }
       )
       .subscribe(
         (status, error) => {
-          console.log(
-            "[Admin Presence] Channel:",
-            status,
-            error || ""
-          );
-
           if (
             status ===
             "SUBSCRIBED"

@@ -1,4 +1,7 @@
-import type { Metadata } from "next";
+import type {
+  Metadata,
+  Viewport,
+} from "next";
 import {
   Geist,
   Geist_Mono,
@@ -6,8 +9,7 @@ import {
 import "./globals.css";
 import LayoutShell from "./LayoutShell";
 import { LanguageProvider } from "../context/LanguageContext";
-
-const SITE_URL = "https://www.kabpharma.com";
+import { SITE_URL } from "@/lib/site";
 
 const siteTitle =
   "KAB Pharma | منتجات العناية بالبشرة والشعر";
@@ -56,12 +58,21 @@ export const metadata: Metadata = {
     siteName: "KAB Pharma",
     title: siteTitle,
     description: siteDescription,
+    images: [
+      {
+        url: `${SITE_URL}/opengraph-image.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "KAB Pharma",
+      },
+    ],
   },
 
   twitter: {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
+    images: [`${SITE_URL}/opengraph-image.jpg`],
   },
 
   robots: {
@@ -82,6 +93,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0a583b",
+  colorScheme: "light",
 };
 
 const structuredData = {
@@ -125,9 +144,24 @@ export default function RootLayout({
     <html
       lang="ar"
       dir="rtl"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var l=localStorage.getItem('lang');if(l==='ar'||l==='en'){document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr'}}catch(e){}",
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col">
+        <a
+          href="#main-content"
+          className="kab-skip-link"
+        >
+          Skip to content / الانتقال إلى المحتوى
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Internal editor thumbnails include temporary object URLs and are not storefront LCP images. */
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";

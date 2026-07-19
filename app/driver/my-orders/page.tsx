@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 type DriverOrder = {
   id: number;
@@ -14,122 +13,153 @@ type DriverOrder = {
 
 export default function DriverMyOrdersPage() {
   const router = useRouter();
-
   const [orders, setOrders] = useState<DriverOrder[]>([]);
   const [driverName, setDriverName] = useState("");
-  const [loadingOrderId, setLoadingOrderId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [loadingOrderId, setLoadingOrderId] =
+    useState<number | null>(null);
 
-  async function loadMyOrders(name: string) {
-    const { data, error } = await supabase
-      .from("orders")
-      .select(`
-        *,
-        order_items (
-          id,
-          product_name,
-          quantity,
-          unit_price
-        )
-      `)
-      .eq("driver_name", name)
-      .eq("status", "out_for_delivery")
-      .order("id", { ascending: false });
+  const loadMyOrders = useCallback(async () => {
+    try {
+      const response = await fetch(
+        "/api/staff/driver/orders",
+        {
+          credentials: "include",
+          cache: "no-store",
+        }
+      );
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (response.status === 401) {
+        router.replace("/driver/login");
+        return;
+      }
+
+      const result = (await response.json()) as {
+        error?: string;
+        driver?: { name: string };
+        myOrders?: DriverOrder[];
+      };
+
+      if (!response.ok) {
+        setError(result.error || "تعذر تحميل الطلب");
+        return;
+      }
+
+      setError("");
+      setDriverName(result.driver?.name || "");
+      setOrders(result.myOrders || []);
+    } catch {
+      setError("تعذر الاتصال بالخادم. حاول مجدداً.");
+    } finally {
+      setLoading(false);
     }
-
-    setOrders(data || []);
-  }
+  }, [router]);
 
   async function markDelivered(id: number) {
     setLoadingOrderId(id);
+    setError("");
 
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        status: "delivered",
-        delivered_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .eq("status", "out_for_delivery");
+    try {
+      const response = await fetch(
+        "/api/staff/driver/orders",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "deliver",
+            orderId: id,
+          }),
+        }
+      );
 
-    setLoadingOrderId(null);
+      const result = (await response.json()) as {
+        error?: string;
+      };
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (response.status === 401) {
+        router.replace("/driver/login");
+        return;
+      }
+
+      if (!response.ok) {
+        setError(result.error || "تعذر تأكيد التسليم");
+        await loadMyOrders();
+        return;
+      }
+
+      router.push("/driver");
+    } catch {
+      setError("تعذر تأكيد التسليم. حاول مجدداً.");
+    } finally {
+      setLoadingOrderId(null);
     }
-
-    router.push("/driver");
   }
 
   useEffect(() => {
-    let cleanupRealtime: (() => void) | undefined;
-
-    const initializationTimer = window.setTimeout(() => {
-      const savedName = localStorage.getItem("driver_name");
-
-    if (!savedName) {
-      router.push("/driver/login");
-      return;
-    }
-
-    const authenticatedDriverName = savedName;
-
-    setDriverName(authenticatedDriverName);
-    loadMyOrders(authenticatedDriverName);
-
-    function refreshOrders() {
-      loadMyOrders(authenticatedDriverName);
-    }
-
-    window.addEventListener(
-      "driverRefreshRequested",
-      refreshOrders
+    const initializationTimer = window.setTimeout(
+      () => void loadMyOrders(),
+      0
     );
 
-    const channel = supabase
-      .channel("my-orders-driver-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => loadMyOrders(authenticatedDriverName)
-      )
-      .subscribe();
-
-      cleanupRealtime = () => {
-        window.removeEventListener(
-          "driverRefreshRequested",
-          refreshOrders
-        );
-        void supabase.removeChannel(channel);
-      };
-    }, 0);
+    const interval = window.setInterval(
+      () => void loadMyOrders(),
+      30_000
+    );
 
     return () => {
       window.clearTimeout(initializationTimer);
-      cleanupRealtime?.();
+      window.clearInterval(interval);
     };
-  }, [router]);
+  }, [loadMyOrders]);
 
   return (
-    <main dir="rtl" className="min-h-screen bg-gradient-to-b from-gray-50 to-green-50 p-4">
+    <main
+      dir="rtl"
+      className="min-h-screen bg-gradient-to-b from-gray-50 to-green-50 p-4"
+    >
       <div className="mx-auto max-w-md">
         <div className="mb-5 rounded-2xl bg-green-700 p-5 text-white shadow">
-          <h1 className="text-xl font-extrabold">طلباتي الحالية</h1>
-          <p className="mt-1 text-sm text-green-100">السائق: {driverName}</p>
+          <h1 className="text-xl font-extrabold">
+            طلباتي الحالية
+          </h1>
+          <p className="mt-1 text-sm text-green-100">
+            السائق: {driverName || "..."}
+          </p>
         </div>
 
-        <div className="space-y-4">
-          {orders.length === 0 ? (
+        {error && (
+          <p
+            role="alert"
+            className="mb-4 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700"
+          >
+            {error}
+          </p>
+        )}
+
+        <div className="space-y-4" aria-live="polite">
+          {!loading && orders.length === 0 ? (
             <div className="rounded-2xl bg-white p-6 text-center shadow">
-              <p className="text-gray-500">لا يوجد طلب قيد التوصيل حالياً</p>
+              <p className="text-gray-500">
+                لا يوجد طلب قيد التوصيل حالياً
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/driver")}
+                className="mt-4 rounded-xl bg-green-700 px-5 py-3 font-bold text-white"
+              >
+                عرض الطلبات المتاحة
+              </button>
             </div>
           ) : (
             orders.map((order) => (
-              <div key={order.id} className="rounded-2xl bg-white p-4 shadow">
+              <div
+                key={order.id}
+                className="rounded-2xl bg-white p-4 shadow"
+              >
                 <div className="mb-3 flex items-center justify-between">
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
                     قيد التوصيل
@@ -140,47 +170,46 @@ export default function DriverMyOrdersPage() {
                 </div>
 
                 <p className="mb-2 text-sm text-gray-500">
-                  👤 العميل:{" "}
+                  👤 العميل: {" "}
                   <span className="font-bold text-gray-900">
                     {order.customer_name || "-"}
                   </span>
                 </p>
-
                 <p className="mb-2 text-sm text-gray-500">
-                  📞 الهاتف:{" "}
+                  📞 الهاتف: {" "}
                   {order.phone ? (
-                    <a href={`tel:${order.phone}`} className="font-bold text-green-700 underline">
+                    <a
+                      href={`tel:${order.phone}`}
+                      className="font-bold text-green-700 underline"
+                    >
                       {order.phone}
                     </a>
                   ) : (
                     "-"
                   )}
                 </p>
-
                 <p className="mb-2 text-sm text-gray-500">
-                  📍 المنطقة:{" "}
+                  📍 المنطقة: {" "}
                   <span className="font-bold text-gray-900">
                     {order.delivery_area || "-"}
                   </span>
                 </p>
-
                 <p className="mb-4 text-sm text-gray-500">
-                  🏠 العنوان:{" "}
+                  🏠 العنوان: {" "}
                   <span className="font-bold text-gray-900">
                     {order.address || "-"}
                   </span>
                 </p>
 
                 <button
-                  onClick={() => markDelivered(order.id)}
-                  disabled={loadingOrderId === order.id}
-                  className={`w-full rounded-xl py-3 font-bold text-white transition ${
-                    loadingOrderId === order.id
-                      ? "bg-green-400"
-                      : "bg-green-600 active:scale-95"
-                  }`}
+                  type="button"
+                  onClick={() => void markDelivered(order.id)}
+                  disabled={loadingOrderId !== null}
+                  className="w-full rounded-xl bg-green-700 py-3 font-bold text-white transition disabled:cursor-wait disabled:bg-green-400"
                 >
-                  {loadingOrderId === order.id ? "جارٍ تأكيد التسليم..." : "تم التسليم"}
+                  {loadingOrderId === order.id
+                    ? "جارٍ تأكيد التسليم..."
+                    : "تم التسليم"}
                 </button>
               </div>
             ))

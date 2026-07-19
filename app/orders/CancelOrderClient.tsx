@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 export default function CancelOrderClient({ orderId }: { orderId: number }) {
   const { lang } = useLanguage();
@@ -14,19 +18,50 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
 
+  const confirmDialogRef =
+    useRef<HTMLDivElement>(null);
+
+  useDialogFocus(showConfirm, confirmDialogRef);
+
+  useEffect(() => {
+    if (!showConfirm) return;
+
+    const previousOverflow =
+      document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function closeWithEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && !loading) {
+        setShowConfirm(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeWithEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener(
+        "keydown",
+        closeWithEscape
+      );
+    };
+  }, [loading, showConfirm]);
+
   async function cancelOrder() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: "cancelled_by_customer" })
-      .eq("id", orderId)
-      .eq("status", "pending");
+    const response = await fetch(
+      `/api/customer/orders/${orderId}/cancel`,
+      {
+        method: "POST",
+        credentials: "include",
+      }
+    );
 
     setLoading(false);
 
-    if (error) {
+    if (!response.ok) {
       setError(
         lang === "ar"
           ? "حدث خطأ أثناء إلغاء الطلب. يرجى المحاولة مرة أخرى."
@@ -66,20 +101,39 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
       )}
 
       {showConfirm && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4">
+        <div
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowConfirm(false);
+            }
+          }}
+        >
           <div
+            ref={confirmDialogRef}
             dir={lang === "ar" ? "rtl" : "ltr"}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="cancel-order-title"
+            aria-describedby="cancel-order-description"
+            tabIndex={-1}
             className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-2xl"
           >
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-2xl">
               ⚠️
             </div>
 
-            <h2 className="text-2xl font-extrabold text-gray-900">
+            <h2
+              id="cancel-order-title"
+              className="text-2xl font-extrabold text-gray-900"
+            >
               {lang === "ar" ? "إلغاء الطلب؟" : "Cancel order?"}
             </h2>
 
-            <p className="mt-3 leading-7 text-gray-600">
+            <p
+              id="cancel-order-description"
+              className="mt-3 leading-7 text-gray-600"
+            >
               {lang === "ar"
                 ? "هل أنت متأكد من إلغاء هذا الطلب؟ سيتم إرجاع المبلغ المدفوع خلال 24 ساعة."
                 : "Are you sure you want to cancel this order? The paid amount will be refunded within 24 hours."}

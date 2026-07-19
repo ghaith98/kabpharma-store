@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- Private signed proof previews should not pass through the public image optimizer. */
 "use client";
 
 import {

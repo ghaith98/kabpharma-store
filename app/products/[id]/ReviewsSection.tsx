@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ import {
 import { FaStar } from "react-icons/fa";
 
 import { useLanguage } from "../../../context/LanguageContext";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 type Review = {
   id: number;
@@ -65,6 +67,11 @@ export default function ReviewsSection({
 
   const [modalOpen, setModalOpen] =
     useState(false);
+
+  const reviewDialogRef =
+    useRef<HTMLDivElement>(null);
+
+  useDialogFocus(modalOpen, reviewDialogRef);
 
   const [reviewText, setReviewText] =
     useState("");
@@ -835,10 +842,12 @@ export default function ReviewsSection({
           }}
         >
           <div
+            ref={reviewDialogRef}
             dir={isArabic ? "rtl" : "ltr"}
             role="dialog"
             aria-modal="true"
             aria-labelledby="review-modal-title"
+            tabIndex={-1}
             className="max-h-[92vh] w-full overflow-y-auto bg-white p-6 shadow-2xl sm:max-w-lg sm:border sm:border-[#dedfdd] sm:p-8"
           >
             <div className="flex items-start justify-between gap-5">

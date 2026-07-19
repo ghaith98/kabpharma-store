@@ -10,6 +10,7 @@ import {
   FiShare2,
 } from "react-icons/fi";
 import { useLanguage } from "../../../context/LanguageContext";
+import { SITE_URL } from "@/lib/site";
 
 type ShareProductButtonProps = {
   productId: number | string;
@@ -18,7 +19,7 @@ type ShareProductButtonProps = {
   fallbackName?: string | null;
 };
 
-const WEBSITE_URL = "https://www.kabpharma.com";
+const WEBSITE_URL = SITE_URL;
 
 export default function ShareProductButton({
   productId,

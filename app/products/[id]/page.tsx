@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { supabase } from "@/lib/supabase";
+import { SITE_URL } from "@/lib/site";
 import ProductExtraClient from "./ProductExtraClient";
 import ProductDetailsClient from "./ProductDetailsClient";
 
-const SITE_URL = "https://www.kabpharma.com";
 const DEFAULT_SOCIAL_IMAGE =
   `${SITE_URL}/opengraph-image.jpg`;
 
@@ -260,28 +260,20 @@ export default async function ProductPage({
     sameCategoryProductsResult,
   ] = await Promise.all([
     supabase
-  .from("products")
-  .select(`
-    *,
-    categories (
-      id,
-      name,
-      name_ar,
-      name_en
-    ),
-    product_variants (
-      *
-    )
-  `)
-  .eq(
-    "category_id",
-    product.category_id
-  )
-  .neq("id", product.id)
-  .eq(
-    "is_out_of_stock",
-    false
-  ),
+      .from("product_reviews")
+      .select(`
+        id,
+        product_id,
+        customer_name,
+        rating,
+        review,
+        created_at,
+        is_anonymous
+      `)
+      .eq("product_id", product.id)
+      .order("created_at", {
+        ascending: false,
+      }),
 
     supabase
       .from("product_images")
@@ -307,7 +299,18 @@ export default async function ProductPage({
 
     supabase
       .from("products")
-      .select("*")
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          name_ar,
+          name_en
+        ),
+        product_variants (
+          *
+        )
+      `)
       .eq(
         "category_id",
         product.category_id

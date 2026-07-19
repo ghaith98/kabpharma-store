@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { useLanguage } from "../../context/LanguageContext";
+import { migrateGuestCartToUser } from "@/lib/cart";
 
 export default function LoginPage() {
   const { lang } = useLanguage();
@@ -221,6 +222,8 @@ export default function LoginPage() {
         phone: result.user.phone,
       })
     );
+
+    migrateGuestCartToUser(result.user.phone);
 
     const redirectAfterLogin =
       localStorage.getItem(

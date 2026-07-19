@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 
 import {
@@ -12,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { addToCart } from "@/lib/cart";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { useLanguage } from "../../../context/LanguageContext";
 
 import type {
@@ -56,6 +61,35 @@ export default function ProductDetailsAddToCart({
 
   const [showModal, setShowModal] =
     useState(false);
+
+  const cartDialogRef =
+    useRef<HTMLDivElement>(null);
+
+  useDialogFocus(showModal, cartDialogRef);
+
+  useEffect(() => {
+    if (!showModal) return;
+
+    const previousOverflow =
+      document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function closeWithEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowModal(false);
+      }
+    }
+
+    window.addEventListener("keydown", closeWithEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener(
+        "keydown",
+        closeWithEscape
+      );
+    };
+  }, [showModal]);
 
   const [quantity, setQuantity] =
     useState(1);
@@ -283,6 +317,7 @@ export default function ProductDetailsAddToCart({
       {showModal && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#07130d]/50 px-5 backdrop-blur-sm">
           <div
+            ref={cartDialogRef}
             dir={
               isArabic
                 ? "rtl"
@@ -291,6 +326,7 @@ export default function ProductDetailsAddToCart({
             role="dialog"
             aria-modal="true"
             aria-labelledby="cart-modal-title"
+            tabIndex={-1}
             className="relative w-full max-w-md border border-[#dfe4e0] bg-white p-7 text-center shadow-2xl sm:p-8"
           >
             <button

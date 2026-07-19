@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 import { useLanguage } from "../context/LanguageContext";
 import {
@@ -56,6 +58,11 @@ export default function Navbar() {
 
   const [menuOpen, setMenuOpen] =
     useState(false);
+
+  const menuDialogRef =
+    useRef<HTMLElement>(null);
+
+  useDialogFocus(menuOpen, menuDialogRef);
 
   const [query, setQuery] =
     useState("");
@@ -945,6 +952,7 @@ const [
     }
     aria-label={t.openMenu}
     aria-expanded={menuOpen}
+    aria-controls="mobile-navigation"
     className="absolute left-4 flex h-11 w-11 items-center justify-start bg-transparent transition active:scale-95 sm:left-6"
   >
     <span className="flex w-6 flex-col items-start gap-[5px]">
@@ -1044,7 +1052,12 @@ const [
           }}
         >
           <aside
-  dir="ltr"
+            ref={menuDialogRef}
+            id="mobile-navigation"
+            role="dialog"
+            aria-modal="true"
+            tabIndex={-1}
+            dir="ltr"
             aria-label={
               t.mobileNavigation
             }
@@ -1173,37 +1186,6 @@ const [
               : "border-l pl-4"
           }`}
         >
-          <Link
-  href="/new-arrivals"
-  onClick={() => {
-    setMenuOpen(false);
-    setProductsOpen(false);
-  }}
-  aria-current={
-    pathname.startsWith(
-      "/new-arrivals"
-    )
-      ? "page"
-      : undefined
-  }
-  className={`flex min-h-12 items-center border-b border-[#e7ebe8] py-4 text-base font-semibold transition ${
-    pathname.startsWith(
-      "/new-arrivals"
-    )
-      ? "text-[#0a583b]"
-      : "text-[#142019] hover:text-[#0a583b]"
-  }`}
->
-  <span
-    dir={
-      isArabic
-        ? "rtl"
-        : "ltr"
-    }
-  >
-    {t.newArrivals}
-  </span>
-</Link>
           {/* All products */}
           <Link
             href="/products"

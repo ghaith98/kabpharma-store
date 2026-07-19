@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 import {
   CartItem,
   getCart,
@@ -73,6 +75,14 @@ export default function CartPage() {
     showAccountModal,
     setShowAccountModal,
   ] = useState(false);
+
+  const accountDialogRef =
+    useRef<HTMLDivElement>(null);
+
+  useDialogFocus(
+    showAccountModal,
+    accountDialogRef
+  );
 
   const BackArrow =
     isArabic
@@ -1075,6 +1085,7 @@ export default function CartPage() {
           }}
         >
           <div
+            ref={accountDialogRef}
             dir={
               isArabic
                 ? "rtl"
@@ -1083,6 +1094,7 @@ export default function CartPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="cart-account-title"
+            tabIndex={-1}
             className="w-full rounded-t-[2rem] bg-white p-6 shadow-2xl sm:max-w-md sm:rounded-[2rem] sm:p-8"
           >
             <div className="flex items-start justify-between gap-5">

@@ -1,20 +1,17 @@
+import type { Metadata } from "next";
+
 import HomeClient from "./HomeClient";
 
 import { supabase } from "@/lib/supabase";
+import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 60;
-const HOME_PRODUCT_SELECT = `
-  *,
-  categories (
-    id,
-    name,
-    name_ar,
-    name_en
-  ),
-  product_variants (
-    *
-  )
-`;
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: SITE_URL,
+  },
+};
 
 export default async function Home() {
   const [
@@ -25,32 +22,50 @@ export default async function Home() {
     bannersResult,
   ] = await Promise.all([
     supabase
-  .from("products")
-  .select(
-    HOME_PRODUCT_SELECT
-  )
-  .eq(
-    "is_new_arrival",
-    true
-  )
-  .order("id", {
-    ascending: false,
-  })
-  .limit(6),
+      .from("products")
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          name_ar,
+          name_en
+        ),
+        product_variants (
+          *
+        )
+      `)
+      .eq(
+        "is_new_arrival",
+        true
+      )
+      .order("id", {
+        ascending: false,
+      })
+      .limit(6),
 
     supabase
-  .from("products")
-  .select(
-    HOME_PRODUCT_SELECT
-  )
-  .eq(
-    "featured",
-    true
-  )
-  .order("id", {
-    ascending: false,
-  })
-  .limit(8),
+      .from("products")
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          name_ar,
+          name_en
+        ),
+        product_variants (
+          *
+        )
+      `)
+      .eq(
+        "featured",
+        true
+      )
+      .order("id", {
+        ascending: false,
+      })
+      .limit(8),
 
     supabase
       .from("order_items")
@@ -221,9 +236,18 @@ export default async function Home() {
       error,
     } = await supabase
       .from("products")
-      .select(
-  HOME_PRODUCT_SELECT
-)
+      .select(`
+        *,
+        categories (
+          id,
+          name,
+          name_ar,
+          name_en
+        ),
+        product_variants (
+          *
+        )
+      `)
       .in(
         "id",
         topSellerIds

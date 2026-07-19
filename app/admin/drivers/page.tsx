@@ -7,7 +7,6 @@ import { supabase } from "@/lib/supabase";
 type Driver = {
   id: string;
   name: string;
-  password: string;
   is_active: boolean;
   created_at?: string | null;
 };
@@ -20,7 +19,7 @@ export default function AdminDriversPage() {
   async function loadDrivers() {
     const { data, error } = await supabase
       .from("delivery_drivers")
-      .select("*")
+      .select("id, name, is_active, created_at")
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
@@ -134,8 +133,9 @@ export default function AdminDriversPage() {
         
 
           <input
-            type="text"
+            type="password"
             placeholder="Password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -159,10 +159,6 @@ export default function AdminDriversPage() {
               <h3 className="text-xl font-bold text-gray-900">
                 {driver.name}
               </h3>
-
-              <p className="text-gray-600">
-  Password: {driver.password}
-</p>
 
               <p
                 className={`mt-2 inline-block rounded-full px-3 py-1 text-sm font-bold ${

@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { supabase } from "@/lib/supabase";
+import { SITE_URL } from "@/lib/site";
 
 import ProductsClient from "./ProductsClient";
-
-const SITE_URL =
-  "https://www.kabpharma.com";
 
 export const revalidate = 60;
 
