@@ -82,6 +82,7 @@ const [
       home: "Home",
       products: "Products",
       allProducts: "All products",
+      newArrivals: "New Arrivals",
       about: "About us",
       contact: "Contact us",
 
@@ -122,6 +123,7 @@ const [
       home: "الرئيسية",
       products: "المنتجات",
       allProducts: "جميع المنتجات",
+      newArrivals: "وصل حديثاً",
       about: "عن الشركة",
       contact: "تواصل معنا",
 
@@ -164,24 +166,28 @@ const [
       lang as "en" | "ar"
     ];
 
-  const navigationLinks = [
-    {
-      label: t.home,
-      href: "/",
-    },
-    {
-      label: t.products,
-      href: "/products",
-    },
-    {
-      label: t.about,
-      href: "/about",
-    },
-    {
-      label: t.contact,
-      href: "/contact",
-    },
-  ];
+ const navigationLinks = [
+  {
+    label: t.home,
+    href: "/",
+  },
+  {
+    label: t.products,
+    href: "/products",
+  },
+  {
+    label: t.newArrivals,
+    href: "/new-arrivals",
+  },
+  {
+    label: t.about,
+    href: "/about",
+  },
+  {
+    label: t.contact,
+    href: "/contact",
+  },
+];
 
   function isActive(
     href: string
