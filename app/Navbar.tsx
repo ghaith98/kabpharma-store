@@ -1173,6 +1173,37 @@ const [
               : "border-l pl-4"
           }`}
         >
+          <Link
+  href="/new-arrivals"
+  onClick={() => {
+    setMenuOpen(false);
+    setProductsOpen(false);
+  }}
+  aria-current={
+    pathname.startsWith(
+      "/new-arrivals"
+    )
+      ? "page"
+      : undefined
+  }
+  className={`flex min-h-12 items-center border-b border-[#e7ebe8] py-4 text-base font-semibold transition ${
+    pathname.startsWith(
+      "/new-arrivals"
+    )
+      ? "text-[#0a583b]"
+      : "text-[#142019] hover:text-[#0a583b]"
+  }`}
+>
+  <span
+    dir={
+      isArabic
+        ? "rtl"
+        : "ltr"
+    }
+  >
+    {t.newArrivals}
+  </span>
+</Link>
           {/* All products */}
           <Link
             href="/products"

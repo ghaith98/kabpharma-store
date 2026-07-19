@@ -3,6 +3,18 @@ import HomeClient from "./HomeClient";
 import { supabase } from "@/lib/supabase";
 
 export const revalidate = 60;
+const HOME_PRODUCT_SELECT = `
+  *,
+  categories (
+    id,
+    name,
+    name_ar,
+    name_en
+  ),
+  product_variants (
+    *
+  )
+`;
 
 export default async function Home() {
   const [
@@ -13,28 +25,32 @@ export default async function Home() {
     bannersResult,
   ] = await Promise.all([
     supabase
-      .from("products")
-      .select("*")
-      .eq(
-        "is_new_arrival",
-        true
-      )
-      .order("id", {
-        ascending: false,
-      })
-      .limit(6),
+  .from("products")
+  .select(
+    HOME_PRODUCT_SELECT
+  )
+  .eq(
+    "is_new_arrival",
+    true
+  )
+  .order("id", {
+    ascending: false,
+  })
+  .limit(6),
 
     supabase
-      .from("products")
-      .select("*")
-      .eq(
-        "featured",
-        true
-      )
-      .order("id", {
-        ascending: false,
-      })
-      .limit(8),
+  .from("products")
+  .select(
+    HOME_PRODUCT_SELECT
+  )
+  .eq(
+    "featured",
+    true
+  )
+  .order("id", {
+    ascending: false,
+  })
+  .limit(8),
 
     supabase
       .from("order_items")
@@ -205,7 +221,9 @@ export default async function Home() {
       error,
     } = await supabase
       .from("products")
-      .select("*")
+      .select(
+  HOME_PRODUCT_SELECT
+)
       .in(
         "id",
         topSellerIds
