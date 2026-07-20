@@ -28,6 +28,7 @@ type CropSettings = {
 
 type BannerData = {
   id?: number;
+  placement?: string | null;
 
   image_url?: string | null;
   image_url_mobile?: string | null;
@@ -111,10 +112,16 @@ function getCropSettings(
 
 export default function NewArrivalsBanner({
   banner,
+  pageType = "new-arrivals",
+  useBannerCopy = true,
 }: {
   banner:
     | BannerData
     | null;
+  pageType?:
+    | "new-arrivals"
+    | "best-sellers";
+  useBannerCopy?: boolean;
 }) {
   const { lang } =
     useLanguage();
@@ -131,22 +138,47 @@ export default function NewArrivalsBanner({
     return null;
   }
 
-  const title = isArabic
-    ? banner.title_ar ||
-      banner.title ||
-      "وصل حديثاً"
-    : banner.title_en ||
-      banner.title ||
-      "New Arrivals";
+  const isBestSellers =
+    pageType === "best-sellers";
+
+  const defaultTitle =
+    isArabic
+      ? isBestSellers
+        ? "الأكثر مبيعاً"
+        : "وصل حديثاً"
+      : isBestSellers
+        ? "Best Sellers"
+        : "New Arrivals";
+
+  const defaultDescription =
+    isArabic
+      ? isBestSellers
+        ? "اكتشفي منتجات KAB Pharma الأكثر طلباً والمفضلة لدى عملائنا."
+        : "اكتشفي أحدث منتجات KAB Pharma للعناية بالبشرة والشعر والجسم."
+      : isBestSellers
+        ? "Discover the KAB Pharma products most loved and ordered by our customers."
+        : "Discover the latest KAB Pharma products for skin, hair, and body care.";
+
+  const title = useBannerCopy
+    ? isArabic
+      ? banner.title_ar ||
+        banner.title ||
+        defaultTitle
+      : banner.title_en ||
+        banner.title ||
+        defaultTitle
+    : defaultTitle;
 
   const description =
-    isArabic
-      ? banner.text_ar ||
-        banner.text ||
-        "اكتشفي أحدث منتجات KAB Pharma للعناية بالبشرة والشعر والجسم."
-      : banner.text_en ||
-        banner.text ||
-        "Discover the latest KAB Pharma products for skin, hair, and body care.";
+    useBannerCopy
+      ? isArabic
+        ? banner.text_ar ||
+          banner.text ||
+          defaultDescription
+        : banner.text_en ||
+          banner.text ||
+          defaultDescription
+      : defaultDescription;
 
   const desktopImage =
     banner.image_url;
@@ -256,8 +288,12 @@ export default function NewArrivalsBanner({
           className="font-bold text-[#26352d]"
         >
           {isArabic
-            ? "وصل حديثاً"
-            : "New Arrivals"}
+            ? isBestSellers
+              ? "الأكثر مبيعاً"
+              : "وصل حديثاً"
+            : isBestSellers
+              ? "Best Sellers"
+              : "New Arrivals"}
         </span>
       </nav>
     );
@@ -296,7 +332,9 @@ export default function NewArrivalsBanner({
             {...responsiveImageProps}
             alt={
               title ||
-              "KAB Pharma new arrivals"
+              (isBestSellers
+                ? "KAB Pharma best sellers"
+                : "KAB Pharma new arrivals")
             }
             loading="eager"
             fetchPriority="high"
@@ -352,7 +390,10 @@ export default function NewArrivalsBanner({
       </div>
 
       {/* Desktop hero يبقى مثل التصميم الحالي */}
-      <div className="relative z-10 mx-auto hidden h-[clamp(520px,38.75vw,680px)] w-full max-w-[1440px] flex-col px-12 py-9 md:flex lg:px-16">
+      <div
+        dir="ltr"
+        className="relative z-10 mx-auto hidden h-[clamp(520px,38.75vw,680px)] w-full max-w-[1440px] flex-col px-12 py-9 md:flex lg:px-16"
+      >
         <div className="shrink-0">
           {renderBreadcrumb()}
         </div>

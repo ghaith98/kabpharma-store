@@ -18,9 +18,11 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type BannerPlacement =
+  | "best_sellers"
+  | "best_sellers_discover_1"
+  | "best_sellers_discover_2"
   | "new_arrivals"
-  | "new_arrivals_discover_1"
-  | "new_arrivals_discover_2";
+  | "new_arrivals_discover_1";
 
 type BannerMode =
   | "desktop"
@@ -108,13 +110,13 @@ const MAX_IMAGE_SIZE =
 const BANNER_CONFIGS: BannerConfig[] = [
   {
     placement:
-      "new_arrivals",
+      "best_sellers",
 
     adminTitle:
-      "Main New Arrivals Hero",
+      "Main Best Sellers Hero",
 
     adminDescription:
-      "The large full-width banner displayed at the top of the New Arrivals page.",
+      "The large full-width banner displayed at the top of the Best Sellers page.",
 
     desktopWidth: 1600,
     desktopHeight: 620,
@@ -127,25 +129,25 @@ const BANNER_CONFIGS: BannerConfig[] = [
 
     defaults: {
       titleAr:
-        "وصل حديثاً",
+        "الأكثر مبيعاً",
 
       titleEn:
-        "New Arrivals",
+        "Best Sellers",
 
       textAr:
-        "اكتشفي أحدث منتجات KAB Pharma للعناية بالبشرة والشعر والجسم.",
+        "اكتشفي منتجات KAB Pharma الأكثر طلباً والمفضلة لدى عملائنا.",
 
       textEn:
-        "Discover the latest KAB Pharma products for skin, hair, and body care.",
+        "Discover the KAB Pharma products most loved and ordered by our customers.",
 
       buttonTextAr:
-        "تسوقي المنتجات الجديدة",
+        "تسوقي الأكثر مبيعاً",
 
       buttonTextEn:
-        "Shop new arrivals",
+        "Shop best sellers",
 
       linkUrl:
-        "/new-arrivals#new-arrivals-products",
+        "/best-sellers#best-sellers-products",
 
       isActive: true,
     },
@@ -153,13 +155,13 @@ const BANNER_CONFIGS: BannerConfig[] = [
 
   {
     placement:
-      "new_arrivals_discover_1",
+      "best_sellers_discover_1",
 
     adminTitle:
-      "Discover Banner One",
+      "Best Sellers Promo Banner One",
 
     adminDescription:
-      "Displayed on the right side beside the first two New Arrivals products.",
+      "An independent New Arrivals promotion displayed between the first Best Sellers products.",
 
     desktopWidth: 1200,
     desktopHeight: 576,
@@ -198,13 +200,13 @@ const BANNER_CONFIGS: BannerConfig[] = [
 
   {
     placement:
-      "new_arrivals_discover_2",
+      "best_sellers_discover_2",
 
     adminTitle:
-      "Discover Banner Two",
+      "Best Sellers Promo Banner Two",
 
     adminDescription:
-      "Displayed on the left side beside the next two New Arrivals products.",
+      "Spotlight one specific new launch farther down the Best Sellers page. Set its link to the exact product path, for example /products/123.",
 
     desktopWidth: 1200,
     desktopHeight: 576,
@@ -217,25 +219,115 @@ const BANNER_CONFIGS: BannerConfig[] = [
 
     defaults: {
       titleAr:
-        "روتينك يبدأ من هنا",
+        "اكتشفي المنتج الجديد",
 
       titleEn:
-        "Your routine starts here",
+        "Meet the new launch",
 
       textAr:
-        "اختاري المنتجات المناسبة لروتين أكثر بساطة وفعالية.",
+        "تعرّفي على أحدث إطلاق من KAB Pharma واكتشفي تفاصيله.",
 
       textEn:
-        "Find the right products for a simpler and more effective routine.",
+        "Meet the latest KAB Pharma launch and discover its details.",
 
       buttonTextAr:
-        "تصفحي المجموعة",
+        "اكتشفي المنتج",
 
       buttonTextEn:
-        "Explore the collection",
+        "Discover the product",
+
+      linkUrl:
+        "/products",
+
+      isActive: true,
+    },
+  },
+
+  {
+    placement:
+      "new_arrivals",
+
+    adminTitle:
+      "Main New Arrivals Hero",
+
+    adminDescription:
+      "The independent full-width hero displayed at the top of the New Arrivals page.",
+
+    desktopWidth: 1600,
+    desktopHeight: 620,
+
+    mobileWidth: 800,
+    mobileHeight: 400,
+
+    sortOrder: 4,
+    type: "hero",
+
+    defaults: {
+      titleAr:
+        "وصل حديثاً",
+
+      titleEn:
+        "New Arrivals",
+
+      textAr:
+        "اكتشفي أحدث منتجات KAB Pharma للعناية بالبشرة والشعر والجسم.",
+
+      textEn:
+        "Discover the latest KAB Pharma products for skin, hair, and body care.",
+
+      buttonTextAr:
+        "تسوقي المنتجات الجديدة",
+
+      buttonTextEn:
+        "Shop new arrivals",
 
       linkUrl:
         "/new-arrivals#new-arrivals-products",
+
+      isActive: true,
+    },
+  },
+
+  {
+    placement:
+      "new_arrivals_discover_1",
+
+    adminTitle:
+      "New Arrivals Banner One",
+
+    adminDescription:
+      "The only promotional banner displayed between New Arrivals products. It promotes Customer Favourites and links to Best Sellers.",
+
+    desktopWidth: 1200,
+    desktopHeight: 576,
+
+    mobileWidth: 800,
+    mobileHeight: 1000,
+
+    sortOrder: 5,
+    type: "discover",
+
+    defaults: {
+      titleAr:
+        "اختيارات عملائنا المفضلة",
+
+      titleEn:
+        "Customer favourites",
+
+      textAr:
+        "اكتشفي المنتجات الأكثر طلباً والمفضلة لدى عملائنا.",
+
+      textEn:
+        "Discover the products most loved and ordered by our customers.",
+
+      buttonTextAr:
+        "تسوّقي الأكثر مبيعاً",
+
+      buttonTextEn:
+        "Shop best sellers",
+
+      linkUrl:
+        "/best-sellers#best-sellers-products",
 
       isActive: true,
     },
@@ -395,6 +487,23 @@ function getDraftFromBanner(
     };
   }
 
+  const storedLinkUrl =
+    banner.link_url?.trim();
+
+  const legacyNewArrivalsHref =
+    "/new-arrivals#new-arrivals-products";
+
+  const linkUrl =
+    (config.placement ===
+      "new_arrivals_discover_1" ||
+      config.placement ===
+        "best_sellers_discover_2") &&
+    storedLinkUrl ===
+      legacyNewArrivalsHref
+      ? config.defaults.linkUrl
+      : storedLinkUrl ||
+        config.defaults.linkUrl;
+
   return {
     titleAr:
       banner.title_ar ||
@@ -426,9 +535,7 @@ function getDraftFromBanner(
       config.defaults
         .buttonTextEn,
 
-    linkUrl:
-      banner.link_url ||
-      config.defaults.linkUrl,
+    linkUrl,
 
     isActive:
       banner.is_active ??
@@ -475,6 +582,7 @@ function HeroPreview({
   draft,
   files,
   language,
+  placement,
 }: {
   banner?: BannerRecord;
   draft: BannerDraft;
@@ -482,6 +590,8 @@ function HeroPreview({
   language:
     | "en"
     | "ar";
+  placement:
+    BannerPlacement;
 }) {
   const isArabic =
     language === "ar";
@@ -500,6 +610,9 @@ function HeroPreview({
     isArabic
       ? draft.buttonTextAr
       : draft.buttonTextEn;
+
+  const isBestSellers =
+    placement === "best_sellers";
 
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -600,8 +713,12 @@ function HeroPreview({
 
       <span className="font-extrabold text-[#26352d]">
         {isArabic
-          ? "وصل حديثاً"
-          : "New Arrivals"}
+          ? isBestSellers
+            ? "الأكثر مبيعاً"
+            : "وصل حديثاً"
+          : isBestSellers
+            ? "Best Sellers"
+            : "New Arrivals"}
       </span>
     </div>
 
@@ -672,8 +789,9 @@ function DiscoverPreview({
       : draft.buttonTextEn;
 
   const bannerOnRight =
-    placement ===
-    "new_arrivals_discover_1";
+    placement.endsWith(
+      "_discover_1"
+    );
 
   return (
     <div>
@@ -928,9 +1046,11 @@ export default function AdminNewArrivalsBannersPage() {
       number
     >
   >({
+    best_sellers: 0,
+    best_sellers_discover_1: 0,
+    best_sellers_discover_2: 0,
     new_arrivals: 0,
     new_arrivals_discover_1: 0,
-    new_arrivals_discover_2: 0,
   });
 
   const loadBanners =
@@ -1036,7 +1156,7 @@ export default function AdminNewArrivalsBannersPage() {
         await loadBanners();
       } catch (error: unknown) {
         console.error(
-          "Could not load New Arrivals banners:",
+          "Could not load Best Sellers and New Arrivals banners:",
           error
         );
       } finally {
@@ -1550,7 +1670,7 @@ export default function AdminNewArrivalsBannersPage() {
 
         link_url:
           draft.linkUrl.trim() ||
-          "/new-arrivals",
+          config.defaults.linkUrl,
 
         desktop_position_x:
           50,
@@ -1903,7 +2023,7 @@ export default function AdminNewArrivalsBannersPage() {
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-[3px] border-[#dfe4e0] border-t-[#0a583b]" />
 
           <p className="mt-4 text-sm font-bold text-[#647168]">
-            Loading New Arrivals banners...
+            Loading Best Sellers and New Arrivals banners...
           </p>
         </div>
       </main>
@@ -1937,6 +2057,14 @@ export default function AdminNewArrivalsBannersPage() {
             </Link>
 
             <Link
+              href="/best-sellers"
+              target="_blank"
+              className="inline-flex rounded-xl bg-[#edf5f0] px-4 py-2 text-sm font-extrabold text-[#0a583b] hover:bg-[#dcebe2]"
+            >
+              Open Best Sellers page ↗
+            </Link>
+
+            <Link
               href="/new-arrivals"
               target="_blank"
               className="inline-flex rounded-xl bg-[#edf5f0] px-4 py-2 text-sm font-extrabold text-[#0a583b] hover:bg-[#dcebe2]"
@@ -1950,11 +2078,11 @@ export default function AdminNewArrivalsBannersPage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-extrabold text-[#142019] sm:text-4xl">
-            New Arrivals Page Banners
+            Best Sellers & New Arrivals Banners
           </h1>
 
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[#647168] sm:text-base">
-            Manage the main New Arrivals hero and both Discover banners displayed between the products.
+            Manage a fully independent hero and two promotional banners for Best Sellers, plus a separate hero and one promotional banner for New Arrivals.
           </p>
 
           <div
@@ -2233,7 +2361,9 @@ export default function AdminNewArrivalsBannersPage() {
                           }
                         )
                       }
-                      placeholder="/new-arrivals"
+                      placeholder={
+                        config.defaults.linkUrl
+                      }
                       className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-black outline-none focus:border-[#0a583b] focus:bg-white"
                     />
 
@@ -2314,6 +2444,9 @@ export default function AdminNewArrivalsBannersPage() {
                           language={
                             previewLanguage
                           }
+                          placement={
+                            placement
+                          }
                         />
                       ) : (
                         <DiscoverPreview
@@ -2357,7 +2490,17 @@ export default function AdminNewArrivalsBannersPage() {
                       />
 
                       <span className="font-extrabold text-[#142019]">
-                        Display this banner on the New Arrivals page
+                        Display this banner on the{
+                          " "
+                        }
+                        {placement.startsWith(
+                          "best_sellers"
+                        )
+                          ? "Best Sellers"
+                          : "New Arrivals"}{
+                          " "
+                        }
+                        page
                       </span>
                     </label>
 

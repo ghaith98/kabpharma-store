@@ -4,6 +4,7 @@ import HomeClient from "./HomeClient";
 
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
+import { rankBestSellerProductIds } from "@/lib/best-sellers";
 
 export const revalidate = 60;
 
@@ -170,60 +171,11 @@ export default async function Home() {
       )
     );
 
-  const salesByProduct =
-    orderItems.reduce(
-      (
-        accumulator: Record<
-          string,
-          number
-        >,
-        item
-      ) => {
-        if (!item.product_id) {
-          return accumulator;
-        }
-
-        const productId =
-          String(
-            item.product_id
-          );
-
-        accumulator[productId] =
-          (accumulator[
-            productId
-          ] || 0) +
-          Number(
-            item.quantity || 0
-          );
-
-        return accumulator;
-      },
-      {}
-    );
-
   const topSellerIds =
-    Object.entries(
-      salesByProduct
-    )
-      .filter(
-        ([productId]) =>
-          availableProductIds.has(
-            Number(productId)
-          )
-      )
-      .sort(
-        (
-          firstProduct,
-          secondProduct
-        ) =>
-          secondProduct[1] -
-          firstProduct[1]
-      )
-      .slice(0, 5)
-      .map(
-        ([productId]) =>
-          Number(productId)
-      );
+    rankBestSellerProductIds(
+      orderItems,
+      availableProductIds
+    ).slice(0, 5);
 
   let topSellerProducts:
     typeof newProducts = [];

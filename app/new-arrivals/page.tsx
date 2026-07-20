@@ -109,7 +109,6 @@ export default async function NewArrivalsPage() {
         [
           "new_arrivals",
           "new_arrivals_discover_1",
-          "new_arrivals_discover_2",
         ]
       )
       .eq(
@@ -167,9 +166,7 @@ export default async function NewArrivalsPage() {
     banners.filter(
       (banner) =>
         banner.placement ===
-          "new_arrivals_discover_1" ||
-        banner.placement ===
-          "new_arrivals_discover_2"
+          "new_arrivals_discover_1"
     );
 
   return (
@@ -187,6 +184,9 @@ export default async function NewArrivalsPage() {
         discoveryBanners={
           discoveryBanners
         }
+        hasHero={Boolean(
+          heroBanner
+        )}
       />
     </main>
   );

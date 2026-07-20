@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -25,6 +26,7 @@ import type {
 } from "../products/EditorialProductCard";
 
 import { useLanguage } from "../../context/LanguageContext";
+import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 type DiscoveryBanner = {
   id: number;
@@ -42,6 +44,62 @@ type DiscoveryBanner = {
   button_text_en?: string | null;
   link_url: string | null;
 };
+
+function getDiscoveryHref(
+  banner: DiscoveryBanner
+) {
+  const currentHref =
+    banner.link_url?.trim();
+
+  const legacyNewArrivalsHref =
+    "/new-arrivals#new-arrivals-products";
+
+  if (
+    banner.placement ===
+    "best_sellers_discover_1"
+  ) {
+    return (
+      currentHref ||
+      legacyNewArrivalsHref
+    );
+  }
+
+  if (
+    banner.placement ===
+    "new_arrivals_discover_1"
+  ) {
+    if (
+      !currentHref ||
+      currentHref ===
+        legacyNewArrivalsHref
+    ) {
+      return "/best-sellers#best-sellers-products";
+    }
+
+    return currentHref;
+  }
+
+  if (
+    banner.placement ===
+    "best_sellers_discover_2"
+  ) {
+    if (
+      !currentHref ||
+      currentHref ===
+        legacyNewArrivalsHref
+    ) {
+      return "/products";
+    }
+
+    return currentHref;
+  }
+
+  if (!currentHref) {
+    return "/products";
+  }
+
+  return currentHref;
+}
 
 function getProductPrice(
   product: EditorialProduct
@@ -155,8 +213,9 @@ function DiscoveryTile({
     <article className="h-full">
       <Link
         href={
-          banner.link_url ||
-          "/products"
+          getDiscoveryHref(
+            banner
+          )
         }
         dir={
           isArabic
@@ -216,11 +275,17 @@ function DiscoveryTile({
 type NewArrivalsCollectionProps = {
   products: EditorialProduct[];
   discoveryBanners: DiscoveryBanner[];
+  collectionType?:
+    | "new-arrivals"
+    | "best-sellers";
+  hasHero?: boolean;
 };
 
 export default function NewArrivalsCollection({
   products,
   discoveryBanners,
+  collectionType = "new-arrivals",
+  hasHero = true,
 }: NewArrivalsCollectionProps) {
   const { lang } =
     useLanguage();
@@ -228,8 +293,51 @@ export default function NewArrivalsCollection({
   const isArabic =
     lang === "ar";
 
+  const isBestSellers =
+    collectionType === "best-sellers";
+
+  const collectionId =
+    isBestSellers
+      ? "best-sellers-products"
+      : "new-arrivals-products";
+
+  const filterDialogId =
+    `${collectionId}-filters`;
+
+  const filterDialogTitleId =
+    `${filterDialogId}-title`;
+
+  const sortSelectId =
+    `${collectionId}-sort`;
+
+  const collectionTitle =
+    isArabic
+      ? isBestSellers
+        ? "الأكثر مبيعاً"
+        : "وصل حديثاً"
+      : isBestSellers
+        ? "Best Sellers"
+        : "New Arrivals";
+
+  const collectionDescription =
+    isArabic
+      ? isBestSellers
+        ? "تصفّحي منتجات KAB Pharma الأكثر طلباً والمفضلة لدى عملائنا."
+        : "اكتشفي أحدث منتجات KAB Pharma للعناية اليومية."
+      : isBestSellers
+        ? "Explore the KAB Pharma products most loved and ordered by our customers."
+        : "Discover the latest KAB Pharma products for your everyday care routine.";
+
   const [filtersOpen, setFiltersOpen] =
     useState(false);
+
+  const filtersDialogRef =
+    useRef<HTMLElement>(null);
+
+  useDialogFocus(
+    filtersOpen,
+    filtersDialogRef
+  );
 
   const [selectedCategoryId, setSelectedCategoryId] =
     useState<number | null>(null);
@@ -431,17 +539,10 @@ export default function NewArrivalsCollection({
     setOnSaleOnly(false);
   }
 
-  const firstProducts =
-    filteredProducts.slice(0, 2);
-
-  const middleProducts =
-    filteredProducts.slice(2, 6);
-
-  const secondProducts =
-    filteredProducts.slice(6, 8);
-
-  const remainingProducts =
-    filteredProducts.slice(8);
+  const discoveryPlacementPrefix =
+    isBestSellers
+      ? "best_sellers"
+      : "new_arrivals";
 
   const firstDiscovery =
     hasProductFilters
@@ -449,33 +550,107 @@ export default function NewArrivalsCollection({
       : discoveryBanners.find(
           (banner) =>
             banner.placement ===
-            "new_arrivals_discover_1"
+            `${discoveryPlacementPrefix}_discover_1`
         );
 
   const secondDiscovery =
-    hasProductFilters
+    hasProductFilters ||
+    !isBestSellers
       ? null
       : discoveryBanners.find(
           (banner) =>
             banner.placement ===
-            "new_arrivals_discover_2"
+            `${discoveryPlacementPrefix}_discover_2`
         );
+
+  const firstProductsEnd =
+    firstDiscovery ? 2 : 0;
+
+  const middleProductsEnd =
+    secondDiscovery
+      ? firstProductsEnd + 4
+      : firstProductsEnd;
+
+  const secondProductsEnd =
+    secondDiscovery
+      ? middleProductsEnd + 2
+      : middleProductsEnd;
+
+  const firstProducts =
+    filteredProducts.slice(
+      0,
+      firstProductsEnd
+    );
+
+  const middleProducts =
+    filteredProducts.slice(
+      firstProductsEnd,
+      middleProductsEnd
+    );
+
+  const secondProducts =
+    filteredProducts.slice(
+      middleProductsEnd,
+      secondProductsEnd
+    );
+
+  const remainingProducts =
+    filteredProducts.slice(
+      secondProductsEnd
+    );
 
   if (products.length === 0) {
     return (
-      <section className="mx-auto flex min-h-[420px] max-w-xl items-center px-4 py-16 text-center sm:px-6">
-        <div className="w-full border border-[#dfe4e0] bg-[#f7f8f6] px-6 py-14">
+      <section
+        id={collectionId}
+        dir={isArabic ? "rtl" : "ltr"}
+        aria-label={collectionTitle}
+        className="mx-auto w-full max-w-[1720px] px-4 py-16 sm:px-6 lg:px-8"
+      >
+        {!hasHero && (
+          <header
+            className={`mb-10 border-b border-[#e7ebe8] pb-8 sm:pb-10 ${
+              isArabic
+                ? "text-right"
+                : "text-left"
+            }`}
+          >
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#0a583b]">
+              KAB Pharma
+            </p>
+
+            <h1 className="mt-3 text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-5xl">
+              {collectionTitle}
+            </h1>
+
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
+              {collectionDescription}
+            </p>
+          </header>
+        )}
+
+        <div className="mx-auto flex min-h-[420px] max-w-xl items-center text-center">
+          <div className="w-full border border-[#dfe4e0] bg-[#f7f8f6] px-6 py-14">
           <h2 className="text-2xl font-bold text-[#142019]">
             {isArabic
-              ? "لا توجد منتجات جديدة حالياً"
-              : "No new arrivals yet"}
+              ? isBestSellers
+                ? "لا توجد منتجات ضمن الأكثر مبيعاً حالياً"
+                : "لا توجد منتجات جديدة حالياً"
+              : isBestSellers
+                ? "No best sellers yet"
+                : "No new arrivals yet"}
           </h2>
 
           <p className="mt-3 text-sm leading-7 text-[#647168]">
             {isArabic
-              ? "ستتم إضافة المنتجات الجديدة قريباً."
-              : "New products will be added soon."}
+              ? isBestSellers
+                ? "ستظهر المنتجات هنا بعد تسجيل أولى المبيعات."
+                : "ستتم إضافة المنتجات الجديدة قريباً."
+              : isBestSellers
+                ? "Products will appear here after their first recorded sales."
+                : "New products will be added soon."}
           </p>
+          </div>
         </div>
       </section>
     );
@@ -483,14 +658,33 @@ export default function NewArrivalsCollection({
 
   return (
     <section
+      id={collectionId}
       dir={isArabic ? "rtl" : "ltr"}
-      aria-label={
-        isArabic
-          ? "المنتجات الجديدة"
-          : "New arrivals products"
-      }
+      aria-label={collectionTitle}
       className="mx-auto w-full max-w-[1720px] px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-10 lg:px-8"
     >
+      {!hasHero && (
+        <header
+          className={`mb-10 border-b border-[#e7ebe8] pb-8 sm:pb-10 ${
+            isArabic
+              ? "text-right"
+              : "text-left"
+          }`}
+        >
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#0a583b]">
+            KAB Pharma
+          </p>
+
+          <h1 className="mt-3 text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-5xl">
+            {collectionTitle}
+          </h1>
+
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
+            {collectionDescription}
+          </p>
+        </header>
+      )}
+
       <div className="mb-7 flex items-center justify-between gap-4 border-b border-[#e7ebe8] pb-5 sm:mb-9 sm:pb-6">
         <div>
           <p className="text-sm font-bold text-[#526057]">
@@ -517,6 +711,8 @@ export default function NewArrivalsCollection({
           onClick={() =>
             setFiltersOpen(true)
           }
+          aria-expanded={filtersOpen}
+          aria-controls={filterDialogId}
           className="relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 text-xs font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] sm:min-h-12 sm:px-6 sm:text-sm"
         >
           <FaFilter className="text-xs sm:text-sm" />
@@ -558,97 +754,68 @@ export default function NewArrivalsCollection({
           </button>
         </section>
       ) : (
-        <>
-          {(firstProducts.length > 0 ||
-            firstDiscovery) && (
-            <div
-              dir="ltr"
-              className={`grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 ${
-                firstDiscovery
-                  ? "lg:grid-cols-4 lg:gap-x-8"
-                  : "lg:grid-cols-2 lg:gap-x-8"
-              }`}
-            >
-              {firstProducts.map(
-                (product) => (
-                  <EditorialProductCard
-                    key={product.id}
-                    product={product}
-                  />
-                )
-              )}
+        <div
+          dir="ltr"
+          className="grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4 lg:gap-x-8"
+        >
+          {firstProducts.map(
+            (product) => (
+              <EditorialProductCard
+                key={product.id}
+                product={product}
+              />
+            )
+          )}
 
-              {firstDiscovery && (
-                <div className="col-span-2">
-                  <DiscoveryTile
-                    banner={firstDiscovery}
-                  />
-                </div>
-              )}
+          {firstDiscovery && (
+            <div
+              key={`banner-${firstDiscovery.id}`}
+              className="col-span-2"
+            >
+              <DiscoveryTile
+                banner={firstDiscovery}
+              />
             </div>
           )}
 
-          {middleProducts.length > 0 && (
+          {middleProducts.map(
+            (product) => (
+              <EditorialProductCard
+                key={product.id}
+                product={product}
+              />
+            )
+          )}
+
+          {secondDiscovery && (
             <div
-              dir="ltr"
-              className="mt-10 grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:mt-12 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4 lg:gap-x-8"
+              key={`banner-${secondDiscovery.id}`}
+              className="col-span-2"
             >
-              {middleProducts.map(
-                (product) => (
-                  <EditorialProductCard
-                    key={product.id}
-                    product={product}
-                  />
-                )
-              )}
+              <DiscoveryTile
+                banner={secondDiscovery}
+              />
             </div>
           )}
 
-          {(secondProducts.length > 0 ||
-            secondDiscovery) && (
-            <div
-              dir="ltr"
-              className={`mt-10 grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:mt-12 sm:gap-x-6 sm:gap-y-10 ${
-                secondDiscovery
-                  ? "lg:grid-cols-4 lg:gap-x-8"
-                  : "lg:grid-cols-2 lg:gap-x-8"
-              }`}
-            >
-              {secondDiscovery && (
-                <div className="col-span-2">
-                  <DiscoveryTile
-                    banner={secondDiscovery}
-                  />
-                </div>
-              )}
-
-              {secondProducts.map(
-                (product) => (
-                  <EditorialProductCard
-                    key={product.id}
-                    product={product}
-                  />
-                )
-              )}
-            </div>
+          {secondProducts.map(
+            (product) => (
+              <EditorialProductCard
+                key={product.id}
+                product={product}
+              />
+            )
           )}
 
-          {remainingProducts.length > 0 && (
-            <div
-              dir="ltr"
-              className="mt-10 grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:mt-12 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4"
-            >
-              {remainingProducts.map(
-                (product) => (
-                  <EditorialProductCard
-                    key={product.id}
-                    product={product}
-                  />
-                )
-              )}
-            </div>
+          {remainingProducts.map(
+            (product) => (
+              <EditorialProductCard
+                key={product.id}
+                product={product}
+              />
+            )
           )}
-        </>
+        </div>
       )}
 
       {filtersOpen && (
@@ -664,6 +831,12 @@ export default function NewArrivalsCollection({
           }}
         >
           <aside
+            ref={filtersDialogRef}
+            id={filterDialogId}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={filterDialogTitleId}
+            tabIndex={-1}
             dir={isArabic ? "rtl" : "ltr"}
             className={`absolute inset-y-0 w-[86%] max-w-[340px] overflow-y-auto bg-white md:max-w-md ${
               isArabic
@@ -673,7 +846,10 @@ export default function NewArrivalsCollection({
           >
             <div className="flex min-h-full flex-col">
               <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e7ebe8] bg-white/95 px-5 py-5 backdrop-blur sm:px-7">
-                <h2 className="text-xl font-extrabold text-[#142019]">
+                <h2
+                  id={filterDialogTitleId}
+                  className="text-xl font-extrabold text-[#142019]"
+                >
                   {isArabic
                     ? "تصفية وترتيب"
                     : "Filter & sort"}
@@ -840,7 +1016,7 @@ export default function NewArrivalsCollection({
 
                 <section className="py-6">
                   <label
-                    htmlFor="new-arrivals-sort"
+                    htmlFor={sortSelectId}
                     className="mb-3 block text-sm font-extrabold text-[#142019]"
                   >
                     {isArabic
@@ -849,7 +1025,7 @@ export default function NewArrivalsCollection({
                   </label>
 
                   <select
-                    id="new-arrivals-sort"
+                    id={sortSelectId}
                     value={sortBy}
                     onChange={(event) =>
                       setSortBy(event.target.value)

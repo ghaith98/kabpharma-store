@@ -1289,7 +1289,7 @@ export default function AdminMainBannersPage() {
               href="/admin/banners/new-arrivals"
               className="inline-flex rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-green-50 hover:text-green-700"
             >
-              New Arrivals banner
+              Best Sellers & New Arrivals banners
             </Link>
           </div>
 
@@ -1303,7 +1303,7 @@ export default function AdminMainBannersPage() {
 
           <p className="mt-3 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
             These banners are displayed only on the main homepage.
-            New Arrivals banners are managed separately.
+            Best Sellers and New Arrivals promotional banners are managed separately.
           </p>
         </section>
 

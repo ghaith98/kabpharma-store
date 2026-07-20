@@ -89,6 +89,7 @@ const [
       home: "Home",
       products: "Products",
       allProducts: "All products",
+      bestSellers: "Best Sellers",
       newArrivals: "New Arrivals",
       about: "About us",
       contact: "Contact us",
@@ -130,6 +131,7 @@ const [
       home: "الرئيسية",
       products: "المنتجات",
       allProducts: "جميع المنتجات",
+      bestSellers: "الأكثر مبيعاً",
       newArrivals: "وصل حديثاً",
       about: "عن الشركة",
       contact: "تواصل معنا",
@@ -181,6 +183,10 @@ const [
   {
     label: t.products,
     href: "/products",
+  },
+  {
+    label: t.bestSellers,
+    href: "/best-sellers",
   },
   {
     label: t.newArrivals,
@@ -1239,73 +1245,46 @@ const [
     </div>
   </div>
 
-  {/* About */}
-  <Link
-    href="/about"
-    onClick={(event) =>
-      handlePrimaryNavigation(
-        event,
-        "/about"
-      )
-    }
-    aria-current={
-      pathname.startsWith(
-        "/about"
-      )
-        ? "page"
-        : undefined
-    }
-    className={`${mobilePrimaryLinkClass} ${
-      pathname.startsWith(
-        "/about"
-      )
-        ? "text-[#0a583b]"
-        : ""
-    }`}
-  >
-    <span>{t.about}</span>
+  {/* Remaining primary links */}
+  {navigationLinks
+    .filter(
+      (item) =>
+        item.href !== "/" &&
+        item.href !== "/products"
+    )
+    .map((item) => {
+      const active =
+        isActive(item.href);
 
-    {pathname.startsWith(
-      "/about"
-    ) && (
-      <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
-    )}
-  </Link>
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={(event) =>
+            handlePrimaryNavigation(
+              event,
+              item.href
+            )
+          }
+          aria-current={
+            active
+              ? "page"
+              : undefined
+          }
+          className={`${mobilePrimaryLinkClass} ${
+            active
+              ? "text-[#0a583b]"
+              : ""
+          }`}
+        >
+          <span>{item.label}</span>
 
-  {/* Contact */}
-  <Link
-    href="/contact"
-    onClick={(event) =>
-      handlePrimaryNavigation(
-        event,
-        "/contact"
-      )
-    }
-    aria-current={
-      pathname.startsWith(
-        "/contact"
-      )
-        ? "page"
-        : undefined
-    }
-    className={`${mobilePrimaryLinkClass} ${
-      pathname.startsWith(
-        "/contact"
-      )
-        ? "text-[#0a583b]"
-        : ""
-    }`}
-  >
-    <span>
-      {t.contact}
-    </span>
-
-    {pathname.startsWith(
-      "/contact"
-    ) && (
-      <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
-    )}
-  </Link>
+          {active && (
+            <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
+          )}
+        </Link>
+      );
+    })}
 </nav>
 
               {/* Account links */}

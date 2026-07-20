@@ -207,6 +207,7 @@ export default function HomeClient({
         lang={
           currentLang
         }
+        viewAllHref="/best-sellers"
       />
 
       {topSellerProducts.length >

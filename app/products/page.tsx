@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
+import { rankBestSellerProductIds } from "@/lib/best-sellers";
 
 import ProductsClient from "./ProductsClient";
 
@@ -170,58 +171,11 @@ export default async function ProductsPage() {
         )
     );
 
-  const salesByProduct =
-    orderItems.reduce(
-      (
-        accumulator: Record<
-          string,
-          number
-        >,
-        item
-      ) => {
-        if (!item.product_id) {
-          return accumulator;
-        }
-
-        const productId =
-          String(
-            item.product_id
-          );
-
-        accumulator[productId] =
-          (accumulator[
-            productId
-          ] || 0) +
-          Number(
-            item.quantity || 0
-          );
-
-        return accumulator;
-      },
-      {}
-    );
-
   const bestSellerIds =
-    Object.entries(
-      salesByProduct
-    )
-      .filter(([productId]) =>
-        availableProductIds.has(
-          Number(productId)
-        )
-      )
-      .sort(
-        (
-          firstProduct,
-          secondProduct
-        ) =>
-          secondProduct[1] -
-          firstProduct[1]
-      )
-      .slice(0, 5)
-      .map(([productId]) =>
-        Number(productId)
-      );
+    rankBestSellerProductIds(
+      orderItems,
+      availableProductIds
+    ).slice(0, 5);
 
   return (
     <main className="min-h-screen bg-white pb-24 md:pb-16">
