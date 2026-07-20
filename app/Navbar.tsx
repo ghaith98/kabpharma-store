@@ -202,6 +202,15 @@ const [
   },
 ];
 
+  const mobileDiscoveryLinks =
+    navigationLinks.filter(
+      (item) =>
+        item.href ===
+          "/best-sellers" ||
+        item.href ===
+          "/new-arrivals"
+    );
+
   function isActive(
     href: string
   ) {
@@ -461,7 +470,7 @@ const [
     function handleResize() {
       if (
         window.innerWidth >=
-        1024
+        1280
       ) {
         setMenuOpen(false);
       }
@@ -527,7 +536,7 @@ const [
                 )
               }
               aria-label="KAB Pharma home"
-              className="hidden shrink-0 items-center lg:flex"
+              className="hidden shrink-0 items-center xl:flex"
             >
               <Image
                 src="/logo.png"
@@ -626,9 +635,9 @@ const [
                   aria-label={
                     t.navigation
                   }
-                  className="hidden min-w-0 flex-1 items-center justify-center lg:flex"
+                  className="hidden min-w-0 flex-1 items-center justify-center xl:flex"
                 >
-                  <div className="flex items-center gap-7 xl:gap-10">
+                  <div className="flex items-center gap-6 2xl:gap-10">
                       {navigationLinks.map((item) => {
   const active = isActive(
     item.href
@@ -849,7 +858,7 @@ const [
                 {/* Desktop icons */}
                 <div
                   dir="ltr"
-                  className="ms-auto hidden shrink-0 items-center gap-1 lg:flex"
+                  className="ms-auto hidden shrink-0 items-center gap-1 xl:flex"
                 >
                   <button
                     type="button"
@@ -948,7 +957,7 @@ const [
                 {/* Mobile header */}
 <div
   dir="ltr"
-  className="absolute inset-0 flex items-center justify-center lg:hidden"
+  className="absolute inset-0 flex items-center justify-center xl:hidden"
 >
   {/* Hamburger - left */}
   <button
@@ -1045,7 +1054,7 @@ const [
       {/* Mobile menu */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[999] bg-[#07130d]/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-[999] bg-[#07130d]/40 backdrop-blur-[2px] xl:hidden"
           onMouseDown={(
             event
           ) => {
@@ -1063,7 +1072,11 @@ const [
             role="dialog"
             aria-modal="true"
             tabIndex={-1}
-            dir="ltr"
+            dir={
+              isArabic
+                ? "rtl"
+                : "ltr"
+            }
             aria-label={
               t.mobileNavigation
             }
@@ -1110,6 +1123,11 @@ const [
             <div className="flex flex-1 flex-col px-5">
               {/* Main links */}
 <nav
+  dir={
+    isArabic
+      ? "rtl"
+      : "ltr"
+  }
   aria-label={
     t.mobileNavigation
   }
@@ -1141,6 +1159,45 @@ const [
       <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
     )}
   </Link>
+
+  {/* Keep the two primary discovery pages visible before the expandable product list. */}
+  {mobileDiscoveryLinks.map(
+    (item) => {
+      const active =
+        isActive(item.href);
+
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={(event) =>
+            handlePrimaryNavigation(
+              event,
+              item.href
+            )
+          }
+          aria-current={
+            active
+              ? "page"
+              : undefined
+          }
+          className={`${mobilePrimaryLinkClass} ${
+            active
+              ? "text-[#0a583b]"
+              : ""
+          }`}
+        >
+          <span>
+            {item.label}
+          </span>
+
+          {active && (
+            <span className="h-1.5 w-1.5 rounded-full bg-[#0a583b]" />
+          )}
+        </Link>
+      );
+    }
+  )}
 
   {/* Products + Categories */}
   <div className="border-b border-[#e8ece9]">
@@ -1250,7 +1307,11 @@ const [
     .filter(
       (item) =>
         item.href !== "/" &&
-        item.href !== "/products"
+        item.href !== "/products" &&
+        item.href !==
+          "/best-sellers" &&
+        item.href !==
+          "/new-arrivals"
     )
     .map((item) => {
       const active =

@@ -97,6 +97,129 @@ export function saveCart(
   );
 }
 
+export function migrateGuestCartToUser(
+  phone: string
+) {
+  if (
+    typeof window === "undefined"
+  ) {
+    return;
+  }
+
+  const normalizedPhone =
+    phone.trim();
+
+  if (!normalizedPhone) {
+    return;
+  }
+
+  const guestCartKey =
+    "cart_guest";
+
+  const userCartKey =
+    `cart_${normalizedPhone}`;
+
+  try {
+    const parseStoredCart = (
+      key: string
+    ): CartItem[] => {
+      const storedValue =
+        localStorage.getItem(
+          key
+        );
+
+      if (!storedValue) {
+        return [];
+      }
+
+      const parsedValue =
+        JSON.parse(storedValue);
+
+      return Array.isArray(
+        parsedValue
+      )
+        ? parsedValue
+        : [];
+    };
+
+    const guestCart =
+      parseStoredCart(
+        guestCartKey
+      );
+
+    if (
+      guestCart.length === 0
+    ) {
+      return;
+    }
+
+    const userCart =
+      parseStoredCart(
+        userCartKey
+      );
+
+    const mergedItems =
+      new Map<
+        string,
+        CartItem
+      >();
+
+    for (const item of [
+      ...userCart,
+      ...guestCart,
+    ]) {
+      const itemKey =
+        getItemKey(item);
+
+      const quantity =
+        Math.max(
+          1,
+          Math.floor(
+            Number(
+              item.quantity
+            ) || 1
+          )
+        );
+
+      const existingItem =
+        mergedItems.get(
+          itemKey
+        );
+
+      mergedItems.set(
+        itemKey,
+        {
+          ...existingItem,
+          ...item,
+          quantity:
+            (existingItem?.quantity ||
+              0) + quantity,
+          cart_key: itemKey,
+        }
+      );
+    }
+
+    localStorage.setItem(
+      userCartKey,
+      JSON.stringify(
+        Array.from(
+          mergedItems.values()
+        )
+      )
+    );
+
+    localStorage.removeItem(
+      guestCartKey
+    );
+
+    window.dispatchEvent(
+      new Event("cartUpdated")
+    );
+  } catch {
+    // Keep the guest cart intact if browser storage is unavailable or malformed.
+  }
+}
+
 export function addToCart(
   item: Omit<
     CartItem,
