@@ -327,9 +327,10 @@ export default function AdminConcernsPage() {
       </div>
 
       <p className="mx-auto mb-6 max-w-5xl text-sm text-gray-600">
-        Concerns power the &quot;Shop by concern&quot; row on the homepage
-        (e.g. Acne, Dryness). Each concern needs a name in both languages, an
-        image, and at least one linked product to appear on the homepage.
+        Concerns power the &quot;Shop by need&quot; row on the homepage
+        (e.g. Acne, Dandruff, or a broader need like Hair Care). Each
+        concern needs a name in both languages, an image, and at least
+        one linked product to appear on the homepage.
       </p>
 
       <form
