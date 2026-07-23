@@ -76,7 +76,7 @@ export default function CategoryShowcase({
 
             const href = `/products?ids=${concern.productIds.join(
               ","
-            )}&label=${encodeURIComponent(label)}`;
+            )}&label=${encodeURIComponent(label)}&concern=${concern.id}`;
 
             return (
               <Link

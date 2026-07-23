@@ -21,6 +21,7 @@ import "rc-slider/assets/index.css";
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 import EditorialProductCard from "./EditorialProductCard";
+import NewArrivalsBanner from "../NewArrivalsBanner";
 import type {
   EditorialProduct,
 } from "./EditorialProductCard";
@@ -31,6 +32,14 @@ type ProductsClientProps = {
   showCategories?: boolean;
   bestSellerIds?: number[];
   showHeader?: boolean;
+  concern?: {
+    id: number;
+    name_ar: string | null;
+    name_en: string | null;
+    description_ar: string | null;
+    description_en: string | null;
+    image_url: string | null;
+  } | null;
 };
 
 function parseCategoryId(value: string | null) {
@@ -62,6 +71,7 @@ export default function ProductsClient({
   showCategories = true,
   showHeader = true,
   bestSellerIds = [],
+  concern = null,
 }: ProductsClientProps) {
   const searchParams = useSearchParams();
   const { lang } = useLanguage();
@@ -86,6 +96,12 @@ export default function ProductsClient({
   );
   const collectionLabel =
     searchParams.get("label") || "";
+
+  const activeConcernName = concern
+    ? isArabic
+      ? concern.name_ar || concern.name_en
+      : concern.name_en || concern.name_ar
+    : null;
 
   const [filtersOpen, setFiltersOpen] =
     useState(false);
@@ -601,11 +617,25 @@ export default function ProductsClient({
         ]);
 
       return (
-        <div
+        <>
+          {concern && activeConcernName && (
+            <NewArrivalsBanner
+              banner={{
+                image_url: concern.image_url,
+                title_ar: concern.name_ar,
+                title_en: concern.name_en,
+                text_ar: concern.description_ar,
+                text_en: concern.description_en,
+              }}
+              pageType="concern"
+            />
+          )}
+
+          <div
           dir={isArabic ? "rtl" : "ltr"}
           className="mx-auto w-full max-w-[1720px] px-4 pb-10 pt-8 sm:px-6 sm:pt-10 lg:px-8"
         >
-          {showHeader && (
+          {showHeader && !activeConcernName && (
             <header
               className={`border-b border-[#e7ebe8] pb-8 sm:pb-10 ${
                 isArabic
@@ -1148,5 +1178,6 @@ export default function ProductsClient({
         </div>
       )}
     </div>
+    </>
   );
 }

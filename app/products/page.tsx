@@ -88,10 +88,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    concern?: string;
+  }>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const concernId = resolvedSearchParams?.concern;
+
   const [
     productsResult,
     orderItemsResult,
+    concernResult,
   ] = await Promise.all([
     supabase
       .from("products")
@@ -116,7 +126,26 @@ export default async function ProductsPage() {
       .select(
         "product_id, quantity"
       ),
+
+    concernId
+      ? supabase
+          .from("concerns")
+          .select(
+            "id, name_ar, name_en, description_ar, description_en, image_url"
+          )
+          .eq("id", concernId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
+
+  if (concernResult.error) {
+    console.error(
+      "Failed to load concern:",
+      concernResult.error
+    );
+  }
+
+  const concern = concernResult.data;
 
   if (productsResult.error) {
     console.error(
@@ -216,6 +245,7 @@ export default async function ProductsPage() {
   bestSellerIds={
     bestSellerIds
   }
+  concern={concern}
 />
         </Suspense>
       )}

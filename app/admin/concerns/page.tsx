@@ -9,6 +9,8 @@ type Concern = {
   id: number;
   name_ar: string;
   name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
   image_url: string | null;
   sort_order: number;
 };
@@ -31,6 +33,8 @@ export default function AdminConcernsPage() {
 
   const [nameAr, setNameAr] = useState("");
   const [nameEn, setNameEn] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,6 +42,8 @@ export default function AdminConcernsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editNameAr, setEditNameAr] = useState("");
   const [editNameEn, setEditNameEn] = useState("");
+  const [editDescriptionAr, setEditDescriptionAr] = useState("");
+  const [editDescriptionEn, setEditDescriptionEn] = useState("");
   const [editSortOrder, setEditSortOrder] = useState("0");
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
 
@@ -146,6 +152,8 @@ export default function AdminConcernsPage() {
       const { error } = await supabase.from("concerns").insert({
         name_ar: nameAr.trim(),
         name_en: nameEn.trim(),
+        description_ar: descriptionAr.trim() || null,
+        description_en: descriptionEn.trim() || null,
         image_url: imageUrl,
         sort_order: Number(sortOrder) || 0,
       });
@@ -157,6 +165,8 @@ export default function AdminConcernsPage() {
 
       setNameAr("");
       setNameEn("");
+      setDescriptionAr("");
+      setDescriptionEn("");
       setSortOrder("0");
       setImageFile(null);
       await loadAll();
@@ -173,6 +183,8 @@ export default function AdminConcernsPage() {
     setEditingId(concern.id);
     setEditNameAr(concern.name_ar);
     setEditNameEn(concern.name_en);
+    setEditDescriptionAr(concern.description_ar || "");
+    setEditDescriptionEn(concern.description_en || "");
     setEditSortOrder(String(concern.sort_order ?? 0));
     setEditImageFile(null);
   }
@@ -193,6 +205,8 @@ export default function AdminConcernsPage() {
         .update({
           name_ar: editNameAr.trim(),
           name_en: editNameEn.trim(),
+          description_ar: editDescriptionAr.trim() || null,
+          description_en: editDescriptionEn.trim() || null,
           sort_order: Number(editSortOrder) || 0,
           ...(imageUrl ? { image_url: imageUrl } : {}),
         })
@@ -359,6 +373,24 @@ export default function AdminConcernsPage() {
           className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
         />
 
+        <textarea
+          placeholder="Description Arabic (shown on the concern page, optional)"
+          value={descriptionAr}
+          onChange={(e) => setDescriptionAr(e.target.value)}
+          dir="rtl"
+          rows={3}
+          className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+        />
+
+        <textarea
+          placeholder="Description English (shown on the concern page, optional)"
+          value={descriptionEn}
+          onChange={(e) => setDescriptionEn(e.target.value)}
+          dir="ltr"
+          rows={3}
+          className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+        />
+
         <input
           type="number"
           placeholder="Sort order (0 = first)"
@@ -484,6 +516,24 @@ export default function AdminConcernsPage() {
               onChange={(e) => setEditNameEn(e.target.value)}
               placeholder="Concern name English"
               dir="ltr"
+              className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+            />
+
+            <textarea
+              value={editDescriptionAr}
+              onChange={(e) => setEditDescriptionAr(e.target.value)}
+              placeholder="Description Arabic"
+              dir="rtl"
+              rows={3}
+              className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+            />
+
+            <textarea
+              value={editDescriptionEn}
+              onChange={(e) => setEditDescriptionEn(e.target.value)}
+              placeholder="Description English"
+              dir="ltr"
+              rows={3}
               className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
             />
 

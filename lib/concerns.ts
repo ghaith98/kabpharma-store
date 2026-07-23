@@ -2,6 +2,8 @@ export type ConcernSource = {
   id: number;
   name_ar?: string | null;
   name_en?: string | null;
+  description_ar?: string | null;
+  description_en?: string | null;
   image_url?: string | null;
   sort_order?: number | null;
 };

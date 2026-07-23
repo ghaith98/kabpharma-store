@@ -120,7 +120,8 @@ export default function NewArrivalsBanner({
     | null;
   pageType?:
     | "new-arrivals"
-    | "best-sellers";
+    | "best-sellers"
+    | "concern";
   useBannerCopy?: boolean;
 }) {
   const { lang } =
@@ -141,23 +142,30 @@ export default function NewArrivalsBanner({
   const isBestSellers =
     pageType === "best-sellers";
 
+  const isConcern =
+    pageType === "concern";
+
   const defaultTitle =
-    isArabic
-      ? isBestSellers
-        ? "الأكثر مبيعاً"
-        : "وصل حديثاً"
-      : isBestSellers
-        ? "Best Sellers"
-        : "New Arrivals";
+    isConcern
+      ? ""
+      : isArabic
+        ? isBestSellers
+          ? "الأكثر مبيعاً"
+          : "وصل حديثاً"
+        : isBestSellers
+          ? "Best Sellers"
+          : "New Arrivals";
 
   const defaultDescription =
-    isArabic
-      ? isBestSellers
-        ? "اكتشفي منتجات KAB Pharma الأكثر طلباً والمفضلة لدى عملائنا."
-        : "اكتشفي أحدث منتجات KAB Pharma للعناية بالبشرة والشعر والجسم."
-      : isBestSellers
-        ? "Discover the KAB Pharma products most loved and ordered by our customers."
-        : "Discover the latest KAB Pharma products for skin, hair, and body care.";
+    isConcern
+      ? ""
+      : isArabic
+        ? isBestSellers
+          ? "اكتشفي منتجات KAB Pharma الأكثر طلباً والمفضلة لدى عملائنا."
+          : "اكتشفي أحدث منتجات KAB Pharma للعناية بالبشرة والشعر والجسم."
+        : isBestSellers
+          ? "Discover the KAB Pharma products most loved and ordered by our customers."
+          : "Discover the latest KAB Pharma products for skin, hair, and body care.";
 
   const title = useBannerCopy
     ? isArabic
@@ -287,13 +295,15 @@ export default function NewArrivalsBanner({
           aria-current="page"
           className="font-bold text-[#26352d]"
         >
-          {isArabic
-            ? isBestSellers
-              ? "الأكثر مبيعاً"
-              : "وصل حديثاً"
-            : isBestSellers
-              ? "Best Sellers"
-              : "New Arrivals"}
+          {isConcern
+            ? title
+            : isArabic
+              ? isBestSellers
+                ? "الأكثر مبيعاً"
+                : "وصل حديثاً"
+              : isBestSellers
+                ? "Best Sellers"
+                : "New Arrivals"}
         </span>
       </nav>
     );
