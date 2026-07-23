@@ -41,6 +41,21 @@ function parseCategoryId(value: string | null) {
     : null;
 }
 
+function parseIdsParam(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const ids = value
+    .split(",")
+    .map((part) => Number(part.trim()))
+    .filter(
+      (id) => Number.isFinite(id) && id > 0
+    );
+
+  return ids.length > 0 ? new Set(ids) : null;
+}
+
 export default function ProductsClient({
   products,
   showSearch = false,
@@ -65,6 +80,11 @@ export default function ProductsClient({
   const selectedCategoryId = parseCategoryId(
     searchParams.get("category")
   );
+  const selectedIds = parseIdsParam(
+    searchParams.get("ids")
+  );
+  const collectionLabel =
+    searchParams.get("label") || "";
 
   const [filtersOpen, setFiltersOpen] =
     useState(false);
@@ -356,6 +376,12 @@ export default function ProductsClient({
               ) ===
                 selectedCategoryId;
 
+            const matchesIds =
+              selectedIds === null ||
+              selectedIds.has(
+                Number(product.id)
+              );
+
             const matchesPrice =
               finalPrice >=
                 priceRange[0] &&
@@ -376,6 +402,7 @@ export default function ProductsClient({
             return (
               matchesSearch &&
               matchesCategory &&
+              matchesIds &&
               matchesPrice &&
               matchesStock &&
               matchesSale
@@ -433,6 +460,7 @@ export default function ProductsClient({
           search,
           isArabic,
           selectedCategoryId,
+          selectedIds,
           priceRange,
           inStockOnly,
           onSaleOnly,
@@ -473,13 +501,18 @@ export default function ProductsClient({
                         : "tracking-[-0.04em]"
                     }`}
                   >
-                    {isArabic
-                      ? "اكتشف منتجاتنا"
-                      : "Discover our products"}
+                    {collectionLabel ||
+                      (isArabic
+                        ? "اكتشف منتجاتنا"
+                        : "Discover our products")}
                   </h1>
 
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
-                    {isArabic
+                    {collectionLabel
+                      ? isArabic
+                        ? `منتجات مختارة لـ${collectionLabel}.`
+                        : `Products selected for ${collectionLabel}.`
+                      : isArabic
                       ? "منتجات مختارة للعناية اليومية بالبشرة والجسم والشعر."
                       : "Explore skincare, body care and personal care products selected for your everyday routine."}
                   </p>

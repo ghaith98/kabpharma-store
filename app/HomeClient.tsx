@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import ProductSwiper from "./ProductSwiper";
 import HomeBannerSwiper from "./HomeBannerSwiper";
+import CategoryShowcase from "./CategoryShowcase";
 
 import type {
   HomeBanner,
@@ -12,6 +13,10 @@ import type {
 import type {
   ProductCardProduct,
 } from "./products/ProductCard";
+
+import type {
+  ConcernWithProducts,
+} from "@/lib/concerns";
 
 import { useLanguage } from "../context/LanguageContext";
 
@@ -116,6 +121,8 @@ type HomeClientProps = {
   topSellerIds: number[];
 
   banners: HomeBanner[];
+
+  concerns: ConcernWithProducts[];
 };
 
 export default function HomeClient({
@@ -124,6 +131,7 @@ export default function HomeClient({
   topSellerProducts,
   topSellerIds,
   banners,
+  concerns,
 }: HomeClientProps) {
   const { lang } =
     useLanguage();
@@ -210,14 +218,14 @@ export default function HomeClient({
         viewAllHref="/best-sellers"
       />
 
-      {topSellerProducts.length >
-        0 &&
-        featuredProducts.length >
-          0 && (
-          <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-            <div className="h-px bg-[#edf0ed]" />
-          </div>
-        )}
+      <CategoryShowcase
+        concerns={
+          concerns
+        }
+        lang={
+          currentLang
+        }
+      />
 
       <ProductSection
         title={

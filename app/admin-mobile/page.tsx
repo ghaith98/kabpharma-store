@@ -280,6 +280,11 @@ export default function AdminMobilePage() {
       icon: "🏷️",
     },
     {
+      href: "/admin/concerns?mobile=1",
+      title: "Concerns",
+      icon: "🎯",
+    },
+    {
       href: "/admin/banners?mobile=1",
       title: "Banners",
       icon: "🖼️",

@@ -123,6 +123,15 @@ img {
   max-width: 100%;
 }
 
+.kab-hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.kab-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background: #cde9d9;
   color: #073f2c;
