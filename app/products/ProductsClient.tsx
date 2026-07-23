@@ -61,6 +61,7 @@ export default function ProductsClient({
   showSearch = false,
   showCategories = true,
   showHeader = true,
+  bestSellerIds = [],
 }: ProductsClientProps) {
   const searchParams = useSearchParams();
   const { lang } = useLanguage();
@@ -123,6 +124,7 @@ export default function ProductsClient({
     updates: {
       search?: string | null;
       categoryId?: number | null;
+      clearCollection?: boolean;
     }
   ) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -143,6 +145,11 @@ export default function ProductsClient({
       } else {
         params.delete("category");
       }
+    }
+
+    if (updates.clearCollection) {
+      params.delete("ids");
+      params.delete("label");
     }
 
     const queryString = params.toString();
@@ -312,6 +319,103 @@ export default function ProductsClient({
       ? 1
       : 0);
 
+  const sortLabels: Record<string, { ar: string; en: string }> = {
+    bestsellers: {
+      ar: "الأكثر مبيعاً أولاً",
+      en: "Bestsellers first",
+    },
+    newest: {
+      ar: "الأحدث أولاً",
+      en: "Newest first",
+    },
+    price_low: {
+      ar: "السعر: الأقل أولاً",
+      en: "Price: low to high",
+    },
+    price_high: {
+      ar: "السعر: الأعلى أولاً",
+      en: "Price: high to low",
+    },
+  };
+
+  const selectedCategory = categories.find(
+    (category) => category.id === selectedCategoryId
+  );
+
+  const selectedCategoryLabel = selectedCategory
+    ? isArabic
+      ? selectedCategory.name_ar ||
+        selectedCategory.name ||
+        selectedCategory.name_en
+      : selectedCategory.name_en ||
+        selectedCategory.name ||
+        selectedCategory.name_ar
+    : null;
+
+  type FilterChip = {
+    key: string;
+    label: string;
+    onRemove: () => void;
+  };
+
+  const filterChips: FilterChip[] = [];
+
+  if (collectionLabel) {
+    filterChips.push({
+      key: "collection",
+      label: collectionLabel,
+      onRemove: () =>
+        replaceProductParams({ clearCollection: true }),
+    });
+  }
+
+  if (selectedCategoryLabel) {
+    filterChips.push({
+      key: "category",
+      label: selectedCategoryLabel,
+      onRemove: () =>
+        replaceProductParams({ categoryId: null }),
+    });
+  }
+
+  if (
+    priceRange[0] > 0 ||
+    priceRange[1] < maxProductPrice
+  ) {
+    filterChips.push({
+      key: "price",
+      label: `${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}`,
+      onRemove: () =>
+        setPriceRange([0, maxProductPrice]),
+    });
+  }
+
+  if (inStockOnly) {
+    filterChips.push({
+      key: "stock",
+      label: isArabic ? "متوفر فقط" : "In stock only",
+      onRemove: () => setInStockOnly(false),
+    });
+  }
+
+  if (onSaleOnly) {
+    filterChips.push({
+      key: "sale",
+      label: isArabic ? "عليه تخفيض" : "On sale",
+      onRemove: () => setOnSaleOnly(false),
+    });
+  }
+
+  if (sortBy !== "default" && sortLabels[sortBy]) {
+    filterChips.push({
+      key: "sort",
+      label: isArabic
+        ? sortLabels[sortBy].ar
+        : sortLabels[sortBy].en,
+      onRemove: () => setSortBy("default"),
+    });
+  }
+
     const filteredProducts =
       useMemo(() => {
         const cleanSearch = search
@@ -414,6 +518,34 @@ export default function ProductsClient({
               secondProduct
             ) => {
               if (
+                sortBy === "bestsellers"
+              ) {
+                const firstRank =
+                  bestSellerIds.indexOf(
+                    Number(firstProduct.id)
+                  );
+
+                const secondRank =
+                  bestSellerIds.indexOf(
+                    Number(secondProduct.id)
+                  );
+
+                const firstScore =
+                  firstRank === -1
+                    ? Number.MAX_SAFE_INTEGER
+                    : firstRank;
+
+                const secondScore =
+                  secondRank === -1
+                    ? Number.MAX_SAFE_INTEGER
+                    : secondRank;
+
+                return (
+                  firstScore - secondScore
+                );
+              }
+
+              if (
                 sortBy === "price_low"
               ) {
                 return (
@@ -465,6 +597,7 @@ export default function ProductsClient({
           inStockOnly,
           onSaleOnly,
           sortBy,
+          bestSellerIds,
         ]);
 
       return (
@@ -611,6 +744,28 @@ export default function ProductsClient({
     </button>
   </div>
         </div>
+
+        {filterChips.length > 0 && (
+          <div
+            dir={isArabic ? "rtl" : "ltr"}
+            className="mb-6 flex flex-wrap gap-2"
+          >
+            {filterChips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={chip.onRemove}
+                className="group flex items-center gap-2 rounded-full border border-[#dfe4e0] bg-white py-2 pl-3 pr-2 text-xs font-bold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0]"
+              >
+                <span>{chip.label}</span>
+
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#edf0ed] text-[10px] text-[#647168] transition group-hover:bg-[#0a583b] group-hover:text-white">
+                  ✕
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {filteredProducts.length ===
         0 ? (
@@ -934,6 +1089,12 @@ export default function ProductsClient({
                       {isArabic
                         ? "الترتيب الافتراضي"
                         : "Default"}
+                    </option>
+
+                    <option value="bestsellers">
+                      {isArabic
+                        ? "الأكثر مبيعاً أولاً"
+                        : "Bestsellers first"}
                     </option>
 
                     <option value="newest">
