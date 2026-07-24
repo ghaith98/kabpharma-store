@@ -63,43 +63,37 @@ export async function POST(request: Request) {
       );
     }
 
-    const accountResult =
-      role === "driver"
-        ? await supabaseAdmin
-            .from("delivery_drivers")
-            .select("id, name, is_active")
-            .eq("name", identifier)
-            .eq("password", password)
-            .eq("is_active", true)
-            .is("deleted_at", null)
-            .maybeSingle()
-        : await supabaseAdmin
-            .from("delivery_companies")
-            .select("id, company_name, is_active")
-            .eq("username", identifier)
-            .eq("password", password)
-            .eq("is_active", true)
-            .maybeSingle();
+    // Password is verified against its bcrypt hash inside the database
+    // (verify_staff_login). We never receive or compare the stored hash here.
+    const { data: accounts, error: loginError } =
+      await supabaseAdmin.rpc("verify_staff_login", {
+        p_role: role,
+        p_identifier: identifier,
+        p_password: password,
+      });
 
-    if (accountResult.error || !accountResult.data) {
+    if (loginError) {
+      console.error(
+        "Staff login verification failed:",
+        loginError
+      );
+      return jsonError("Could not sign in", 500);
+    }
+
+    const account = Array.isArray(accounts)
+      ? accounts[0]
+      : null;
+
+    if (!account) {
       return jsonError("Invalid credentials", 401);
     }
 
-    const accountId = Number(accountResult.data.id);
-    const displayName =
-      role === "driver"
-        ? String(
-            "name" in accountResult.data
-              ? accountResult.data.name
-              : ""
-          ).trim()
-        : String(
-            "company_name" in accountResult.data
-              ? accountResult.data.company_name
-              : ""
-          ).trim();
+    const accountId = String(account.id);
+    const displayName = String(
+      account.display_name || ""
+    ).trim();
 
-    if (!Number.isInteger(accountId) || !displayName) {
+    if (!accountId || !displayName) {
       return jsonError("Invalid staff account", 500);
     }
 

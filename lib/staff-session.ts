@@ -8,7 +8,7 @@ export const STAFF_SESSION_COOKIE =
 
 export type StaffSession = {
   role: "driver" | "delivery_company";
-  accountId: number;
+  accountId: string;
   displayName: string;
 };
 
@@ -52,7 +52,10 @@ export async function verifyStaffSessionToken(
     );
 
     const role = payload.role;
-    const accountId = Number(payload.accountId);
+    const accountId =
+      typeof payload.accountId === "string"
+        ? payload.accountId
+        : String(payload.accountId ?? "");
     const displayName =
       typeof payload.displayName === "string"
         ? payload.displayName.trim()
@@ -61,8 +64,8 @@ export async function verifyStaffSessionToken(
     if (
       (role !== "driver" &&
         role !== "delivery_company") ||
-      !Number.isInteger(accountId) ||
-      accountId <= 0 ||
+      !accountId ||
+      accountId.length > 100 ||
       !displayName ||
       displayName.length > 150
     ) {

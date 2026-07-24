@@ -366,9 +366,10 @@ export default function HomeBannerSwiper({
                     ? "rtl"
                     : "ltr"
                 }
-                className="relative h-[calc(100svh-150px)] min-h-[520px] max-h-[600px] w-full overflow-hidden bg-[#f6f6f3] md:h-auto md:min-h-[560px] md:max-h-none lg:min-h-[620px]"
+                className="relative w-full overflow-hidden bg-white md:min-h-[560px] md:bg-[#f6f6f3] lg:min-h-[620px]"
               >
-                <picture className="absolute inset-0 block h-full w-full overflow-hidden">
+                <div className="relative h-[400px] w-full overflow-hidden bg-[#f6f6f3] md:absolute md:inset-0 md:h-full md:min-h-[560px] md:max-h-none">
+                  <picture className="absolute inset-0 block h-full w-full overflow-hidden">
                   <source
                     media="(min-width: 768px)"
                     srcSet={desktopSrcSet}
@@ -392,35 +393,26 @@ export default function HomeBannerSwiper({
                     style={cropVariables}
                     className="kab-home-banner-image absolute inset-0 h-full w-full select-none object-cover will-change-transform"
                   />
-                </picture>
+                  </picture>
 
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/35 via-transparent to-transparent md:bg-gradient-to-r md:from-white/25 md:via-transparent md:to-transparent" />
+                  <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-white/25 via-transparent to-transparent md:block" />
+                </div>
 
-                <div className="relative z-10 mx-auto flex h-full w-full max-w-[1440px] items-start px-5 pb-8 pt-7 sm:px-8 md:h-auto md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
+                <div className="relative z-10 mx-auto flex min-h-[308px] w-full max-w-[1440px] px-5 py-8 sm:px-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
                   <div
                     dir={
                       isArabic
                         ? "rtl"
                         : "ltr"
                     }
-                    className={`w-full max-w-[490px] md:ml-0 md:mr-auto md:w-[46%] ${
+                    className={`flex min-h-[244px] w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
                       isArabic
                         ? "text-right"
                         : "text-left"
                     }`}
                   >
-                    <p
-                      className={`text-[11px] font-extrabold uppercase text-[#0a583b] sm:text-xs ${
-                        isArabic
-                          ? "tracking-normal"
-                          : "tracking-[0.22em]"
-                      }`}
-                    >
-                      KAB Pharma
-                    </p>
-
                     <h1
-                      className={`mt-3 max-w-[440px] text-[32px] font-extrabold leading-[1.2] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px] ${
+                      className={`max-w-[440px] text-[30px] font-extrabold leading-[1.18] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px] ${
                         isArabic
                           ? "tracking-normal [font-family:var(--font-arabic)]"
                           : "leading-[1.08] tracking-[-0.035em]"
@@ -440,7 +432,7 @@ export default function HomeBannerSwiper({
                         slide.link_url ||
                         "/products"
                       }
-                      className="mt-6 inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg"
+                      className="mt-auto inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-[#073f2c] hover:shadow-lg sm:w-auto md:mt-6"
                     >
                       <span>
                         {buttonText}
@@ -499,4 +491,3 @@ export default function HomeBannerSwiper({
     </Swiper>
   );
 }
-

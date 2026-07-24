@@ -139,6 +139,13 @@ export default function HomeClient({
   const currentLang =
     lang as "en" | "ar";
 
+  const bestSellerProducts =
+    topSellerProducts.length > 0
+      ? topSellerProducts
+      : featuredProducts.length > 0
+        ? featuredProducts
+        : newProducts;
+
   const text = {
     en: {
       topSellers:
@@ -194,8 +201,17 @@ export default function HomeClient({
         viewAllHref="/new-arrivals"
       />
 
+      <CategoryShowcase
+        concerns={
+          concerns
+        }
+        lang={
+          currentLang
+        }
+      />
+
       {newProducts.length > 0 &&
-        topSellerProducts.length >
+        bestSellerProducts.length >
           0 && (
           <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
             <div className="h-px bg-[#edf0ed]" />
@@ -207,7 +223,7 @@ export default function HomeClient({
           t.topSellers
         }
         products={
-          topSellerProducts
+          bestSellerProducts
         }
         bestSellerIds={
           topSellerIds
@@ -216,15 +232,6 @@ export default function HomeClient({
           currentLang
         }
         viewAllHref="/best-sellers"
-      />
-
-      <CategoryShowcase
-        concerns={
-          concerns
-        }
-        lang={
-          currentLang
-        }
       />
 
       <ProductSection
@@ -243,4 +250,3 @@ export default function HomeClient({
     </main>
   );
 }
-

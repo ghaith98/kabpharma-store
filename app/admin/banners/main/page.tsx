@@ -31,6 +31,21 @@ type BannerCropDraft = {
   mobile: CropSettings;
 };
 
+type BannerEditDraft = {
+  titleAr: string;
+  titleEn: string;
+  textAr: string;
+  textEn: string;
+  buttonTextAr: string;
+  buttonTextEn: string;
+  linkUrl: string;
+};
+
+type BannerEditFiles = {
+  desktop: File | null;
+  mobile: File | null;
+};
+
 type CropProperty =
   keyof CropSettings;
 
@@ -77,6 +92,52 @@ const DEFAULT_CROP: CropSettings = {
   y: 50,
   zoom: 1,
 };
+
+async function getImageDimensions(
+  file: File
+) {
+  return new Promise<{
+    width: number;
+    height: number;
+  }>((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      resolve({
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not read the selected image."));
+    };
+
+    image.src = objectUrl;
+  });
+}
+
+async function validateMobileBannerImage(
+  file: File
+) {
+  const {
+    width,
+    height,
+  } = await getImageDimensions(file);
+
+  if (
+    width !== height ||
+    width < 800
+  ) {
+    throw new Error(
+      `Mobile banner must be a square image of at least 800 × 800 px. Selected image is ${width} × ${height} px.`
+    );
+  }
+}
 
 function clamp(
   value: unknown,
@@ -177,6 +238,20 @@ function getBannerCropDraft(
   };
 }
 
+function getBannerEditDraft(
+  banner: BannerRecord
+): BannerEditDraft {
+  return {
+    titleAr: banner.title_ar || "",
+    titleEn: banner.title_en || banner.title || "",
+    textAr: banner.text_ar || "",
+    textEn: banner.text_en || banner.text || "",
+    buttonTextAr: banner.button_text_ar || "تسوق الآن",
+    buttonTextEn: banner.button_text || "Shop now",
+    linkUrl: banner.link_url || "/products",
+  };
+}
+
 function useFilePreview(
   file: File | null
 ) {
@@ -238,7 +313,7 @@ function CropPreview({
       className={`relative overflow-hidden rounded-2xl bg-[#eef1ee] ${
         mode === "desktop"
           ? "aspect-[1600/620] w-full"
-          : "mx-auto aspect-[393/680] w-full max-w-[330px]"
+          : "mx-auto aspect-square w-full max-w-[330px]"
       }`}
     >
       {imageUrl ? (
@@ -540,12 +615,39 @@ export default function AdminMainBannersPage() {
   >({});
 
   const [
+    editDrafts,
+    setEditDrafts,
+  ] = useState<
+    Record<
+      number,
+      BannerEditDraft
+    >
+  >({});
+
+  const [
+    editFiles,
+    setEditFiles,
+  ] = useState<
+    Record<
+      number,
+      BannerEditFiles
+    >
+  >({});
+
+  const [
     savingCropId,
     setSavingCropId,
   ] =
     useState<number | null>(
       null
     );
+
+  const [
+    savingEditId,
+    setSavingEditId,
+  ] = useState<number | null>(
+    null
+  );
 
   const [
     loading,
@@ -616,9 +718,30 @@ export default function AdminMainBannersPage() {
       }
     );
 
+    const contentDrafts: Record<
+      number,
+      BannerEditDraft
+    > = {};
+
+    loadedBanners.forEach(
+      (banner) => {
+        contentDrafts[
+          Number(banner.id)
+        ] = getBannerEditDraft(
+          banner
+        );
+      }
+    );
+
     setCropDrafts(
       drafts
     );
+
+    setEditDrafts(
+      contentDrafts
+    );
+
+    setEditFiles({});
   }, []);
 
   const checkAdmin = useCallback(async () => {
@@ -858,6 +981,20 @@ export default function AdminMainBannersPage() {
     ) {
       alert(
         "Please upload the mobile banner image"
+      );
+
+      return;
+    }
+
+    try {
+      await validateMobileBannerImage(
+        mobileImageFile
+      );
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Please select a square mobile image."
       );
 
       return;
@@ -1163,6 +1300,137 @@ export default function AdminMainBannersPage() {
     );
   }
 
+  function updateBannerEditDraft(
+    banner: BannerRecord,
+    property: keyof BannerEditDraft,
+    value: string
+  ) {
+    const bannerId = Number(banner.id);
+
+    setEditDrafts((current) => ({
+      ...current,
+      [bannerId]: {
+        ...(current[bannerId] ||
+          getBannerEditDraft(banner)),
+        [property]: value,
+      },
+    }));
+  }
+
+  function setBannerEditFile(
+    bannerId: number,
+    mode: CropMode,
+    file: File | null
+  ) {
+    setEditFiles((current) => ({
+      ...current,
+      [bannerId]: {
+        desktop: current[bannerId]?.desktop || null,
+        mobile: current[bannerId]?.mobile || null,
+        [mode]: file,
+      },
+    }));
+  }
+
+  async function saveBannerEdit(
+    banner: BannerRecord
+  ) {
+    const bannerId = Number(banner.id);
+    const draft =
+      editDrafts[bannerId] ||
+      getBannerEditDraft(banner);
+    const files = editFiles[bannerId];
+
+    if (files?.mobile) {
+      try {
+        await validateMobileBannerImage(
+          files.mobile
+        );
+      } catch (error) {
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Please select a square mobile image."
+        );
+        return;
+      }
+    }
+
+    setSavingEditId(bannerId);
+
+    const newlyUploadedPaths: string[] = [];
+
+    try {
+      let desktopUrl = banner.image_url || "";
+      let mobileUrl = banner.image_url_mobile || "";
+
+      if (files?.desktop) {
+        const upload = await uploadBannerImage(
+          files.desktop,
+          "desktop"
+        );
+        desktopUrl = upload.publicUrl;
+        newlyUploadedPaths.push(upload.filePath);
+      }
+
+      if (files?.mobile) {
+        const upload = await uploadBannerImage(
+          files.mobile,
+          "mobile"
+        );
+        mobileUrl = upload.publicUrl;
+        newlyUploadedPaths.push(upload.filePath);
+      }
+
+      const { error } = await supabase
+        .from("home_banners")
+        .update({
+          image_url: desktopUrl,
+          image_url_mobile: mobileUrl,
+          title: draft.titleEn.trim() || draft.titleAr.trim(),
+          title_ar: draft.titleAr.trim(),
+          title_en: draft.titleEn.trim(),
+          text: draft.textEn.trim() || draft.textAr.trim(),
+          text_ar: draft.textAr.trim(),
+          text_en: draft.textEn.trim(),
+          button_text: draft.buttonTextEn.trim() || "Shop now",
+          button_text_ar:
+            draft.buttonTextAr.trim() || "تسوق الآن",
+          link_url: draft.linkUrl.trim() || "/products",
+        })
+        .eq("id", bannerId)
+        .eq("placement", BANNER_PLACEMENT);
+
+      if (error) {
+        throw error;
+      }
+
+      const replacedOldPaths = [
+        files?.desktop
+          ? getStoragePathFromPublicUrl(banner.image_url)
+          : null,
+        files?.mobile
+          ? getStoragePathFromPublicUrl(
+              banner.image_url_mobile
+            )
+          : null,
+      ].filter(Boolean) as string[];
+
+      await removeUploadedFiles(replacedOldPaths);
+      await loadBanners();
+      alert("Banner updated");
+    } catch (error) {
+      await removeUploadedFiles(newlyUploadedPaths);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Could not update this banner."
+      );
+    } finally {
+      setSavingEditId(null);
+    }
+  }
+
   async function toggleActive(
     banner: BannerRecord
   ) {
@@ -1440,7 +1708,7 @@ export default function AdminMainBannersPage() {
               </span>
 
               <p className="mt-1 text-xs leading-5 text-[#647168]">
-                Recommended size: 393 × 680 pixels.
+                Required: square image, at least 800 × 800 pixels.
               </p>
 
               <input
@@ -1499,7 +1767,7 @@ export default function AdminMainBannersPage() {
               {mobilePreviewUrl && (
                 <CropEditor
                   title="Mobile framing"
-                  description="This portrait preview matches the visible mobile banner."
+                  description="This square preview matches the visible mobile banner."
                   imageUrl={
                     mobilePreviewUrl
                   }
@@ -1578,9 +1846,22 @@ export default function AdminMainBannersPage() {
                     cropDrafts[
                       bannerId
                     ] ||
-                    getBannerCropDraft(
+                      getBannerCropDraft(
+                        banner
+                      );
+
+                  const editDraft =
+                    editDrafts[
+                      bannerId
+                    ] ||
+                    getBannerEditDraft(
                       banner
                     );
+
+                  const bannerEditFiles =
+                    editFiles[
+                      bannerId
+                    ];
 
                   return (
                     <article
@@ -1797,6 +2078,186 @@ export default function AdminMainBannersPage() {
                           </div>
                         </details>
 
+                        <details className="mt-4 rounded-2xl border border-[#e7ebe8] bg-white">
+                          <summary className="cursor-pointer px-5 py-4 font-extrabold text-[#0a583b]">
+                            Edit banner content and images
+                          </summary>
+
+                          <div className="border-t border-[#e7ebe8] p-5">
+                            <p className="mb-5 text-sm leading-6 text-[#647168]">
+                              Change any text, link, desktop image, or mobile image. Images are optional here—leave them empty to keep the current ones.
+                            </p>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <input
+                                type="text"
+                                placeholder="عنوان الإعلان بالعربي"
+                                value={editDraft.titleAr}
+                                onChange={(event) =>
+                                  updateBannerEditDraft(
+                                    banner,
+                                    "titleAr",
+                                    event.target.value
+                                  )
+                                }
+                                dir="rtl"
+                                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                              />
+
+                              <input
+                                type="text"
+                                placeholder="Campaign title"
+                                value={editDraft.titleEn}
+                                onChange={(event) =>
+                                  updateBannerEditDraft(
+                                    banner,
+                                    "titleEn",
+                                    event.target.value
+                                  )
+                                }
+                                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                              />
+
+                              <textarea
+                                placeholder="وصف مختصر للإعلان"
+                                value={editDraft.textAr}
+                                onChange={(event) =>
+                                  updateBannerEditDraft(
+                                    banner,
+                                    "textAr",
+                                    event.target.value
+                                  )
+                                }
+                                dir="rtl"
+                                className="min-h-28 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                              />
+
+                              <textarea
+                                placeholder="Short campaign description"
+                                value={editDraft.textEn}
+                                onChange={(event) =>
+                                  updateBannerEditDraft(
+                                    banner,
+                                    "textEn",
+                                    event.target.value
+                                  )
+                                }
+                                className="min-h-28 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                              />
+
+                              <input
+                                type="text"
+                                placeholder="تسوق الآن"
+                                value={editDraft.buttonTextAr}
+                                onChange={(event) =>
+                                  updateBannerEditDraft(
+                                    banner,
+                                    "buttonTextAr",
+                                    event.target.value
+                                  )
+                                }
+                                dir="rtl"
+                                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                              />
+
+                              <input
+                                type="text"
+                                placeholder="Shop now"
+                                value={editDraft.buttonTextEn}
+                                onChange={(event) =>
+                                  updateBannerEditDraft(
+                                    banner,
+                                    "buttonTextEn",
+                                    event.target.value
+                                  )
+                                }
+                                className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                              />
+                            </div>
+
+                            <input
+                              type="text"
+                              placeholder="/products/24"
+                              value={editDraft.linkUrl}
+                              onChange={(event) =>
+                                updateBannerEditDraft(
+                                  banner,
+                                  "linkUrl",
+                                  event.target.value
+                                )
+                              }
+                              className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                            />
+
+                            <div className="mt-5 grid gap-4 md:grid-cols-2">
+                              <label className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4">
+                                <span className="font-extrabold text-[#142019]">
+                                  Replace desktop image
+                                </span>
+                                <p className="mt-1 text-xs leading-5 text-[#647168]">
+                                  Optional · 1600 × 620 recommended.
+                                </p>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(event) =>
+                                    setBannerEditFile(
+                                      bannerId,
+                                      "desktop",
+                                      event.target.files?.[0] || null
+                                    )
+                                  }
+                                  className="mt-3 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-[#0a583b] file:px-3 file:py-2 file:font-extrabold file:text-white"
+                                />
+                                {bannerEditFiles?.desktop && (
+                                  <p className="mt-2 break-all text-xs font-bold text-[#0a583b]">
+                                    Selected: {bannerEditFiles.desktop.name}
+                                  </p>
+                                )}
+                              </label>
+
+                              <label className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4">
+                                <span className="font-extrabold text-[#142019]">
+                                  Replace mobile image
+                                </span>
+                                <p className="mt-1 text-xs leading-5 text-[#647168]">
+                                  Optional · square, at least 800 × 800.
+                                </p>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(event) =>
+                                    setBannerEditFile(
+                                      bannerId,
+                                      "mobile",
+                                      event.target.files?.[0] || null
+                                    )
+                                  }
+                                  className="mt-3 block w-full text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-[#0a583b] file:px-3 file:py-2 file:font-extrabold file:text-white"
+                                />
+                                {bannerEditFiles?.mobile && (
+                                  <p className="mt-2 break-all text-xs font-bold text-[#0a583b]">
+                                    Selected: {bannerEditFiles.mobile.name}
+                                  </p>
+                                )}
+                              </label>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                saveBannerEdit(banner)
+                              }
+                              disabled={savingEditId === bannerId}
+                              className="mt-5 rounded-xl bg-[#0a583b] px-5 py-3 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:bg-gray-400"
+                            >
+                              {savingEditId === bannerId
+                                ? "Saving..."
+                                : "Save all changes"}
+                            </button>
+                          </div>
+                        </details>
+
                         <p className="mt-5 break-all text-sm font-bold text-[#647168]">
                           Link:{" "}
                           {banner.link_url ||
@@ -1846,4 +2307,3 @@ export default function AdminMainBannersPage() {
     </main>
   );
 }
-
