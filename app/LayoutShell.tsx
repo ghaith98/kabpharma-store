@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import Footer from "./FooterComponent";
@@ -55,7 +57,9 @@ export default function LayoutShell({
 
   return (
     <>
-      <NavigationProgress />
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
 
       {shouldTrackPresence && (
         <OnlinePresenceTracker />
@@ -77,4 +81,3 @@ export default function LayoutShell({
     </>
   );
 }
-

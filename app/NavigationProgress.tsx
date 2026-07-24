@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const SHOW_DELAY_MS = 120;
 const SAFETY_TIMEOUT_MS = 10_000;
 
 export default function NavigationProgress() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [visible, setVisible] = useState(false);
   const showTimer = useRef<number | null>(null);
   const safetyTimer = useRef<number | null>(null);
@@ -28,7 +29,7 @@ export default function NavigationProgress() {
     }
 
     clearProgress();
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     function startProgress() {
@@ -80,7 +81,8 @@ export default function NavigationProgress() {
 
       if (
         destination.origin !== window.location.origin ||
-        destination.pathname === window.location.pathname ||
+        (destination.pathname === window.location.pathname &&
+          destination.search === window.location.search) ||
         destination.protocol !== window.location.protocol
       ) {
         return;
@@ -117,4 +119,3 @@ export default function NavigationProgress() {
     </div>
   );
 }
-
