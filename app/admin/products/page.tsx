@@ -25,6 +25,10 @@ type AdminProduct = {
   ingredients?: string | null;
   ingredients_ar?: string | null;
   ingredients_en?: string | null;
+  how_to_use_ar?: string | null;
+  how_to_use_en?: string | null;
+  warnings_ar?: string | null;
+  warnings_en?: string | null;
   price?: number | string | null;
   sale_percent?: number | string | null;
   image_url?: string | null;
@@ -82,6 +86,10 @@ type ProductUpdateData = {
   description_en: string;
   ingredients_ar: string;
   ingredients_en: string;
+  how_to_use_ar: string;
+  how_to_use_en: string;
+  warnings_ar: string;
+  warnings_en: string;
   category_id: number;
   price: number;
   sale_percent: number;
@@ -105,6 +113,10 @@ export default function AdminProductsPage() {
   const [descriptionEn, setDescriptionEn] = useState("");
   const [ingredientsAr, setIngredientsAr] = useState("");
   const [ingredientsEn, setIngredientsEn] = useState("");
+  const [howToUseAr, setHowToUseAr] = useState("");
+  const [howToUseEn, setHowToUseEn] = useState("");
+  const [warningsAr, setWarningsAr] = useState("");
+  const [warningsEn, setWarningsEn] = useState("");
 
   const [price, setPrice] = useState("");
   const [salePercent, setSalePercent] = useState("0");
@@ -130,6 +142,10 @@ export default function AdminProductsPage() {
   const [editDescriptionEn, setEditDescriptionEn] = useState("");
   const [editIngredientsAr, setEditIngredientsAr] = useState("");
   const [editIngredientsEn, setEditIngredientsEn] = useState("");
+  const [editHowToUseAr, setEditHowToUseAr] = useState("");
+  const [editHowToUseEn, setEditHowToUseEn] = useState("");
+  const [editWarningsAr, setEditWarningsAr] = useState("");
+  const [editWarningsEn, setEditWarningsEn] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editSalePercent, setEditSalePercent] = useState("0");
   const [editCategoryId, setEditCategoryId] = useState("");
@@ -451,6 +467,10 @@ export default function AdminProductsPage() {
           description_en: descriptionEn,
           ingredients_ar: ingredientsAr,
           ingredients_en: ingredientsEn,
+          how_to_use_ar: howToUseAr.trim() || null,
+          how_to_use_en: howToUseEn.trim() || null,
+          warnings_ar: warningsAr.trim() || null,
+          warnings_en: warningsEn.trim() || null,
 
           price: basePrice,
           sale_percent: Number(salePercent),
@@ -509,6 +529,10 @@ export default function AdminProductsPage() {
       setDescriptionEn("");
       setIngredientsAr("");
       setIngredientsEn("");
+      setHowToUseAr("");
+      setHowToUseEn("");
+      setWarningsAr("");
+      setWarningsEn("");
       setPrice("");
       setSalePercent("0");
       setCategoryId("");
@@ -540,6 +564,10 @@ export default function AdminProductsPage() {
 
     setEditIngredientsAr(product.ingredients_ar || "");
     setEditIngredientsEn(product.ingredients_en || product.ingredients || "");
+    setEditHowToUseAr(product.how_to_use_ar || "");
+    setEditHowToUseEn(product.how_to_use_en || "");
+    setEditWarningsAr(product.warnings_ar || "");
+    setEditWarningsEn(product.warnings_en || "");
 
     setEditCategoryId(String(product.category_id || ""));
     setEditPrice(String(product.price || ""));
@@ -650,6 +678,10 @@ export default function AdminProductsPage() {
         description_en: editDescriptionEn,
         ingredients_ar: editIngredientsAr,
         ingredients_en: editIngredientsEn,
+        how_to_use_ar: editHowToUseAr.trim(),
+        how_to_use_en: editHowToUseEn.trim(),
+        warnings_ar: editWarningsAr.trim(),
+        warnings_en: editWarningsEn.trim(),
 
         category_id: Number(editCategoryId),
         price: finalBasePrice,
@@ -1071,6 +1103,47 @@ export default function AdminProductsPage() {
             className="mt-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
           />
 
+          <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+            <h3 className="font-extrabold text-gray-900">
+              Optional product guidance
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Empty fields are completely hidden from the customer product page.
+            </p>
+
+            <textarea
+              placeholder="How to Use Arabic (optional)"
+              value={howToUseAr}
+              onChange={(e) => setHowToUseAr(e.target.value)}
+              dir="rtl"
+              className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+            />
+
+            <textarea
+              placeholder="How to Use English (optional)"
+              value={howToUseEn}
+              onChange={(e) => setHowToUseEn(e.target.value)}
+              dir="ltr"
+              className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+            />
+
+            <textarea
+              placeholder="Warnings Arabic (optional)"
+              value={warningsAr}
+              onChange={(e) => setWarningsAr(e.target.value)}
+              dir="rtl"
+              className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+            />
+
+            <textarea
+              placeholder="Warnings English (optional)"
+              value={warningsEn}
+              onChange={(e) => setWarningsEn(e.target.value)}
+              dir="ltr"
+              className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+            />
+          </div>
+
           <div className="mt-3 rounded-2xl border border-gray-200 bg-gray-50 p-4">
             <p className="mb-2 text-sm font-bold text-gray-600">
               Main Product Image — required only if there are no options.
@@ -1364,6 +1437,47 @@ export default function AdminProductsPage() {
               className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             />
 
+            <div className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+              <h3 className="font-extrabold text-gray-900">
+                Optional product guidance
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Leave any field empty to hide its section completely.
+              </p>
+
+              <textarea
+                value={editHowToUseAr}
+                onChange={(e) => setEditHowToUseAr(e.target.value)}
+                placeholder="How to Use Arabic (optional)"
+                dir="rtl"
+                className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+              />
+
+              <textarea
+                value={editHowToUseEn}
+                onChange={(e) => setEditHowToUseEn(e.target.value)}
+                placeholder="How to Use English (optional)"
+                dir="ltr"
+                className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+              />
+
+              <textarea
+                value={editWarningsAr}
+                onChange={(e) => setEditWarningsAr(e.target.value)}
+                placeholder="Warnings Arabic (optional)"
+                dir="rtl"
+                className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+              />
+
+              <textarea
+                value={editWarningsEn}
+                onChange={(e) => setEditWarningsEn(e.target.value)}
+                placeholder="Warnings English (optional)"
+                dir="ltr"
+                className="mt-3 w-full rounded-2xl border border-gray-200 bg-white p-4 text-black outline-none focus:border-green-600"
+              />
+            </div>
+
             <input
               type="number"
               value={editPrice}
@@ -1541,4 +1655,3 @@ export default function AdminProductsPage() {
     </main>
   );
 }
-
