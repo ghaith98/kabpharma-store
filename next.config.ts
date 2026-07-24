@@ -70,6 +70,18 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: "query",
+            key: "concern",
+            value: "(?<concernId>.+)",
+          },
+        ],
+        destination: "/shop-by-need/:concernId",
+        permanent: false,
+      },
+      {
+        source: "/products",
+        has: [
+          {
+            type: "query",
             key: "new",
             value: "1",
           },

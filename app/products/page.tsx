@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
@@ -89,19 +88,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function ProductsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    concern?: string;
-  }>;
-}) {
-  const resolvedSearchParams = await searchParams;
-  const concernId = resolvedSearchParams?.concern;
-
-  if (concernId) {
-    redirect(`/shop-by-need/${encodeURIComponent(concernId)}`);
-  }
+export default async function ProductsPage() {
 
   const [productsResult, orderItemsResult] = await Promise.all([
     supabase
@@ -232,4 +219,3 @@ export default async function ProductsPage({
     </main>
   );
 }
-
