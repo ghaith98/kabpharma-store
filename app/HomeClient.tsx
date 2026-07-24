@@ -62,7 +62,7 @@ function ProductSection({
           <h2
             className={`text-2xl font-extrabold text-[#142019] sm:text-3xl lg:text-[34px] ${
               lang === "ar"
-                ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                ? "tracking-normal [font-family:var(--font-arabic)]"
                 : "tracking-[-0.025em]"
             }`}
           >
@@ -243,3 +243,4 @@ export default function HomeClient({
     </main>
   );
 }
+

@@ -422,7 +422,7 @@ export default function HomeBannerSwiper({
                     <h1
                       className={`mt-3 max-w-[440px] text-[32px] font-extrabold leading-[1.2] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px] ${
                         isArabic
-                          ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                          ? "tracking-normal [font-family:var(--font-arabic)]"
                           : "leading-[1.08] tracking-[-0.035em]"
                       }`}
                     >
@@ -499,3 +499,4 @@ export default function HomeBannerSwiper({
     </Swiper>
   );
 }
+

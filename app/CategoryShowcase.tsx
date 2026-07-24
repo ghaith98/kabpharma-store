@@ -28,7 +28,6 @@ export default function CategoryShowcase({
     .filter(
       (concern) =>
         concern.image_url &&
-        concern.productIds.length > 0 &&
         labelFor(concern)
     )
     .slice(0, MAX_VISIBLE_CONCERNS);
@@ -56,7 +55,7 @@ export default function CategoryShowcase({
         <h2
           className={`font-extrabold text-[#142019] ${
             isArabic
-              ? "text-2xl [font-family:Tahoma,Arial,sans-serif] sm:text-[28px]"
+              ? "text-2xl [font-family:var(--font-arabic)] sm:text-[28px]"
               : "text-2xl tracking-[-0.02em] sm:text-[28px]"
           }`}
         >
@@ -74,9 +73,7 @@ export default function CategoryShowcase({
           {visibleConcerns.map((concern) => {
             const label = labelFor(concern) as string;
 
-            const href = `/products?ids=${concern.productIds.join(
-              ","
-            )}&label=${encodeURIComponent(label)}&concern=${concern.id}`;
+            const href = `/shop-by-need/${concern.id}`;
 
             return (
               <Link
@@ -110,3 +107,4 @@ export default function CategoryShowcase({
     </section>
   );
 }
+

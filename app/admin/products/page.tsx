@@ -1541,3 +1541,4 @@ export default function AdminProductsPage() {
     </main>
   );
 }
+

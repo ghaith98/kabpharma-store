@@ -285,7 +285,7 @@ export default function LoginPage() {
             <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-white/60">
               KAB Pharma
             </p>
-            <h2 className={isArabic ? "mt-8 text-[45px] font-extrabold leading-[1.25] [font-family:Tahoma,Arial,sans-serif]" : "mt-8 text-[58px] font-extrabold leading-[0.98] tracking-[-0.055em]"}>
+            <h2 className={isArabic ? "mt-8 text-[45px] font-extrabold leading-[1.25] [font-family:var(--font-arabic)]" : "mt-8 text-[58px] font-extrabold leading-[0.98] tracking-[-0.055em]"}>
               {t(
                 "Your care and orders, all in one place.",
                 "عنايتك وطلباتك، في مكان واحد."
@@ -317,7 +317,7 @@ export default function LoginPage() {
           {otpSent ? t("Verification", "التحقق") : t("Welcome back", "أهلاً بعودتك")}
         </p>
 
-        <h1 className={isArabic ? "mt-3 text-[34px] font-extrabold leading-[1.25] [font-family:Tahoma,Arial,sans-serif] sm:text-[40px]" : "mt-3 text-[40px] font-extrabold leading-[1.04] tracking-[-0.045em] sm:text-[46px]"}>
+        <h1 className={isArabic ? "mt-3 text-[34px] font-extrabold leading-[1.25] [font-family:var(--font-arabic)] sm:text-[40px]" : "mt-3 text-[40px] font-extrabold leading-[1.04] tracking-[-0.045em] sm:text-[46px]"}>
           {t("Sign In", "تسجيل الدخول")}
         </h1>
 
@@ -439,3 +439,4 @@ export default function LoginPage() {
     </main>
   );
 }
+

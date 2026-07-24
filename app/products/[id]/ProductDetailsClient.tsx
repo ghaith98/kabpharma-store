@@ -446,7 +446,7 @@ export default function ProductDetailsClient({
               : ""
           } break-words text-[28px] font-semibold text-[#142019] sm:text-4xl lg:text-[42px] ${
             isArabic
-              ? "leading-[1.35] tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+              ? "leading-[1.35] tracking-normal [font-family:var(--font-arabic)]"
               : "leading-[1.1] tracking-[-0.035em]"
           }`}
         >
@@ -457,7 +457,7 @@ export default function ProductDetailsClient({
           <p
             className={`mt-4 whitespace-pre-line text-sm text-[#536158] sm:text-[15px] ${
               isArabic
-                ? "leading-7 [font-family:Tahoma,Arial,sans-serif]"
+                ? "leading-7 [font-family:var(--font-arabic)]"
                 : "leading-7"
             }`}
           >

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
@@ -98,11 +99,11 @@ export default async function ProductsPage({
   const resolvedSearchParams = await searchParams;
   const concernId = resolvedSearchParams?.concern;
 
-  const [
-    productsResult,
-    orderItemsResult,
-    concernResult,
-  ] = await Promise.all([
+  if (concernId) {
+    redirect(`/shop-by-need/${encodeURIComponent(concernId)}`);
+  }
+
+  const [productsResult, orderItemsResult] = await Promise.all([
     supabase
       .from("products")
       .select(`
@@ -127,25 +128,7 @@ export default async function ProductsPage({
         "product_id, quantity"
       ),
 
-    concernId
-      ? supabase
-          .from("concerns")
-          .select(
-            "id, name_ar, name_en, description_ar, description_en, image_url"
-          )
-          .eq("id", concernId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
   ]);
-
-  if (concernResult.error) {
-    console.error(
-      "Failed to load concern:",
-      concernResult.error
-    );
-  }
-
-  const concern = concernResult.data;
 
   if (productsResult.error) {
     console.error(
@@ -240,15 +223,13 @@ export default async function ProductsPage({
             </div>
           }
         >
-         <ProductsClient
-  products={products}
-  bestSellerIds={
-    bestSellerIds
-  }
-  concern={concern}
-/>
+          <ProductsClient
+            products={products}
+            bestSellerIds={bestSellerIds}
+          />
         </Suspense>
       )}
     </main>
   );
 }
+

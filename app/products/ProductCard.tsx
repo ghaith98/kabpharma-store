@@ -281,7 +281,7 @@ export default function ProductCard({
           <p
             className={`min-h-4 truncate text-[9px] font-extrabold text-[#0a583b] sm:text-[10px] ${
               isArabic
-                ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                ? "tracking-normal [font-family:var(--font-arabic)]"
                 : "uppercase tracking-[0.12em]"
             }`}
           >

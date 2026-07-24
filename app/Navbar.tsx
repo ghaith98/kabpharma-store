@@ -604,7 +604,7 @@ const [
                       }
                       className={`min-w-0 flex-1 bg-transparent text-base font-medium text-[#142019] outline-none placeholder:text-[#98a39c] ${
                         isArabic
-                          ? "[font-family:Tahoma,Arial,sans-serif]"
+                          ? "[font-family:var(--font-arabic)]"
                           : ""
                       }`}
                     />
@@ -645,7 +645,7 @@ const [
 
   const linkClass = `group relative flex h-[74px] items-center whitespace-nowrap text-[12px] font-extrabold transition-colors duration-200 ${
     isArabic
-      ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+      ? "tracking-normal [font-family:var(--font-arabic)]"
       : "uppercase tracking-[0.1em]"
   } ${
     active
@@ -1544,3 +1544,4 @@ const [
     </>
   );
 }
+

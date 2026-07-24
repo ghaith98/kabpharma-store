@@ -215,7 +215,7 @@ export default function RefundPolicyPage() {
             <h1
               className={`mt-6 max-w-4xl font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-[38px] leading-[1.24] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[52px] lg:text-[66px]"
+                  ? "text-[38px] leading-[1.24] tracking-normal [font-family:var(--font-arabic)] sm:text-[52px] lg:text-[66px]"
                   : "text-[44px] leading-[0.98] tracking-[-0.055em] sm:text-[62px] lg:text-[78px]"
               }`}
             >
@@ -372,3 +372,4 @@ export default function RefundPolicyPage() {
     </main>
   );
 }
+

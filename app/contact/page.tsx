@@ -231,7 +231,7 @@ I need help regarding:
             <h1
               className={`mt-5 max-w-4xl font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-[40px] leading-[1.2] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[54px] lg:text-[68px]"
+                  ? "text-[40px] leading-[1.2] tracking-normal [font-family:var(--font-arabic)] sm:text-[54px] lg:text-[68px]"
                   : "text-[46px] leading-[0.98] tracking-[-0.055em] sm:text-[64px] lg:text-[82px]"
               }`}
             >
@@ -305,7 +305,7 @@ I need help regarding:
                   <h2
                     className={`mt-2 font-extrabold text-[#142019] ${
                       isArabic
-                        ? "text-lg leading-7 [font-family:Tahoma,Arial,sans-serif]"
+                        ? "text-lg leading-7 [font-family:var(--font-arabic)]"
                         : "text-xl leading-6 tracking-[-0.02em]"
                     }`}
                   >
@@ -370,7 +370,7 @@ I need help regarding:
               <h2
                 className={`mt-10 max-w-xl font-extrabold ${
                   isArabic
-                    ? "text-4xl leading-[1.3] [font-family:Tahoma,Arial,sans-serif]"
+                    ? "text-4xl leading-[1.3] [font-family:var(--font-arabic)]"
                     : "text-5xl leading-[1.02] tracking-[-0.04em]"
                 }`}
               >
@@ -536,3 +536,4 @@ I need help regarding:
     </main>
   );
 }
+

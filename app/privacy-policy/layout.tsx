@@ -17,3 +17,4 @@ export default function PrivacyPolicyLayout({
 }) {
   return children;
 }
+

@@ -32,6 +32,7 @@ type ProductsClientProps = {
   showCategories?: boolean;
   bestSellerIds?: number[];
   showHeader?: boolean;
+  standaloneCollection?: boolean;
   concern?: {
     id: number;
     name_ar: string | null;
@@ -39,6 +40,8 @@ type ProductsClientProps = {
     description_ar: string | null;
     description_en: string | null;
     image_url: string | null;
+    banner_image_url: string | null;
+    banner_image_url_mobile: string | null;
   } | null;
 };
 
@@ -71,6 +74,7 @@ export default function ProductsClient({
   showCategories = true,
   showHeader = true,
   bestSellerIds = [],
+  standaloneCollection = false,
   concern = null,
 }: ProductsClientProps) {
   const searchParams = useSearchParams();
@@ -87,15 +91,18 @@ export default function ProductsClient({
     );
   }, [products]);
 
-  const search = searchParams.get("search") || "";
-  const selectedCategoryId = parseCategoryId(
-    searchParams.get("category")
-  );
-  const selectedIds = parseIdsParam(
-    searchParams.get("ids")
-  );
-  const collectionLabel =
-    searchParams.get("label") || "";
+  const search = standaloneCollection
+    ? ""
+    : searchParams.get("search") || "";
+  const selectedCategoryId = standaloneCollection
+    ? null
+    : parseCategoryId(searchParams.get("category"));
+  const selectedIds = standaloneCollection
+    ? null
+    : parseIdsParam(searchParams.get("ids"));
+  const collectionLabel = standaloneCollection
+    ? ""
+    : searchParams.get("label") || "";
 
   const activeConcernName = concern
     ? isArabic
@@ -621,8 +628,13 @@ export default function ProductsClient({
           {concern && activeConcernName && (
             <NewArrivalsBanner
               banner={{
-                image_url: concern.image_url,
-                title_ar: concern.name_ar,
+                image_url:
+                  concern.banner_image_url || concern.image_url,
+                image_url_mobile:
+                  concern.banner_image_url_mobile ||
+                  concern.banner_image_url ||
+                  concern.image_url,
+            title_ar: concern.name_ar,
                 title_en: concern.name_en,
                 text_ar: concern.description_ar,
                 text_en: concern.description_en,
@@ -660,7 +672,7 @@ export default function ProductsClient({
                   <h1
                     className={`text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-5xl ${
                       isArabic
-                        ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                        ? "tracking-normal [font-family:var(--font-arabic)]"
                         : "tracking-[-0.04em]"
                     }`}
                   >
@@ -734,7 +746,7 @@ export default function ProductsClient({
                   } found`}
             </p>
 
-            {activeFiltersCount >
+            {!standaloneCollection && activeFiltersCount >
               0 && (
               <button
                 type="button"
@@ -748,7 +760,8 @@ export default function ProductsClient({
             )}
           </div>
 
-          <div className="flex w-full justify-start">
+          {!standaloneCollection && (
+          <div className="flex w-full justify-start sm:w-auto">
     <button
       type="button"
       onClick={() =>
@@ -773,9 +786,10 @@ export default function ProductsClient({
       )}
     </button>
   </div>
+          )}
         </div>
 
-        {filterChips.length > 0 && (
+        {!standaloneCollection && filterChips.length > 0 && (
           <div
             dir={isArabic ? "rtl" : "ltr"}
             className="mb-6 flex flex-wrap gap-2"
@@ -811,11 +825,16 @@ export default function ProductsClient({
             </h2>
 
             <p className="mt-2 max-w-md text-sm leading-7 text-[#647168]">
-              {isArabic
-                ? "جرّب تغيير البحث أو إزالة بعض خيارات التصفية."
-                : "Try changing your search or removing some filters."}
+              {standaloneCollection
+                ? isArabic
+                  ? "سيتم إضافة منتجات مختارة لهذه الحاجة قريباً."
+                  : "Curated products for this need will be added soon."
+                : isArabic
+                  ? "جرّب تغيير البحث أو إزالة بعض خيارات التصفية."
+                  : "Try changing your search or removing some filters."}
             </p>
 
+            {!standaloneCollection && (
             <button
               type="button"
               onClick={clearFilters}
@@ -825,6 +844,7 @@ export default function ProductsClient({
                 ? "مسح الفلاتر"
                 : "Clear filters"}
             </button>
+            )}
           </section>
         ) : (
          <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
@@ -841,7 +861,7 @@ export default function ProductsClient({
 </div>
       )}
 
-      {filtersOpen && (
+      {!standaloneCollection && filtersOpen && (
         <div
           className="fixed inset-0 z-[999] bg-[#07130d]/50 backdrop-blur-sm"
           onMouseDown={(event) => {
@@ -1181,3 +1201,4 @@ export default function ProductsClient({
     </>
   );
 }
+

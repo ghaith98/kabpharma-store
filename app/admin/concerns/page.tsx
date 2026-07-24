@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -12,6 +18,8 @@ type Concern = {
   description_ar: string | null;
   description_en: string | null;
   image_url: string | null;
+  banner_image_url: string | null;
+  banner_image_url_mobile: string | null;
   sort_order: number;
 };
 
@@ -21,6 +29,139 @@ type ProductOption = {
   name_ar: string | null;
   name_en: string | null;
 };
+
+type ConcernImageFieldProps = {
+  title: string;
+  description: string;
+  dimensions: string;
+  file: File | null;
+  currentUrl?: string | null;
+  required?: boolean;
+  onChange: (file: File | null) => void;
+};
+
+function ConcernImageField({
+  title,
+  description,
+  dimensions,
+  file,
+  currentUrl,
+  required = false,
+  onChange,
+}: ConcernImageFieldProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    currentUrl || null
+  );
+  const objectUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+      }
+    };
+  }, []);
+
+  function handleFileChange(nextFile: File | null) {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+
+    if (nextFile) {
+      objectUrlRef.current = URL.createObjectURL(nextFile);
+      setPreviewUrl(objectUrlRef.current);
+    } else {
+      setPreviewUrl(currentUrl || null);
+    }
+
+    onChange(nextFile);
+  }
+
+  return (
+    <label className="block overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+      <div className="border-b border-gray-200 bg-white px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-bold text-gray-900">{title}</span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+            {dimensions}
+          </span>
+        </div>
+        <p className="mt-1 text-xs leading-5 text-gray-500">{description}</p>
+      </div>
+
+      <div className="p-4">
+        <div className="mb-3 aspect-[8/3.1] overflow-hidden rounded-xl border border-gray-200 bg-white">
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs font-semibold text-gray-400">
+              No image selected
+            </div>
+          )}
+        </div>
+
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          required={required}
+          onChange={(event) =>
+            handleFileChange(event.target.files?.[0] || null)
+          }
+          className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-full file:border-0 file:bg-emerald-700 file:px-4 file:py-2 file:font-bold file:text-white hover:file:bg-emerald-800"
+        />
+
+        {file && (
+          <p className="mt-2 truncate text-xs font-semibold text-gray-500">
+            Selected: {file.name}
+          </p>
+        )}
+      </div>
+    </label>
+  );
+}
+
+function validateImageDimensions(
+  file: File,
+  expectedWidth: number,
+  expectedHeight: number,
+  label: string
+) {
+  return new Promise<void>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      if (
+        image.naturalWidth !== expectedWidth ||
+        image.naturalHeight !== expectedHeight
+      ) {
+        reject(
+          new Error(
+            `${label} must be exactly ${expectedWidth} × ${expectedHeight} px. Selected image is ${image.naturalWidth} × ${image.naturalHeight} px.`
+          )
+        );
+        return;
+      }
+
+      resolve();
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error(`Could not read ${label.toLowerCase()} dimensions.`));
+    };
+
+    image.src = objectUrl;
+  });
+}
 
 export default function AdminConcernsPage() {
   const router = useRouter();
@@ -36,7 +177,11 @@ export default function AdminConcernsPage() {
   const [descriptionAr, setDescriptionAr] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [tileImageFile, setTileImageFile] = useState<File | null>(null);
+  const [desktopBannerFile, setDesktopBannerFile] =
+    useState<File | null>(null);
+  const [mobileBannerFile, setMobileBannerFile] =
+    useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -45,7 +190,12 @@ export default function AdminConcernsPage() {
   const [editDescriptionAr, setEditDescriptionAr] = useState("");
   const [editDescriptionEn, setEditDescriptionEn] = useState("");
   const [editSortOrder, setEditSortOrder] = useState("0");
-  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editTileImageFile, setEditTileImageFile] =
+    useState<File | null>(null);
+  const [editDesktopBannerFile, setEditDesktopBannerFile] =
+    useState<File | null>(null);
+  const [editMobileBannerFile, setEditMobileBannerFile] =
+    useState<File | null>(null);
 
   const [managingId, setManagingId] = useState<number | null>(null);
   const [managingSelection, setManagingSelection] = useState<Set<number>>(
@@ -116,9 +266,12 @@ export default function AdminConcernsPage() {
     });
   }, [checkAdmin]);
 
-  async function uploadConcernImage(file: File) {
+  async function uploadConcernImage(
+    file: File,
+    variant: "tile" | "desktop" | "mobile"
+  ) {
     const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-    const filePath = `concerns/${crypto.randomUUID()}-${safeFileName}`;
+    const filePath = `concerns/${variant}/${crypto.randomUUID()}-${safeFileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("product-images")
@@ -140,21 +293,52 @@ export default function AdminConcernsPage() {
 
     if (!nameAr.trim() || !nameEn.trim()) return;
 
+    if (!tileImageFile || !desktopBannerFile || !mobileBannerFile) {
+      alert(
+        "Please upload the homepage tile (800 × 800 px), desktop banner (1600 × 620 px), and mobile banner (800 × 400 px)."
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
-      let imageUrl: string | null = null;
+      await Promise.all([
+        validateImageDimensions(
+          tileImageFile,
+          800,
+          800,
+          "Homepage tile"
+        ),
+        validateImageDimensions(
+          desktopBannerFile,
+          1600,
+          620,
+          "Desktop banner"
+        ),
+        validateImageDimensions(
+          mobileBannerFile,
+          800,
+          400,
+          "Mobile banner"
+        ),
+      ]);
 
-      if (imageFile) {
-        imageUrl = await uploadConcernImage(imageFile);
-      }
+      const [tileImageUrl, desktopBannerUrl, mobileBannerUrl] =
+        await Promise.all([
+          uploadConcernImage(tileImageFile, "tile"),
+          uploadConcernImage(desktopBannerFile, "desktop"),
+          uploadConcernImage(mobileBannerFile, "mobile"),
+      ]);
 
       const { error } = await supabase.from("concerns").insert({
         name_ar: nameAr.trim(),
         name_en: nameEn.trim(),
         description_ar: descriptionAr.trim() || null,
         description_en: descriptionEn.trim() || null,
-        image_url: imageUrl,
+        image_url: tileImageUrl,
+        banner_image_url: desktopBannerUrl,
+        banner_image_url_mobile: mobileBannerUrl,
         sort_order: Number(sortOrder) || 0,
       });
 
@@ -168,7 +352,9 @@ export default function AdminConcernsPage() {
       setDescriptionAr("");
       setDescriptionEn("");
       setSortOrder("0");
-      setImageFile(null);
+      setTileImageFile(null);
+      setDesktopBannerFile(null);
+      setMobileBannerFile(null);
       await loadAll();
     } catch (error) {
       alert(
@@ -186,7 +372,9 @@ export default function AdminConcernsPage() {
     setEditDescriptionAr(concern.description_ar || "");
     setEditDescriptionEn(concern.description_en || "");
     setEditSortOrder(String(concern.sort_order ?? 0));
-    setEditImageFile(null);
+    setEditTileImageFile(null);
+    setEditDesktopBannerFile(null);
+    setEditMobileBannerFile(null);
   }
 
   async function updateConcern() {
@@ -194,11 +382,45 @@ export default function AdminConcernsPage() {
     if (!editNameAr.trim() || !editNameEn.trim()) return;
 
     try {
-      let imageUrl: string | undefined;
-
-      if (editImageFile) {
-        imageUrl = await uploadConcernImage(editImageFile);
+      if (editTileImageFile) {
+        await validateImageDimensions(
+          editTileImageFile,
+          800,
+          800,
+          "Homepage tile"
+        );
       }
+
+      if (editDesktopBannerFile) {
+        await validateImageDimensions(
+          editDesktopBannerFile,
+          1600,
+          620,
+          "Desktop banner"
+        );
+      }
+
+      if (editMobileBannerFile) {
+        await validateImageDimensions(
+          editMobileBannerFile,
+          800,
+          400,
+          "Mobile banner"
+        );
+      }
+
+      const [tileImageUrl, desktopBannerUrl, mobileBannerUrl] =
+        await Promise.all([
+          editTileImageFile
+            ? uploadConcernImage(editTileImageFile, "tile")
+            : Promise.resolve(undefined),
+          editDesktopBannerFile
+            ? uploadConcernImage(editDesktopBannerFile, "desktop")
+            : Promise.resolve(undefined),
+          editMobileBannerFile
+            ? uploadConcernImage(editMobileBannerFile, "mobile")
+            : Promise.resolve(undefined),
+        ]);
 
       const { error } = await supabase
         .from("concerns")
@@ -208,7 +430,13 @@ export default function AdminConcernsPage() {
           description_ar: editDescriptionAr.trim() || null,
           description_en: editDescriptionEn.trim() || null,
           sort_order: Number(editSortOrder) || 0,
-          ...(imageUrl ? { image_url: imageUrl } : {}),
+          ...(tileImageUrl ? { image_url: tileImageUrl } : {}),
+          ...(desktopBannerUrl
+            ? { banner_image_url: desktopBannerUrl }
+            : {}),
+          ...(mobileBannerUrl
+            ? { banner_image_url_mobile: mobileBannerUrl }
+            : {}),
         })
         .eq("id", editingId);
 
@@ -326,6 +554,9 @@ export default function AdminConcernsPage() {
   const managingConcern = concerns.find(
     (concern) => concern.id === managingId
   );
+  const editingConcern = concerns.find(
+    (concern) => concern.id === editingId
+  );
 
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
@@ -343,8 +574,9 @@ export default function AdminConcernsPage() {
       <p className="mx-auto mb-6 max-w-5xl text-sm text-gray-600">
         Concerns power the &quot;Shop by need&quot; row on the homepage
         (e.g. Acne, Dandruff, or a broader need like Hair Care). Each
-        concern needs a name in both languages, an image, and at least
-        one linked product to appear on the homepage.
+        concern has one independent homepage tile and two page banners.
+        It appears on the homepage immediately; linked products only
+        control what appears inside its page.
       </p>
 
       <form
@@ -399,15 +631,34 @@ export default function AdminConcernsPage() {
           className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
         />
 
-        <label className="mb-4 block text-sm font-semibold text-gray-700">
-          Image
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-            className="mt-2 block w-full text-sm text-gray-600"
+        <div className="mb-5 grid gap-4 lg:grid-cols-3">
+          <ConcernImageField
+            title="Homepage tile"
+            description="Independent square image shown in Shop by Need on the customer homepage."
+            dimensions="800 × 800 px"
+            file={tileImageFile}
+            required
+            onChange={setTileImageFile}
           />
-        </label>
+
+          <ConcernImageField
+            title="Desktop page banner"
+            description="Full-width hero used only inside this concern page."
+            dimensions="1600 × 620 px"
+            file={desktopBannerFile}
+            required
+            onChange={setDesktopBannerFile}
+          />
+
+          <ConcernImageField
+            title="Mobile page banner"
+            description="Dedicated hero used only inside this concern page on phones."
+            dimensions="800 × 400 px"
+            file={mobileBannerFile}
+            required
+            onChange={setMobileBannerFile}
+          />
+        </div>
 
         <button
           type="submit"
@@ -428,15 +679,39 @@ export default function AdminConcernsPage() {
               className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-                  {concern.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={concern.image_url}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : null}
+                <div className="grid shrink-0 grid-cols-3 gap-1">
+                  <div className="h-14 w-14 overflow-hidden rounded-lg bg-gray-100">
+                    {concern.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={concern.image_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+
+                  <div className="h-14 w-20 overflow-hidden rounded-lg bg-gray-100">
+                    {concern.banner_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={concern.banner_image_url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+
+                  <div className="h-14 w-14 overflow-hidden rounded-lg bg-gray-100">
+                    {concern.banner_image_url_mobile ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={concern.banner_image_url_mobile}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : null}
+                  </div>
                 </div>
 
                 <div>
@@ -454,11 +729,6 @@ export default function AdminConcernsPage() {
 
                   <p className="mt-2 text-sm text-gray-500">
                     {linkedCount} product{linkedCount === 1 ? "" : "s"} linked
-                    {linkedCount === 0 && (
-                      <span className="ml-1 font-semibold text-amber-600">
-                        (hidden on homepage until you link products)
-                      </span>
-                    )}
                   </p>
                 </div>
               </div>
@@ -496,9 +766,9 @@ export default function AdminConcernsPage() {
         )}
       </div>
 
-      {editingId && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 px-6">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+      {editingId && editingConcern && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-8 sm:px-6">
+          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
             <h2 className="mb-4 text-xl font-bold text-gray-900">
               Edit Concern
             </h2>
@@ -545,17 +815,41 @@ export default function AdminConcernsPage() {
               className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
             />
 
-            <label className="mb-4 block text-sm font-semibold text-gray-700">
-              Replace image (optional)
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  setEditImageFile(e.target.files?.[0] || null)
-                }
-                className="mt-2 block w-full text-sm text-gray-600"
+            <div className="mb-5 grid gap-4 lg:grid-cols-3">
+              <ConcernImageField
+                title="Replace homepage tile"
+                description="Leave empty to keep the current independent homepage image."
+                dimensions="800 × 800 px"
+                file={editTileImageFile}
+                currentUrl={editingConcern.image_url}
+                onChange={setEditTileImageFile}
               />
-            </label>
+
+              <ConcernImageField
+                title="Replace desktop banner"
+                description="Leave empty to keep the current page banner."
+                dimensions="1600 × 620 px"
+                file={editDesktopBannerFile}
+                currentUrl={
+                  editingConcern.banner_image_url ||
+                  editingConcern.image_url
+                }
+                onChange={setEditDesktopBannerFile}
+              />
+
+              <ConcernImageField
+                title="Replace mobile banner"
+                description="Leave empty to keep the current page banner."
+                dimensions="800 × 400 px"
+                file={editMobileBannerFile}
+                currentUrl={
+                  editingConcern.banner_image_url_mobile ||
+                  editingConcern.banner_image_url ||
+                  editingConcern.image_url
+                }
+                onChange={setEditMobileBannerFile}
+              />
+            </div>
 
             <div className="flex flex-wrap gap-3">
               <button
@@ -643,3 +937,4 @@ export default function AdminConcernsPage() {
     </main>
   );
 }
+

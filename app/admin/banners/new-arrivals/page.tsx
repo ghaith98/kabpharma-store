@@ -2550,3 +2550,4 @@ export default function AdminNewArrivalsBannersPage() {
     </main>
   );
 }
+

@@ -286,7 +286,7 @@ try {
           <div className="absolute -right-28 -top-28 h-80 w-80 rounded-full border border-white/10" />
           <div className="relative">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-white/60">KAB Pharma</p>
-            <h2 className={isArabic ? "mt-8 text-[45px] font-extrabold leading-[1.25] [font-family:Tahoma,Arial,sans-serif]" : "mt-8 text-[58px] font-extrabold leading-[0.98] tracking-[-0.055em]"}>
+            <h2 className={isArabic ? "mt-8 text-[45px] font-extrabold leading-[1.25] [font-family:var(--font-arabic)]" : "mt-8 text-[58px] font-extrabold leading-[0.98] tracking-[-0.055em]"}>
               {t("Begin your personal care journey.", "ابدأ رحلة عنايتك الشخصية.")}
             </h2>
           </div>
@@ -315,7 +315,7 @@ try {
               {otpSent ? t("Verification", "التحقق") : t("Create your account", "إنشاء حسابك")}
             </p>
 
-            <h1 className={isArabic ? "mt-3 text-[34px] font-extrabold leading-[1.25] [font-family:Tahoma,Arial,sans-serif] sm:text-[40px]" : "mt-3 text-[40px] font-extrabold leading-[1.04] tracking-[-0.045em] sm:text-[46px]"}>
+            <h1 className={isArabic ? "mt-3 text-[34px] font-extrabold leading-[1.25] [font-family:var(--font-arabic)] sm:text-[40px]" : "mt-3 text-[40px] font-extrabold leading-[1.04] tracking-[-0.045em] sm:text-[46px]"}>
               {otpSent ? t("Enter your code.", "أدخل رمز التحقق.") : t("Join KAB Pharma.", "انضم إلى KAB Pharma.")}
             </h1>
 
@@ -436,3 +436,4 @@ try {
     </main>
   );
 }
+

@@ -825,7 +825,7 @@ export default function CheckoutPage() {
               <h1
                 className={`text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-[48px] ${
                   isArabic
-                    ? "leading-[1.25] tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                    ? "leading-[1.25] tracking-normal [font-family:var(--font-arabic)]"
                     : "leading-[1.05] tracking-[-0.04em]"
                 }`}
               >
@@ -1519,3 +1519,4 @@ export default function CheckoutPage() {
     </main>
   );
 }
+

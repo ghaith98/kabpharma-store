@@ -399,7 +399,7 @@ export default function CartPage() {
             <h1
               className={`mt-3 font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-4xl leading-tight [font-family:Tahoma,Arial,sans-serif] sm:text-5xl"
+                  ? "text-4xl leading-tight [font-family:var(--font-arabic)] sm:text-5xl"
                   : "text-4xl tracking-[-0.045em] sm:text-6xl"
               }`}
             >
@@ -1186,3 +1186,4 @@ export default function CartPage() {
     </main>
   );
 }
+

@@ -5,6 +5,8 @@ export type ConcernSource = {
   description_ar?: string | null;
   description_en?: string | null;
   image_url?: string | null;
+  banner_image_url?: string | null;
+  banner_image_url_mobile?: string | null;
   sort_order?: number | null;
 };
 

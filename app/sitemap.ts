@@ -3,14 +3,22 @@ import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { data: products, error } = await supabase
-    .from("products")
-    .select("id");
+  const [productsResult, concernsResult] = await Promise.all([
+    supabase.from("products").select("id"),
+    supabase.from("concerns").select("id"),
+  ]);
 
-  if (error) {
+  if (productsResult.error) {
     console.error(
       "Failed to load products for sitemap:",
-      error
+      productsResult.error
+    );
+  }
+
+  if (concernsResult.error) {
+    console.error(
+      "Failed to load Shop by Need pages for sitemap:",
+      concernsResult.error
     );
   }
 
@@ -63,11 +71,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const productPages: MetadataRoute.Sitemap =
-    (products || []).map((product) => ({
+    (productsResult.data || []).map((product) => ({
       url: `${SITE_URL}/products/${product.id}`,
       changeFrequency: "weekly",
       priority: 0.8,
     }));
 
-  return [...staticPages, ...productPages];
+  const concernPages: MetadataRoute.Sitemap =
+    (concernsResult.data || []).map((concern) => ({
+      url: `${SITE_URL}/shop-by-need/${concern.id}`,
+      changeFrequency: "weekly",
+      priority: 0.75,
+    }));
+
+  return [...staticPages, ...productPages, ...concernPages];
 }

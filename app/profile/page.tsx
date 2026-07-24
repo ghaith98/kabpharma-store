@@ -200,7 +200,7 @@ export default function ProfilePage() {
       dir={isArabic ? "rtl" : "ltr"}
       className={`min-h-screen bg-[#f7f7f3] pb-20 ${
         isArabic
-          ? "[font-family:Tahoma,Arial,sans-serif]"
+          ? "[font-family:var(--font-arabic)]"
           : ""
       }`}
     >
@@ -1117,3 +1117,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+

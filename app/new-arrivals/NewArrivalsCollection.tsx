@@ -277,7 +277,8 @@ type NewArrivalsCollectionProps = {
   discoveryBanners: DiscoveryBanner[];
   collectionType?:
     | "new-arrivals"
-    | "best-sellers";
+    | "best-sellers"
+    | "concern";
   hasHero?: boolean;
 };
 
@@ -296,10 +297,15 @@ export default function NewArrivalsCollection({
   const isBestSellers =
     collectionType === "best-sellers";
 
+  const isConcern =
+    collectionType === "concern";
+
   const collectionId =
-    isBestSellers
-      ? "best-sellers-products"
-      : "new-arrivals-products";
+    isConcern
+      ? "concern-products"
+      : isBestSellers
+        ? "best-sellers-products"
+        : "new-arrivals-products";
 
   const filterDialogId =
     `${collectionId}-filters`;
@@ -311,22 +317,26 @@ export default function NewArrivalsCollection({
     `${collectionId}-sort`;
 
   const collectionTitle =
-    isArabic
-      ? isBestSellers
-        ? "الأكثر مبيعاً"
-        : "وصل حديثاً"
-      : isBestSellers
-        ? "Best Sellers"
-        : "New Arrivals";
+    isConcern
+      ? ""
+      : isArabic
+        ? isBestSellers
+          ? "الأكثر مبيعاً"
+          : "وصل حديثاً"
+        : isBestSellers
+          ? "Best Sellers"
+          : "New Arrivals";
 
   const collectionDescription =
-    isArabic
-      ? isBestSellers
-        ? "تصفّحي منتجات KAB Pharma الأكثر طلباً والمفضلة لدى عملائنا."
-        : "اكتشفي أحدث منتجات KAB Pharma للعناية اليومية."
-      : isBestSellers
-        ? "Explore the KAB Pharma products most loved and ordered by our customers."
-        : "Discover the latest KAB Pharma products for your everyday care routine.";
+    isConcern
+      ? ""
+      : isArabic
+        ? isBestSellers
+          ? "تصفّحي منتجات KAB Pharma الأكثر طلباً والمفضلة لدى عملائنا."
+          : "اكتشفي أحدث منتجات KAB Pharma للعناية اليومية."
+        : isBestSellers
+          ? "Explore the KAB Pharma products most loved and ordered by our customers."
+          : "Discover the latest KAB Pharma products for your everyday care routine.";
 
   const [filtersOpen, setFiltersOpen] =
     useState(false);
@@ -540,9 +550,11 @@ export default function NewArrivalsCollection({
   }
 
   const discoveryPlacementPrefix =
-    isBestSellers
-      ? "best_sellers"
-      : "new_arrivals";
+    isConcern
+      ? "concern"
+      : isBestSellers
+        ? "best_sellers"
+        : "new_arrivals";
 
   const firstDiscovery =
     hasProductFilters
@@ -633,22 +645,30 @@ export default function NewArrivalsCollection({
           <div className="w-full border border-[#dfe4e0] bg-[#f7f8f6] px-6 py-14">
           <h2 className="text-2xl font-bold text-[#142019]">
             {isArabic
-              ? isBestSellers
-                ? "لا توجد منتجات ضمن الأكثر مبيعاً حالياً"
-                : "لا توجد منتجات جديدة حالياً"
-              : isBestSellers
-                ? "No best sellers yet"
-                : "No new arrivals yet"}
+              ? isConcern
+                ? "لا توجد منتجات هنا حالياً"
+                : isBestSellers
+                  ? "لا توجد منتجات ضمن الأكثر مبيعاً حالياً"
+                  : "لا توجد منتجات جديدة حالياً"
+              : isConcern
+                ? "No products here yet"
+                : isBestSellers
+                  ? "No best sellers yet"
+                  : "No new arrivals yet"}
           </h2>
 
           <p className="mt-3 text-sm leading-7 text-[#647168]">
             {isArabic
-              ? isBestSellers
-                ? "ستظهر المنتجات هنا بعد تسجيل أولى المبيعات."
-                : "ستتم إضافة المنتجات الجديدة قريباً."
-              : isBestSellers
-                ? "Products will appear here after their first recorded sales."
-                : "New products will be added soon."}
+              ? isConcern
+                ? "ستتم إضافة المنتجات قريباً."
+                : isBestSellers
+                  ? "ستظهر المنتجات هنا بعد تسجيل أولى المبيعات."
+                  : "ستتم إضافة المنتجات الجديدة قريباً."
+              : isConcern
+                ? "Products will be added here soon."
+                : isBestSellers
+                  ? "Products will appear here after their first recorded sales."
+                  : "New products will be added soon."}
           </p>
           </div>
         </div>
@@ -1087,3 +1107,4 @@ export default function NewArrivalsCollection({
     </section>
   );
 }
+

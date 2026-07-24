@@ -78,7 +78,7 @@ export default function ProductExtraClient({
             <div
               className={`max-w-3xl pb-6 text-sm text-[#536158] sm:text-[15px] ${
                 isArabic
-                  ? "text-right leading-7 [font-family:Tahoma,Arial,sans-serif]"
+                  ? "text-right leading-7 [font-family:var(--font-arabic)]"
                   : "text-left leading-7"
               }`}
             >
@@ -104,7 +104,7 @@ export default function ProductExtraClient({
             <p
               className={`text-[10px] font-bold text-[#0a583b] sm:text-[11px] ${
                 isArabic
-                  ? "tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                  ? "tracking-normal [font-family:var(--font-arabic)]"
                   : "uppercase tracking-[0.16em]"
               }`}
             >
@@ -116,7 +116,7 @@ export default function ProductExtraClient({
             <h2
               className={`mt-2 text-2xl font-semibold text-[#142019] sm:text-3xl ${
                 isArabic
-                  ? "text-right tracking-normal [font-family:Tahoma,Arial,sans-serif]"
+                  ? "text-right tracking-normal [font-family:var(--font-arabic)]"
                   : "text-left tracking-[-0.025em]"
               }`}
             >

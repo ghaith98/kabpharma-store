@@ -368,7 +368,7 @@ export default function AboutPage() {
             <h1
               className={`max-w-[1000px] font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-[42px] leading-[1.2] tracking-normal [font-family:Tahoma,Arial,sans-serif] sm:text-[58px] lg:text-[76px]"
+                  ? "text-[42px] leading-[1.2] tracking-normal [font-family:var(--font-arabic)] sm:text-[58px] lg:text-[76px]"
                   : "text-[50px] leading-[0.94] tracking-[-0.06em] sm:text-[72px] lg:text-[98px]"
               }`}
             >
@@ -420,7 +420,7 @@ export default function AboutPage() {
             <h2
               className={`max-w-4xl font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-3xl leading-[1.35] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl lg:text-5xl"
+                  ? "text-3xl leading-[1.35] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
                   : "text-4xl leading-[1.04] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
               }`}
             >
@@ -451,7 +451,7 @@ export default function AboutPage() {
           <blockquote
             className={`mt-8 max-w-[1150px] font-extrabold ${
               isArabic
-                ? "text-3xl leading-[1.45] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl lg:text-5xl"
+                ? "text-3xl leading-[1.45] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
                 : "text-4xl leading-[1.08] tracking-[-0.04em] sm:text-5xl lg:text-7xl"
             }`}
           >
@@ -538,7 +538,7 @@ export default function AboutPage() {
               <h2
                 className={`mt-5 font-extrabold text-[#142019] ${
                   isArabic
-                    ? "text-3xl leading-[1.3] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl lg:text-5xl"
+                    ? "text-3xl leading-[1.3] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
                     : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
                 }`}
               >
@@ -605,7 +605,7 @@ export default function AboutPage() {
             <h2
               className={`mt-5 max-w-xl font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-3xl leading-[1.3] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl lg:text-5xl"
+                  ? "text-3xl leading-[1.3] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
                   : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
               }`}
             >
@@ -685,7 +685,7 @@ export default function AboutPage() {
             <h2
               className={`font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-3xl leading-[1.35] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl lg:text-5xl"
+                  ? "text-3xl leading-[1.35] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
                   : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
               }`}
             >
@@ -731,7 +731,7 @@ export default function AboutPage() {
             <h2
               className={`mt-5 max-w-3xl font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-3xl leading-[1.3] [font-family:Tahoma,Arial,sans-serif] sm:text-4xl lg:text-5xl"
+                  ? "text-3xl leading-[1.3] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
                   : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
               }`}
             >
