@@ -163,6 +163,7 @@ export default function PaymentPage() {
   } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const [couponOpen, setCouponOpen] = useState(false);
 
   const BackArrow =
     isArabic
@@ -636,6 +637,7 @@ export default function PaymentPage() {
     setCouponInput("");
     setAppliedCoupon(null);
     setCouponError("");
+    setCouponOpen(false);
     sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
     sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
   }
@@ -1045,14 +1047,14 @@ export default function PaymentPage() {
               }`}
             >
               {isArabic
-                ? "إتمام الطلب"
-                : "Complete your order"}
+                ? "إتمام الدفع"
+                : "Complete payment"}
             </h1>
 
             <p className="mt-3 max-w-xl text-sm leading-7 text-[#647168] sm:text-base">
               {isArabic
-                ? "راجعي تفاصيل طلبك، ثم اختاري طريقة الدفع المناسبة لتأكيده."
-                : "Review your order details, then choose the payment method that suits you to confirm it."}
+                ? "حوّل قيمة الطلب، ثم ارفع صورة واضحة أو ملف PDF لإثبات الدفع."
+                : "Transfer your order total, then upload a clear image or PDF of your payment receipt."}
             </p>
           </div>
 
@@ -1685,77 +1687,83 @@ export default function PaymentPage() {
   </div>
 
   {/* Coupon */}
-  <div className="border-b border-[#e7ebe8] py-5">
-    <div className="rounded-2xl border border-[#cfe3d5] bg-[#f3f8f4] p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#0a583b] shadow-sm">
-            <Tag size={16} strokeWidth={2.2} />
-          </span>
+  <div className="border-b border-[#e7ebe8] py-4">
+    {!couponOpen && !appliedCoupon ? (
+      <button
+        type="button"
+        onClick={() => setCouponOpen(true)}
+        className="flex w-full items-center justify-between gap-3 text-sm font-extrabold text-[#526057] transition hover:text-[#0a583b]"
+      >
+        <span className="flex items-center gap-2">
+          <Tag size={16} strokeWidth={2} />
+          {isArabic ? "لديك كود خصم؟" : "Have a discount code?"}
+        </span>
 
-          <div>
-            <p className="text-sm font-extrabold text-[#142019]">
-              {isArabic ? "لديك كود خصم؟" : "Have a discount code?"}
-            </p>
-            <p className="mt-0.5 text-xs leading-5 text-[#647168]">
-              {isArabic ? "أدخليه قبل تأكيد الطلب." : "Enter it before confirming your order."}
-            </p>
-          </div>
-        </div>
+        <span className="text-xs font-bold">
+          {isArabic ? "إضافة" : "Add"}
+        </span>
+      </button>
+    ) : (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="flex items-center gap-2 text-sm font-extrabold text-[#142019]">
+            <Tag size={16} strokeWidth={2} className="text-[#0a583b]" />
+            {isArabic ? "كود الخصم" : "Discount code"}
+          </p>
 
-        {appliedCoupon && (
-          <button
-            type="button"
-            onClick={clearCoupon}
-            className="shrink-0 text-xs font-extrabold text-[#647168] transition hover:text-red-600"
-          >
-            {isArabic ? "إزالة" : "Remove"}
-          </button>
-        )}
-      </div>
-
-      {appliedCoupon ? (
-        <p className="mt-3 rounded-xl border border-[#b8d7c4] bg-white px-3 py-2.5 text-xs font-extrabold text-[#0a583b]">
-          {isArabic
-            ? `تم تطبيق كود ${appliedCoupon.code}`
-            : `${appliedCoupon.code} applied`}
-        </p>
-      ) : (
-        <>
-          <div className="mt-3 flex gap-2" dir="ltr">
-            <input
-              value={couponInput}
-              onChange={(event) => {
-                setCouponInput(event.target.value.toUpperCase());
-                setCouponError("");
-              }}
-              aria-label={isArabic ? "كود الخصم" : "Discount code"}
-              placeholder={isArabic ? "أدخل كود الخصم" : "Enter discount code"}
-              maxLength={40}
-              className="min-w-0 flex-1 rounded-xl border border-[#b8d7c4] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none placeholder:normal-case placeholder:font-medium placeholder:text-[#8a948d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#dceee1]"
-            />
+          {appliedCoupon && (
             <button
               type="button"
-              disabled={checkingCoupon}
-              onClick={applyCoupon}
-              className="rounded-xl bg-[#0a583b] px-4 text-xs font-extrabold text-white transition hover:bg-[#073f2c] disabled:bg-[#b4bdb7]"
+              onClick={clearCoupon}
+              className="text-xs font-extrabold text-[#647168] transition hover:text-red-600"
             >
-              {checkingCoupon
-                ? "..."
-                : isArabic
-                  ? "تطبيق"
-                  : "Apply"}
+              {isArabic ? "إزالة" : "Remove"}
             </button>
-          </div>
-
-          {couponError && (
-            <p role="alert" className="mt-2 text-xs font-bold text-red-600">
-              {couponError}
-            </p>
           )}
-        </>
-      )}
-    </div>
+        </div>
+
+        {appliedCoupon ? (
+          <p className="mt-3 rounded-xl bg-[#edf5f0] px-3 py-2.5 text-xs font-extrabold text-[#0a583b]">
+            {isArabic
+              ? `تم تطبيق كود ${appliedCoupon.code}`
+              : `${appliedCoupon.code} applied`}
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 flex gap-2" dir="ltr">
+              <input
+                value={couponInput}
+                onChange={(event) => {
+                  setCouponInput(event.target.value.toUpperCase());
+                  setCouponError("");
+                }}
+                aria-label={isArabic ? "كود الخصم" : "Discount code"}
+                maxLength={40}
+                className="min-w-0 flex-1 rounded-xl border border-[#cbd3cd] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
+              />
+              <button
+                type="button"
+                disabled={checkingCoupon}
+                onClick={applyCoupon}
+                className="rounded-xl bg-[#0a583b] px-4 text-xs font-extrabold text-white transition hover:bg-[#073f2c] disabled:bg-[#b4bdb7]"
+              >
+                {checkingCoupon
+                  ? "..."
+                  : isArabic
+                    ? "تطبيق"
+                    : "Apply"}
+              </button>
+            </div>
+
+            {couponError && (
+              <p role="alert" className="mt-2 text-xs font-bold text-red-600">
+                {couponError}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    )}
   </div>
 
   {/* Totals */}
