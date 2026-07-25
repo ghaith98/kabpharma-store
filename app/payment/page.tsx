@@ -1448,7 +1448,6 @@ export default function PaymentPage() {
     </p>
   </div>
 </div>
-</div>
 )}
 
 {paymentMethod === "cod" && (
