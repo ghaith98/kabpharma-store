@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { rankBestSellerProductIds } from "@/lib/best-sellers";
 import { SITE_URL } from "@/lib/site";
 import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import NewArrivalsCollection from "../new-arrivals/NewArrivalsCollection";
@@ -77,7 +78,9 @@ export default async function BestSellersPage() {
         ascending: false,
       }),
 
-    supabase
+    // Order items are private data. Read the aggregate source only on the
+    // server, so public RLS rules cannot make this collection look empty.
+    supabaseAdmin
       .from("order_items")
       .select("product_id, quantity"),
 
@@ -148,7 +151,7 @@ export default async function BestSellersPage() {
       ])
     );
 
-  const products = rankedProductIds
+  const rankedProducts = rankedProductIds
     .map((productId) =>
       productsById.get(productId)
     )
@@ -158,6 +161,18 @@ export default async function BestSellersPage() {
       ): product is (typeof availableProducts)[number] =>
         Boolean(product)
     );
+
+  const featuredProducts =
+    availableProducts.filter(
+      (product) => product.featured === true
+    );
+
+  const products =
+    rankedProducts.length > 0
+      ? rankedProducts
+      : featuredProducts.length > 0
+      ? featuredProducts
+      : availableProducts.slice(0, 8);
 
   const banners =
     bannersResult.data || [];
@@ -226,4 +241,3 @@ export default async function BestSellersPage() {
     </main>
   );
 }
-
