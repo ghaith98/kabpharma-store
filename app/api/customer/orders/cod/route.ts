@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCustomerSession } from "@/lib/customer-session";
-import { couponCode, getCouponDiscount } from "@/lib/coupons";
+import { getCouponDiscount } from "@/lib/coupons";
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
@@ -424,7 +424,11 @@ export async function POST(request: Request) {
       : configuredDeliveryFee;
   let coupon;
   try {
-    coupon = await getCouponDiscount(body.couponCode, productsTotal);
+    coupon = await getCouponDiscount(
+      body.couponCode,
+      productsTotal,
+      profile.id
+    );
   } catch (error) {
     return jsonError(
       error instanceof Error ? error.message : "Coupon validation failed",
@@ -440,7 +444,7 @@ export async function POST(request: Request) {
   // Atomic + idempotent creation. If items fail, the order rolls back.
   // If this idempotency key was already used, the existing order is returned.
   const { data: rpcData, error: rpcError } =
-    await supabaseAdmin.rpc("create_order_atomic", {
+    await supabaseAdmin.rpc("create_order_with_coupon_atomic", {
       p_order: {
         customer_name: customerName,
         phone: profile.phone,
@@ -455,6 +459,10 @@ export async function POST(request: Request) {
       },
       p_items: validatedItems,
       p_idempotency_key: idempotencyKey,
+      p_coupon_code: coupon?.code || null,
+      p_discount_amount: discountAmount,
+      p_products_subtotal: productsTotal,
+      p_customer_profile_id: profile.id,
     });
 
   if (rpcError) {
@@ -468,20 +476,6 @@ export async function POST(request: Request) {
 
   if (!created?.id) {
     return jsonError("Could not create order", 500);
-  }
-
-  if (coupon) {
-    const { error: couponSaveError } = await supabaseAdmin
-      .from("orders")
-      .update({
-        coupon_code: couponCode(coupon.code),
-        discount_amount: discountAmount,
-        products_subtotal: productsTotal,
-      })
-      .eq("id", created.id);
-    if (couponSaveError) {
-      console.error("Coupon metadata save failed:", couponSaveError);
-    }
   }
 
   return NextResponse.json(

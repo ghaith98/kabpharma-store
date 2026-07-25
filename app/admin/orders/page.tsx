@@ -45,6 +45,9 @@ type AdminOrder = {
   delivery_fee: number | null;
   cod_fee: number | null;
   payment_method: string | null;
+  coupon_code: string | null;
+  discount_amount: number | null;
+  products_subtotal: number | null;
   total_price: number | null;
   status: string;
   created_at: string | null;
@@ -92,6 +95,9 @@ export default function AdminOrdersPage() {
         delivery_fee,
         cod_fee,
         payment_method,
+        coupon_code,
+        discount_amount,
+        products_subtotal,
         total_price,
         status,
         created_at,
@@ -586,6 +592,29 @@ export default function AdminOrdersPage() {
                     ).toLocaleString()} {" "}
                     SYP
                   </p>
+                )}
+
+                {order.coupon_code && (
+                  <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
+                    <p>
+                      <strong>Coupon code:</strong>{" "}
+                      <span className="font-mono font-extrabold">
+                        {order.coupon_code}
+                      </span>
+                    </p>
+                    <p className="mt-1">
+                      <strong>Products subtotal:</strong>{" "}
+                      {Number(
+                        order.products_subtotal || 0
+                      ).toLocaleString()} SYP
+                    </p>
+                    <p className="mt-1">
+                      <strong>Coupon discount:</strong>{" "}
+                      −{Number(
+                        order.discount_amount || 0
+                      ).toLocaleString()} SYP
+                    </p>
+                  </div>
                 )}
 
                 <p>

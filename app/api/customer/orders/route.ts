@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCustomerSession } from "@/lib/customer-session";
-import { couponCode, getCouponDiscount } from "@/lib/coupons";
+import { getCouponDiscount } from "@/lib/coupons";
 import {
   hasTrustedOrigin,
   jsonError,
@@ -672,7 +672,11 @@ export async function POST(request: Request) {
       : configuredDeliveryFee;
   let coupon;
   try {
-    coupon = await getCouponDiscount(submittedCouponCode, productsTotal);
+    coupon = await getCouponDiscount(
+      submittedCouponCode,
+      productsTotal,
+      profile.id
+    );
   } catch (error) {
     return jsonError(
       error instanceof Error ? error.message : "Coupon validation failed",
@@ -705,7 +709,7 @@ export async function POST(request: Request) {
     // idempotency key (same RPC the COD path uses). The bucket is private,
     // so we store only the path; admins view via signed URLs.
     const { data: rpcData, error: rpcError } =
-      await supabaseAdmin.rpc("create_order_atomic", {
+      await supabaseAdmin.rpc("create_order_with_coupon_atomic", {
         p_order: {
           customer_name: customerName,
           phone: profile.phone,
@@ -722,6 +726,10 @@ export async function POST(request: Request) {
         },
         p_items: validatedItems,
         p_idempotency_key: idempotencyKey,
+        p_coupon_code: coupon?.code || null,
+        p_discount_amount: discountAmount,
+        p_products_subtotal: productsTotal,
+        p_customer_profile_id: profile.id,
       });
 
     if (rpcError) {
@@ -734,20 +742,6 @@ export async function POST(request: Request) {
 
     if (!created?.id) {
       throw new Error("Order was not created");
-    }
-
-    if (coupon) {
-      const { error: couponSaveError } = await supabaseAdmin
-        .from("orders")
-        .update({
-          coupon_code: couponCode(coupon.code),
-          discount_amount: discountAmount,
-          products_subtotal: productsTotal,
-        })
-        .eq("id", created.id);
-      if (couponSaveError) {
-        console.error("Coupon metadata save failed:", couponSaveError);
-      }
     }
 
     return NextResponse.json(

@@ -1,8 +1,10 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type CouponResult = {
+  id: number;
   code: string;
   discountAmount: number;
+  oneUsePerCustomer: boolean;
 };
 
 function cleanCode(value: unknown) {
@@ -16,7 +18,8 @@ function cleanCode(value: unknown) {
 /** Validates only server-side data. Never trust a client supplied discount. */
 export async function getCouponDiscount(
   rawCode: unknown,
-  subtotal: number
+  subtotal: number,
+  profileId?: number
 ): Promise<CouponResult | null> {
   const code = cleanCode(rawCode);
   if (!code) return null;
@@ -24,7 +27,7 @@ export async function getCouponDiscount(
   const { data, error } = await supabaseAdmin
     .from("coupons")
     .select(
-      "code, discount_percent, maximum_discount, minimum_order_amount, is_active, starts_at, expires_at"
+      "id, code, discount_percent, maximum_discount, minimum_order_amount, is_active, starts_at, expires_at, one_use_per_customer"
     )
     .eq("code", code)
     .maybeSingle();
@@ -47,6 +50,21 @@ export async function getCouponDiscount(
     throw new Error("Order does not meet the coupon minimum");
   }
 
+  const oneUsePerCustomer = data.one_use_per_customer === true;
+  if (oneUsePerCustomer && profileId) {
+    const { data: priorUse, error: usageError } = await supabaseAdmin
+      .from("coupon_usages")
+      .select("id")
+      .eq("coupon_id", data.id)
+      .eq("profile_id", profileId)
+      .maybeSingle();
+
+    if (usageError) throw usageError;
+    if (priorUse) {
+      throw new Error("This coupon has already been used on your account");
+    }
+  }
+
   const percent = Math.min(100, Math.max(0, Number(data.discount_percent)));
   const maximum = Number(data.maximum_discount || 0);
   const calculated = Math.round(subtotal * (percent / 100));
@@ -55,7 +73,12 @@ export async function getCouponDiscount(
     maximum > 0 ? Math.min(calculated, maximum) : calculated
   );
 
-  return { code, discountAmount };
+  return {
+    id: Number(data.id),
+    code,
+    discountAmount,
+    oneUsePerCustomer,
+  };
 }
 
 export function couponCode(value: unknown) {

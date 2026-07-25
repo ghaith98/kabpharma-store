@@ -10,7 +10,8 @@ export async function POST(request: Request) {
   if (!hasTrustedOrigin(request)) {
     return jsonError("Invalid request origin", 403);
   }
-  if (!(await getCustomerSession())) {
+  const session = await getCustomerSession();
+  if (!session) {
     return jsonError("Authentication required", 401);
   }
 
@@ -27,7 +28,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const coupon = await getCouponDiscount(body.code, subtotal);
+    const coupon = await getCouponDiscount(
+      body.code,
+      subtotal,
+      session.profileId
+    );
     if (!coupon) return jsonError("Enter a coupon code", 400);
     return NextResponse.json({ success: true, coupon });
   } catch (error) {
