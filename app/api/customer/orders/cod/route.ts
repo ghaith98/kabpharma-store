@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 
 const MAX_CART_ITEMS = 50;
 const MAX_ITEM_QUANTITY = 99;
+// This amount is server-controlled. The client cannot set or alter it.
+const COD_FEE = 50;
 
 type SubmittedCartItem = {
   id?: unknown;
@@ -378,7 +380,10 @@ export async function POST(request: Request) {
     productsTotal >= freeShippingThreshold
       ? 0
       : configuredDeliveryFee;
-  const orderTotal = productsTotal + deliveryFee;
+  const orderTotal =
+    productsTotal +
+    deliveryFee +
+    COD_FEE;
 
   // Atomic + idempotent creation. If items fail, the order rolls back.
   // If this idempotency key was already used, the existing order is returned.
@@ -391,6 +396,7 @@ export async function POST(request: Request) {
         delivery_area: deliveryArea.area_name,
         address,
         delivery_fee: deliveryFee,
+        cod_fee: COD_FEE,
         total_price: orderTotal,
         status: "pending",
         payment_method: "cod",

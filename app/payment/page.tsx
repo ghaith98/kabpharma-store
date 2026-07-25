@@ -42,6 +42,14 @@ import { useLanguage } from "../../context/LanguageContext";
 const MAX_PAYMENT_PROOF_SIZE =
   20 * 1024 * 1024;
 
+const COD_FEE = 50;
+const COD_IDEMPOTENCY_KEY =
+  "kab_cod_idempotency_key";
+
+type PaymentMethod =
+  | "sham_cash"
+  | "cod";
+
 type CartItemWithVariant =
   CartItem & {
     cart_key?: string;
@@ -140,6 +148,9 @@ export default function PaymentPage() {
   ] = useState<CheckoutData>(
     {}
   );
+
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethod>("sham_cash");
 
   const BackArrow =
     isArabic
@@ -552,7 +563,13 @@ export default function PaymentPage() {
 
   const total =
     productsTotal +
-    deliveryFee;
+    deliveryFee +
+    (paymentMethod === "cod"
+      ? COD_FEE
+      : 0);
+
+  const requiresPaymentProof =
+    paymentMethod === "sham_cash";
 
   const itemsCount =
     cart.reduce(
@@ -581,7 +598,10 @@ export default function PaymentPage() {
       return;
     }
 
-    if (!file) {
+    if (
+      requiresPaymentProof &&
+      !file
+    ) {
       setFileError(
         isArabic
           ? "يرجى رفع إثبات الدفع."
@@ -591,17 +611,14 @@ export default function PaymentPage() {
       return;
     }
 
-    const validationError =
-      getPaymentProofError(
-        file
-      );
+    if (requiresPaymentProof && file) {
+      const validationError =
+        getPaymentProofError(file);
 
-    if (validationError) {
-      setFileError(
-        validationError
-      );
-
-      return;
+      if (validationError) {
+        setFileError(validationError);
+        return;
+      }
     }
 
     setFileError("");
@@ -684,6 +701,91 @@ export default function PaymentPage() {
     setLoading(true);
 
     try {
+      if (paymentMethod === "cod") {
+        const existingKey =
+          sessionStorage.getItem(
+            COD_IDEMPOTENCY_KEY
+          );
+        const idempotencyKey =
+          existingKey ||
+          crypto.randomUUID();
+
+        sessionStorage.setItem(
+          COD_IDEMPOTENCY_KEY,
+          idempotencyKey
+        );
+
+        const response = await fetch(
+          "/api/customer/orders/cod",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              checkout: {
+                name: currentCheckout.name,
+                governorate:
+                  currentCheckout.governorate,
+                delivery_area:
+                  currentCheckout.delivery_area,
+                address: currentCheckout.address,
+              },
+              cart: currentCart.map((item) => ({
+                id: item.id,
+                variant_id:
+                  item.variant_id ?? null,
+                quantity: item.quantity,
+              })),
+              idempotencyKey,
+            }),
+          }
+        );
+
+        const result = await response
+          .json()
+          .catch(() => null);
+
+        if (!response.ok || !result?.success) {
+          if (response.status === 401) {
+            localStorage.setItem(
+              "redirect_after_login",
+              "/payment"
+            );
+            router.replace("/login");
+            return;
+          }
+
+          throw new Error(
+            result?.error ||
+              result?.message ||
+              (isArabic
+                ? "تعذر تأكيد طلب الدفع عند الاستلام. يرجى مراجعة السلة والمحاولة مجدداً."
+                : "Could not place your cash-on-delivery order. Please review your cart and try again.")
+          );
+        }
+
+        saveCart([]);
+        window.dispatchEvent(
+          new Event("cartUpdated")
+        );
+        localStorage.removeItem("checkout");
+        sessionStorage.removeItem(
+          COD_IDEMPOTENCY_KEY
+        );
+        router.replace(`/orders/${result.orderId}`);
+        return;
+      }
+
+      if (!file) {
+        throw new Error(
+          isArabic
+            ? "يرجى رفع إثبات الدفع."
+            : "Please upload payment proof."
+        );
+      }
+
       const formData = new FormData();
 
       formData.set(
@@ -911,12 +1013,112 @@ export default function PaymentPage() {
 
               <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#142019]">
                 {isArabic
-                  ? "الدفع عبر رمز QR"
-                  : "Pay using the QR code"}
+                  ? "اختر طريقة الدفع"
+                  : "Choose a payment method"}
               </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#647168]">
+                {isArabic
+                  ? "اختر الطريقة المناسبة لك قبل تأكيد الطلب."
+                  : "Choose your preferred method before confirming the order."}
+              </p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <label className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment-method"
+                    value="sham_cash"
+                    checked={
+                      paymentMethod ===
+                      "sham_cash"
+                    }
+                    onChange={() =>
+                      setPaymentMethod(
+                        "sham_cash"
+                      )
+                    }
+                    className="sr-only"
+                  />
+
+                  <span
+                    className={`block rounded-2xl border p-4 transition ${
+                      paymentMethod === "sham_cash"
+                        ? "border-[#0a583b] bg-[#edf5f0]"
+                        : "border-[#dfe4e0] bg-white hover:border-[#8fb5a0]"
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="font-extrabold text-[#142019]">
+                        {isArabic
+                          ? "شام كاش"
+                          : "Sham Cash"}
+                      </span>
+
+                      <span
+                        className={`h-4 w-4 shrink-0 rounded-full border ${
+                          paymentMethod === "sham_cash"
+                            ? "border-[5px] border-[#0a583b]"
+                            : "border-[#9aa39d]"
+                        }`}
+                      />
+                    </span>
+
+                    <span className="mt-1.5 block text-xs leading-5 text-[#647168]">
+                      {isArabic
+                        ? "امسح الرمز أو حوّل إلى رقم شام كاش ثم ارفع إثبات الدفع."
+                        : "Scan the QR code or transfer to the Sham Cash number, then upload your proof."}
+                    </span>
+                  </span>
+                </label>
+
+                <label className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment-method"
+                    value="cod"
+                    checked={paymentMethod === "cod"}
+                    onChange={() =>
+                      setPaymentMethod("cod")
+                    }
+                    className="sr-only"
+                  />
+
+                  <span
+                    className={`block rounded-2xl border p-4 transition ${
+                      paymentMethod === "cod"
+                        ? "border-[#0a583b] bg-[#edf5f0]"
+                        : "border-[#dfe4e0] bg-white hover:border-[#8fb5a0]"
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="font-extrabold text-[#142019]">
+                        {isArabic
+                          ? "الدفع عند الاستلام"
+                          : "Cash on delivery"}
+                      </span>
+
+                      <span
+                        className={`h-4 w-4 shrink-0 rounded-full border ${
+                          paymentMethod === "cod"
+                            ? "border-[5px] border-[#0a583b]"
+                            : "border-[#9aa39d]"
+                        }`}
+                      />
+                    </span>
+
+                    <span className="mt-1.5 block text-xs font-bold leading-5 text-[#0a583b]">
+                      {isArabic
+                        ? `رسوم خدمة إضافية ${formatPrice(COD_FEE)}`
+                        : `Additional service fee: ${formatPrice(COD_FEE)}`}
+                    </span>
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* QR area */}
+            {paymentMethod === "sham_cash" ? (
             <div className="grid gap-7 p-5 sm:p-7 md:grid-cols-[270px_minmax(0,1fr)] md:items-center">
               <div className="flex aspect-square w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[1.5rem] border border-[#dfe4e0] bg-[#f7f8f6] p-4">
                 {qrUrl ? (
@@ -1050,7 +1252,46 @@ export default function PaymentPage() {
               </div>
             </div>
 
+            ) : (
+              <div className="p-5 sm:p-7">
+                <div className="rounded-[1.5rem] border border-[#b8d7c4] bg-[#edf5f0] p-5 sm:p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#0a583b]">
+                      <Truck size={19} />
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-extrabold text-[#142019]">
+                        {isArabic
+                          ? "الدفع عند الاستلام"
+                          : "Cash on delivery"}
+                      </h3>
+
+                      <p className="mt-1 text-sm leading-6 text-[#526057]">
+                        {isArabic
+                          ? "ادفع قيمة الطلب لمندوب التوصيل عند استلامه. لا تحتاج إلى رفع إثبات دفع."
+                          : "Pay the delivery representative when your order arrives. No payment proof is required."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#b8d7c4] pt-4 text-sm">
+                    <span className="font-bold text-[#526057]">
+                      {isArabic
+                        ? "رسوم خدمة الدفع عند الاستلام"
+                        : "Cash-on-delivery service fee"}
+                    </span>
+
+                    <span className="font-extrabold text-[#0a583b]">
+                      {formatPrice(COD_FEE)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
           {/* Upload */}
+{paymentMethod === "sham_cash" && (
 <div className="border-t border-[#e7ebe8] p-4 sm:p-7">
   <h2 className="text-lg font-extrabold text-[#142019]">
     {isArabic
@@ -1132,7 +1373,7 @@ export default function PaymentPage() {
         accept="image/*,application/pdf,.pdf"
         onChange={handleFileChange}
         disabled={loading}
-        required
+        required={requiresPaymentProof}
         className="hidden"
       />
     </label>
@@ -1164,8 +1405,9 @@ export default function PaymentPage() {
       type="submit"
       disabled={
         loading ||
-        !file ||
-        Boolean(fileError)
+        (requiresPaymentProof &&
+          (!file ||
+            Boolean(fileError)))
       }
       className="mt-5 hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex"
     >
@@ -1206,6 +1448,55 @@ export default function PaymentPage() {
     </p>
   </div>
 </div>
+</div>
+)}
+
+{paymentMethod === "cod" && (
+  <form
+    id="payment-proof-form"
+    onSubmit={handleSubmit}
+    className="border-t border-[#e7ebe8] p-5 sm:p-7"
+  >
+    <button
+      type="submit"
+      disabled={loading}
+      className="hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex"
+    >
+      {loading ? (
+        <>
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          <span>
+            {isArabic
+              ? "جاري تأكيد الطلب..."
+              : "Placing order..."}
+          </span>
+        </>
+      ) : (
+        <>
+          <ShieldCheck size={17} />
+          <span>
+            {isArabic
+              ? "تأكيد طلب الدفع عند الاستلام"
+              : "Place cash-on-delivery order"}
+          </span>
+        </>
+      )}
+    </button>
+
+    <div className="flex items-start gap-3 rounded-2xl bg-[#f7f8f6] px-4 py-3 lg:mt-4">
+      <LockKeyhole
+        size={16}
+        className="mt-0.5 shrink-0 text-[#0a583b]"
+      />
+
+      <p className="text-xs leading-5 text-[#647168]">
+        {isArabic
+          ? "بتأكيد الطلب، توافق على دفع الإجمالي الظاهر لمندوب التوصيل عند الاستلام."
+          : "By confirming, you agree to pay the displayed total to the delivery representative on arrival."}
+      </p>
+    </div>
+  </form>
+)}
 </section>
 
 {/* Summary */}
@@ -1347,6 +1638,20 @@ export default function PaymentPage() {
             : "Free"}
       </span>
     </div>
+
+    {paymentMethod === "cod" && (
+      <div className="flex items-center justify-between gap-4 text-[#526057]">
+        <span>
+          {isArabic
+            ? "رسوم الدفع عند الاستلام"
+            : "Cash-on-delivery fee"}
+        </span>
+
+        <span className="font-bold text-[#0a583b]">
+          {formatPrice(COD_FEE)}
+        </span>
+      </div>
+    )}
   </div>
 
   <div className="my-5 h-px bg-[#dfe4e0]" />
@@ -1433,8 +1738,9 @@ export default function PaymentPage() {
       form="payment-proof-form"
       disabled={
         loading ||
-        !file ||
-        Boolean(fileError)
+        (requiresPaymentProof &&
+          (!file ||
+            Boolean(fileError)))
       }
       className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-4 text-sm font-extrabold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#b4bdb7]"
     >
@@ -1444,7 +1750,11 @@ export default function PaymentPage() {
 
           <span className="truncate">
             {isArabic
-              ? "جاري الإرسال..."
+              ? paymentMethod === "cod"
+                ? "جاري تأكيد الطلب..."
+                : "جاري الإرسال..."
+              : paymentMethod === "cod"
+              ? "Placing order..."
               : "Submitting..."}
           </span>
         </>
@@ -1454,7 +1764,11 @@ export default function PaymentPage() {
 
           <span className="truncate">
             {isArabic
-              ? "تأكيد الدفع"
+              ? paymentMethod === "cod"
+                ? "تأكيد طلب COD"
+                : "تأكيد الدفع"
+              : paymentMethod === "cod"
+              ? "Place COD order"
               : "Confirm payment"}
           </span>
         </>
@@ -1465,4 +1779,3 @@ export default function PaymentPage() {
 </main>
 );
 }
-

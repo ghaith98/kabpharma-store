@@ -27,7 +27,6 @@ import { supabase } from "@/lib/supabase";
 import {
   CartItem,
   getCart,
-  saveCart,
 } from "@/lib/cart";
 
 import { useLanguage } from "../../context/LanguageContext";
@@ -83,13 +82,6 @@ type StoredCheckout = {
   address?: string;
 };
 
-type PaymentMethod =
-  | "transfer"
-  | "cod";
-
-const COD_IDEMPOTENCY_KEY =
-  "kab_cod_idempotency_key";
-
 export default function CheckoutPage() {
   const { lang } =
     useLanguage();
@@ -141,9 +133,6 @@ export default function CheckoutPage() {
 
   const [address, setAddress] =
     useState("");
-
-  const [paymentMethod, setPaymentMethod] =
-    useState<PaymentMethod>("transfer");
 
   const [
     checkingBan,
@@ -721,85 +710,7 @@ export default function CheckoutPage() {
         })
       );
 
-      if (paymentMethod === "transfer") {
-        router.push("/payment");
-        return;
-      }
-
-      const existingKey =
-        sessionStorage.getItem(
-          COD_IDEMPOTENCY_KEY
-        );
-
-      const idempotencyKey =
-        existingKey ||
-        crypto.randomUUID();
-
-      sessionStorage.setItem(
-        COD_IDEMPOTENCY_KEY,
-        idempotencyKey
-      );
-
-      const response = await fetch(
-        "/api/customer/orders/cod",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            checkout: {
-              name: name.trim(),
-              governorate,
-              delivery_area:
-                selectedArea?.area_name ||
-                "",
-              address: address.trim(),
-            },
-            cart: cart.map((item) => ({
-              id: item.id,
-              variant_id:
-                item.variant_id ?? null,
-              quantity: item.quantity,
-            })),
-            idempotencyKey,
-          }),
-        }
-      );
-
-      const result = await response
-        .json()
-        .catch(() => null);
-
-      if (!response.ok || !result?.success) {
-        if (response.status === 401) {
-          localStorage.setItem(
-            "redirect_after_login",
-            "/checkout"
-          );
-          router.replace("/login");
-          return;
-        }
-
-        throw new Error(
-          result?.error ||
-            result?.message ||
-            (isArabic
-              ? "تعذر تأكيد طلب الدفع عند الاستلام. يرجى مراجعة السلة والمحاولة مجدداً."
-              : "Could not place your cash-on-delivery order. Please review your cart and try again.")
-        );
-      }
-
-      saveCart([]);
-      window.dispatchEvent(
-        new Event("cartUpdated")
-      );
-      localStorage.removeItem("checkout");
-      sessionStorage.removeItem(
-        COD_IDEMPOTENCY_KEY
-      );
-      router.replace(`/orders/${result.orderId}`);
+      router.push("/payment");
     } catch (error) {
       console.error(
         "Checkout error:",
@@ -828,11 +739,7 @@ export default function CheckoutPage() {
   function getSubmitText() {
     if (submitting) {
       return isArabic
-        ? paymentMethod === "cod"
-          ? "جاري تأكيد الطلب..."
-          : "جاري المتابعة..."
-        : paymentMethod === "cod"
-        ? "Placing order..."
+        ? "جاري المتابعة..."
         : "Continuing...";
     }
 
@@ -855,11 +762,7 @@ export default function CheckoutPage() {
     }
 
     return isArabic
-      ? paymentMethod === "cod"
-        ? "تأكيد طلب الدفع عند الاستلام"
-        : "المتابعة إلى الدفع"
-      : paymentMethod === "cod"
-      ? "Place COD order"
+      ? "المتابعة إلى الدفع"
       : "Continue to payment";
   }
 
@@ -899,11 +802,7 @@ export default function CheckoutPage() {
 
             <span className="text-[#8a948d]">
               {isArabic
-                ? paymentMethod === "cod"
-                  ? "تأكيد الطلب"
-                  : "الدفع"
-                : paymentMethod === "cod"
-                ? "Confirm order"
+                ? "الدفع"
                 : "Payment"}
             </span>
           </div>
@@ -937,11 +836,7 @@ export default function CheckoutPage() {
 
               <p className="mt-3 max-w-xl text-sm leading-7 text-[#647168] sm:text-base">
                 {isArabic
-                  ? paymentMethod === "cod"
-                    ? "أدخل تفاصيل التوصيل، ثم أكّد طلبك للدفع عند الاستلام."
-                    : "أدخل تفاصيل التوصيل، ثم انتقل إلى الدفع لإكمال طلبك."
-                  : paymentMethod === "cod"
-                  ? "Add your delivery information, then confirm your cash-on-delivery order."
+                  ? "أدخل تفاصيل التوصيل، ثم انتقل إلى الدفع لإكمال طلبك."
                   : "Add your delivery information, then continue to payment to complete your order."}
               </p>
             </div>
@@ -1317,115 +1212,6 @@ export default function CheckoutPage() {
                 </p>
               </label>
 
-              {/* Payment method */}
-              <fieldset>
-                <legend className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
-                  <ShieldCheck
-                    size={15}
-                    className="text-[#0a583b]"
-                  />
-
-                  {isArabic
-                    ? "طريقة الدفع"
-                    : "Payment method"}
-                </legend>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="cursor-pointer">
-                    <input
-                      type="radio"
-                      name="payment-method"
-                      value="transfer"
-                      checked={
-                        paymentMethod ===
-                        "transfer"
-                      }
-                      onChange={() =>
-                        setPaymentMethod(
-                          "transfer"
-                        )
-                      }
-                      className="peer sr-only"
-                    />
-
-                    <span
-                      className={`block rounded-2xl border p-4 transition focus-within:ring-4 focus-within:ring-[#edf5f0] ${
-                        paymentMethod === "transfer"
-                          ? "border-[#0a583b] bg-[#edf5f0]"
-                          : "border-[#dfe4e0] bg-white"
-                      }`}
-                    >
-                      <span className="flex items-center justify-between gap-3">
-                        <span className="font-extrabold text-[#142019]">
-                          {isArabic
-                            ? "تحويل بنكي"
-                            : "Bank transfer"}
-                        </span>
-
-                        <span
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                            paymentMethod === "transfer"
-                              ? "border-[5px] border-[#0a583b]"
-                              : "border-[#9aa39d]"
-                          }`}
-                        />
-                      </span>
-
-                      <span className="mt-1.5 block text-xs leading-5 text-[#647168]">
-                        {isArabic
-                          ? "ارفع إثبات التحويل في الخطوة التالية."
-                          : "Upload your transfer proof in the next step."}
-                      </span>
-                    </span>
-                  </label>
-
-                  <label className="cursor-pointer">
-                    <input
-                      type="radio"
-                      name="payment-method"
-                      value="cod"
-                      checked={
-                        paymentMethod === "cod"
-                      }
-                      onChange={() =>
-                        setPaymentMethod("cod")
-                      }
-                      className="peer sr-only"
-                    />
-
-                    <span
-                      className={`block rounded-2xl border p-4 transition focus-within:ring-4 focus-within:ring-[#edf5f0] ${
-                        paymentMethod === "cod"
-                          ? "border-[#0a583b] bg-[#edf5f0]"
-                          : "border-[#dfe4e0] bg-white"
-                      }`}
-                    >
-                      <span className="flex items-center justify-between gap-3">
-                        <span className="font-extrabold text-[#142019]">
-                          {isArabic
-                            ? "الدفع عند الاستلام"
-                            : "Cash on delivery"}
-                        </span>
-
-                        <span
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                            paymentMethod === "cod"
-                              ? "border-[5px] border-[#0a583b]"
-                              : "border-[#9aa39d]"
-                          }`}
-                        />
-                      </span>
-
-                      <span className="mt-1.5 block text-xs leading-5 text-[#647168]">
-                        {isArabic
-                          ? "ادفع لمندوب التوصيل عند استلام طلبك."
-                          : "Pay the delivery representative when your order arrives."}
-                      </span>
-                    </span>
-                  </label>
-                </div>
-              </fieldset>
-
               {/* Desktop submit */}
               <button
                 type="submit"
@@ -1453,11 +1239,7 @@ export default function CheckoutPage() {
                 />
 
                 {isArabic
-                  ? paymentMethod === "cod"
-                    ? "سيتم تأكيد طلب الدفع عند الاستلام الآن."
-                    : "سيتم تأكيد تفاصيل الدفع في الخطوة التالية."
-                  : paymentMethod === "cod"
-                  ? "Your cash-on-delivery order will be confirmed now."
+                  ? "سيتم تأكيد تفاصيل الدفع في الخطوة التالية."
                   : "Payment details will be confirmed in the next step."}
               </div>
             </div>
