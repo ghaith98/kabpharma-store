@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 import { NextResponse } from "next/server";
 
 import { getCustomerSession } from "@/lib/customer-session";
@@ -340,6 +338,21 @@ export async function POST(request: Request) {
   const proof = formData.get("proof");
   const checkoutValue = formData.get("checkout");
   const cartValue = formData.get("cart");
+  const idempotencyKeyValue = formData.get(
+    "idempotencyKey"
+  );
+
+  const idempotencyKey = (
+    typeof idempotencyKeyValue === "string"
+      ? idempotencyKeyValue
+      : ""
+  )
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .slice(0, 100);
+
+  if (idempotencyKey.length < 8) {
+    return jsonError("Invalid request", 400);
+  }
 
   if (!(proof instanceof File)) {
     return jsonError("Payment proof is required", 400);
@@ -657,10 +670,10 @@ export async function POST(request: Request) {
       : configuredDeliveryFee;
   const orderTotal = productsTotal + deliveryFee;
 
+  // Deterministic path from the idempotency key so a retry overwrites the
+  // same object instead of leaving an orphan upload.
   const proofPath =
-    `orders/${profile.id}/` +
-    `${Date.now()}-${randomUUID()}.${proofType.extension}`;
-  let createdOrderId: number | null = null;
+    `orders/${profile.id}/${idempotencyKey}.${proofType.extension}`;
 
   try {
     const { error: uploadError } =
@@ -669,61 +682,52 @@ export async function POST(request: Request) {
         .upload(proofPath, proof, {
           cacheControl: "3600",
           contentType: proofType.contentType,
-          upsert: false,
+          upsert: true,
         });
 
     if (uploadError) {
       throw uploadError;
     }
 
-    // The payment-proofs bucket is PRIVATE. We store only the object
-    // path; admins view proofs through short-lived signed URLs
-    // (createSignedUrl). No public URL is generated or stored.
-    const { data: order, error: orderError } =
-      await supabaseAdmin
-        .from("orders")
-        .insert({
+    // Atomic + idempotent: order + items in one transaction, deduped by
+    // idempotency key (same RPC the COD path uses). The bucket is private,
+    // so we store only the path; admins view via signed URLs.
+    const { data: rpcData, error: rpcError } =
+      await supabaseAdmin.rpc("create_order_atomic", {
+        p_order: {
           customer_name: customerName,
           phone: profile.phone,
           governorate,
           delivery_area: deliveryArea.area_name,
           address,
           delivery_fee: deliveryFee,
+          cod_fee: 0,
           total_price: orderTotal,
           status: "pending",
-          payment_proof_url: null,
+          payment_method: "transfer",
           payment_proof_path: proofPath,
-          payment_proof_reviewed_at: null,
-          delivered_at: null,
-          payment_proof_deleted_at: null,
-        })
-        .select("id")
-        .single();
+          payment_proof_url: null,
+        },
+        p_items: validatedItems,
+        p_idempotency_key: idempotencyKey,
+      });
 
-    if (orderError || !order) {
-      throw orderError || new Error("Order was not created");
+    if (rpcError) {
+      throw rpcError;
     }
 
-    createdOrderId = Number(order.id);
+    const created = Array.isArray(rpcData)
+      ? rpcData[0]
+      : rpcData;
 
-    const { error: itemsError } =
-      await supabaseAdmin
-        .from("order_items")
-        .insert(
-          validatedItems.map((item) => ({
-            ...item,
-            order_id: order.id,
-          }))
-        );
-
-    if (itemsError) {
-      throw itemsError;
+    if (!created?.id) {
+      throw new Error("Order was not created");
     }
 
     return NextResponse.json(
       {
         success: true,
-        orderId: order.id,
+        orderId: created.id,
         total: orderTotal,
       },
       {
@@ -736,14 +740,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Secure order creation failed:", error);
 
-    if (createdOrderId !== null) {
-      await supabaseAdmin
-        .from("orders")
-        .delete()
-        .eq("id", createdOrderId)
-        .eq("phone", profile.phone);
-    }
-
+    // Best-effort cleanup of the uploaded proof. On a retry with the same
+    // idempotency key the RPC returns the existing order (no duplicate).
     await supabaseAdmin.storage
       .from("payment-proofs")
       .remove([proofPath]);

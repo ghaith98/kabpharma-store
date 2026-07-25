@@ -46,6 +46,9 @@ const COD_FEE = 50;
 const COD_IDEMPOTENCY_KEY =
   "kab_cod_idempotency_key";
 
+const TRANSFER_IDEMPOTENCY_KEY =
+  "kab_transfer_idempotency_key";
+
 type PaymentMethod =
   | "sham_cash"
   | "cod";
@@ -812,6 +815,24 @@ export default function PaymentPage() {
       );
       formData.set("proof", file);
 
+      const existingTransferKey =
+        sessionStorage.getItem(
+          TRANSFER_IDEMPOTENCY_KEY
+        );
+      const transferIdempotencyKey =
+        existingTransferKey ||
+        crypto.randomUUID();
+
+      sessionStorage.setItem(
+        TRANSFER_IDEMPOTENCY_KEY,
+        transferIdempotencyKey
+      );
+
+      formData.set(
+        "idempotencyKey",
+        transferIdempotencyKey
+      );
+
       const response = await fetch(
         "/api/customer/orders",
         {
@@ -849,6 +870,10 @@ export default function PaymentPage() {
 
       localStorage.removeItem(
         "checkout"
+      );
+
+      sessionStorage.removeItem(
+        TRANSFER_IDEMPOTENCY_KEY
       );
 
       router.replace(
@@ -903,7 +928,7 @@ export default function PaymentPage() {
               ? "مراحل إتمام الطلب"
               : "Checkout progress"
           }
-          className="max-w-[470px] md:hidden"
+          className="max-w-[470px]"
         >
           <div
             dir="ltr"
