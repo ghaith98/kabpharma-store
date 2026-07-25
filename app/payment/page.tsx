@@ -25,6 +25,7 @@ import {
   Package,
   QrCode,
   ShieldCheck,
+  Tag,
   Truck,
   UploadCloud,
 } from "lucide-react";
@@ -162,6 +163,7 @@ export default function PaymentPage() {
   } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const [couponOpen, setCouponOpen] = useState(false);
 
   const BackArrow =
     isArabic
@@ -635,6 +637,7 @@ export default function PaymentPage() {
     setCouponInput("");
     setAppliedCoupon(null);
     setCouponError("");
+    setCouponOpen(false);
     sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
     sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
   }
@@ -1190,16 +1193,6 @@ export default function PaymentPage() {
                 </label>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-[#dfe4e0] bg-[#f7f8f6] p-4">
-                <label className="block text-sm font-extrabold text-[#142019]">
-                  {isArabic ? "كود الخصم" : "Coupon code"}
-                </label>
-                <div className="mt-2 flex gap-2" dir="ltr">
-                  <input value={couponInput} onChange={(event) => { setCouponInput(event.target.value.toUpperCase()); if (appliedCoupon) setAppliedCoupon(null); setCouponError(""); }} placeholder="WELCOME5" maxLength={40} className="min-w-0 flex-1 rounded-xl border border-[#cbd3cd] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]" />
-                  {appliedCoupon ? <button type="button" onClick={clearCoupon} className="rounded-xl border border-[#cbd3cd] bg-white px-3 text-xs font-extrabold text-[#526057] hover:text-red-600">{isArabic ? "إزالة" : "Remove"}</button> : <button type="button" disabled={checkingCoupon} onClick={applyCoupon} className="rounded-xl bg-[#0a583b] px-4 text-xs font-extrabold text-white disabled:bg-[#b4bdb7]">{checkingCoupon ? "..." : (isArabic ? "تطبيق" : "Apply")}</button>}
-                </div>
-                {appliedCoupon ? <p className="mt-2 text-xs font-bold text-[#0a583b]">{isArabic ? `تم تطبيق ${appliedCoupon.code}` : `${appliedCoupon.code} applied`}</p> : couponError ? <p role="alert" className="mt-2 text-xs font-bold text-red-600">{couponError}</p> : null}
-              </div>
             </div>
 
             {/* QR area */}
@@ -1690,6 +1683,86 @@ export default function PaymentPage() {
           </div>
         );
       })
+    )}
+  </div>
+
+  {/* Coupon */}
+  <div className="border-b border-[#e7ebe8] py-4">
+    {!couponOpen && !appliedCoupon ? (
+      <button
+        type="button"
+        onClick={() => setCouponOpen(true)}
+        className="flex w-full items-center justify-between gap-3 text-sm font-extrabold text-[#526057] transition hover:text-[#0a583b]"
+      >
+        <span className="flex items-center gap-2">
+          <Tag size={16} strokeWidth={2} />
+          {isArabic ? "لديك كود خصم؟" : "Have a discount code?"}
+        </span>
+
+        <span className="text-xs font-bold">
+          {isArabic ? "إضافة" : "Add"}
+        </span>
+      </button>
+    ) : (
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <p className="flex items-center gap-2 text-sm font-extrabold text-[#142019]">
+            <Tag size={16} strokeWidth={2} className="text-[#0a583b]" />
+            {isArabic ? "كود الخصم" : "Discount code"}
+          </p>
+
+          {appliedCoupon && (
+            <button
+              type="button"
+              onClick={clearCoupon}
+              className="text-xs font-extrabold text-[#647168] transition hover:text-red-600"
+            >
+              {isArabic ? "إزالة" : "Remove"}
+            </button>
+          )}
+        </div>
+
+        {appliedCoupon ? (
+          <p className="mt-3 rounded-xl bg-[#edf5f0] px-3 py-2.5 text-xs font-extrabold text-[#0a583b]">
+            {isArabic
+              ? `تم تطبيق كود ${appliedCoupon.code}`
+              : `${appliedCoupon.code} applied`}
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 flex gap-2" dir="ltr">
+              <input
+                value={couponInput}
+                onChange={(event) => {
+                  setCouponInput(event.target.value.toUpperCase());
+                  setCouponError("");
+                }}
+                aria-label={isArabic ? "كود الخصم" : "Discount code"}
+                maxLength={40}
+                className="min-w-0 flex-1 rounded-xl border border-[#cbd3cd] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
+              />
+              <button
+                type="button"
+                disabled={checkingCoupon}
+                onClick={applyCoupon}
+                className="rounded-xl bg-[#0a583b] px-4 text-xs font-extrabold text-white transition hover:bg-[#073f2c] disabled:bg-[#b4bdb7]"
+              >
+                {checkingCoupon
+                  ? "..."
+                  : isArabic
+                    ? "تطبيق"
+                    : "Apply"}
+              </button>
+            </div>
+
+            {couponError && (
+              <p role="alert" className="mt-2 text-xs font-bold text-red-600">
+                {couponError}
+              </p>
+            )}
+          </>
+        )}
+      </div>
     )}
   </div>
 
