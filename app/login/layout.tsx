@@ -1,12 +1,9 @@
-import type { ReactNode } from "react";
-import { noIndexMetadata } from "@/lib/seo";
+import type { Metadata } from "next";
 
-export const metadata = noIndexMetadata;
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
-export default function NoIndexLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function LoginLayout({ children }: { children: React.ReactNode }) {
   return children;
 }
