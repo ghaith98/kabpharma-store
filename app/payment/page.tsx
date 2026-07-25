@@ -1107,7 +1107,7 @@ export default function PaymentPage() {
                       />
                     </span>
 
-                    <span className="mt-1.5 block text-xs font-bold leading-5 text-[#0a583b]">
+                    <span className="mt-1.5 block text-xs leading-5 text-[#647168]">
                       {isArabic
                         ? `رسوم خدمة إضافية ${formatPrice(COD_FEE)}`
                         : `Additional service fee: ${formatPrice(COD_FEE)}`}
