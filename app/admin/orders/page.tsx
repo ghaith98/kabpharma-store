@@ -43,6 +43,8 @@ type AdminOrder = {
   delivery_area: string | null;
   address: string | null;
   delivery_fee: number | null;
+  cod_fee: number | null;
+  payment_method: string | null;
   total_price: number | null;
   status: string;
   created_at: string | null;
@@ -88,6 +90,8 @@ export default function AdminOrdersPage() {
         delivery_area,
         address,
         delivery_fee,
+        cod_fee,
+        payment_method,
         total_price,
         status,
         created_at,
@@ -537,6 +541,21 @@ export default function AdminOrdersPage() {
                 </p>
 
                 <p>
+                  <strong>Payment:</strong>{" "}
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                      order.payment_method === "cod"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {order.payment_method === "cod"
+                      ? "Cash on Delivery"
+                      : "Sham Cash"}
+                  </span>
+                </p>
+
+                <p>
                   <strong>Governorate:</strong>{" "}
                   {order.governorate || "Not selected"}
                 </p>
@@ -558,6 +577,16 @@ export default function AdminOrdersPage() {
                   ).toLocaleString()}{" "}
                   SYP
                 </p>
+
+                {Number(order.cod_fee || 0) > 0 && (
+                  <p>
+                    <strong>COD Fee:</strong>{" "}
+                    {Number(
+                      order.cod_fee || 0
+                    ).toLocaleString()} {" "}
+                    SYP
+                  </p>
+                )}
 
                 <p>
                   <strong>Total:</strong>{" "}
@@ -629,6 +658,10 @@ export default function AdminOrdersPage() {
                   {formatDate(
                     order.payment_proof_deleted_at
                   )}
+                </div>
+              ) : order.payment_method === "cod" ? (
+                <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
+                  Cash on Delivery — no payment proof required
                 </div>
               ) : (
                 <div className="mt-4 rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-sm font-bold text-gray-600">
@@ -792,4 +825,3 @@ export default function AdminOrdersPage() {
     </main>
   );
 }
-

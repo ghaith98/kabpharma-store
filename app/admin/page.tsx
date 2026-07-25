@@ -33,6 +33,8 @@ type RecentOrder = {
   id: number;
   customer_name: string | null;
   phone: string | null;
+  payment_method: string | null;
+  cod_fee: number | string | null;
   total_price: number | string | null;
   status: string | null;
   created_at: string | null;
@@ -172,7 +174,7 @@ export default function AdminDashboardPage() {
       supabase
         .from("orders")
         .select(
-          "id, customer_name, phone, total_price, status, created_at"
+          "id, customer_name, phone, payment_method, cod_fee, total_price, status, created_at"
         )
         .order("created_at", {
           ascending: false,
@@ -769,6 +771,26 @@ export default function AdminDashboardPage() {
                               order.total_price || 0
                             ).toLocaleString()}{" "}
                             SYP
+
+                            <p
+                              className={`mt-1 text-xs font-extrabold ${
+                                order.payment_method === "cod"
+                                  ? "text-emerald-700"
+                                  : "text-blue-700"
+                              }`}
+                            >
+                              {order.payment_method === "cod"
+                                ? `COD${
+                                    Number(
+                                      order.cod_fee || 0
+                                    ) > 0
+                                      ? ` + ${Number(
+                                          order.cod_fee || 0
+                                        ).toLocaleString()} SYP fee`
+                                      : ""
+                                  }`
+                                : "Sham Cash"}
+                            </p>
                           </td>
 
                           <td className="px-6 py-4">
@@ -826,6 +848,26 @@ export default function AdminDashboardPage() {
                               order.total_price || 0
                             ).toLocaleString()}{" "}
                             SYP
+                          </p>
+
+                          <p
+                            className={`mt-1 text-xs font-extrabold ${
+                              order.payment_method === "cod"
+                                ? "text-emerald-700"
+                                : "text-blue-700"
+                            }`}
+                          >
+                            {order.payment_method === "cod"
+                              ? `Cash on Delivery${
+                                  Number(
+                                    order.cod_fee || 0
+                                  ) > 0
+                                    ? ` + ${Number(
+                                        order.cod_fee || 0
+                                      ).toLocaleString()} SYP fee`
+                                    : ""
+                                }`
+                              : "Sham Cash"}
                           </p>
 
                           <span
@@ -889,4 +931,3 @@ export default function AdminDashboardPage() {
     </main>
   );
 }
-
