@@ -7,8 +7,11 @@ import {
 } from "@/lib/http";
 import {
   getRequestIp,
-  takeRateLimit,
 } from "@/lib/rate-limit";
+import {
+  resetOtpBackoff,
+  takeRateLimitDb,
+} from "@/lib/rate-limit-db";
 
 import {
   CUSTOMER_SESSION_COOKIE,
@@ -99,10 +102,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const verificationLimit = takeRateLimit({
+    const verificationLimit = await takeRateLimitDb({
       key: `verify-otp:${getRequestIp(request)}:${phone}`,
       limit: 10,
-      windowMs: 10 * 60 * 1000,
+      windowSeconds: 10 * 60,
     });
 
     if (!verificationLimit.allowed) {
@@ -205,6 +208,12 @@ export async function POST(request: Request) {
 
     /*
       OTP verification succeeded.
+      Clear the send-backoff for this phone so a returning user
+      isn't stuck in a cooldown next time.
+    */
+    await resetOtpBackoff(`otp:send:${phone}`);
+
+    /*
       Now find the customer profile.
     */
     const {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { IconType } from "react-icons";
@@ -152,9 +152,63 @@ export default function AdminShell({
   const pathname = usePathname();
   const router = useRouter();
 
+  const [authState, setAuthState] = useState<
+    "checking" | "authenticated"
+  >("checking");
+
   const isLoginPage =
     pathname === "/admin/login" ||
     pathname?.startsWith("/admin/login/");
+
+  // Single source of truth for admin access.
+  // Every /admin/* page is wrapped by this shell, so guarding here
+  // protects all current and future admin pages at once.
+  // NOTE: this is a client-side UX guard only. The real data boundary
+  // is Supabase RLS + disabling public sign-ups — do not rely on this
+  // alone to protect data.
+  useEffect(() => {
+    // The login page must be reachable without a session.
+    if (isLoginPage) {
+      setAuthState("authenticated");
+      return;
+    }
+
+    let active = true;
+
+    async function verifySession() {
+      const { data, error } =
+        await supabase.auth.getUser();
+
+      if (!active) return;
+
+      if (error || !data.user) {
+        router.replace("/admin/login");
+        return;
+      }
+
+      setAuthState("authenticated");
+    }
+
+    verifySession();
+
+    // React to sign-out / token expiry (this tab or another tab).
+    const { data: listener } =
+      supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          if (!active) return;
+
+          if (!session) {
+            setAuthState("checking");
+            router.replace("/admin/login");
+          }
+        }
+      );
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [isLoginPage, router]);
 
   const currentPageTitle = useMemo(() => {
     const allLinks = navigationGroups.flatMap(
@@ -192,6 +246,22 @@ export default function AdminShell({
 
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  // Never render an admin page (or its data-fetching) until the
+  // session is confirmed. Unauthenticated visitors are redirected
+  // above, so they only ever see this state.
+  if (authState === "checking") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f4f7f5] text-gray-500">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-green-600" />
+          <p className="text-sm font-semibold">
+            Verifying access…
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

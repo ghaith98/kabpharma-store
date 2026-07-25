@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getCustomerSession } from "@/lib/customer-session";
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
+import { getRequestIp } from "@/lib/rate-limit";
+import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +106,44 @@ export async function POST(request: Request) {
   const profile = await getVerifiedProfile();
   if (!profile) {
     return jsonError("Authentication required", 401);
+  }
+
+  // Rate limit order creation per phone and per IP (distributed).
+  // COD has no payment proof, so this is the main flood-control here.
+  const ip = getRequestIp(request);
+  const [ipLimit, phoneLimit] = await Promise.all([
+    takeRateLimitDb({
+      key: `orders:ip:${ip}`,
+      limit: 20,
+      windowSeconds: 60 * 60,
+    }),
+    takeRateLimitDb({
+      key: `orders:phone:${profile.phone}`,
+      limit: 6,
+      windowSeconds: 10 * 60,
+    }),
+  ]);
+
+  if (!ipLimit.allowed || !phoneLimit.allowed) {
+    const retryAfter = Math.max(
+      ipLimit.retryAfterSeconds,
+      phoneLimit.retryAfterSeconds
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          "Too many orders in a short time. Please try again shortly.",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfter),
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   }
 
   let body: {

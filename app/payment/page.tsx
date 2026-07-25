@@ -903,7 +903,7 @@ export default function PaymentPage() {
               ? "مراحل إتمام الطلب"
               : "Checkout progress"
           }
-          className="max-w-[470px]"
+          className="max-w-[470px] md:hidden"
         >
           <div
             dir="ltr"

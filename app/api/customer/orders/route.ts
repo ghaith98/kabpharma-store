@@ -7,6 +7,8 @@ import {
   hasTrustedOrigin,
   jsonError,
 } from "@/lib/http";
+import { getRequestIp } from "@/lib/rate-limit";
+import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -287,6 +289,43 @@ export async function POST(request: Request) {
     return jsonError(
       "Authentication required",
       401
+    );
+  }
+
+  // Rate limit order creation per phone and per IP (distributed).
+  const ip = getRequestIp(request);
+  const [ipLimit, phoneLimit] = await Promise.all([
+    takeRateLimitDb({
+      key: `orders:ip:${ip}`,
+      limit: 20,
+      windowSeconds: 60 * 60,
+    }),
+    takeRateLimitDb({
+      key: `orders:phone:${profile.phone}`,
+      limit: 6,
+      windowSeconds: 10 * 60,
+    }),
+  ]);
+
+  if (!ipLimit.allowed || !phoneLimit.allowed) {
+    const retryAfter = Math.max(
+      ipLimit.retryAfterSeconds,
+      phoneLimit.retryAfterSeconds
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          "Too many orders in a short time. Please try again shortly.",
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfter),
+          "Cache-Control": "no-store",
+        },
+      }
     );
   }
 
@@ -637,11 +676,9 @@ export async function POST(request: Request) {
       throw uploadError;
     }
 
-    const { data: publicUrlData } =
-      supabaseAdmin.storage
-        .from("payment-proofs")
-        .getPublicUrl(proofPath);
-
+    // The payment-proofs bucket is PRIVATE. We store only the object
+    // path; admins view proofs through short-lived signed URLs
+    // (createSignedUrl). No public URL is generated or stored.
     const { data: order, error: orderError } =
       await supabaseAdmin
         .from("orders")
@@ -654,8 +691,7 @@ export async function POST(request: Request) {
           delivery_fee: deliveryFee,
           total_price: orderTotal,
           status: "pending",
-          payment_proof_url:
-            publicUrlData.publicUrl,
+          payment_proof_url: null,
           payment_proof_path: proofPath,
           payment_proof_reviewed_at: null,
           delivered_at: null,

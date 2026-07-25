@@ -6,8 +6,11 @@ import {
 } from "@/lib/http";
 import {
   getRequestIp,
-  takeRateLimit,
 } from "@/lib/rate-limit";
+import {
+  takeOtpBackoff,
+  takeRateLimitDb,
+} from "@/lib/rate-limit-db";
 
 export const dynamic = "force-dynamic";
 
@@ -37,16 +40,19 @@ export async function POST(req: Request) {
     }
 
     const ip = getRequestIp(req);
-    const phoneLimit = takeRateLimit({
-      key: `send-otp:phone:${phone}`,
-      limit: 5,
-      windowMs: 10 * 60 * 1000,
-    });
-    const ipLimit = takeRateLimit({
-      key: `send-otp:ip:${ip}`,
-      limit: 20,
-      windowMs: 60 * 60 * 1000,
-    });
+    // Per-phone: escalating backoff (1st immediate, then 60s, 120s, 300s, 600s;
+    // max 6/hour). Per-IP: fixed hourly cap so one IP can't hammer many phones.
+    const [phoneLimit, ipLimit] = await Promise.all([
+      takeOtpBackoff({
+        key: `otp:send:${phone}`,
+        maxPerHour: 6,
+      }),
+      takeRateLimitDb({
+        key: `otp:send:ip:${ip}`,
+        limit: 20,
+        windowSeconds: 60 * 60,
+      }),
+    ]);
 
     if (!phoneLimit.allowed || !ipLimit.allowed) {
       const retryAfter = Math.max(
@@ -59,6 +65,7 @@ export async function POST(req: Request) {
           success: false,
           error:
             "Too many verification requests. Please try again later.",
+          retryAfter,
         },
         {
           status: 429,
