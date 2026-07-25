@@ -22,6 +22,7 @@ import {
   FiExternalLink,
   FiChevronRight,
   FiUserCheck,
+  FiTag,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 
@@ -104,6 +105,16 @@ const navigationGroups: NavigationGroup[] = [
         href: "/admin/delivery",
         label: "Fees & Areas",
         icon: FiSettings,
+      },
+    ],
+  },
+  {
+    title: "Marketing",
+    links: [
+      {
+        href: "/admin/coupons",
+        label: "Coupons",
+        icon: FiTag,
       },
     ],
   },
@@ -454,4 +465,3 @@ export default function AdminShell({
     </div>
   );
 }
-

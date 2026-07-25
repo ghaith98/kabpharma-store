@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCustomerSession } from "@/lib/customer-session";
+import { couponCode, getCouponDiscount } from "@/lib/coupons";
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
@@ -150,6 +151,7 @@ export async function POST(request: Request) {
     checkout?: CheckoutPayload;
     cart?: SubmittedCartItem[];
     idempotencyKey?: unknown;
+    couponCode?: unknown;
   };
 
   try {
@@ -420,10 +422,20 @@ export async function POST(request: Request) {
     productsTotal >= freeShippingThreshold
       ? 0
       : configuredDeliveryFee;
-  const orderTotal =
-    productsTotal +
-    deliveryFee +
-    COD_FEE;
+  let coupon;
+  try {
+    coupon = await getCouponDiscount(body.couponCode, productsTotal);
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : "Coupon validation failed",
+      400
+    );
+  }
+  const discountAmount = coupon?.discountAmount || 0;
+  const orderTotal = Math.max(
+    0,
+    productsTotal - discountAmount + deliveryFee + COD_FEE
+  );
 
   // Atomic + idempotent creation. If items fail, the order rolls back.
   // If this idempotency key was already used, the existing order is returned.
@@ -456,6 +468,20 @@ export async function POST(request: Request) {
 
   if (!created?.id) {
     return jsonError("Could not create order", 500);
+  }
+
+  if (coupon) {
+    const { error: couponSaveError } = await supabaseAdmin
+      .from("orders")
+      .update({
+        coupon_code: couponCode(coupon.code),
+        discount_amount: discountAmount,
+        products_subtotal: productsTotal,
+      })
+      .eq("id", created.id);
+    if (couponSaveError) {
+      console.error("Coupon metadata save failed:", couponSaveError);
+    }
   }
 
   return NextResponse.json(

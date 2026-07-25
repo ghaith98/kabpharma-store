@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getCustomerSession } from "@/lib/customer-session";
+import { couponCode, getCouponDiscount } from "@/lib/coupons";
 import {
   hasTrustedOrigin,
   jsonError,
@@ -341,6 +342,7 @@ export async function POST(request: Request) {
   const idempotencyKeyValue = formData.get(
     "idempotencyKey"
   );
+  const submittedCouponCode = formData.get("couponCode");
 
   const idempotencyKey = (
     typeof idempotencyKeyValue === "string"
@@ -668,7 +670,17 @@ export async function POST(request: Request) {
     productsTotal >= freeShippingThreshold
       ? 0
       : configuredDeliveryFee;
-  const orderTotal = productsTotal + deliveryFee;
+  let coupon;
+  try {
+    coupon = await getCouponDiscount(submittedCouponCode, productsTotal);
+  } catch (error) {
+    return jsonError(
+      error instanceof Error ? error.message : "Coupon validation failed",
+      400
+    );
+  }
+  const discountAmount = coupon?.discountAmount || 0;
+  const orderTotal = Math.max(0, productsTotal - discountAmount + deliveryFee);
 
   // Deterministic path from the idempotency key so a retry overwrites the
   // same object instead of leaving an orphan upload.
@@ -722,6 +734,20 @@ export async function POST(request: Request) {
 
     if (!created?.id) {
       throw new Error("Order was not created");
+    }
+
+    if (coupon) {
+      const { error: couponSaveError } = await supabaseAdmin
+        .from("orders")
+        .update({
+          coupon_code: couponCode(coupon.code),
+          discount_amount: discountAmount,
+          products_subtotal: productsTotal,
+        })
+        .eq("id", created.id);
+      if (couponSaveError) {
+        console.error("Coupon metadata save failed:", couponSaveError);
+      }
     }
 
     return NextResponse.json(

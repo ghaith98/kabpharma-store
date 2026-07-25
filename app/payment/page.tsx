@@ -155,6 +155,14 @@ export default function PaymentPage() {
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethod>("sham_cash");
 
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+  } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+
   const BackArrow =
     isArabic
       ? ArrowRight
@@ -565,7 +573,7 @@ export default function PaymentPage() {
     );
 
   const total =
-    productsTotal +
+    Math.max(0, productsTotal - (appliedCoupon?.discountAmount || 0)) +
     deliveryFee +
     (paymentMethod === "cod"
       ? COD_FEE
@@ -591,6 +599,45 @@ export default function PaymentPage() {
     ]
       .filter(Boolean)
       .join("، ");
+
+  async function applyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError(isArabic ? "أدخلي كود الخصم." : "Enter a coupon code.");
+      return;
+    }
+    setCheckingCoupon(true);
+    setCouponError("");
+    try {
+      const response = await fetch("/api/customer/coupons/validate", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal: productsTotal }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || "Coupon validation failed");
+      }
+      setAppliedCoupon(result.coupon);
+      setCouponInput(result.coupon.code);
+      sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
+      sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
+    } catch (error) {
+      setAppliedCoupon(null);
+      setCouponError(error instanceof Error ? error.message : (isArabic ? "تعذر التحقق من الكوبون." : "Could not validate the coupon."));
+    } finally {
+      setCheckingCoupon(false);
+    }
+  }
+
+  function clearCoupon() {
+    setCouponInput("");
+    setAppliedCoupon(null);
+    setCouponError("");
+    sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
+    sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
+  }
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>
@@ -741,6 +788,7 @@ export default function PaymentPage() {
                   item.variant_id ?? null,
                 quantity: item.quantity,
               })),
+              couponCode: appliedCoupon?.code || "",
               idempotencyKey,
             }),
           }
@@ -814,6 +862,7 @@ export default function PaymentPage() {
         )
       );
       formData.set("proof", file);
+      formData.set("couponCode", appliedCoupon?.code || "");
 
       const existingTransferKey =
         sessionStorage.getItem(
@@ -1139,6 +1188,17 @@ export default function PaymentPage() {
                     </span>
                   </span>
                 </label>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-[#dfe4e0] bg-[#f7f8f6] p-4">
+                <label className="block text-sm font-extrabold text-[#142019]">
+                  {isArabic ? "كود الخصم" : "Coupon code"}
+                </label>
+                <div className="mt-2 flex gap-2" dir="ltr">
+                  <input value={couponInput} onChange={(event) => { setCouponInput(event.target.value.toUpperCase()); if (appliedCoupon) setAppliedCoupon(null); setCouponError(""); }} placeholder="WELCOME5" maxLength={40} className="min-w-0 flex-1 rounded-xl border border-[#cbd3cd] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]" />
+                  {appliedCoupon ? <button type="button" onClick={clearCoupon} className="rounded-xl border border-[#cbd3cd] bg-white px-3 text-xs font-extrabold text-[#526057] hover:text-red-600">{isArabic ? "إزالة" : "Remove"}</button> : <button type="button" disabled={checkingCoupon} onClick={applyCoupon} className="rounded-xl bg-[#0a583b] px-4 text-xs font-extrabold text-white disabled:bg-[#b4bdb7]">{checkingCoupon ? "..." : (isArabic ? "تطبيق" : "Apply")}</button>}
+                </div>
+                {appliedCoupon ? <p className="mt-2 text-xs font-bold text-[#0a583b]">{isArabic ? `تم تطبيق ${appliedCoupon.code}` : `${appliedCoupon.code} applied`}</p> : couponError ? <p role="alert" className="mt-2 text-xs font-bold text-red-600">{couponError}</p> : null}
               </div>
             </div>
 
@@ -1646,6 +1706,13 @@ export default function PaymentPage() {
         {formatPrice(productsTotal)}
       </span>
     </div>
+
+    {appliedCoupon && (
+      <div className="flex items-center justify-between gap-4 text-[#0a583b]">
+        <span>{isArabic ? `خصم (${appliedCoupon.code})` : `Discount (${appliedCoupon.code})`}</span>
+        <span className="font-bold">−{formatPrice(appliedCoupon.discountAmount)}</span>
+      </div>
+    )}
 
     <div className="flex items-center justify-between gap-4 text-[#526057]">
       <span>
