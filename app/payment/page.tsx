@@ -1276,10 +1276,10 @@ export default function PaymentPage() {
                   </div>
 
                   <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#b8d7c4] pt-4 text-sm">
-                    <span className="font-bold text-[#526057]">
+                    <span className="font-bold text-[#0a583b]">
                       {isArabic
                         ? "رسوم خدمة الدفع عند الاستلام"
-                        : "Cash-on-delivery service fee"}
+                        : "Cash on delivery service fee"}
                     </span>
 
                     <span className="font-extrabold text-[#0a583b]">
@@ -1476,7 +1476,7 @@ export default function PaymentPage() {
           <span>
             {isArabic
               ? "تأكيد طلب الدفع عند الاستلام"
-              : "Place cash-on-delivery order"}
+              : "Place cash on delivery"}
           </span>
         </>
       )}
@@ -1640,10 +1640,10 @@ export default function PaymentPage() {
 
     {paymentMethod === "cod" && (
       <div className="flex items-center justify-between gap-4 text-[#526057]">
-        <span>
+        <span className="text-[#0a583b]">
           {isArabic
             ? "رسوم الدفع عند الاستلام"
-            : "Cash-on-delivery fee"}
+            : "Cash on delivery fee"}
         </span>
 
         <span className="font-bold text-[#0a583b]">
@@ -1764,10 +1764,10 @@ export default function PaymentPage() {
           <span className="truncate">
             {isArabic
               ? paymentMethod === "cod"
-                ? "تأكيد طلب COD"
+                ? "تأكيد طلب الدفع عند الاستلام"
                 : "تأكيد الدفع"
               : paymentMethod === "cod"
-              ? "Place COD order"
+              ? "Place cash on delivery"
               : "Confirm payment"}
           </span>
         </>
