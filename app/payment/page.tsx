@@ -1042,7 +1042,7 @@ export default function PaymentPage() {
                   />
 
                   <span
-                    className={`block rounded-2xl border p-4 transition ${
+                    className={`block min-h-[104px] rounded-2xl border p-4 transition ${
                       paymentMethod === "sham_cash"
                         ? "border-[#0a583b] bg-[#edf5f0]"
                         : "border-[#dfe4e0] bg-white hover:border-[#8fb5a0]"
@@ -1085,7 +1085,7 @@ export default function PaymentPage() {
                   />
 
                   <span
-                    className={`block rounded-2xl border p-4 transition ${
+                    className={`block min-h-[104px] rounded-2xl border p-4 transition ${
                       paymentMethod === "cod"
                         ? "border-[#0a583b] bg-[#edf5f0]"
                         : "border-[#dfe4e0] bg-white hover:border-[#8fb5a0]"
