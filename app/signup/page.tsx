@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -26,9 +26,30 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [resendAttempts, setResendAttempts] = useState(0);
+  const [resendIn, setResendIn] = useState(0);
+
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const fullPhone = phone.trim() ? `963${phone.trim()}` : "";
+
+  // Ticking countdown for the resend button.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const id = setInterval(() => {
+      setResendIn((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [resendIn]);
+
+  // Escalating cooldown (mirrors the server backoff):
+  // after the 1st send wait 60s, then 120s, 300s, 600s.
+  function cooldownFor(attempt: number) {
+    const schedule = [60, 120, 300, 600];
+    return schedule[
+      Math.min(Math.max(attempt, 1), schedule.length) - 1
+    ];
+  }
   const otpCode = otpDigits.join("");
 
   function t(en: string, ar: string) {
@@ -122,16 +143,32 @@ try {
     !response.ok ||
     !result.success
   ) {
-    setErrorMessage(
-      t(
-        "Could not send the verification code. Please try again.",
-        "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
-      )
-    );
+    if (response.status === 429) {
+      const wait =
+        Number(result?.retryAfter) ||
+        cooldownFor(resendAttempts || 1);
+      setResendIn(wait);
+      setErrorMessage(
+        t(
+          `Please wait ${wait}s before requesting another code.`,
+          `يرجى الانتظار ${wait} ثانية قبل طلب رمز جديد.`
+        )
+      );
+    } else {
+      setErrorMessage(
+        t(
+          "Could not send the verification code. Please try again.",
+          "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
+        )
+      );
+    }
 
     return;
   }
 
+  const nextAttempt = resendAttempts + 1;
+  setResendAttempts(nextAttempt);
+  setResendIn(cooldownFor(nextAttempt));
   setOtpSent(true);
 
   setTimeout(() => {
@@ -371,7 +408,7 @@ try {
                     <button
                       type="button"
                       disabled={loading}
-                      onClick={() => { setOtpSent(false); setOtpDigits(["", "", "", "", "", ""]); setErrorMessage(""); }}
+                      onClick={() => { setOtpSent(false); setOtpDigits(["", "", "", "", "", ""]); setErrorMessage(""); setResendAttempts(0); setResendIn(0); }}
                       className="shrink-0 text-xs font-extrabold text-[#0a583b] disabled:opacity-50"
                     >
                       {t("Edit details", "تعديل البيانات")}
@@ -398,6 +435,22 @@ try {
                         className="aspect-square min-w-0 rounded-xl border border-[#cfd6d1] text-center text-xl font-extrabold outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                       />
                     ))}
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-center">
+                    <button
+                      type="button"
+                      disabled={loading || resendIn > 0}
+                      onClick={sendOtp}
+                      className="text-xs font-extrabold text-[#0a583b] transition disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {resendIn > 0
+                        ? t(
+                            `Resend in ${resendIn}s`,
+                            `أعد الإرسال بعد ${resendIn} ثانية`
+                          )
+                        : t("Resend code", "إعادة إرسال الرمز")}
+                    </button>
                   </div>
                 </div>
               )}
