@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -22,6 +23,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 import EditorialProductCard from "./EditorialProductCard";
 import NewArrivalsBanner from "../NewArrivalsBanner";
+import RoutineBanner from "./RoutineBanner";
 import type {
   EditorialProduct,
 } from "./EditorialProductCard";
@@ -849,13 +851,20 @@ export default function ProductsClient({
         ) : (
          <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
   {filteredProducts.map(
-    (product) => (
-      <EditorialProductCard
-        key={product.id}
-        product={product}
-        headingLevel={2}
-        imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-      />
+    (product, index) => (
+      <Fragment key={product.id}>
+        <EditorialProductCard
+          product={product}
+          headingLevel={2}
+          imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+        />
+
+        {!standaloneCollection && index === 3 && (
+            <div className="col-span-full my-2">
+              <RoutineBanner />
+            </div>
+          )}
+      </Fragment>
     )
   )}
 </div>
@@ -1201,4 +1210,3 @@ export default function ProductsClient({
     </>
   );
 }
-

@@ -8,6 +8,7 @@ import Footer from "./FooterComponent";
 import MobileBottomNav from "./MobileBottomNav";
 import OnlinePresenceTracker from "./OnlinePresenceTracker";
 import NavigationProgress from "./NavigationProgress";
+import KABAssistantWidget from "./KABAssistantWidget";
 
 export default function LayoutShell({
   children,
@@ -78,6 +79,7 @@ export default function LayoutShell({
       <Footer />
 
       <MobileBottomNav />
+      <KABAssistantWidget />
     </>
   );
 }
