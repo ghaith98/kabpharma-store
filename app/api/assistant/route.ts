@@ -59,12 +59,15 @@ function asksForCatalogue(query: string) {
   return includesAny(q, [
     "what products",
     "what do you sell",
-    "best products",
-    "your products",
-    "products",
-    "product",
-    "منتجات",
-    "منتج",
+    "whole website",
+    "entire website",
+    "all products",
+    "full catalogue",
+    "full catalog",
+    "كل الموقع",
+    "كامل الموقع",
+    "كل المنتجات",
+    "جميع المنتجات",
     "شو عندكم",
     "شو بتبيعو",
   ]);
@@ -130,7 +133,6 @@ function aliases(query: string) {
     "what",
     "which",
     "the",
-    "best",
     "for",
     "with",
     "and",
@@ -140,6 +142,10 @@ function aliases(query: string) {
     "products",
     "recommend",
     "recommendation",
+    "do",
+    "have",
+    "can",
+    "use",
     "ما",
     "ماهو",
     "ماهي",
@@ -366,6 +372,34 @@ function outputText(data: {
     .trim();
 }
 
+function parseAssistantAnswer(
+  rawAnswer: string,
+  products: Array<{ id: number }>
+) {
+  const markerPattern =
+    /\s*KAB_PRODUCTS\s*:\s*([0-9][0-9,\s]*)\.?/i;
+
+  const marker = rawAnswer.match(markerPattern);
+
+  const answer = rawAnswer
+    .replace(markerPattern, "")
+    .trim();
+
+  const allowedIds = new Set(products.map((product) => product.id));
+  const ids = (marker?.[1].match(/\d+/g) || [])
+    .map(Number)
+    .filter(
+      (id, index, values) =>
+        allowedIds.has(id) && values.indexOf(id) === index
+    )
+    .slice(0, 2);
+
+  return {
+    answer,
+    products: products.filter((product) => ids.includes(product.id)),
+  };
+}
+
 function shortAnswer(
   language: Language,
   kind: "action" | "app" | "unrelated"
@@ -479,12 +513,13 @@ export async function POST(request: Request) {
     productsResult,
     concernsResult,
     concernLinksResult,
+    productCountResult,
   ] = await Promise.all([
     supabaseAdmin
       .from("products")
       .select("*, categories (*), product_variants (*)")
       .order("id", { ascending: false })
-      .limit(80),
+      .limit(500),
 
     supabaseAdmin
       .from("concerns")
@@ -495,6 +530,10 @@ export async function POST(request: Request) {
     supabaseAdmin
       .from("product_concerns")
       .select("product_id, concern_id"),
+
+    supabaseAdmin
+      .from("products")
+      .select("*", { count: "exact", head: true }),
   ]);
 
   const { data, error } = productsResult;
@@ -555,6 +594,29 @@ export async function POST(request: Request) {
     enrichedProducts,
     message
   ).map((product) => catalogItem(product, language));
+
+  const catalogueSummary = {
+    total_products:
+      productCountResult.count ?? enrichedProducts.length,
+    categories: Array.from(
+      new Set(
+        enrichedProducts
+          .map((product) => {
+            const category = product.categories as Product | null;
+            return localized(
+              category || {},
+              "name",
+              language,
+              80
+            );
+          })
+          .filter(Boolean)
+      )
+    ),
+    shop_by_need: ((concernsResult.data || []) as Product[])
+      .map((concern) => localized(concern, "name", language, 80))
+      .filter(Boolean),
+  };
 
   const query = normalize(message);
 
@@ -620,9 +682,13 @@ ABSOLUTE RULES:
 - Do not claim availability unless the supplied available field is true.
 - Keep the answer short and direct. Recommend a maximum of 3 relevant products.
 - For pregnancy, breastfeeding, allergies, severe irritation, children, medications, or medical conditions: do not diagnose or promise a result. Say suitability should be checked with a qualified professional.
+- When the customer asks about the whole website, number of products, or all products, use FULL WEBSITE CATALOGUE SUMMARY. Do not claim there is only one product when the summary contains more than one.
 
 VERIFIED PRODUCT SEARCH RESULTS:
-${JSON.stringify(products)}`;
+${JSON.stringify(products)}
+
+FULL WEBSITE CATALOGUE SUMMARY:
+${JSON.stringify(catalogueSummary)}`;
 
   try {
     const response = await fetch(
@@ -694,7 +760,7 @@ ${message}`,
     return NextResponse.json({
       success: true,
       answer,
-      products,
+      products: products.slice(0, 2),
       needsHuman,
     });
   } catch (exception) {
