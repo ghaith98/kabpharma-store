@@ -154,6 +154,20 @@ export default function KABAssistantWidget({
   useEffect(() => {
     if (
       !isOpen ||
+      isSending ||
+      authState !== "authenticated"
+    ) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  }, [authState, isOpen, isSending, messages]);
+
+  useEffect(() => {
+    if (
+      !isOpen ||
       authState !== "guest" ||
       sessionStorage.getItem(GUEST_NOTICE_STORAGE_KEY)
     ) {
