@@ -459,8 +459,10 @@ export async function POST(request: Request) {
     concernsByProductId.set(productId, existing);
   }
 
-  const enrichedProducts = ((data || []) as Product[]).map(
-    (product) => ({
+  const enrichedProducts: Product[] = (
+    (data || []) as unknown as Product[]
+  ).map(
+    (product): Product => ({
       ...product,
       ai_concerns:
         concernsByProductId.get(Number(product.id)) || [],
