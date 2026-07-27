@@ -846,7 +846,7 @@ export default function ProductsClient({
                 <div
                   id="product-sort-menu"
                   role="menu"
-                  className="absolute right-0 top-[calc(100%+0.15rem)] z-30 min-w-[190px] overflow-hidden border border-[#777] bg-white py-0 text-sm shadow-none"
+                  className="absolute right-0 top-[calc(100%+0.15rem)] z-30 min-w-[190px] overflow-hidden border border-[#dfe4e0] bg-white py-0 text-sm shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
                 >
                   {[
                     ["default", isArabic ? "الترتيب الافتراضي" : "Default"],
@@ -870,8 +870,8 @@ export default function ProductsClient({
                           : "justify-start text-left"
                       } ${
                         sortBy === value
-                          ? "bg-[#1558d6] text-white"
-                          : "text-black hover:bg-[#eeeeee]"
+                          ? "bg-[#edf5f0] font-medium text-[#0a583b]"
+                          : "text-[#142019] hover:bg-[#f5f7f5]"
                       }`}
                     >
                       {label}
@@ -965,7 +965,7 @@ export default function ProductsClient({
             <div className="flex min-h-full flex-col">
               <div
                 dir="ltr"
-                className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e5e5e5] bg-white px-3 py-2"
+                className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e7ebe8] bg-white px-3 py-2"
               >
                 <div className="flex items-center gap-2">
                   <h2
@@ -987,7 +987,7 @@ export default function ProductsClient({
                       ? "إغلاق"
                       : "Close"
                   }
-                  className="flex h-11 w-11 items-center justify-center border-2 border-black bg-white text-lg text-black transition hover:bg-[#f3f3f3]"
+                  className="flex h-11 w-11 items-center justify-center border-2 border-[#dfe4e0] bg-white text-lg text-[#142019] transition hover:bg-[#edf5f0]"
                 >
                   <FaTimes />
                 </button>
@@ -1008,11 +1008,11 @@ export default function ProductsClient({
                         onClick={() =>
                           setDraftCategoryIds([])
                         }
-                        className={`border px-3 py-3 text-sm italic text-black transition ${
+                        className={`border px-3 py-3 text-sm italic transition ${
                           draftCategoryIds.length ===
                           0
-                            ? "border-black bg-[#f1f1f1]"
-                            : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
+                            ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                            : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
                         }`}
                       >
                         {isArabic
@@ -1053,10 +1053,10 @@ export default function ProductsClient({
                                     : [...current, category.id]
                                 )
                               }
-                              className={`border px-3 py-3 text-sm italic text-black transition ${
+                              className={`border px-3 py-3 text-sm italic transition ${
                                 isSelected
-                                  ? "border-black bg-[#f1f1f1]"
-                                  : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
+                                  ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                                  : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
                               }`}
                             >
                               {
@@ -1078,10 +1078,10 @@ export default function ProductsClient({
                   </h3>
 
                   <div className="flex flex-wrap gap-0.5">
-                    <label className={`cursor-pointer border px-3 py-3 text-sm italic text-black transition ${
+                    <label className={`cursor-pointer border px-3 py-3 text-sm italic transition ${
                       draftInStockOnly
-                        ? "border-black bg-[#f1f1f1]"
-                        : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
+                        ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                        : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
                     }`}>
                       <input
                         type="checkbox"
@@ -1104,10 +1104,10 @@ export default function ProductsClient({
                       </span>
                     </label>
 
-                    <label className={`cursor-pointer border px-3 py-3 text-sm italic text-black transition ${
+                    <label className={`cursor-pointer border px-3 py-3 text-sm italic transition ${
                       draftOnSaleOnly
-                        ? "border-black bg-[#f1f1f1]"
-                        : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
+                        ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                        : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
                     }`}>
                       <input
                         type="checkbox"
@@ -1190,7 +1190,7 @@ export default function ProductsClient({
                 <button
                   type="button"
                   onClick={cancelDraftFilters}
-                  className="min-h-11 border-b border-black bg-white px-3 text-sm font-medium text-black transition hover:bg-[#f5f5f5]"
+                  className="min-h-11 border-b border-[#0a583b]/30 bg-white px-3 text-sm font-medium text-[#142019] transition hover:bg-[#f5f7f5]"
                 >
                   {isArabic
                     ? "إلغاء"
@@ -1200,7 +1200,7 @@ export default function ProductsClient({
                 <button
                   type="button"
                   onClick={applyDraftFilters}
-                  className="min-h-11 border-b border-r border-black bg-white px-3 text-sm font-medium text-black transition hover:bg-[#f5f5f5]"
+                  className="min-h-11 bg-[#0a583b] px-3 text-sm font-semibold text-white transition hover:bg-[#073f2c]"
                 >
                   {isArabic
                     ? `تطبيق${draftFiltersCount ? ` (${draftFiltersCount})` : ""}`
