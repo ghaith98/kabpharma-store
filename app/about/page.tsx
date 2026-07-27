@@ -6,14 +6,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  Eye,
-  Headphones,
-  HeartHandshake,
-  Leaf,
-  RefreshCw,
   ShieldCheck,
-  Sparkles,
-  Target,
+  HeartHandshake,
+  FlaskConical,
+  MessageCircle,
 } from "lucide-react";
 
 import { useLanguage } from "../../context/LanguageContext";
@@ -284,52 +280,37 @@ export default function AboutPage() {
   const values = [
     {
       number: "01",
-
       Icon:
         ShieldCheck,
-
       title:
         t.qualityTitle,
-
       text:
         t.qualityText,
     },
-
     {
       number: "02",
-
       Icon:
-        Eye,
-
+        FlaskConical,
       title:
         t.clarityTitle,
-
       text:
         t.clarityText,
     },
-
     {
       number: "03",
-
       Icon:
         HeartHandshake,
-
       title:
         t.customerTitle,
-
       text:
         t.customerText,
     },
-
     {
       number: "04",
-
       Icon:
-        RefreshCw,
-
+        MessageCircle,
       title:
         t.improvementTitle,
-
       text:
         t.improvementText,
     },
@@ -349,90 +330,81 @@ export default function AboutPage() {
           ? "rtl"
           : "ltr"
       }
-      className="min-h-screen bg-[#f7f8f6] text-[#142019]"
+      className="min-h-screen overflow-hidden bg-[#fbfcfa] text-[#142019]"
     >
-      {/* Hero */}
-      <header className="border-b border-[#dfe4e0] bg-white px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-28">
-        <div className="mx-auto max-w-[1440px]">
-          <p
-            className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-              isArabic
-                ? "tracking-normal"
-                : "tracking-[0.2em]"
-            }`}
-          >
-            {t.eyebrow}
-          </p>
-
-          <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] lg:items-end lg:gap-20">
-            <h1
-              className={`max-w-[1000px] font-extrabold text-[#142019] ${
-                isArabic
-                  ? "text-[42px] leading-[1.2] tracking-normal [font-family:var(--font-arabic)] sm:text-[58px] lg:text-[76px]"
-                  : "text-[50px] leading-[0.94] tracking-[-0.06em] sm:text-[72px] lg:text-[98px]"
-              }`}
-            >
-              {t.title}
-            </h1>
-
+      <header className="bg-[#eaf2ed] px-5 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20 lg:px-10 lg:pb-32 lg:pt-28">
+        <div className="mx-auto max-w-[1320px]">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,.65fr)] lg:items-end lg:gap-24">
             <div>
-              <p className="text-[15px] leading-8 text-[#526057] sm:text-base">
+              <p
+                className={`text-[11px] font-bold uppercase text-[#0a583b] ${
+                  isArabic ? "tracking-normal" : "tracking-[0.22em]"
+                }`}
+              >
+                {t.eyebrow}
+              </p>
+              <h1
+                className={`mt-6 max-w-[920px] font-medium text-[#102c21] ${
+                  isArabic
+                    ? "text-[42px] leading-[1.25] [font-family:var(--font-arabic)] sm:text-[58px] lg:text-[76px]"
+                    : "text-[50px] leading-[.98] tracking-[-0.055em] sm:text-[70px] lg:text-[88px]"
+                }`}
+              >
+                {t.title}
+              </h1>
+            </div>
+            <div className="border-s border-[#b9ccc0] ps-6 sm:ps-8">
+              <p className="text-[15px] leading-8 text-[#42564b] sm:text-base">
                 {t.heroText}
               </p>
-
-              <div className="mt-7 border-t border-[#dfe4e0] pt-5">
-                <p
-                  dir="ltr"
-                  className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#0a583b]"
-                >
-                  KAB Pharma
-                </p>
-
-                <p className="mt-2 text-sm font-bold text-[#647168]">
-                  {t.signature}
-                </p>
-              </div>
+              <Link
+                href="/products"
+                className="group mt-7 inline-flex items-center gap-3 text-sm font-bold text-[#0a583b]"
+              >
+                {t.productsButton}
+                <ArrowIcon
+                  size={16}
+                  className={`transition-transform ${
+                    isArabic
+                      ? "group-hover:-translate-x-1"
+                      : "group-hover:translate-x-1"
+                  }`}
+                />
+              </Link>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Story */}
-      <section className="px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-28">
-        <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-20">
-          <div>
+      <section className="bg-white px-5 py-16 sm:px-6 sm:py-24 lg:px-10 lg:py-32">
+        <div className="mx-auto grid max-w-[1320px] gap-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-24">
+          <div className="lg:pt-2">
             <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-                isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.18em]"
+              className={`text-[11px] font-bold uppercase text-[#0a583b] ${
+                isArabic ? "tracking-normal" : "tracking-[0.2em]"
               }`}
             >
               {t.storyLabel}
             </p>
-
-            <div className="mt-5 flex h-12 w-12 items-center justify-center rounded-full border border-[#cbd3cd] text-[#0a583b]">
-              <Leaf size={20} />
-            </div>
+            <p dir="ltr" className="mt-4 text-xs font-semibold tracking-[0.14em] text-[#849188]">
+              KAB PHARMA
+            </p>
           </div>
-
           <div>
             <h2
-              className={`max-w-4xl font-extrabold text-[#142019] ${
+              className={`max-w-4xl font-medium text-[#142019] ${
                 isArabic
-                  ? "text-3xl leading-[1.35] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
-                  : "text-4xl leading-[1.04] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
+                  ? "text-3xl leading-[1.4] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
+                  : "text-4xl leading-[1.08] tracking-[-0.04em] sm:text-5xl lg:text-[58px]"
               }`}
             >
               {t.storyTitle}
             </h2>
-
-            <div className="mt-10 grid gap-7 border-t border-[#dfe4e0] pt-8 sm:grid-cols-2 sm:gap-10">
-              <p className="text-[15px] leading-8 text-[#526057]">
+            <div className="mt-10 grid gap-7 border-t border-[#dce4df] pt-8 sm:grid-cols-2 sm:gap-12">
+              <p className="text-[15px] leading-8 text-[#536158]">
                 {t.storyParagraph1}
               </p>
-
-              <p className="text-[15px] leading-8 text-[#526057]">
+              <p className="text-[15px] leading-8 text-[#536158]">
                 {t.storyParagraph2}
               </p>
             </div>
@@ -440,118 +412,78 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Brand statement */}
-      <section className="bg-[#0a583b] px-5 py-16 text-white sm:px-6 sm:py-20 lg:px-10 lg:py-28">
-        <div className="mx-auto max-w-[1320px]">
-          <Sparkles
-            size={22}
-            className="text-white/70"
-          />
-
+      <section className="bg-[#0a583b] px-5 py-16 text-white sm:px-6 sm:py-24 lg:px-10 lg:py-28">
+        <div className="mx-auto grid max-w-[1320px] gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
           <blockquote
-            className={`mt-8 max-w-[1150px] font-extrabold ${
+            className={`font-medium ${
               isArabic
-                ? "text-3xl leading-[1.45] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
-                : "text-4xl leading-[1.08] tracking-[-0.04em] sm:text-5xl lg:text-7xl"
+                ? "text-3xl leading-[1.5] [font-family:var(--font-arabic)] sm:text-4xl"
+                : "text-4xl leading-[1.12] tracking-[-0.035em] sm:text-5xl"
             }`}
           >
             “{t.statement}”
           </blockquote>
-
-          <p
-            dir="ltr"
-            className="mt-10 text-xs font-extrabold uppercase tracking-[0.18em] text-white/65"
-          >
-            KAB Pharma
-          </p>
-        </div>
-      </section>
-
-      {/* Vision and mission */}
-      <section className="border-b border-[#dfe4e0] bg-white px-5 sm:px-6 lg:px-10">
-        <div className="mx-auto grid max-w-[1320px] lg:grid-cols-2">
-          <article className="border-b border-[#dfe4e0] py-14 lg:border-b-0 lg:border-e lg:py-20 lg:pe-16">
+          <div className="grid gap-10 border-t border-white/25 pt-8 sm:grid-cols-2 lg:border-s lg:border-t-0 lg:ps-14 lg:pt-0">
+            <article>
             <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-                isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.16em]"
-              }`}
+                className={`text-[10px] font-bold uppercase text-white/60 ${
+                  isArabic ? "tracking-normal" : "tracking-[0.18em]"
+                }`}
             >
               {t.visionLabel}
             </p>
-
-            <div className="mt-8 flex h-12 w-12 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-              <Eye size={20} />
-            </div>
-
-            <h2 className="mt-7 max-w-xl text-3xl font-extrabold leading-tight tracking-tight text-[#142019] sm:text-4xl">
+              <h2 className="mt-5 text-xl font-semibold leading-snug">
               {t.visionTitle}
             </h2>
-
-            <p className="mt-5 max-w-xl text-[15px] leading-8 text-[#647168]">
+              <p className="mt-4 text-sm leading-7 text-white/70">
               {t.visionText}
             </p>
           </article>
-
-          <article className="py-14 lg:py-20 lg:ps-16">
+            <article>
             <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-                isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.16em]"
-              }`}
+                className={`text-[10px] font-bold uppercase text-white/60 ${
+                  isArabic ? "tracking-normal" : "tracking-[0.18em]"
+                }`}
             >
               {t.missionLabel}
             </p>
-
-            <div className="mt-8 flex h-12 w-12 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-              <Target size={20} />
-            </div>
-
-            <h2 className="mt-7 max-w-xl text-3xl font-extrabold leading-tight tracking-tight text-[#142019] sm:text-4xl">
+              <h2 className="mt-5 text-xl font-semibold leading-snug">
               {t.missionTitle}
             </h2>
-
-            <p className="mt-5 max-w-xl text-[15px] leading-8 text-[#647168]">
+              <p className="mt-4 text-sm leading-7 text-white/70">
               {t.missionText}
             </p>
           </article>
+          </div>
         </div>
       </section>
 
-      {/* Values */}
-      <section className="px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-28">
+      <section className="bg-[#fbfcfa] px-5 py-16 sm:px-6 sm:py-24 lg:px-10 lg:py-32">
         <div className="mx-auto max-w-[1320px]">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:items-end lg:gap-20">
+          <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-end lg:gap-20">
             <div>
               <p
-                className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-                  isArabic
-                    ? "tracking-normal"
-                    : "tracking-[0.18em]"
+                className={`text-[11px] font-bold uppercase text-[#0a583b] ${
+                  isArabic ? "tracking-normal" : "tracking-[0.2em]"
                 }`}
               >
                 {t.valuesLabel}
               </p>
-
               <h2
-                className={`mt-5 font-extrabold text-[#142019] ${
+                className={`mt-5 font-medium text-[#142019] ${
                   isArabic
-                    ? "text-3xl leading-[1.3] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
-                    : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
+                    ? "text-3xl leading-[1.35] [font-family:var(--font-arabic)] sm:text-4xl"
+                    : "text-4xl leading-[1.05] tracking-[-0.04em] sm:text-5xl"
                 }`}
               >
                 {t.valuesTitle}
               </h2>
             </div>
-
             <p className="max-w-2xl text-[15px] leading-8 text-[#647168]">
               {t.valuesSubtitle}
             </p>
           </div>
-
-          <div className="mt-12 grid border-y border-[#dfe4e0] sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-px overflow-hidden rounded-[1.5rem] border border-[#dce4df] bg-[#dce4df] sm:grid-cols-2 lg:grid-cols-4">
             {values.map(
               ({
                 number,
@@ -561,23 +493,19 @@ export default function AboutPage() {
               }) => (
                 <article
                   key={number}
-                  className="border-b border-[#dfe4e0] py-8 last:border-b-0 sm:p-7 sm:[&:nth-child(odd)]:border-e lg:border-b-0 lg:border-e lg:last:border-e-0"
+                  className="bg-white p-7 sm:min-h-[285px] sm:p-8"
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <span className="text-xs font-extrabold text-[#8a948d]">
+                    <span className="text-[10px] font-bold tracking-[0.16em] text-[#8a948d]">
                       {number}
                     </span>
-
-                    <Icon
-                      size={19}
-                      className="text-[#0a583b]"
-                    />
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#edf5f0]">
+                      <Icon size={18} strokeWidth={1.7} className="text-[#0a583b]" />
+                    </span>
                   </div>
-
-                  <h3 className="mt-10 text-lg font-extrabold text-[#142019]">
+                  <h3 className="mt-12 text-lg font-semibold text-[#142019]">
                     {title}
                   </h3>
-
                   <p className="mt-3 text-sm leading-7 text-[#647168]">
                     {text}
                   </p>
@@ -588,36 +516,30 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Why KAB */}
-      <section className="border-y border-[#dfe4e0] bg-white px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-24">
+      <section className="border-y border-[#dfe4e0] bg-white px-5 py-16 sm:px-6 sm:py-24 lg:px-10 lg:py-28">
         <div className="mx-auto grid max-w-[1320px] gap-12 lg:grid-cols-2 lg:items-start lg:gap-20">
           <div>
             <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
-                isArabic
-                  ? "tracking-normal"
-                  : "tracking-[0.18em]"
+              className={`text-[11px] font-bold uppercase text-[#0a583b] ${
+                isArabic ? "tracking-normal" : "tracking-[0.2em]"
               }`}
             >
               {t.whyLabel}
             </p>
-
             <h2
-              className={`mt-5 max-w-xl font-extrabold text-[#142019] ${
+              className={`mt-5 max-w-xl font-medium text-[#142019] ${
                 isArabic
                   ? "text-3xl leading-[1.3] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
-                  : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
+                  : "text-4xl leading-[1.04] tracking-[-0.04em] sm:text-5xl"
               }`}
             >
               {t.whyTitle}
             </h2>
-
             <p className="mt-6 max-w-xl text-[15px] leading-8 text-[#647168]">
               {t.whyText}
             </p>
           </div>
-
-          <div className="border-t border-[#dfe4e0]">
+          <div className="border-t border-[#ccd7d0]">
             {whyPoints.map(
               (
                 point,
@@ -625,20 +547,15 @@ export default function AboutPage() {
               ) => (
                 <div
                   key={point}
-                  className="flex items-start gap-4 border-b border-[#dfe4e0] py-5"
+                  className="flex items-center gap-4 border-b border-[#dce4df] py-6"
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-                    <Check
-                      size={14}
-                      strokeWidth={2.5}
-                    />
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eaf3ed] text-[#0a583b]">
+                    <Check size={14} strokeWidth={2} />
                   </span>
-
-                  <span className="text-sm font-bold leading-7 text-[#526057]">
+                  <span className="text-sm font-semibold leading-7 text-[#42564b]">
                     {point}
                   </span>
-
-                  <span className="ms-auto shrink-0 text-xs font-bold text-[#9aa39d]">
+                  <span className="ms-auto shrink-0 text-[10px] font-bold tracking-[0.15em] text-[#a0aaa3]">
                     {String(
                       index + 1
                     ).padStart(
@@ -653,114 +570,28 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Promise */}
-      <section className="px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-24">
-        <div className="mx-auto grid max-w-[1320px] overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-[#edf5f0] lg:grid-cols-[0.65fr_1.35fr]">
-          <div className="flex min-h-[260px] flex-col justify-between bg-[#142019] p-7 text-white sm:p-10 lg:min-h-[440px]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25">
-              <Headphones size={20} />
-            </div>
-
-            <div>
-              <p
-                className={`text-[11px] font-extrabold uppercase text-white/60 ${
-                  isArabic
-                    ? "tracking-normal"
-                    : "tracking-[0.16em]"
-                }`}
-              >
-                {t.promiseLabel}
-              </p>
-
-              <p
-                dir="ltr"
-                className="mt-3 text-xs font-extrabold uppercase tracking-[0.18em] text-white"
-              >
-                KAB Pharma
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-16">
+      <section className="bg-[#eaf2ed] px-5 py-16 sm:px-6 sm:py-24 lg:px-10 lg:py-28">
+        <div className="mx-auto flex max-w-[1320px] flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className={`text-[11px] font-bold uppercase text-[#0a583b] ${
+              isArabic ? "tracking-normal" : "tracking-[0.2em]"
+            }`}>
+              {t.promiseLabel}
+            </p>
             <h2
-              className={`font-extrabold text-[#142019] ${
+              className={`mt-5 max-w-3xl font-medium text-[#142019] ${
                 isArabic
-                  ? "text-3xl leading-[1.35] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
-                  : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
+                  ? "text-3xl leading-[1.3] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
+                  : "text-4xl leading-[1.04] tracking-[-0.04em] sm:text-5xl"
               }`}
             >
               {t.promiseTitle}
             </h2>
-
-            <p className="mt-6 max-w-2xl text-[15px] leading-8 text-[#526057]">
+            <p className="mt-5 max-w-2xl text-[15px] leading-8 text-[#647168]">
               {t.promiseText}
             </p>
-
-            <Link
-              href="/contact"
-              className="group mt-8 inline-flex w-fit items-center gap-3 border-b border-[#142019] pb-1 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
-            >
-              <span>
-                {t.contactButton}
-              </span>
-
-              <ArrowIcon
-                size={15}
-                className={`transition-transform ${
-                  isArabic
-                    ? "group-hover:-translate-x-1"
-                    : "group-hover:translate-x-1"
-                }`}
-              />
-            </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="border-t border-[#dfe4e0] bg-white px-5 py-14 sm:px-6 sm:py-20 lg:px-10 lg:py-24">
-        <div className="mx-auto flex max-w-[1320px] flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p
-              dir="ltr"
-              className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#0a583b]"
-            >
-              KAB Pharma
-            </p>
-
-            <h2
-              className={`mt-5 max-w-3xl font-extrabold text-[#142019] ${
-                isArabic
-                  ? "text-3xl leading-[1.3] [font-family:var(--font-arabic)] sm:text-4xl lg:text-5xl"
-                  : "text-4xl leading-[1.02] tracking-[-0.045em] sm:text-5xl lg:text-6xl"
-              }`}
-            >
-              {t.ctaTitle}
-            </h2>
-
-            <p className="mt-5 max-w-2xl text-[15px] leading-8 text-[#647168]">
-              {t.ctaText}
-            </p>
-          </div>
-
           <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
-            <Link
-              href="/products"
-              className="group inline-flex min-h-[52px] items-center justify-center gap-3 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
-            >
-              <span>
-                {t.productsButton}
-              </span>
-
-              <ArrowIcon
-                size={16}
-                className={`transition-transform ${
-                  isArabic
-                    ? "group-hover:-translate-x-1"
-                    : "group-hover:translate-x-1"
-                }`}
-              />
-            </Link>
           </div>
         </div>
       </section>
