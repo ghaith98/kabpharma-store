@@ -119,11 +119,21 @@ export default function KABAssistantWidget({
     try {
       const savedMessages = sessionStorage.getItem(CHAT_STORAGE_KEY);
 
+      sessionStorage.removeItem(GUEST_NOTICE_STORAGE_KEY);
+
       if (savedMessages) {
         const parsedMessages = JSON.parse(savedMessages) as Message[];
 
         if (Array.isArray(parsedMessages)) {
-          setMessages(parsedMessages.slice(-20));
+          const customerMessages = parsedMessages
+            .filter((message) => !message.needsSignup)
+            .slice(-20);
+
+          sessionStorage.setItem(
+            CHAT_STORAGE_KEY,
+            JSON.stringify(customerMessages)
+          );
+          setMessages(customerMessages);
         }
       }
     } catch {
