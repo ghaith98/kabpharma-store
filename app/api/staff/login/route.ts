@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
-import {
-  getRequestIp,
-  takeRateLimit,
-} from "@/lib/rate-limit";
+import { getRequestIp } from "@/lib/rate-limit";
+import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import {
   createStaffSessionToken,
   STAFF_SESSION_COOKIE,
@@ -38,10 +36,10 @@ export async function POST(request: Request) {
       return jsonError("Invalid credentials", 400);
     }
 
-    const rateLimit = takeRateLimit({
+    const rateLimit = await takeRateLimitDb({
       key: `staff-login:${getRequestIp(request)}:${role}:${identifier.toLowerCase()}`,
       limit: 10,
-      windowMs: 15 * 60 * 1000,
+      windowSeconds: 15 * 60,
     });
 
     if (!rateLimit.allowed) {

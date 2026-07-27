@@ -1,10 +1,8 @@
 "use client";
 
 import { FormEvent, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
   Bot,
-  ChevronRight,
   ExternalLink,
   Send,
   Sparkles,
@@ -14,19 +12,10 @@ import {
 import { FaWhatsapp } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
 
-type AssistantProduct = {
-  id: number;
-  name: string;
-  price: number;
-  available: boolean;
-  description: string;
-};
-
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  products?: AssistantProduct[];
   needsHuman?: boolean;
 };
 
@@ -43,8 +32,6 @@ const copy = {
     whatsappNote: "هل تحتاجين مساعدة مباشرة؟ فريقنا متاح عبر واتساب.",
     error: "تعذر إرسال الرسالة الآن. يرجى المحاولة مجدداً.",
     assistant: "مساعد KAB",
-    product: "عرض المنتج",
-    unavailable: "غير متوفر",
   },
   en: {
     online: "KAB AI Assistant",
@@ -58,12 +45,14 @@ const copy = {
     whatsappNote: "Need direct help? Our team is available on WhatsApp.",
     error: "Your message could not be sent. Please try again.",
     assistant: "KAB Assistant",
-    product: "View product",
-    unavailable: "Out of stock",
   },
 } as const;
 
-export default function KABAssistantWidget() {
+export default function KABAssistantWidget({
+  placement = "floating",
+}: {
+  placement?: "floating" | "banner";
+}) {
   const { lang } = useLanguage();
   const isArabic = lang === "ar";
   const t = copy[lang];
@@ -145,9 +134,6 @@ export default function KABAssistantWidget() {
           id: crypto.randomUUID(),
           role: "assistant",
           content: String(data.answer || t.error),
-          products: Array.isArray(data.products)
-            ? data.products
-            : [],
           needsHuman: data.needsHuman === true,
         },
       ]);
@@ -169,11 +155,15 @@ export default function KABAssistantWidget() {
   return (
     <div
       dir={isArabic ? "rtl" : "ltr"}
-      className="fixed bottom-24 right-4 z-[80] md:bottom-6 md:right-6"
+      className={
+        placement === "banner"
+          ? "relative z-30 mt-4 w-fit"
+          : "fixed bottom-24 right-4 z-[80] md:bottom-6 md:right-6"
+      }
     >
       <section
         aria-label={t.assistant}
-        className={`absolute bottom-20 right-0 flex h-[min(610px,calc(100vh-9rem))] w-[calc(100vw-2rem)] max-w-[390px] origin-bottom-right flex-col overflow-hidden rounded-[26px] bg-[#fcfcf8] shadow-[0_24px_70px_rgba(10,48,33,0.28)] ring-1 ring-black/5 transition-all duration-300 ${
+        className={`${placement === "banner" ? "fixed bottom-4 right-4 z-[100] md:bottom-6 md:right-6" : "absolute bottom-20 right-0"} flex h-[min(610px,calc(100vh-9rem))] w-[calc(100vw-2rem)] max-w-[390px] origin-bottom-right flex-col overflow-hidden rounded-[26px] bg-[#fcfcf8] shadow-[0_24px_70px_rgba(10,48,33,0.28)] ring-1 ring-black/5 transition-all duration-300 ${
           isOpen
             ? "visible translate-y-0 scale-100 opacity-100"
             : "pointer-events-none invisible translate-y-5 scale-95 opacity-0"
@@ -185,8 +175,11 @@ export default function KABAssistantWidget() {
 
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
-            className={`absolute top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 ${
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsOpen(false);
+            }}
+            className={`absolute top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition hover:bg-white/20 ${
               isArabic ? "left-4" : "right-4"
             }`}
             aria-label="Close"
@@ -257,36 +250,6 @@ export default function KABAssistantWidget() {
                   </div>
 
                   <p className="whitespace-pre-line">{message.content}</p>
-
-                  {message.products?.map((product) => (
-                    <Link
-                      key={product.id}
-                      href={`/products/${product.id}`}
-                      onClick={() => setIsOpen(false)}
-                      className="mt-3 block rounded-xl border border-[#c9dbc6] bg-white p-3 text-[#1b382a] transition hover:border-[#0a583b]"
-                    >
-                      <p className="font-semibold">{product.name}</p>
-
-                      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-[#55705f]">
-                        <span>
-                          {product.price.toLocaleString()} SYP
-                        </span>
-
-                        <span className="flex items-center gap-1 font-semibold text-[#0a583b]">
-                          {product.available
-                            ? t.product
-                            : t.unavailable}
-
-                          <ChevronRight
-                            size={14}
-                            className={
-                              isArabic ? "rotate-180" : ""
-                            }
-                          />
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
 
                   {message.needsHuman && (
                     <a

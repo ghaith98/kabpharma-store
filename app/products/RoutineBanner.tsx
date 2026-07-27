@@ -2,6 +2,7 @@
 
 import { Sparkles } from "lucide-react";
 
+import KABAssistantWidget from "../KABAssistantWidget";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function RoutineBanner() {
@@ -51,6 +52,8 @@ export default function RoutineBanner() {
             "أجيبي عن أسئلة مدروسة واحصلي على روتين KAB مركّز لك."
           )}
         </p>
+
+        <KABAssistantWidget placement="banner" />
       </div>
     </section>
   );
