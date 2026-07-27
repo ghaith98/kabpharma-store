@@ -1190,7 +1190,7 @@ export default function ProductsClient({
                 <button
                   type="button"
                   onClick={cancelDraftFilters}
-                  className="min-h-11 border-b border-[#0a583b]/30 bg-white px-3 text-sm font-medium text-[#142019] transition hover:bg-[#f5f7f5]"
+                  className="min-h-11 border border-[#c5cdc7] border-b-[3px] border-b-[#a8b3ab] bg-[#f5f7f5] px-3 text-sm font-medium text-[#142019] transition hover:brightness-[0.97] active:border-b active:mt-[2px]"
                 >
                   {isArabic
                     ? "إلغاء"
@@ -1200,7 +1200,7 @@ export default function ProductsClient({
                 <button
                   type="button"
                   onClick={applyDraftFilters}
-                  className="min-h-11 bg-[#0a583b] px-3 text-sm font-semibold text-white transition hover:bg-[#073f2c]"
+                  className="min-h-11 border border-[#0a583b] border-b-[3px] border-b-[#063a28] bg-[#0a583b] px-3 text-sm font-semibold text-white transition hover:brightness-[0.95] active:border-b active:mt-[2px]"
                 >
                   {isArabic
                     ? `تطبيق${draftFiltersCount ? ` (${draftFiltersCount})` : ""}`

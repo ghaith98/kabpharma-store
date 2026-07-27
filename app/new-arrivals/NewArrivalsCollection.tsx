@@ -11,13 +11,13 @@ import Link from "next/link";
 import { getImageProps } from "next/image";
 
 import {
-  FaFilter,
   FaSearch,
   FaTimes,
 } from "react-icons/fa";
 
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
+import { X } from "lucide-react";
 
 import EditorialProductCard from "../products/EditorialProductCard";
 
@@ -263,7 +263,7 @@ function DiscoveryTile({
             </p>
           )}
 
-          <span className="mt-5 inline-flex min-h-11 w-fit items-center justify-center rounded-full border border-[#0a583b] px-5 text-xs font-extrabold text-[#0a583b] transition group-hover:bg-[#0a583b] group-hover:text-white sm:text-sm">
+          <span className="mt-5 inline-flex min-h-11 w-fit items-center justify-center border border-[#0a583b] px-5 text-xs font-extrabold text-[#0a583b] transition group-hover:bg-[#0a583b] group-hover:text-white sm:text-sm">
             {buttonText}
           </span>
         </div>
@@ -341,8 +341,14 @@ export default function NewArrivalsCollection({
   const [filtersOpen, setFiltersOpen] =
     useState(false);
 
+  const [sortOpen, setSortOpen] =
+    useState(false);
+
   const filtersDialogRef =
     useRef<HTMLElement>(null);
+
+  const sortMenuRef =
+    useRef<HTMLDivElement>(null);
 
   useDialogFocus(
     filtersOpen,
@@ -427,6 +433,50 @@ export default function NewArrivalsCollection({
       );
     };
   }, [filtersOpen]);
+
+  useEffect(() => {
+    if (!sortOpen) return;
+
+    function closeSortWhenClickingOutside(
+      event: PointerEvent
+    ) {
+      if (
+        !sortMenuRef.current?.contains(
+          event.target as Node
+        )
+      ) {
+        setSortOpen(false);
+      }
+    }
+
+    function closeSortWithEscape(
+      event: KeyboardEvent
+    ) {
+      if (event.key === "Escape") {
+        setSortOpen(false);
+      }
+    }
+
+    document.addEventListener(
+      "pointerdown",
+      closeSortWhenClickingOutside
+    );
+    window.addEventListener(
+      "keydown",
+      closeSortWithEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        closeSortWhenClickingOutside
+      );
+      window.removeEventListener(
+        "keydown",
+        closeSortWithEscape
+      );
+    };
+  }, [sortOpen]);
 
   const categories = useMemo(() => {
     const categoryMap = new Map<
@@ -535,8 +585,31 @@ export default function NewArrivalsCollection({
     (priceRange[0] > 0 ||
     priceRange[1] < maxProductPrice
       ? 1
-      : 0) +
-    (sortBy !== "default" ? 1 : 0);
+      : 0);
+
+  const sortLabels: Record<string, { ar: string; en: string }> = {
+    newest: {
+      ar: "الأحدث أولاً",
+      en: "Newest first",
+    },
+    price_low: {
+      ar: "السعر: الأقل أولاً",
+      en: "Price: low to high",
+    },
+    price_high: {
+      ar: "السعر: الأعلى أولاً",
+      en: "Price: high to low",
+    },
+  };
+
+  const selectedSortLabel =
+    sortBy !== "default" && sortLabels[sortBy]
+      ? isArabic
+        ? sortLabels[sortBy].ar
+        : sortLabels[sortBy].en
+      : isArabic
+        ? "ترتيب"
+        : "Sort";
 
   function clearFilters() {
     setSelectedCategoryId(null);
@@ -705,55 +778,123 @@ export default function NewArrivalsCollection({
         </header>
       )}
 
-      <div className="mb-7 flex items-center justify-between gap-4 border-b border-[#e7ebe8] pb-5 sm:mb-9 sm:pb-6">
-        <div>
-          <p className="text-sm font-bold text-[#526057]">
+      <div
+        dir="ltr"
+        className="flex items-center justify-between gap-3 py-5"
+      >
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-[#526057]">
             {isArabic
-              ? `${filteredProducts.length} منتجات`
-              : `${filteredProducts.length} products found`}
+              ? `${filteredProducts.length} ${
+                  filteredProducts.length === 1
+                    ? "منتج"
+                    : "منتجات"
+                }`
+              : `${filteredProducts.length} ${
+                  filteredProducts.length === 1
+                    ? "product"
+                    : "products"
+                } found`}
           </p>
-
-          {activeFiltersCount > 0 && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="mt-1 text-xs font-extrabold text-[#0a583b] underline decoration-[#b9d3c3] underline-offset-4"
-            >
-              {isArabic
-                ? "مسح جميع الفلاتر"
-                : "Clear all filters"}
-            </button>
-          )}
         </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            setFiltersOpen(true)
-          }
-          aria-expanded={filtersOpen}
-          aria-controls={filterDialogId}
-          className="relative inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 text-xs font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] sm:min-h-12 sm:px-6 sm:text-sm"
+        <div
+          ref={sortMenuRef}
+          dir="ltr"
+          className="relative flex shrink-0 items-center gap-4 text-sm sm:gap-6"
         >
-          <FaFilter className="text-xs sm:text-sm" />
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setSortOpen(false);
+                setFiltersOpen(true);
+              }}
+              aria-expanded={filtersOpen}
+              aria-controls={filterDialogId}
+              className="inline-flex min-h-9 items-center bg-transparent px-0.5 font-medium text-[#142019] transition hover:opacity-60"
+            >
+              <span dir={isArabic ? "rtl" : "ltr"}>
+                {isArabic ? "تصفية" : "Filter"}
+                {activeFiltersCount > 0
+                  ? ` (${activeFiltersCount})`
+                  : ""}
+              </span>
+            </button>
 
-          <span>
-            {isArabic
-              ? "تصفية وترتيب"
-              : "Filter & sort"}
-          </span>
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  clearFilters();
+                }}
+                aria-label={
+                  isArabic
+                    ? "مسح الفلاتر"
+                    : "Clear filters"
+                }
+                className="inline-flex h-10 w-6 -ml-2 items-center justify-center bg-transparent text-[#142019] transition hover:opacity-55"
+              >
+                <X size={14} strokeWidth={2} />
+              </button>
+            )}
+          </div>
 
-          {activeFiltersCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0a583b] px-1 text-[10px] font-extrabold text-white">
-              {activeFiltersCount}
+          <button
+            type="button"
+            onClick={() => setSortOpen((current) => !current)}
+            aria-expanded={sortOpen}
+            aria-controls={`${collectionId}-sort-menu`}
+            className="inline-flex min-h-9 items-center bg-transparent px-0.5 font-medium text-[#142019] transition hover:opacity-60"
+          >
+            <span dir={isArabic ? "rtl" : "ltr"}>
+              {selectedSortLabel}
             </span>
+          </button>
+
+          {sortOpen && (
+            <div
+              id={`${collectionId}-sort-menu`}
+              role="menu"
+              className="absolute right-0 top-[calc(100%+0.15rem)] z-30 min-w-[190px] overflow-hidden border border-[#dfe4e0] bg-white py-0 text-sm shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+            >
+              {[
+                ["default", isArabic ? "الترتيب الافتراضي" : "Default"],
+                ["newest", isArabic ? "الأحدث أولاً" : "Newest first"],
+                ["price_low", isArabic ? "السعر: من الأقل إلى الأعلى" : "Price: low to high"],
+                ["price_high", isArabic ? "السعر: من الأعلى إلى الأقل" : "Price: high to low"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={sortBy === value}
+                  onClick={() => {
+                    setSortBy(value);
+                    setSortOpen(false);
+                  }}
+                  className={`flex w-full items-center px-3 py-1.5 text-sm font-normal leading-5 transition ${
+                    isArabic
+                      ? "justify-end text-right"
+                      : "justify-start text-left"
+                  } ${
+                    sortBy === value
+                      ? "bg-[#edf5f0] font-medium text-[#0a583b]"
+                      : "text-[#142019] hover:bg-[#f5f7f5]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
       </div>
 
       {filteredProducts.length === 0 ? (
         <section className="flex min-h-[340px] flex-col items-center justify-center border border-dashed border-[#dce3de] bg-[#fafbfa] px-6 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+          <div className="flex h-14 w-14 items-center justify-center bg-[#edf5f0] text-[#0a583b]">
             <FaSearch />
           </div>
 
@@ -766,7 +907,7 @@ export default function NewArrivalsCollection({
           <button
             type="button"
             onClick={clearFilters}
-            className="mt-6 rounded-full bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
+            className="mt-6 bg-[#0a583b] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
           >
             {isArabic
               ? "مسح الفلاتر"
@@ -840,7 +981,7 @@ export default function NewArrivalsCollection({
 
       {filtersOpen && (
         <div
-          className="fixed inset-0 z-[999] bg-[#07130d]/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[999] bg-black/55"
           onMouseDown={(event) => {
             if (
               event.target ===
@@ -858,22 +999,24 @@ export default function NewArrivalsCollection({
             aria-labelledby={filterDialogTitleId}
             tabIndex={-1}
             dir={isArabic ? "rtl" : "ltr"}
-            className={`absolute inset-y-0 w-[86%] max-w-[340px] overflow-y-auto bg-white md:max-w-md ${
-              isArabic
-                ? "right-0 shadow-[-18px_0_60px_rgba(7,31,20,0.16)]"
-                : "left-0 shadow-[18px_0_60px_rgba(7,31,20,0.16)]"
-            }`}
+            className="absolute inset-x-0 bottom-0 max-h-[76dvh] overflow-y-auto bg-white shadow-[0_-12px_50px_rgba(0,0,0,0.18)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[min(78vh,650px)] sm:w-[min(700px,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:shadow-[0_18px_70px_rgba(0,0,0,0.24)]"
           >
             <div className="flex min-h-full flex-col">
-              <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e7ebe8] bg-white/95 px-5 py-5 backdrop-blur sm:px-7">
-                <h2
-                  id={filterDialogTitleId}
-                  className="text-xl font-extrabold text-[#142019]"
-                >
-                  {isArabic
-                    ? "تصفية وترتيب"
-                    : "Filter & sort"}
-                </h2>
+              <div
+                dir="ltr"
+                className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e7ebe8] bg-white px-3 py-2"
+              >
+                <div className="flex items-center gap-2">
+                  <h2
+                    id={filterDialogTitleId}
+                    dir={isArabic ? "rtl" : "ltr"}
+                    className="text-sm font-semibold text-black"
+                  >
+                    {isArabic
+                      ? "تصفية المنتجات"
+                      : "Filters"}
+                  </h2>
+                </div>
 
                 <button
                   type="button"
@@ -885,30 +1028,30 @@ export default function NewArrivalsCollection({
                       ? "إغلاق"
                       : "Close"
                   }
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f3f5f3] text-[#526057]"
+                  className="flex h-11 w-11 items-center justify-center border-2 border-[#dfe4e0] bg-white text-lg text-[#142019] transition hover:bg-[#edf5f0]"
                 >
                   <FaTimes />
                 </button>
               </div>
 
-              <div className="flex-1 px-5 sm:px-7">
-                <section className="border-b border-[#e7ebe8] py-6">
-                  <h3 className="text-sm font-extrabold text-[#142019]">
+              <div className="flex-1 px-2 pb-4">
+                <section className="py-4">
+                  <h3 className="mb-2 text-sm font-medium text-black">
                     {isArabic
-                      ? "تصنيفات المنتجات"
-                      : "Product categories"}
+                      ? "التصنيفات"
+                      : "Category"}
                   </h3>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-0.5">
                     <button
                       type="button"
                       onClick={() =>
                         setSelectedCategoryId(null)
                       }
-                      className={`rounded-full border px-4 py-2.5 text-sm font-bold transition ${
+                      className={`border px-3 py-3 text-sm italic transition ${
                         selectedCategoryId === null
-                          ? "border-[#0a583b] bg-[#0a583b] text-white"
-                          : "border-[#dfe4e0] bg-white text-[#526057]"
+                          ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                          : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
                       }`}
                     >
                       {isArabic ? "الكل" : "All"}
@@ -934,10 +1077,10 @@ export default function NewArrivalsCollection({
                           onClick={() =>
                             setSelectedCategoryId(id)
                           }
-                          className={`rounded-full border px-4 py-2.5 text-sm font-bold transition ${
+                          className={`border px-3 py-3 text-sm italic transition ${
                             selectedCategoryId === id
-                              ? "border-[#0a583b] bg-[#0a583b] text-white"
-                              : "border-[#dfe4e0] bg-white text-[#526057]"
+                              ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                              : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
                           }`}
                         >
                           {label}
@@ -947,21 +1090,19 @@ export default function NewArrivalsCollection({
                   </div>
                 </section>
 
-                <section className="border-b border-[#e7ebe8] py-6">
-                  <h3 className="text-sm font-extrabold text-[#142019]">
+                <section className="py-4">
+                  <h3 className="mb-2 text-sm font-medium text-black">
                     {isArabic
                       ? "التوفر والعروض"
                       : "Availability & offers"}
                   </h3>
 
-                  <div className="mt-5 space-y-4">
-                    <label className="flex cursor-pointer items-center justify-between gap-4">
-                      <span className="text-sm font-bold text-[#526057]">
-                        {isArabic
-                          ? "المنتجات المتوفرة فقط"
-                          : "In-stock products only"}
-                      </span>
-
+                  <div className="flex flex-wrap gap-0.5">
+                    <label className={`cursor-pointer border px-3 py-3 text-sm italic transition ${
+                      inStockOnly
+                        ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                        : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
+                    }`}>
                       <input
                         type="checkbox"
                         checked={inStockOnly}
@@ -970,17 +1111,21 @@ export default function NewArrivalsCollection({
                             (current) => !current
                           )
                         }
-                        className="h-5 w-5 accent-[#0a583b]"
+                        className="sr-only"
                       />
+
+                      <span>
+                        {isArabic
+                          ? "متوفر"
+                          : "In stock"}
+                      </span>
                     </label>
 
-                    <label className="flex cursor-pointer items-center justify-between gap-4">
-                      <span className="text-sm font-bold text-[#526057]">
-                        {isArabic
-                          ? "المنتجات المخفضة"
-                          : "Products on sale"}
-                      </span>
-
+                    <label className={`cursor-pointer border px-3 py-3 text-sm italic transition ${
+                      onSaleOnly
+                        ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                        : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
+                    }`}>
                       <input
                         type="checkbox"
                         checked={onSaleOnly}
@@ -989,26 +1134,32 @@ export default function NewArrivalsCollection({
                             (current) => !current
                           )
                         }
-                        className="h-5 w-5 accent-[#0a583b]"
+                        className="sr-only"
                       />
+
+                      <span>
+                        {isArabic
+                          ? "تخفيضات"
+                          : "On sale"}
+                      </span>
                     </label>
                   </div>
                 </section>
 
-                <section className="border-b border-[#e7ebe8] py-6">
+                <section className="py-4">
                   <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-sm font-extrabold text-[#142019]">
+                    <h3 className="text-sm font-medium text-black">
                       {isArabic
                         ? "نطاق السعر"
                         : "Price range"}
                     </h3>
 
-                    <span className="text-xs font-bold text-[#647168]">
-                      SYP
+                    <span className="text-xs text-[#666]">
+                      {isArabic ? "ل.س" : "SYP"}
                     </span>
                   </div>
 
-                  <div dir="ltr" className="mt-7 px-2">
+                  <div dir="ltr" className="mt-4 px-2">
                     <Slider
                       range
                       min={0}
@@ -1022,7 +1173,7 @@ export default function NewArrivalsCollection({
                       className="kab-price-slider"
                     />
 
-                    <div className="mt-5 flex justify-between text-xs font-extrabold text-[#526057]">
+                    <div className="mt-2 flex items-center justify-between text-[10px] leading-none text-[#555]">
                       <span>
                         {priceRange[0].toLocaleString()} SYP
                       </span>
@@ -1033,59 +1184,20 @@ export default function NewArrivalsCollection({
                     </div>
                   </div>
                 </section>
-
-                <section className="py-6">
-                  <label
-                    htmlFor={sortSelectId}
-                    className="mb-3 block text-sm font-extrabold text-[#142019]"
-                  >
-                    {isArabic
-                      ? "ترتيب المنتجات"
-                      : "Sort products"}
-                  </label>
-
-                  <select
-                    id={sortSelectId}
-                    value={sortBy}
-                    onChange={(event) =>
-                      setSortBy(event.target.value)
-                    }
-                    className="min-h-12 w-full rounded-2xl border border-[#dfe4e0] bg-white px-4 text-sm font-bold text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
-                  >
-                    <option value="default">
-                      {isArabic
-                        ? "الترتيب الافتراضي"
-                        : "Default"}
-                    </option>
-
-                    <option value="newest">
-                      {isArabic
-                        ? "الأحدث أولاً"
-                        : "Newest first"}
-                    </option>
-
-                    <option value="price_low">
-                      {isArabic
-                        ? "السعر: من الأقل إلى الأعلى"
-                        : "Price: low to high"}
-                    </option>
-
-                    <option value="price_high">
-                      {isArabic
-                        ? "السعر: من الأعلى إلى الأقل"
-                        : "Price: high to low"}
-                    </option>
-                  </select>
-                </section>
               </div>
 
-              <div className="sticky bottom-0 z-20 grid grid-cols-2 gap-3 border-t border-[#e7ebe8] bg-white/95 p-5 backdrop-blur sm:p-7">
+              <div className="sticky bottom-0 z-20 grid grid-cols-2 gap-3 bg-white px-2 pb-3 pt-2">
                 <button
                   type="button"
-                  onClick={clearFilters}
-                  className="min-h-12 rounded-full border border-[#dfe4e0] bg-white px-4 text-sm font-extrabold text-[#526057]"
+                  onClick={() => {
+                    clearFilters();
+                    setFiltersOpen(false);
+                  }}
+                  className="min-h-11 border border-[#c5cdc7] border-b-[3px] border-b-[#a8b3ab] bg-[#f5f7f5] px-3 text-sm font-medium text-[#142019] transition hover:brightness-[0.97] active:border-b active:mt-[2px]"
                 >
-                  {isArabic ? "مسح" : "Clear"}
+                  {isArabic
+                    ? "إلغاء"
+                    : "Cancel"}
                 </button>
 
                 <button
@@ -1093,11 +1205,11 @@ export default function NewArrivalsCollection({
                   onClick={() =>
                     setFiltersOpen(false)
                   }
-                  className="min-h-12 rounded-full bg-[#0a583b] px-4 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
+                  className="min-h-11 border border-[#0a583b] border-b-[3px] border-b-[#063a28] bg-[#0a583b] px-3 text-sm font-semibold text-white transition hover:brightness-[0.95] active:border-b active:mt-[2px]"
                 >
                   {isArabic
-                    ? `عرض ${filteredProducts.length} منتجات`
-                    : `Show ${filteredProducts.length} products`}
+                    ? `تطبيق`
+                    : `Apply`}
                 </button>
               </div>
             </div>
@@ -1107,4 +1219,3 @@ export default function NewArrivalsCollection({
     </section>
   );
 }
-
