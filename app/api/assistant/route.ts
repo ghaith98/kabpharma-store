@@ -18,6 +18,30 @@ function clean(value: unknown, limit: number) {
     .slice(0, limit);
 }
 
+function customerResponseLanguage(
+  message: string,
+  fallback: Language
+): Language {
+  if (/[\u0600-\u06ff]/.test(message)) {
+    return "ar";
+  }
+
+  const looksLikeArabizi =
+    /\b(shu|shou|keef|kif|baddi|beddi|fini|mish|ya3ni|bsawe|bt2dar|sha3r|2shra|3am|3ala|yjawob)\b/i.test(
+      message
+    );
+
+  if (looksLikeArabizi) {
+    return "ar";
+  }
+
+  if (/[a-z]/i.test(message)) {
+    return "en";
+  }
+
+  return fallback;
+}
+
 function promptSafe(value: string) {
   return value
     .replace(/\`\`\`/g, "")
@@ -358,6 +382,8 @@ export async function POST(request: Request) {
 
   const language: Language =
     body.language === "en" ? "en" : "ar";
+  const responseLanguage =
+    customerResponseLanguage(message, language);
 
   const history: Message[] = Array.isArray(body.history)
     ? body.history
@@ -477,7 +503,7 @@ export async function POST(request: Request) {
   const products = searchProducts(
     enrichedProducts,
     searchContext
-  ).map((product) => catalogItem(product, language));
+  ).map((product) => catalogItem(product, responseLanguage));
 
   const catalogueSummary = {
     total_products:
@@ -490,7 +516,7 @@ export async function POST(request: Request) {
             return localized(
               category || {},
               "name",
-              language,
+              responseLanguage,
               80
             );
           })
@@ -498,7 +524,9 @@ export async function POST(request: Request) {
       )
     ),
     shop_by_need: ((concernsResult.data || []) as Product[])
-      .map((concern) => localized(concern, "name", language, 80))
+      .map((concern) =>
+        localized(concern, "name", responseLanguage, 80)
+      )
       .filter(Boolean),
   };
 
@@ -530,7 +558,9 @@ HOW TO HELP:
 - When the question is about the complete website catalogue, use FULL WEBSITE CATALOGUE SUMMARY.
 
 LANGUAGE:
-Reply in Arabic script when the customer writes Arabic or Arabizi. Reply in English when they clearly write English.
+Your required reply language for this message is ${
+  responseLanguage === "en" ? "English" : "Arabic script"
+}. Reply entirely in that language, except for verified product names and SYP prices. Do not switch language because a question is unclear. If the customer wrote English, reply in English only.
 
 ABSOLUTE RULES:
 - Use only the verified KAB product and Shop by Need data below.
