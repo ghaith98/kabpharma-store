@@ -11,13 +11,13 @@ import {
 import { useSearchParams } from "next/navigation";
 
 import {
-  FaFilter,
   FaSearch,
   FaTimes,
 } from "react-icons/fa";
 
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
+import { X } from "lucide-react";
 
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
@@ -47,12 +47,21 @@ type ProductsClientProps = {
   } | null;
 };
 
-function parseCategoryId(value: string | null) {
-  const categoryId = value ? Number(value) : Number.NaN;
+function parseCategoryIds(value: string | null) {
+  if (!value) {
+    return [];
+  }
 
-  return Number.isFinite(categoryId) && categoryId > 0
-    ? categoryId
-    : null;
+  return Array.from(
+    new Set(
+      value
+        .split(",")
+        .map((part) => Number(part.trim()))
+        .filter(
+          (id) => Number.isFinite(id) && id > 0
+        )
+    )
+  );
 }
 
 function parseIdsParam(value: string | null) {
@@ -96,9 +105,9 @@ export default function ProductsClient({
   const search = standaloneCollection
     ? ""
     : searchParams.get("search") || "";
-  const selectedCategoryId = standaloneCollection
-    ? null
-    : parseCategoryId(searchParams.get("category"));
+  const selectedCategoryIds = standaloneCollection
+    ? []
+    : parseCategoryIds(searchParams.get("category"));
   const selectedIds = standaloneCollection
     ? null
     : parseIdsParam(searchParams.get("ids"));
@@ -115,8 +124,13 @@ export default function ProductsClient({
   const [filtersOpen, setFiltersOpen] =
     useState(false);
 
+  const [sortOpen, setSortOpen] = useState(false);
+
   const filtersDialogRef =
     useRef<HTMLElement>(null);
+
+  const sortMenuRef =
+    useRef<HTMLDivElement>(null);
 
   useDialogFocus(filtersOpen, filtersDialogRef);
 
@@ -145,10 +159,20 @@ export default function ProductsClient({
   const [onSaleOnly, setOnSaleOnly] =
     useState(false);
 
+  const [draftCategoryIds, setDraftCategoryIds] =
+    useState<number[]>(selectedCategoryIds);
+  const [draftPriceRange, setDraftPriceRange] =
+    useState<number[]>(priceRange);
+  const [draftInStockOnly, setDraftInStockOnly] =
+    useState(inStockOnly);
+  const [draftOnSaleOnly, setDraftOnSaleOnly] =
+    useState(onSaleOnly);
+
   const replaceProductParams = useCallback((
     updates: {
       search?: string | null;
       categoryId?: number | null;
+      categoryIds?: number[];
       clearCollection?: boolean;
     }
   ) => {
@@ -167,6 +191,17 @@ export default function ProductsClient({
     if ("categoryId" in updates) {
       if (updates.categoryId) {
         params.set("category", String(updates.categoryId));
+      } else {
+        params.delete("category");
+      }
+    }
+
+    if ("categoryIds" in updates) {
+      if (updates.categoryIds?.length) {
+        params.set(
+          "category",
+          updates.categoryIds.join(",")
+        );
       } else {
         params.delete("category");
       }
@@ -191,17 +226,14 @@ export default function ProductsClient({
   useEffect(() => {
     if (!filtersOpen) return;
 
-    const previousOverflow =
-      document.body.style.overflow;
-
-    document.body.style.overflow =
-      "hidden";
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     function closeWithEscape(
       event: KeyboardEvent
     ) {
       if (event.key === "Escape") {
-        setFiltersOpen(false);
+        cancelDraftFilters();
       }
     }
 
@@ -209,10 +241,8 @@ export default function ProductsClient({
       "keydown",
       closeWithEscape
     );
-
     return () => {
-      document.body.style.overflow =
-        previousOverflow;
+      document.body.style.overflow = previousOverflow;
 
       window.removeEventListener(
         "keydown",
@@ -220,6 +250,50 @@ export default function ProductsClient({
       );
     };
   }, [filtersOpen]);
+
+  useEffect(() => {
+    if (!sortOpen) return;
+
+    function closeSortWhenClickingOutside(
+      event: PointerEvent
+    ) {
+      if (
+        !sortMenuRef.current?.contains(
+          event.target as Node
+        )
+      ) {
+        setSortOpen(false);
+      }
+    }
+
+    function closeSortWithEscape(
+      event: KeyboardEvent
+    ) {
+      if (event.key === "Escape") {
+        setSortOpen(false);
+      }
+    }
+
+    document.addEventListener(
+      "pointerdown",
+      closeSortWhenClickingOutside
+    );
+    window.addEventListener(
+      "keydown",
+      closeSortWithEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        closeSortWhenClickingOutside
+      );
+      window.removeEventListener(
+        "keydown",
+        closeSortWithEscape
+      );
+    };
+  }, [sortOpen]);
 
   useEffect(() => {
     function resetProductsView() {
@@ -329,18 +403,49 @@ export default function ProductsClient({
     setOnSaleOnly(false);
   }
 
-  const activeFiltersCount =
-    (selectedCategoryId !== null
+  function openFilters() {
+    setDraftCategoryIds(selectedCategoryIds);
+    setDraftPriceRange([...priceRange]);
+    setDraftInStockOnly(inStockOnly);
+    setDraftOnSaleOnly(onSaleOnly);
+    setSortOpen(false);
+    setFiltersOpen(true);
+  }
+
+  function cancelDraftFilters() {
+    setDraftCategoryIds(selectedCategoryIds);
+    setDraftPriceRange([...priceRange]);
+    setDraftInStockOnly(inStockOnly);
+    setDraftOnSaleOnly(onSaleOnly);
+    setFiltersOpen(false);
+  }
+
+  function applyDraftFilters() {
+    replaceProductParams({
+      categoryIds: draftCategoryIds,
+    });
+    setPriceRange([...draftPriceRange]);
+    setInStockOnly(draftInStockOnly);
+    setOnSaleOnly(draftOnSaleOnly);
+    setFiltersOpen(false);
+  }
+
+  const draftFiltersCount =
+    draftCategoryIds.length +
+    (draftInStockOnly ? 1 : 0) +
+    (draftOnSaleOnly ? 1 : 0) +
+    (draftPriceRange[0] > 0 ||
+    draftPriceRange[1] < maxProductPrice
       ? 1
-      : 0) +
+      : 0);
+
+  const activeFiltersCount =
+    selectedCategoryIds.length +
     (inStockOnly ? 1 : 0) +
     (onSaleOnly ? 1 : 0) +
     (priceRange[0] > 0 ||
     priceRange[1] <
       maxProductPrice
-      ? 1
-      : 0) +
-    (sortBy !== "default"
       ? 1
       : 0);
 
@@ -363,83 +468,14 @@ export default function ProductsClient({
     },
   };
 
-  const selectedCategory = categories.find(
-    (category) => category.id === selectedCategoryId
-  );
-
-  const selectedCategoryLabel = selectedCategory
-    ? isArabic
-      ? selectedCategory.name_ar ||
-        selectedCategory.name ||
-        selectedCategory.name_en
-      : selectedCategory.name_en ||
-        selectedCategory.name ||
-        selectedCategory.name_ar
-    : null;
-
-  type FilterChip = {
-    key: string;
-    label: string;
-    onRemove: () => void;
-  };
-
-  const filterChips: FilterChip[] = [];
-
-  if (collectionLabel) {
-    filterChips.push({
-      key: "collection",
-      label: collectionLabel,
-      onRemove: () =>
-        replaceProductParams({ clearCollection: true }),
-    });
-  }
-
-  if (selectedCategoryLabel) {
-    filterChips.push({
-      key: "category",
-      label: selectedCategoryLabel,
-      onRemove: () =>
-        replaceProductParams({ categoryId: null }),
-    });
-  }
-
-  if (
-    priceRange[0] > 0 ||
-    priceRange[1] < maxProductPrice
-  ) {
-    filterChips.push({
-      key: "price",
-      label: `${priceRange[0].toLocaleString()} - ${priceRange[1].toLocaleString()}`,
-      onRemove: () =>
-        setPriceRange([0, maxProductPrice]),
-    });
-  }
-
-  if (inStockOnly) {
-    filterChips.push({
-      key: "stock",
-      label: isArabic ? "متوفر فقط" : "In stock only",
-      onRemove: () => setInStockOnly(false),
-    });
-  }
-
-  if (onSaleOnly) {
-    filterChips.push({
-      key: "sale",
-      label: isArabic ? "عليه تخفيض" : "On sale",
-      onRemove: () => setOnSaleOnly(false),
-    });
-  }
-
-  if (sortBy !== "default" && sortLabels[sortBy]) {
-    filterChips.push({
-      key: "sort",
-      label: isArabic
+  const selectedSortLabel =
+    sortBy !== "default" && sortLabels[sortBy]
+      ? isArabic
         ? sortLabels[sortBy].ar
-        : sortLabels[sortBy].en,
-      onRemove: () => setSortBy("default"),
-    });
-  }
+        : sortLabels[sortBy].en
+      : isArabic
+        ? "ترتيب"
+        : "Sort";
 
     const filteredProducts =
       useMemo(() => {
@@ -498,12 +534,12 @@ export default function ProductsClient({
               );
 
             const matchesCategory =
-              selectedCategoryId ===
-                null ||
+              selectedCategoryIds.length ===
+                0 ||
+              selectedCategoryIds.includes(
               Number(
                 product.category_id
-              ) ===
-                selectedCategoryId;
+              ));
 
             const matchesIds =
               selectedIds === null ||
@@ -616,7 +652,7 @@ export default function ProductsClient({
           products,
           search,
           isArabic,
-          selectedCategoryId,
+          selectedCategoryIds,
           selectedIds,
           priceRange,
           inStockOnly,
@@ -730,9 +766,12 @@ export default function ProductsClient({
           </header>
         )}
 
-        <div className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-bold text-[#526057]">
+        <div
+          dir="ltr"
+          className="flex items-center justify-between gap-3 py-5"
+        >
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-[#526057]">
               {isArabic
                 ? `${filteredProducts.length} ${
                     filteredProducts.length ===
@@ -748,70 +787,101 @@ export default function ProductsClient({
                   } found`}
             </p>
 
-            {!standaloneCollection && activeFiltersCount >
-              0 && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="mt-1 text-xs font-extrabold text-[#0a583b] underline decoration-[#b9d3c3] underline-offset-4 transition hover:text-[#073f2c]"
-              >
-                {isArabic
-                  ? "مسح جميع الفلاتر"
-                  : "Clear all filters"}
-              </button>
-            )}
           </div>
 
           {!standaloneCollection && (
-          <div className="flex w-full justify-start sm:w-auto">
-    <button
-      type="button"
-      onClick={() =>
-        setFiltersOpen(true)
-      }
-      aria-expanded={filtersOpen}
-      aria-controls="product-filters"
-      className="relative inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 text-xs font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0] hover:text-[#0a583b] sm:min-h-12 sm:px-6 sm:text-sm"
-    >
-      <FaFilter className="text-xs sm:text-sm" />
+            <div
+              ref={sortMenuRef}
+              dir="ltr"
+              className="relative flex shrink-0 items-center gap-4 text-sm sm:gap-6"
+            >
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={openFilters}
+                  aria-expanded={filtersOpen}
+                  aria-controls="product-filters"
+                  className="inline-flex min-h-9 items-center bg-transparent px-0.5 font-medium text-[#142019] transition hover:opacity-60"
+                >
+                  <span dir={isArabic ? "rtl" : "ltr"}>
+                    {isArabic ? "تصفية" : "Filter"}
+                    {activeFiltersCount > 0
+                      ? ` (${activeFiltersCount})`
+                      : ""}
+                  </span>
+                </button>
 
-      <span>
-        {isArabic
-          ? "تصفية وترتيب"
-          : "Filter & sort"}
-      </span>
+                {activeFiltersCount > 0 && (
+                  <button
+  type="button"
+  onClick={(event) => {
+    event.stopPropagation();
+    clearFilters();
+  }}
+  aria-label={
+    isArabic
+      ? "مسح الفلاتر"
+      : "Clear filters"
+  }
+  className="inline-flex h-10 w-6 -ml-2 items-center justify-center bg-transparent text-[#142019] transition hover:opacity-55"
+>
+  <X size={14} strokeWidth={2} />
+</button>
+                )}
+              </div>
 
-      {activeFiltersCount > 0 && (
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0a583b] px-1 text-[10px] font-extrabold text-white">
-          {activeFiltersCount}
-        </span>
-      )}
-    </button>
-  </div>
-          )}
-        </div>
-
-        {!standaloneCollection && filterChips.length > 0 && (
-          <div
-            dir={isArabic ? "rtl" : "ltr"}
-            className="mb-6 flex flex-wrap gap-2"
-          >
-            {filterChips.map((chip) => (
               <button
-                key={chip.key}
                 type="button"
-                onClick={chip.onRemove}
-                className="group flex items-center gap-2 rounded-full border border-[#dfe4e0] bg-white py-2 pl-3 pr-2 text-xs font-bold text-[#142019] transition hover:border-[#0a583b] hover:bg-[#edf5f0]"
+                onClick={() => setSortOpen((current) => !current)}
+                aria-expanded={sortOpen}
+                aria-controls="product-sort-menu"
+                className="inline-flex min-h-9 items-center bg-transparent px-0.5 font-medium text-[#142019] transition hover:opacity-60"
               >
-                <span>{chip.label}</span>
-
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#edf0ed] text-[10px] text-[#647168] transition group-hover:bg-[#0a583b] group-hover:text-white">
-                  ✕
+                <span dir={isArabic ? "rtl" : "ltr"}>
+                  {selectedSortLabel}
                 </span>
               </button>
-            ))}
-          </div>
-        )}
+
+              {sortOpen && (
+                <div
+                  id="product-sort-menu"
+                  role="menu"
+                  className="absolute right-0 top-[calc(100%+0.15rem)] z-30 min-w-[190px] overflow-hidden border border-[#777] bg-white py-0 text-sm shadow-none"
+                >
+                  {[
+                    ["default", isArabic ? "الترتيب الافتراضي" : "Default"],
+                    ["bestsellers", isArabic ? "الأكثر مبيعاً أولاً" : "Bestsellers first"],
+                    ["newest", isArabic ? "الأحدث أولاً" : "Newest first"],
+                    ["price_low", isArabic ? "السعر: من الأقل إلى الأعلى" : "Price: low to high"],
+                    ["price_high", isArabic ? "السعر: من الأعلى إلى الأقل" : "Price: high to low"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={sortBy === value}
+                      onClick={() => {
+                        setSortBy(value);
+                        setSortOpen(false);
+                      }}
+                      className={`flex w-full items-center px-3 py-1.5 text-sm font-normal leading-5 transition ${
+                        isArabic
+                          ? "justify-end text-right"
+                          : "justify-start text-left"
+                      } ${
+                        sortBy === value
+                          ? "bg-[#1558d6] text-white"
+                          : "text-black hover:bg-[#eeeeee]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {filteredProducts.length ===
         0 ? (
@@ -872,97 +942,77 @@ export default function ProductsClient({
 
       {!standaloneCollection && filtersOpen && (
         <div
-          className="fixed inset-0 z-[999] bg-[#07130d]/50 backdrop-blur-sm"
+          className="fixed inset-0 z-[999] bg-black/55"
           onMouseDown={(event) => {
             if (
               event.target ===
               event.currentTarget
             ) {
-              setFiltersOpen(false);
+              cancelDraftFilters();
             }
           }}
         >
           <aside
-  ref={filtersDialogRef}
-  id="product-filters"
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="product-filters-title"
-  tabIndex={-1}
-  dir={
-    isArabic
-      ? "rtl"
-      : "ltr"
-  }
-  className={`absolute inset-y-0 w-[78%] max-w-[320px] overflow-y-auto bg-white sm:w-[82%] sm:max-w-[340px] md:w-[90%] md:max-w-md ${
-    isArabic
-      ? "right-0 shadow-[-18px_0_60px_rgba(7,31,20,0.16)]"
-      : "left-0 shadow-[18px_0_60px_rgba(7,31,20,0.16)]"
-  }`}
->
+            ref={filtersDialogRef}
+            id="product-filters"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-filters-title"
+            tabIndex={-1}
+            dir={isArabic ? "rtl" : "ltr"}
+            className="absolute inset-x-0 bottom-0 max-h-[76dvh] overflow-y-auto bg-white shadow-[0_-12px_50px_rgba(0,0,0,0.18)] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[min(78vh,650px)] sm:w-[min(700px,calc(100vw-3rem))] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:shadow-[0_18px_70px_rgba(0,0,0,0.24)]"
+          >
             <div className="flex min-h-full flex-col">
-              <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e7ebe8] bg-white/95 px-5 py-5 backdrop-blur sm:px-7">
-                <div>
-                  <p
-                    className={`text-[10px] font-extrabold uppercase text-[#0a583b] ${
-                      isArabic
-                        ? "tracking-normal"
-                        : "tracking-[0.18em]"
-                    }`}
-                  >
-                    KAB Pharma
-                  </p>
-
+              <div
+                dir="ltr"
+                className="sticky top-0 z-20 flex items-center justify-between border-b border-[#e5e5e5] bg-white px-3 py-2"
+              >
+                <div className="flex items-center gap-2">
                   <h2
                     id="product-filters-title"
-                    className="mt-1 text-xl font-extrabold text-[#142019]"
+                    dir={isArabic ? "rtl" : "ltr"}
+                    className="text-sm font-semibold text-black"
                   >
                     {isArabic
                       ? "تصفية المنتجات"
-                      : "Filter products"}
+                      : "Filters"}
                   </h2>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setFiltersOpen(
-                      false
-                    )
-                  }
+                  onClick={cancelDraftFilters}
                   aria-label={
                     isArabic
                       ? "إغلاق"
                       : "Close"
                   }
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f3f5f3] text-[#526057] transition hover:bg-[#e7ebe8] hover:text-[#142019]"
+                  className="flex h-11 w-11 items-center justify-center border-2 border-black bg-white text-lg text-black transition hover:bg-[#f3f3f3]"
                 >
                   <FaTimes />
                 </button>
               </div>
 
-              <div className="flex-1 px-5 sm:px-7">
+              <div className="flex-1 px-2 pb-4">
                 {showCategories && (
-  <section className="hidden border-b border-[#e7ebe8] py-7 md:block">
-                    <h3 className="text-sm font-extrabold text-[#142019]">
+                  <section className="py-4">
+                    <h3 className="mb-2 text-sm font-medium text-black">
                       {isArabic
-                        ? "تصنيفات المنتجات"
-                        : "Product categories"}
+                        ? "التصنيفات"
+                        : "Category"}
                     </h3>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-0.5">
                       <button
                         type="button"
                         onClick={() =>
-                          replaceProductParams({
-                            categoryId: null,
-                          })
+                          setDraftCategoryIds([])
                         }
-                        className={`rounded-full border px-4 py-2.5 text-sm font-bold transition ${
-                          selectedCategoryId ===
-                          null
-                            ? "border-[#0a583b] bg-[#0a583b] text-white"
-                            : "border-[#dfe4e0] bg-white text-[#526057] hover:border-[#0a583b] hover:text-[#0a583b]"
+                        className={`border px-3 py-3 text-sm italic text-black transition ${
+                          draftCategoryIds.length ===
+                          0
+                            ? "border-black bg-[#f1f1f1]"
+                            : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
                         }`}
                       >
                         {isArabic
@@ -984,8 +1034,9 @@ export default function ProductsClient({
                                 category.name_ar;
 
                           const isSelected =
-                            selectedCategoryId ===
-                            category.id;
+                            draftCategoryIds.includes(
+                              category.id
+                            );
 
                           return (
                             <button
@@ -994,14 +1045,18 @@ export default function ProductsClient({
                               }
                               type="button"
                               onClick={() =>
-                                replaceProductParams({
-                                  categoryId: category.id,
-                                })
+                                setDraftCategoryIds((current) =>
+                                  current.includes(category.id)
+                                    ? current.filter(
+                                        (id) => id !== category.id
+                                      )
+                                    : [...current, category.id]
+                                )
                               }
-                              className={`rounded-full border px-4 py-2.5 text-sm font-bold transition ${
+                              className={`border px-3 py-3 text-sm italic text-black transition ${
                                 isSelected
-                                  ? "border-[#0a583b] bg-[#0a583b] text-white"
-                                  : "border-[#dfe4e0] bg-white text-[#526057] hover:border-[#0a583b] hover:text-[#0a583b]"
+                                  ? "border-black bg-[#f1f1f1]"
+                                  : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
                               }`}
                             >
                               {
@@ -1015,80 +1070,86 @@ export default function ProductsClient({
                   </section>
                 )}
 
-                <section className="border-b border-[#e7ebe8] py-7">
-                  <h3 className="text-sm font-extrabold text-[#142019]">
+                <section className="py-4">
+                  <h3 className="mb-2 text-sm font-medium text-black">
                     {isArabic
                       ? "التوفر والعروض"
                       : "Availability & offers"}
                   </h3>
 
-                  <div className="mt-5 space-y-4">
-                    <label className="flex cursor-pointer items-center justify-between gap-4">
-                      <span className="text-sm font-bold text-[#526057]">
-                        {isArabic
-                          ? "المنتجات المتوفرة فقط"
-                          : "In-stock products only"}
-                      </span>
-
+                  <div className="flex flex-wrap gap-0.5">
+                    <label className={`cursor-pointer border px-3 py-3 text-sm italic text-black transition ${
+                      draftInStockOnly
+                        ? "border-black bg-[#f1f1f1]"
+                        : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
+                    }`}>
                       <input
                         type="checkbox"
-                        checked={
-                          inStockOnly
-                        }
+                        checked={draftInStockOnly}
                         onChange={() =>
-                          setInStockOnly(
+                          setDraftInStockOnly(
                             (
                               current
                             ) =>
                               !current
                           )
                         }
-                        className="h-5 w-5 accent-[#0a583b]"
+                        className="sr-only"
                       />
+
+                      <span>
+                        {isArabic
+                          ? "متوفر"
+                          : "In stock"}
+                      </span>
                     </label>
 
-                    <label className="flex cursor-pointer items-center justify-between gap-4">
-                      <span className="text-sm font-bold text-[#526057]">
-                        {isArabic
-                          ? "المنتجات المخفضة"
-                          : "Products on sale"}
-                      </span>
-
+                    <label className={`cursor-pointer border px-3 py-3 text-sm italic text-black transition ${
+                      draftOnSaleOnly
+                        ? "border-black bg-[#f1f1f1]"
+                        : "border-transparent bg-[#f1f1f1] hover:border-[#888]"
+                    }`}>
                       <input
                         type="checkbox"
                         checked={
-                          onSaleOnly
+                          draftOnSaleOnly
                         }
                         onChange={() =>
-                          setOnSaleOnly(
+                          setDraftOnSaleOnly(
                             (
                               current
                             ) =>
                               !current
                           )
                         }
-                        className="h-5 w-5 accent-[#0a583b]"
+                        className="sr-only"
                       />
+
+                      <span>
+                        {isArabic
+                          ? "تخفيضات"
+                          : "On sale"}
+                      </span>
                     </label>
                   </div>
                 </section>
 
-                <section className="border-b border-[#e7ebe8] py-7">
+                <section className="py-4">
                   <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-sm font-extrabold text-[#142019]">
+                    <h3 className="text-sm font-medium text-black">
                       {isArabic
                         ? "نطاق السعر"
                         : "Price range"}
                     </h3>
 
-                    <span className="text-xs font-bold text-[#647168]">
-                      SYP
+                    <span className="text-xs text-[#666]">
+                      {isArabic ? "ل.س" : "SYP"}
                     </span>
                   </div>
 
                   <div
                     dir="ltr"
-                    className="mt-7 px-2"
+                    className="mt-4 px-2"
                   >
                     <Slider
                       range
@@ -1097,109 +1158,53 @@ export default function ProductsClient({
                         maxProductPrice
                       }
                       value={
-                        priceRange
+                        draftPriceRange
                       }
                       onChange={(
                         value
                       ) =>
-                        setPriceRange(
+                        setDraftPriceRange(
                           value as number[]
                         )
                       }
                       className="kab-price-slider"
                     />
 
-                    <div className="mt-5 flex justify-between text-xs font-extrabold text-[#526057]">
+                    <div className="mt-2 flex items-center justify-between text-[10px] leading-none text-[#555]">
                       <span>
-                        {priceRange[0].toLocaleString()}{" "}
+                        {draftPriceRange[0].toLocaleString()}{" "}
                         SYP
                       </span>
 
                       <span>
-                        {priceRange[1].toLocaleString()}{" "}
+                        {draftPriceRange[1].toLocaleString()}{" "}
                         SYP
                       </span>
                     </div>
                   </div>
                 </section>
 
-                <section className="py-7">
-                  <label
-                    htmlFor="product-sort"
-                    className="mb-3 block text-sm font-extrabold text-[#142019]"
-                  >
-                    {isArabic
-                      ? "ترتيب المنتجات"
-                      : "Sort products"}
-                  </label>
-
-                  <select
-                    id="product-sort"
-                    value={sortBy}
-                    onChange={(event) =>
-                      setSortBy(
-                        event.target
-                          .value
-                      )
-                    }
-                    className="min-h-12 w-full rounded-2xl border border-[#dfe4e0] bg-white px-4 text-sm font-bold text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
-                  >
-                    <option value="default">
-                      {isArabic
-                        ? "الترتيب الافتراضي"
-                        : "Default"}
-                    </option>
-
-                    <option value="bestsellers">
-                      {isArabic
-                        ? "الأكثر مبيعاً أولاً"
-                        : "Bestsellers first"}
-                    </option>
-
-                    <option value="newest">
-                      {isArabic
-                        ? "الأحدث أولاً"
-                        : "Newest first"}
-                    </option>
-
-                    <option value="price_low">
-                      {isArabic
-                        ? "السعر: من الأقل إلى الأعلى"
-                        : "Price: low to high"}
-                    </option>
-
-                    <option value="price_high">
-                      {isArabic
-                        ? "السعر: من الأعلى إلى الأقل"
-                        : "Price: high to low"}
-                    </option>
-                  </select>
-                </section>
               </div>
 
-              <div className="sticky bottom-0 z-20 grid grid-cols-2 gap-3 border-t border-[#e7ebe8] bg-white/95 p-5 backdrop-blur sm:p-7">
+              <div className="sticky bottom-0 z-20 grid grid-cols-2 gap-3 bg-white px-2 pb-3 pt-2">
                 <button
                   type="button"
-                  onClick={clearFilters}
-                  className="min-h-12 rounded-full border border-[#dfe4e0] bg-white px-4 text-sm font-extrabold text-[#526057] transition hover:border-[#0a583b] hover:text-[#0a583b]"
+                  onClick={cancelDraftFilters}
+                  className="min-h-11 border-b border-black bg-white px-3 text-sm font-medium text-black transition hover:bg-[#f5f5f5]"
                 >
                   {isArabic
-                    ? "مسح"
-                    : "Clear"}
+                    ? "إلغاء"
+                    : "Cancel"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setFiltersOpen(
-                      false
-                    )
-                  }
-                  className="min-h-12 rounded-full bg-[#0a583b] px-4 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
+                  onClick={applyDraftFilters}
+                  className="min-h-11 border-b border-r border-black bg-white px-3 text-sm font-medium text-black transition hover:bg-[#f5f5f5]"
                 >
                   {isArabic
-                    ? `عرض ${filteredProducts.length} منتجات`
-                    : `Show ${filteredProducts.length} products`}
+                    ? `تطبيق${draftFiltersCount ? ` (${draftFiltersCount})` : ""}`
+                    : `Apply${draftFiltersCount ? ` (${draftFiltersCount} filters)` : ""}`}
                 </button>
               </div>
             </div>
