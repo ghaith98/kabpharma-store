@@ -560,7 +560,12 @@ HOW TO HELP:
 LANGUAGE:
 Your required reply language for this message is ${
   responseLanguage === "en" ? "English" : "Arabic script"
-}. Reply entirely in that language, except for verified product names and SYP prices. Do not switch language because a question is unclear. If the customer wrote English, reply in English only.
+}. Do not switch language because a question is unclear. If the customer wrote English, reply in English only.
+
+PRODUCT NAMES:
+- When the required reply language is Arabic script, write every KAB product and variant name in Arabic script too.
+- First use the Arabic product or variant name supplied in VERIFIED PRODUCT SEARCH RESULTS. If that name itself is written in Latin letters, write a clear Arabic transliteration or Arabic product-type translation instead; never leave the product name in English.
+- When the required reply language is English, use the English product or variant name supplied in VERIFIED PRODUCT SEARCH RESULTS.
 
 ABSOLUTE RULES:
 - Use only the verified KAB product and Shop by Need data below.
