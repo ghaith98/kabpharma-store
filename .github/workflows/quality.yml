@@ -1,0 +1,34 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SITE_URL: https://www.kabpharma.com
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+      CUSTOMER_SESSION_SECRET: ci-customer-session-secret-32-characters
+      STAFF_SESSION_SECRET: ci-staff-session-secret-32-characters
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm audit --omit=dev --audit-level=high

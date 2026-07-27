@@ -125,6 +125,13 @@ export async function POST(request: Request) {
     }),
   ]);
 
+  if (ipLimit.unavailable || phoneLimit.unavailable) {
+    return jsonError(
+      "Order service is temporarily unavailable. Please retry shortly.",
+      503
+    );
+  }
+
   if (!ipLimit.allowed || !phoneLimit.allowed) {
     const retryAfter = Math.max(
       ipLimit.retryAfterSeconds,

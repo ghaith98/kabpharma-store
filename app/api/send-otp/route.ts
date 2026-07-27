@@ -54,6 +54,13 @@ export async function POST(req: Request) {
       }),
     ]);
 
+    if (phoneLimit.unavailable || ipLimit.unavailable) {
+      return jsonError(
+        "Verification service is temporarily unavailable. Please retry shortly.",
+        503
+      );
+    }
+
     if (!phoneLimit.allowed || !ipLimit.allowed) {
       const retryAfter = Math.max(
         phoneLimit.retryAfterSeconds,

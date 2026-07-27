@@ -162,17 +162,10 @@ export default async function BestSellersPage() {
         Boolean(product)
     );
 
-  const featuredProducts =
-    availableProducts.filter(
-      (product) => product.featured === true
-    );
-
-  const products =
-    rankedProducts.length > 0
-      ? rankedProducts
-      : featuredProducts.length > 0
-      ? featuredProducts
-      : availableProducts.slice(0, 8);
+  // Never label featured or arbitrary products as best sellers. If no
+  // qualifying sales exist, the existing collection empty state is the
+  // truthful fallback.
+  const products = rankedProducts;
 
   const banners =
     bannersResult.data || [];

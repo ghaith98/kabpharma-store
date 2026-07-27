@@ -6,8 +6,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
  * Distributed fixed-window rate limiter backed by Postgres
  * (take_rate_limit RPC). Shared across all Vercel instances.
  *
- * Fail-open: on limiter error we allow the request (and log it) rather
- * than blocking every customer. Auth + ban checks still gate the route.
+ * Fail closed: a request must not bypass abuse controls merely because
+ * the limiter is unavailable. A short retry window keeps the response
+ * recoverable while protecting OTP, sign-in and order endpoints.
  */
 export async function takeRateLimitDb({
   key,
@@ -17,7 +18,11 @@ export async function takeRateLimitDb({
   key: string;
   limit: number;
   windowSeconds: number;
-}): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+}): Promise<{
+  allowed: boolean;
+  retryAfterSeconds: number;
+  unavailable: boolean;
+}> {
   const { data, error } = await supabaseAdmin.rpc(
     "take_rate_limit",
     {
@@ -29,16 +34,21 @@ export async function takeRateLimitDb({
 
   if (error) {
     console.error("Rate limit check failed:", error);
-    return { allowed: true, retryAfterSeconds: 0 };
+    return {
+      allowed: false,
+      retryAfterSeconds: 30,
+      unavailable: true,
+    };
   }
 
   const row = Array.isArray(data) ? data[0] : data;
 
   return {
-    allowed: Boolean(row?.allowed ?? true),
+    allowed: Boolean(row?.allowed ?? false),
     retryAfterSeconds: Number(
       row?.retry_after_seconds ?? 0
     ),
+    unavailable: false,
   };
 }
 
@@ -48,7 +58,7 @@ export async function takeRateLimitDb({
  * wait longer (60s, 120s, 300s, then 600s), capped at maxPerHour total.
  * Reset by calling resetOtpBackoff on successful verification.
  *
- * Fail-open on limiter error, same rationale as above.
+ * Fail closed on limiter error, matching the fixed-window limiter.
  */
 export async function takeOtpBackoff({
   key,
@@ -56,7 +66,11 @@ export async function takeOtpBackoff({
 }: {
   key: string;
   maxPerHour?: number;
-}): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+}): Promise<{
+  allowed: boolean;
+  retryAfterSeconds: number;
+  unavailable: boolean;
+}> {
   const { data, error } = await supabaseAdmin.rpc(
     "take_otp_backoff",
     {
@@ -67,16 +81,21 @@ export async function takeOtpBackoff({
 
   if (error) {
     console.error("OTP backoff check failed:", error);
-    return { allowed: true, retryAfterSeconds: 0 };
+    return {
+      allowed: false,
+      retryAfterSeconds: 30,
+      unavailable: true,
+    };
   }
 
   const row = Array.isArray(data) ? data[0] : data;
 
   return {
-    allowed: Boolean(row?.allowed ?? true),
+    allowed: Boolean(row?.allowed ?? false),
     retryAfterSeconds: Number(
       row?.retry_after_seconds ?? 0
     ),
+    unavailable: false,
   };
 }
 

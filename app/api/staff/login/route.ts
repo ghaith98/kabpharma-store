@@ -42,6 +42,13 @@ export async function POST(request: Request) {
       windowSeconds: 15 * 60,
     });
 
+    if (rateLimit.unavailable) {
+      return jsonError(
+        "Sign-in is temporarily unavailable. Please retry shortly.",
+        503
+      );
+    }
+
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {

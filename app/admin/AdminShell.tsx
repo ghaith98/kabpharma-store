@@ -180,20 +180,37 @@ export default function AdminShell({
   useEffect(() => {
     // The login page must be reachable without a session.
     if (isLoginPage) {
-      setAuthState("authenticated");
       return;
     }
 
     let active = true;
 
     async function verifySession() {
-      const { data, error } =
-        await supabase.auth.getUser();
+      const { data: sessionData } =
+        await supabase.auth.getSession();
+      const accessToken =
+        sessionData.session?.access_token;
+
+      if (!accessToken) {
+        router.replace("/admin/login");
+        return;
+      }
+
+      const response = await fetch(
+        "/api/admin/session",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          cache: "no-store",
+        }
+      );
 
       if (!active) return;
 
-      if (error || !data.user) {
-        router.replace("/admin/login");
+      if (!response.ok) {
+        await supabase.auth.signOut();
+        router.replace("/admin/login?error=unauthorized");
         return;
       }
 

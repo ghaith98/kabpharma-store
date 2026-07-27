@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerSession } from "@/lib/customer-session";
+import {
+  hasTrustedOrigin,
+  jsonError,
+} from "@/lib/http";
+import { getRequestIp } from "@/lib/rate-limit";
+import { takeRateLimitDb } from "@/lib/rate-limit-db";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +15,10 @@ export async function POST(
   request: Request
 ) {
   try {
+    if (!hasTrustedOrigin(request)) {
+      return jsonError("Invalid request origin", 403);
+    }
+
     const session =
       await getCustomerSession();
 
@@ -73,7 +83,7 @@ export async function POST(
     }
 
     if (
-      review.length < 2 ||
+      review.length < 8 ||
       review.length > 1500
     ) {
       return NextResponse.json(
@@ -120,6 +130,38 @@ export async function POST(
       );
     }
 
+    const rateLimit = await takeRateLimitDb({
+      key: `reviews:${getRequestIp(request)}:${profile.id}`,
+      limit: 5,
+      windowSeconds: 60 * 60,
+    });
+
+    if (rateLimit.unavailable) {
+      return jsonError(
+        "Review service is temporarily unavailable. Please retry shortly.",
+        503
+      );
+    }
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Too many review attempts. Please try again later.",
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              rateLimit.retryAfterSeconds
+            ),
+            "Cache-Control": "no-store",
+          },
+        }
+      );
+    }
+
     const {
       data: product,
       error: productError,
@@ -141,6 +183,41 @@ export async function POST(
         {
           status: 404,
         }
+      );
+    }
+
+    const {
+      data: deliveredItem,
+      error: purchaseError,
+    } = await supabaseAdmin
+      .from("order_items")
+      .select(
+        "id, orders!inner(customer_profile_id, status)"
+      )
+      .eq("product_id", productId)
+      .eq(
+        "orders.customer_profile_id",
+        profile.id
+      )
+      .eq("orders.status", "delivered")
+      .limit(1)
+      .maybeSingle();
+
+    if (purchaseError) {
+      console.error(
+        "Review purchase verification failed:",
+        purchaseError
+      );
+      return jsonError(
+        "Could not verify your purchase",
+        503
+      );
+    }
+
+    if (!deliveredItem) {
+      return jsonError(
+        "A delivered purchase is required to review this product",
+        403
       );
     }
 

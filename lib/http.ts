@@ -20,23 +20,38 @@ export function jsonError(
 
 export function hasTrustedOrigin(request: Request) {
   const origin = request.headers.get("origin");
+  const fetchSite = request.headers.get(
+    "sec-fetch-site"
+  );
 
   if (!origin) {
-    return true;
+    return fetchSite === "same-origin";
   }
 
   try {
     const originUrl = new URL(origin);
-    const forwardedHost = request.headers
-      .get("x-forwarded-host")
-      ?.split(",")[0]
-      ?.trim();
-    const host =
-      forwardedHost ||
-      request.headers.get("host");
+    const requestUrl = new URL(request.url);
+    const configuredOrigin =
+      process.env.NEXT_PUBLIC_SITE_URL
+        ? new URL(
+            process.env.NEXT_PUBLIC_SITE_URL
+          ).origin
+        : null;
+    const allowedOrigins = new Set(
+      [
+        requestUrl.origin,
+        configuredOrigin,
+      ].filter(
+        (value): value is string =>
+          Boolean(value)
+      )
+    );
 
-    return Boolean(
-      host && originUrl.host === host
+    return (
+      allowedOrigins.has(originUrl.origin) &&
+      (fetchSite == null ||
+        fetchSite === "same-origin" ||
+        fetchSite === "same-site")
     );
   } catch {
     return false;

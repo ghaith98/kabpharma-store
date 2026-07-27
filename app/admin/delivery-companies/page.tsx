@@ -60,18 +60,37 @@ export default function AdminDeliveryCompaniesPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.from("delivery_companies").insert({
-      company_name: companyName.trim(),
-      username: username.trim(),
-      password: password.trim(),
-      is_active: true,
-      is_online: false,
-    });
+    const { data } = await supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
+
+    if (!accessToken) {
+      setLoading(false);
+      alert("Administrator session expired.");
+      return;
+    }
+
+    const response = await fetch(
+      "/api/admin/staff-accounts",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role: "delivery_company",
+          name: companyName,
+          username,
+          password,
+        }),
+      }
+    );
+    const result = await response.json();
 
     setLoading(false);
 
-    if (error) {
-      alert(error.message);
+    if (!response.ok) {
+      alert(result.error || "Could not add delivery company.");
       return;
     }
 
@@ -183,6 +202,7 @@ export default function AdminDeliveryCompaniesPage() {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              minLength={10}
               required
               className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600"
             />
@@ -276,4 +296,3 @@ export default function AdminDeliveryCompaniesPage() {
     </main>
   );
 }
-

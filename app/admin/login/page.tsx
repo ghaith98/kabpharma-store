@@ -22,18 +22,38 @@ export default function AdminLoginPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setLoading(false);
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (error) {
+      setLoading(false);
       setErrorMessage(error.message);
       return;
     }
 
+    const response = await fetch(
+      "/api/admin/session",
+      {
+        headers: {
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      setErrorMessage(
+        "This account does not have administrator access."
+      );
+      return;
+    }
+
+    setLoading(false);
     router.replace(
       window.innerWidth < 768
         ? "/admin-mobile"
@@ -86,4 +106,3 @@ export default function AdminLoginPage() {
     </main>
   );
 }
-

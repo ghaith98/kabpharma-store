@@ -354,7 +354,11 @@ export default async function ProductPage({
   }
 
   const reviews =
-    reviewsResult.data || [];
+    (reviewsResult.data || []).filter(
+      (review) =>
+        String(review.review || "").trim()
+          .length >= 8
+    );
 
   const extraImages =
     extraImagesResult.data || [];

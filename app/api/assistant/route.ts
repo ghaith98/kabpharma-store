@@ -344,6 +344,13 @@ export async function POST(request: Request) {
     windowSeconds: 60 * 60,
   });
 
+  if (rate.unavailable) {
+    return jsonError(
+      "KAB Assistant is temporarily unavailable. Please retry shortly.",
+      503
+    );
+  }
+
   if (!rate.allowed) {
     return NextResponse.json(
       {

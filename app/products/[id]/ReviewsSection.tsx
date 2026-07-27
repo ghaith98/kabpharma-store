@@ -304,11 +304,11 @@ export default function ReviewsSection({
     const cleanReview =
       reviewText.trim();
 
-    if (cleanReview.length < 2) {
+    if (cleanReview.length < 8) {
       alert(
         isArabic
-          ? "يرجى كتابة تقييمك قبل الإرسال."
-          : "Please write your review before submitting."
+          ? "يرجى كتابة تقييم مفيد من 8 أحرف على الأقل."
+          : "Please write a useful review of at least 8 characters."
       );
 
       return;

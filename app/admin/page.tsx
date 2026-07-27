@@ -743,7 +743,7 @@ export default function AdminDashboardPage() {
                         >
                           <td className="px-6 py-4">
                             <Link
-                              href={`/admin/orders/${order.id}`}
+                              href="/admin/orders"
                               className="font-extrabold text-green-700 hover:text-green-800"
                             >
                               #{order.id}
@@ -821,7 +821,7 @@ export default function AdminDashboardPage() {
                   {recentOrders.map((order) => (
                     <Link
                       key={order.id}
-                      href={`/admin/orders/${order.id}`}
+                      href="/admin/orders"
                       className="block p-5 transition hover:bg-gray-50"
                     >
                       <div className="flex items-start justify-between gap-4">

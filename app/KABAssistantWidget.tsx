@@ -110,7 +110,7 @@ export default function KABAssistantWidget({
     if (authState !== "authenticated") {
       if (authState === "guest") {
         sessionStorage.removeItem(CHAT_STORAGE_KEY);
-        setMessages([]);
+        window.queueMicrotask(() => setMessages([]));
       }
 
       return;
@@ -133,7 +133,9 @@ export default function KABAssistantWidget({
             CHAT_STORAGE_KEY,
             JSON.stringify(customerMessages)
           );
-          setMessages(customerMessages);
+          window.queueMicrotask(() =>
+            setMessages(customerMessages)
+          );
         }
       }
     } catch {
@@ -185,15 +187,17 @@ export default function KABAssistantWidget({
     }
 
     sessionStorage.setItem(GUEST_NOTICE_STORAGE_KEY, "true");
-    setMessages((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: t.guestNotice,
-        needsSignup: true,
-      },
-    ]);
+    window.queueMicrotask(() => {
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: t.guestNotice,
+          needsSignup: true,
+        },
+      ]);
+    });
   }, [authState, isOpen, t.guestNotice]);
 
   const whatsappUrl = useMemo(() => {

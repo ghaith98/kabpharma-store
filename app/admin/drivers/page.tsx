@@ -34,14 +34,33 @@ export default function AdminDriversPage() {
   async function addDriver(e: React.FormEvent) {
     e.preventDefault();
 
-    const { error } = await supabase.from("delivery_drivers").insert({
-      name: name.trim(),
-      password: password.trim(),
-      is_active: true,
-    });
+    const { data } = await supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
 
-    if (error) {
-      alert(error.message);
+    if (!accessToken) {
+      alert("Administrator session expired.");
+      return;
+    }
+
+    const response = await fetch(
+      "/api/admin/staff-accounts",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role: "driver",
+          name,
+          password,
+        }),
+      }
+    );
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.error || "Could not add driver.");
       return;
     }
 
@@ -138,6 +157,7 @@ export default function AdminDriversPage() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            minLength={10}
             required
             className="mb-5 w-full rounded-xl border p-3 text-black"
           />
@@ -192,4 +212,3 @@ export default function AdminDriversPage() {
     </main>
   );
 }
-

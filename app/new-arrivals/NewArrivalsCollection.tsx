@@ -313,9 +313,6 @@ export default function NewArrivalsCollection({
   const filterDialogTitleId =
     `${filterDialogId}-title`;
 
-  const sortSelectId =
-    `${collectionId}-sort`;
-
   const collectionTitle =
     isConcern
       ? ""

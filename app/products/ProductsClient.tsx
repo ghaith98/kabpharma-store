@@ -79,6 +79,20 @@ function parseIdsParam(value: string | null) {
   return ids.length > 0 ? new Set(ids) : null;
 }
 
+function normalizeSearchText(value: unknown) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ة/g, "ه")
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
 export default function ProductsClient({
   products,
   showSearch = false,
@@ -105,9 +119,15 @@ export default function ProductsClient({
   const search = standaloneCollection
     ? ""
     : searchParams.get("search") || "";
-  const selectedCategoryIds = standaloneCollection
-    ? []
-    : parseCategoryIds(searchParams.get("category"));
+  const selectedCategoryIds = useMemo(
+    () =>
+      standaloneCollection
+        ? []
+        : parseCategoryIds(
+            searchParams.get("category")
+          ),
+    [searchParams, standaloneCollection]
+  );
   const selectedIds = standaloneCollection
     ? null
     : parseIdsParam(searchParams.get("ids"));
@@ -167,6 +187,19 @@ export default function ProductsClient({
     useState(inStockOnly);
   const [draftOnSaleOnly, setDraftOnSaleOnly] =
     useState(onSaleOnly);
+
+  const cancelDraftFilters = useCallback(() => {
+    setDraftCategoryIds(selectedCategoryIds);
+    setDraftPriceRange([...priceRange]);
+    setDraftInStockOnly(inStockOnly);
+    setDraftOnSaleOnly(onSaleOnly);
+    setFiltersOpen(false);
+  }, [
+    inStockOnly,
+    onSaleOnly,
+    priceRange,
+    selectedCategoryIds,
+  ]);
 
   const replaceProductParams = useCallback((
     updates: {
@@ -249,7 +282,7 @@ export default function ProductsClient({
         closeWithEscape
       );
     };
-  }, [filtersOpen]);
+  }, [cancelDraftFilters, filtersOpen]);
 
   useEffect(() => {
     if (!sortOpen) return;
@@ -412,14 +445,6 @@ export default function ProductsClient({
     setFiltersOpen(true);
   }
 
-  function cancelDraftFilters() {
-    setDraftCategoryIds(selectedCategoryIds);
-    setDraftPriceRange([...priceRange]);
-    setDraftInStockOnly(inStockOnly);
-    setDraftOnSaleOnly(onSaleOnly);
-    setFiltersOpen(false);
-  }
-
   function applyDraftFilters() {
     replaceProductParams({
       categoryIds: draftCategoryIds,
@@ -479,50 +504,23 @@ export default function ProductsClient({
 
     const filteredProducts =
       useMemo(() => {
-        const cleanSearch = search
-          .trim()
-          .toLocaleLowerCase();
+        const cleanSearch =
+          normalizeSearchText(search);
 
         return [...products]
           .filter((product) => {
-            const productName =
-              isArabic
-                ? product.name_ar ||
-                  product.name ||
-                  product.name_en
-                : product.name_en ||
-                  product.name ||
-                  product.name_ar;
-
-            const productDescription =
-              isArabic
-                ? product.description_ar ||
-                  product.description ||
-                  product.description_en
-                : product.description_en ||
-                  product.description ||
-                  product.description_ar;
-
-            const categoryName =
-              isArabic
-                ? product.categories
-                    ?.name_ar ||
-                  product.categories
-                    ?.name ||
-                  product.categories
-                    ?.name_en
-                : product.categories
-                    ?.name_en ||
-                  product.categories
-                    ?.name ||
-                  product.categories
-                    ?.name_ar;
-
-            const searchableText = `
-              ${productName || ""}
-              ${productDescription || ""}
-              ${categoryName || ""}
-            `.toLocaleLowerCase();
+            const searchableText =
+              normalizeSearchText(`
+                ${product.name || ""}
+                ${product.name_ar || ""}
+                ${product.name_en || ""}
+                ${product.description || ""}
+                ${product.description_ar || ""}
+                ${product.description_en || ""}
+                ${product.categories?.name || ""}
+                ${product.categories?.name_ar || ""}
+                ${product.categories?.name_en || ""}
+              `);
 
             const finalPrice =
               getFinalPrice(product);
@@ -651,7 +649,6 @@ export default function ProductsClient({
         }, [
           products,
           search,
-          isArabic,
           selectedCategoryIds,
           selectedIds,
           priceRange,

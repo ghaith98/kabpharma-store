@@ -140,11 +140,7 @@ export default function HomeClient({
     lang as "en" | "ar";
 
   const bestSellerProducts =
-    topSellerProducts.length > 0
-      ? topSellerProducts
-      : featuredProducts.length > 0
-        ? featuredProducts
-        : newProducts;
+    topSellerProducts;
 
   const text = {
     en: {
@@ -218,21 +214,23 @@ export default function HomeClient({
           </div>
         )}
 
-      <ProductSection
-        title={
-          t.topSellers
-        }
-        products={
-          bestSellerProducts
-        }
-        bestSellerIds={
-          topSellerIds
-        }
-        lang={
-          currentLang
-        }
-        viewAllHref="/best-sellers"
-      />
+      {bestSellerProducts.length > 0 && (
+        <ProductSection
+          title={
+            t.topSellers
+          }
+          products={
+            bestSellerProducts
+          }
+          bestSellerIds={
+            topSellerIds
+          }
+          lang={
+            currentLang
+          }
+          viewAllHref="/best-sellers"
+        />
+      )}
 
       <ProductSection
         title={

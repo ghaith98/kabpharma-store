@@ -108,6 +108,13 @@ export async function POST(request: Request) {
       windowSeconds: 10 * 60,
     });
 
+    if (verificationLimit.unavailable) {
+      return jsonError(
+        "Verification service is temporarily unavailable. Please retry shortly.",
+        503
+      );
+    }
+
     if (!verificationLimit.allowed) {
       return NextResponse.json(
         {
