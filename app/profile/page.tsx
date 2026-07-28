@@ -14,10 +14,12 @@ import {
   FaFileContract,
   FaGlobe,
   FaHeadset,
+  FaHeart,
   FaShieldAlt,
   FaSignOutAlt,
   FaUndoAlt,
   FaUserCircle,
+  FaUserEdit,
 } from "react-icons/fa";
 
 import { useLanguage } from "../../context/LanguageContext";
@@ -314,6 +316,56 @@ export default function ProfilePage() {
                 {isArabic
                   ? "طلباتي"
                   : "My orders"}
+              </span>
+            </div>
+
+            <FaChevronRight
+              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
+                isArabic
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          </Link>
+
+          <Link
+            href="/wishlist"
+            className={mobileActionClass}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <FaHeart />
+              </div>
+
+              <span className="font-extrabold text-[#142019]">
+                {isArabic
+                  ? "قائمة الأمنيات"
+                  : "Wishlist"}
+              </span>
+            </div>
+
+            <FaChevronRight
+              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
+                isArabic
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          </Link>
+
+          <Link
+            href="/account-information"
+            className={mobileActionClass}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
+                <FaUserEdit />
+              </div>
+
+              <span className="font-extrabold text-[#142019]">
+                {isArabic
+                  ? "معلومات الحساب"
+                  : "Account information"}
               </span>
             </div>
 
@@ -687,6 +739,48 @@ export default function ProfilePage() {
                   </Link>
 
                   <Link
+                    href="/wishlist"
+                    className={sidebarLinkClass}
+                  >
+                    <span className="flex items-center gap-3">
+                      <FaHeart className="text-white/60 transition group-hover:text-white" />
+
+                      {isArabic
+                        ? "قائمة الأمنيات"
+                        : "Wishlist"}
+                    </span>
+
+                    <FaChevronRight
+                      className={`text-[11px] text-white/35 transition group-hover:text-white ${
+                        isArabic
+                          ? "rotate-180"
+                          : ""
+                      }`}
+                    />
+                  </Link>
+
+                  <Link
+                    href="/account-information"
+                    className={sidebarLinkClass}
+                  >
+                    <span className="flex items-center gap-3">
+                      <FaUserEdit className="text-white/60 transition group-hover:text-white" />
+
+                      {isArabic
+                        ? "معلومات الحساب"
+                        : "Account information"}
+                    </span>
+
+                    <FaChevronRight
+                      className={`text-[11px] text-white/35 transition group-hover:text-white ${
+                        isArabic
+                          ? "rotate-180"
+                          : ""
+                      }`}
+                    />
+                  </Link>
+
+                  <Link
                     href="/contact"
                     className={sidebarLinkClass}
                   >
@@ -806,6 +900,76 @@ export default function ProfilePage() {
                           {isArabic
                             ? "عرض سجل الطلبات ومتابعة حالة الطلب الحالي."
                             : "View your order history and follow the status of current orders."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dfe5e1] text-xs text-[#647168] transition group-hover:border-[#0a583b] group-hover:bg-[#0a583b] group-hover:text-white">
+                      <FaChevronRight
+                        className={
+                          isArabic
+                            ? "rotate-180"
+                            : ""
+                        }
+                      />
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/wishlist"
+                    className={accountLinkClass}
+                  >
+                    <div className="flex min-w-0 items-center gap-5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#dbe5de] bg-[#f3f7f4] text-[#0a583b]">
+                        <FaHeart />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xl font-extrabold text-[#142019]">
+                          {isArabic
+                            ? "قائمة الأمنيات"
+                            : "Wishlist"}
+                        </p>
+
+                        <p className="mt-1 text-sm leading-6 text-[#647168]">
+                          {isArabic
+                            ? "تصفح المنتجات التي حفظتها لشرائها لاحقاً."
+                            : "Browse the products you saved to buy later."}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dfe5e1] text-xs text-[#647168] transition group-hover:border-[#0a583b] group-hover:bg-[#0a583b] group-hover:text-white">
+                      <FaChevronRight
+                        className={
+                          isArabic
+                            ? "rotate-180"
+                            : ""
+                        }
+                      />
+                    </div>
+                  </Link>
+
+                  <Link
+                    href="/account-information"
+                    className={accountLinkClass}
+                  >
+                    <div className="flex min-w-0 items-center gap-5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#dbe5de] bg-[#f3f7f4] text-[#0a583b]">
+                        <FaUserEdit />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xl font-extrabold text-[#142019]">
+                          {isArabic
+                            ? "معلومات الحساب"
+                            : "Account information"}
+                        </p>
+
+                        <p className="mt-1 text-sm leading-6 text-[#647168]">
+                          {isArabic
+                            ? "عرض وتعديل اسمك ورقم هاتفك وبيانات حسابك."
+                            : "View and update your name, phone number, and account details."}
                         </p>
                       </div>
                     </div>
@@ -1117,4 +1281,3 @@ export default function ProfilePage() {
     </main>
   );
 }
-
