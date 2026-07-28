@@ -85,12 +85,13 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  // Sync the new name onto every order that belongs to this profile
-  // (orders store customer_name as a text snapshot — keep it in sync)
+  // Sync the new name onto every order that belongs to this profile.
+  // Match by phone because old orders may have customer_profile_id = NULL
+  // (placed before that column was added).
   await supabaseAdmin
     .from("orders")
     .update({ customer_name: full_name })
-    .eq("customer_profile_id", session.profileId);
+    .eq("phone", session.phone);
 
   // Update localStorage-side cache by returning the new value
   return NextResponse.json({ success: true, full_name });

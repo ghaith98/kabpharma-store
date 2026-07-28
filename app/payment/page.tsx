@@ -716,19 +716,42 @@ export default function PaymentPage() {
       return;
     }
 
+    const normalizedCheckout = {
+      name: String(
+        currentCheckout.name ||
+          ""
+      )
+        .replace(/\s+/g, " ")
+        .trim(),
+      governorate: String(
+        currentCheckout.governorate ||
+          ""
+      ).trim(),
+      delivery_area: String(
+        currentCheckout.delivery_area ||
+          ""
+      ).trim(),
+      address: String(
+        currentCheckout.address ||
+          ""
+      )
+        .replace(/\s+/g, " ")
+        .trim(),
+    };
+
     const currentCart =
       getCart() as CartItemWithVariant[];
 
     if (
-      !currentCheckout.name ||
-      !currentCheckout.governorate ||
-      !currentCheckout.delivery_area ||
-      !currentCheckout.address
+      normalizedCheckout.name.length < 2 ||
+      !normalizedCheckout.governorate ||
+      !normalizedCheckout.delivery_area ||
+      normalizedCheckout.address.length < 5
     ) {
       alert(
         isArabic
-          ? "معلومات الطلب غير مكتملة."
-          : "Checkout information is incomplete."
+          ? "بعض معلومات التوصيل غير مكتملة. يرجى مراجعة الاسم والمحافظة والمنطقة والعنوان."
+          : "Some delivery information is incomplete. Please review your name, governorate, area and address."
       );
 
       router.replace("/checkout");
@@ -778,12 +801,12 @@ export default function PaymentPage() {
             },
             body: JSON.stringify({
               checkout: {
-                name: currentCheckout.name,
+                name: normalizedCheckout.name,
                 governorate:
-                  currentCheckout.governorate,
+                  normalizedCheckout.governorate,
                 delivery_area:
-                  currentCheckout.delivery_area,
-                address: currentCheckout.address,
+                  normalizedCheckout.delivery_area,
+                address: normalizedCheckout.address,
               },
               cart: currentCart.map((item) => ({
                 id: item.id,
@@ -791,7 +814,12 @@ export default function PaymentPage() {
                   item.variant_id ?? null,
                 quantity: item.quantity,
               })),
-              couponCode: appliedCoupon?.code || "",
+              ...(appliedCoupon
+                ? {
+                    couponCode:
+                      appliedCoupon.code,
+                  }
+                : {}),
               idempotencyKey,
             }),
           }
@@ -845,12 +873,12 @@ export default function PaymentPage() {
       formData.set(
         "checkout",
         JSON.stringify({
-          name: currentCheckout.name,
+          name: normalizedCheckout.name,
           governorate:
-            currentCheckout.governorate,
+            normalizedCheckout.governorate,
           delivery_area:
-            currentCheckout.delivery_area,
-          address: currentCheckout.address,
+            normalizedCheckout.delivery_area,
+          address: normalizedCheckout.address,
         })
       );
       formData.set(
@@ -865,7 +893,13 @@ export default function PaymentPage() {
         )
       );
       formData.set("proof", file);
-      formData.set("couponCode", appliedCoupon?.code || "");
+
+      if (appliedCoupon) {
+        formData.set(
+          "couponCode",
+          appliedCoupon.code
+        );
+      }
 
       const existingTransferKey =
         sessionStorage.getItem(
@@ -906,9 +940,11 @@ export default function PaymentPage() {
         }
 
         throw new Error(
-          isArabic
-            ? "تعذر إنشاء الطلب. تم تحديث الأسعار والتوفر؛ يرجى مراجعة السلة والمحاولة مجدداً."
-            : "The order could not be created. Prices or availability may have changed; review your cart and try again."
+          result?.error ||
+            result?.message ||
+            (isArabic
+              ? "تعذر إنشاء الطلب. يرجى مراجعة السلة والمحاولة مجدداً."
+              : "The order could not be created. Please review your cart and try again.")
         );
       }
 

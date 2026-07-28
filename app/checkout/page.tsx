@@ -595,11 +595,24 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!name.trim()) {
+    const normalizedName =
+      name
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const normalizedAddress =
+      address
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (
+      normalizedName.length <
+      2
+    ) {
       alert(
         isArabic
-          ? "يرجى إدخال الاسم الكامل"
-          : "Please enter your full name"
+          ? "يرجى إدخال اسم كامل وصحيح"
+          : "Please enter a valid full name"
       );
 
       return;
@@ -615,7 +628,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!deliveryArea) {
+    if (
+      !deliveryArea ||
+      !selectedArea ||
+      selectedArea.governorate !==
+        governorate
+    ) {
       alert(
         isArabic
           ? "يرجى اختيار منطقة التوصيل"
@@ -625,11 +643,14 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!address.trim()) {
+    if (
+      normalizedAddress.length <
+      5
+    ) {
       alert(
         isArabic
-          ? "يرجى إدخال عنوان التوصيل"
-          : "Please enter the delivery address"
+          ? "يرجى إدخال عنوان توصيل أكثر تفصيلاً"
+          : "Please enter a more detailed delivery address"
       );
 
       return;
@@ -683,7 +704,7 @@ export default function CheckoutPage() {
         "checkout",
         JSON.stringify({
           name:
-            name.trim(),
+            normalizedName,
 
           phone:
             accountPhone,
@@ -691,19 +712,18 @@ export default function CheckoutPage() {
           governorate,
 
           delivery_area:
-            selectedArea?.area_name ||
-            "",
+            selectedArea.area_name,
 
           delivery_area_ar:
-            selectedArea?.area_name_ar ||
+            selectedArea.area_name_ar ||
             "",
 
           delivery_area_en:
-            selectedArea?.area_name_en ||
+            selectedArea.area_name_en ||
             "",
 
           address:
-            address.trim(),
+            normalizedAddress,
 
           delivery_fee:
             deliveryFee,
