@@ -86,12 +86,19 @@ export async function PATCH(req: NextRequest) {
   }
 
   // Sync the new name onto every order that belongs to this profile.
-  // Match by phone because old orders may have customer_profile_id = NULL
-  // (placed before that column was added).
+  // Session stores phone without + (e.g. 9639...) but orders stores it
+  // with + (e.g. +9639...) — try both to be safe.
+  const phoneWithPlus = session.phone.startsWith("+")
+    ? session.phone
+    : "+" + session.phone;
+  const phoneWithout = session.phone.startsWith("+")
+    ? session.phone.slice(1)
+    : session.phone;
+
   await supabaseAdmin
     .from("orders")
     .update({ customer_name: full_name })
-    .eq("phone", session.phone);
+    .or(`phone.eq.${phoneWithPlus},phone.eq.${phoneWithout}`);
 
   // Update localStorage-side cache by returning the new value
   return NextResponse.json({ success: true, full_name });
