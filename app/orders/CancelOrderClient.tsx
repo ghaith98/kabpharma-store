@@ -83,7 +83,7 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
       <button
         onClick={() => setShowConfirm(true)}
         disabled={loading || cancelled}
-        className="mt-4 w-full rounded-2xl border border-red-300 bg-red-50 px-5 py-3 font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#e1bcb6] bg-white px-5 text-sm font-extrabold text-[#9a4036] transition hover:border-[#c9877e] hover:bg-[#fff7f5] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {cancelled
           ? lang === "ar"
@@ -95,14 +95,14 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
       </button>
 
       {error && (
-        <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+        <p className="mt-3 rounded-2xl border border-[#e8c7c2] bg-[#fff7f5] px-4 py-3 text-sm font-bold text-[#9a4036]">
           {error}
         </p>
       )}
 
       {showConfirm && (
         <div
-          className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-[999] flex items-center justify-center bg-[#07130d]/55 px-4 backdrop-blur-[2px]"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               setShowConfirm(false);
@@ -117,33 +117,33 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
             aria-labelledby="cancel-order-title"
             aria-describedby="cancel-order-description"
             tabIndex={-1}
-            className="w-full max-w-md rounded-[2rem] bg-white p-6 text-center shadow-2xl"
+            className="w-full max-w-md rounded-[1.75rem] border border-white/50 bg-white p-6 text-center shadow-[0_28px_80px_rgba(7,19,13,0.22)] sm:p-8"
           >
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-2xl">
+            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#fff3f1] text-2xl">
               ⚠️
             </div>
 
             <h2
               id="cancel-order-title"
-              className="text-2xl font-extrabold text-gray-900"
+              className="text-2xl font-extrabold tracking-[-0.02em] text-[#142019]"
             >
               {lang === "ar" ? "إلغاء الطلب؟" : "Cancel order?"}
             </h2>
 
             <p
               id="cancel-order-description"
-              className="mt-3 leading-7 text-gray-600"
+              className="mt-3 text-sm leading-7 text-[#647168]"
             >
               {lang === "ar"
                 ? "هل أنت متأكد من إلغاء هذا الطلب؟ سيتم إرجاع المبلغ المدفوع خلال 24 ساعة."
                 : "Are you sure you want to cancel this order? The paid amount will be refunded within 24 hours."}
             </p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <button
                 onClick={() => setShowConfirm(false)}
                 disabled={loading}
-                className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50"
+                className="min-h-12 rounded-full border border-[#cbd3cd] px-5 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
               >
                 {lang === "ar" ? "لا، تراجع" : "No, go back"}
               </button>
@@ -151,7 +151,7 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
               <button
                 onClick={cancelOrder}
                 disabled={loading}
-                className="rounded-2xl bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                className="min-h-12 rounded-full bg-[#9a4036] px-5 text-sm font-extrabold text-white transition hover:bg-[#7f332b] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading
                   ? lang === "ar"
@@ -168,4 +168,3 @@ export default function CancelOrderClient({ orderId }: { orderId: number }) {
     </>
   );
 }
-
