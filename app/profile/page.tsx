@@ -199,7 +199,7 @@ export default function ProfilePage() {
 
   return (
     <main
-      dir={isArabic ? "rtl" : "ltr"}
+      dir="ltr"
       className={`min-h-screen bg-[#f7f7f3] pb-20 ${
         isArabic
           ? "[font-family:var(--font-arabic)]"
@@ -320,11 +320,7 @@ export default function ProfilePage() {
             </div>
 
             <FaChevronRight
-              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
-                isArabic
-                  ? "rotate-180"
-                  : ""
-              }`}
+              className={"shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b]"}
             />
           </Link>
 
@@ -345,11 +341,7 @@ export default function ProfilePage() {
             </div>
 
             <FaChevronRight
-              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
-                isArabic
-                  ? "rotate-180"
-                  : ""
-              }`}
+              className={"shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b]"}
             />
           </Link>
 
@@ -370,11 +362,7 @@ export default function ProfilePage() {
             </div>
 
             <FaChevronRight
-              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
-                isArabic
-                  ? "rotate-180"
-                  : ""
-              }`}
+              className={"shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b]"}
             />
           </Link>
 
@@ -399,11 +387,7 @@ export default function ProfilePage() {
             </div>
 
             <FaChevronRight
-              className={`shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b] ${
-                isArabic
-                  ? "rotate-180"
-                  : ""
-              }`}
+              className={"shrink-0 text-xs text-[#96a098] transition group-active:text-[#0a583b]"}
             />
           </Link>
         </nav>
@@ -527,11 +511,7 @@ export default function ProfilePage() {
                   </div>
 
                   <FaChevronRight
-                    className={`shrink-0 text-[10px] text-[#99a29c] ${
-                      isArabic
-                        ? "rotate-180"
-                        : ""
-                    }`}
+                    className={"shrink-0 text-[10px] text-[#99a29c]"}
                   />
                 </Link>
 
@@ -550,11 +530,7 @@ export default function ProfilePage() {
                   </div>
 
                   <FaChevronRight
-                    className={`shrink-0 text-[10px] text-[#99a29c] ${
-                      isArabic
-                        ? "rotate-180"
-                        : ""
-                    }`}
+                    className={"shrink-0 text-[10px] text-[#99a29c]"}
                   />
                 </Link>
 
@@ -573,11 +549,7 @@ export default function ProfilePage() {
                   </div>
 
                   <FaChevronRight
-                    className={`shrink-0 text-[10px] text-[#99a29c] ${
-                      isArabic
-                        ? "rotate-180"
-                        : ""
-                    }`}
+                    className={"shrink-0 text-[10px] text-[#99a29c]"}
                   />
                 </Link>
               </nav>
@@ -730,11 +702,7 @@ export default function ProfilePage() {
                     </span>
 
                     <FaChevronRight
-                      className={`text-[11px] text-white/35 transition group-hover:text-white ${
-                        isArabic
-                          ? "rotate-180"
-                          : ""
-                      }`}
+                      className={"text-[11px] text-white/35 transition group-hover:text-white"}
                     />
                   </Link>
 
@@ -751,11 +719,7 @@ export default function ProfilePage() {
                     </span>
 
                     <FaChevronRight
-                      className={`text-[11px] text-white/35 transition group-hover:text-white ${
-                        isArabic
-                          ? "rotate-180"
-                          : ""
-                      }`}
+                      className={"text-[11px] text-white/35 transition group-hover:text-white"}
                     />
                   </Link>
 
@@ -772,11 +736,7 @@ export default function ProfilePage() {
                     </span>
 
                     <FaChevronRight
-                      className={`text-[11px] text-white/35 transition group-hover:text-white ${
-                        isArabic
-                          ? "rotate-180"
-                          : ""
-                      }`}
+                      className={"text-[11px] text-white/35 transition group-hover:text-white"}
                     />
                   </Link>
 
@@ -793,11 +753,7 @@ export default function ProfilePage() {
                     </span>
 
                     <FaChevronRight
-                      className={`text-[11px] text-white/35 transition group-hover:text-white ${
-                        isArabic
-                          ? "rotate-180"
-                          : ""
-                      }`}
+                      className={"text-[11px] text-white/35 transition group-hover:text-white"}
                     />
                   </Link>
                 </nav>
@@ -906,11 +862,7 @@ export default function ProfilePage() {
 
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dfe5e1] text-xs text-[#647168] transition group-hover:border-[#0a583b] group-hover:bg-[#0a583b] group-hover:text-white">
                       <FaChevronRight
-                        className={
-                          isArabic
-                            ? "rotate-180"
-                            : ""
-                        }
+                        className=""
                       />
                     </div>
                   </Link>
@@ -941,11 +893,7 @@ export default function ProfilePage() {
 
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dfe5e1] text-xs text-[#647168] transition group-hover:border-[#0a583b] group-hover:bg-[#0a583b] group-hover:text-white">
                       <FaChevronRight
-                        className={
-                          isArabic
-                            ? "rotate-180"
-                            : ""
-                        }
+                        className=""
                       />
                     </div>
                   </Link>
@@ -976,11 +924,7 @@ export default function ProfilePage() {
 
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dfe5e1] text-xs text-[#647168] transition group-hover:border-[#0a583b] group-hover:bg-[#0a583b] group-hover:text-white">
                       <FaChevronRight
-                        className={
-                          isArabic
-                            ? "rotate-180"
-                            : ""
-                        }
+                        className=""
                       />
                     </div>
                   </Link>
@@ -1011,11 +955,7 @@ export default function ProfilePage() {
 
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dfe5e1] text-xs text-[#647168] transition group-hover:border-[#0a583b] group-hover:bg-[#0a583b] group-hover:text-white">
                       <FaChevronRight
-                        className={
-                          isArabic
-                            ? "rotate-180"
-                            : ""
-                        }
+                        className=""
                       />
                     </div>
                   </Link>
@@ -1201,11 +1141,7 @@ export default function ProfilePage() {
                         </div>
 
                         <FaChevronRight
-                          className={`shrink-0 text-xs text-[#99a29c] transition group-hover:text-[#0a583b] ${
-                            isArabic
-                              ? "rotate-180"
-                              : ""
-                          }`}
+                          className={"shrink-0 text-xs text-[#99a29c] transition group-hover:text-[#0a583b]"}
                         />
                       </Link>
 
@@ -1232,11 +1168,7 @@ export default function ProfilePage() {
                         </div>
 
                         <FaChevronRight
-                          className={`shrink-0 text-xs text-[#99a29c] transition group-hover:text-[#0a583b] ${
-                            isArabic
-                              ? "rotate-180"
-                              : ""
-                          }`}
+                          className={"shrink-0 text-xs text-[#99a29c] transition group-hover:text-[#0a583b]"}
                         />
                       </Link>
 
@@ -1263,11 +1195,7 @@ export default function ProfilePage() {
                         </div>
 
                         <FaChevronRight
-                          className={`shrink-0 text-xs text-[#99a29c] transition group-hover:text-[#0a583b] ${
-                            isArabic
-                              ? "rotate-180"
-                              : ""
-                          }`}
+                          className={"shrink-0 text-xs text-[#99a29c] transition group-hover:text-[#0a583b]"}
                         />
                       </Link>
                     </nav>

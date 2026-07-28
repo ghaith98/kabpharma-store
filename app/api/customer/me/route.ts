@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerSession } from "@/lib/customer-session";
@@ -6,56 +6,85 @@ import { getCustomerSession } from "@/lib/customer-session";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session =
-    await getCustomerSession();
+  const session = await getCustomerSession();
 
   if (!session) {
     return NextResponse.json(
-      {
-        authenticated: false,
-        user: null,
-      },
-      {
-        status: 401,
-      }
+      { authenticated: false, user: null },
+      { status: 401 }
     );
   }
 
-  const { data: profile, error } =
-    await supabaseAdmin
-      .from("profiles")
-      .select(
-        "id, full_name, phone"
-      )
-      .eq(
-        "id",
-        session.profileId
-      )
-      .eq(
-        "phone",
-        session.phone
-      )
-      .maybeSingle();
+  const { data: profile, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, full_name, phone")
+    .eq("id", session.profileId)
+    .eq("phone", session.phone)
+    .maybeSingle();
 
   if (error || !profile) {
     return NextResponse.json(
-      {
-        authenticated: false,
-        user: null,
-      },
-      {
-        status: 401,
-      }
+      { authenticated: false, user: null },
+      { status: 401 }
     );
   }
 
   return NextResponse.json({
     authenticated: true,
-
     user: {
       id: profile.id,
       full_name: profile.full_name,
       phone: profile.phone,
     },
   });
+}
+
+export async function PATCH(req: NextRequest) {
+  const session = await getCustomerSession();
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  let body: unknown;
+
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 }
+    );
+  }
+
+  const full_name =
+    typeof (body as Record<string, unknown>).full_name === "string"
+      ? ((body as Record<string, unknown>).full_name as string).trim()
+      : null;
+
+  if (!full_name || full_name.length < 2 || full_name.length > 80) {
+    return NextResponse.json(
+      { error: "Name must be between 2 and 80 characters." },
+      { status: 422 }
+    );
+  }
+
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({ full_name })
+    .eq("id", session.profileId)
+    .eq("phone", session.phone);
+
+  if (error) {
+    return NextResponse.json(
+      { error: "Failed to update name. Please try again." },
+      { status: 500 }
+    );
+  }
+
+  // Update localStorage-side cache by returning the new value
+  return NextResponse.json({ success: true, full_name });
 }
