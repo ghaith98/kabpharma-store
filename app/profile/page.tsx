@@ -229,20 +229,7 @@ export default function ProfilePage() {
                   {user.full_name}
                 </h1>
 
-                <p
-                  dir="ltr"
-                  className={`mt-1 text-xs text-white/60 ${
-                    isArabic
-                      ? "text-right"
-                      : "text-left"
-                  }`}
-                >
-                  +
-                  {user.phone.replace(
-                    /^\+/,
-                    ""
-                  )}
-                </p>
+
               </div>
             </div>
           </section>
@@ -649,20 +636,7 @@ export default function ProfilePage() {
                         {user.full_name}
                       </h2>
 
-                      <p
-                        dir="ltr"
-                        className={`mt-1 text-xs font-medium text-white/60 ${
-                          isArabic
-                            ? "text-right"
-                            : "text-left"
-                        }`}
-                      >
-                        +
-                        {user.phone.replace(
-                          /^\+/,
-                          ""
-                        )}
-                      </p>
+
                     </div>
                   ) : (
                     <div className="mt-5 min-w-0">
