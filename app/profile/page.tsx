@@ -82,9 +82,7 @@ export default function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
 
-    // ── Step 1: show cached user instantly from localStorage ──────────
-    // This eliminates the skeleton flash on every re-visit.
-    // The user sees their name/UI immediately while we verify in the background.
+    // Step 1: show cached user instantly — eliminates skeleton on re-visits
     try {
       const cached = localStorage.getItem("kab_user");
       if (cached) {
@@ -93,7 +91,7 @@ export default function ProfilePage() {
           if (!cancelled) {
             setUser({ full_name: parsed.full_name, phone: parsed.phone });
             setOrdersLoading(true);
-            setPageReady(true); // show UI immediately — no skeleton
+            setPageReady(true);
           }
         }
       }
@@ -101,30 +99,17 @@ export default function ProfilePage() {
       // localStorage unavailable — fall through to full load
     }
 
-    // ── Step 2: verify session + fetch orders in parallel ────────────
-    // Both requests fire at the same time instead of sequentially.
-    // cache: "default" lets the browser use its own HTTP cache for /me
-    // (the response headers from the API control how long it's valid).
+    // Step 2: verify session + fetch orders in parallel
     async function loadProfile() {
       try {
         const [meResponse, ordersResponse] = await Promise.all([
-          fetch("/api/customer/me", {
-            credentials: "include",
-            cache: "default",
-          }),
-          fetch("/api/customer/orders?view=profile", {
-            credentials: "include",
-            cache: "default",
-          }),
+          fetch("/api/customer/me", { credentials: "include", cache: "default" }),
+          fetch("/api/customer/orders?view=profile", { credentials: "include", cache: "default" }),
         ]);
 
-        // Auth check
         if (!meResponse.ok) {
           localStorage.removeItem("kab_user");
-          if (!cancelled) {
-            setUser(null);
-            setRecentOrders([]);
-          }
+          if (!cancelled) { setUser(null); setRecentOrders([]); }
           return;
         }
 
@@ -132,10 +117,7 @@ export default function ProfilePage() {
 
         if (!result.authenticated || !result.user) {
           localStorage.removeItem("kab_user");
-          if (!cancelled) {
-            setUser(null);
-            setRecentOrders([]);
-          }
+          if (!cancelled) { setUser(null); setRecentOrders([]); }
           return;
         }
 
@@ -144,42 +126,25 @@ export default function ProfilePage() {
           phone: result.user.phone,
         };
 
-        localStorage.setItem(
-          "kab_user",
-          JSON.stringify({ id: result.user.id, ...verifiedUser })
-        );
+        localStorage.setItem("kab_user", JSON.stringify({ id: result.user.id, ...verifiedUser }));
+        if (!cancelled) setUser(verifiedUser);
 
-        if (!cancelled) {
-          setUser(verifiedUser);
-        }
-
-        // Orders
         if (ordersResponse.ok) {
           const ordersResult = await ordersResponse.json();
           if (!cancelled) {
-            setRecentOrders(
-              Array.isArray(ordersResult.orders) ? ordersResult.orders : []
-            );
+            setRecentOrders(Array.isArray(ordersResult.orders) ? ordersResult.orders : []);
           }
         }
       } catch {
-        if (!cancelled) {
-          setUser(null);
-          setRecentOrders([]);
-        }
+        if (!cancelled) { setUser(null); setRecentOrders([]); }
       } finally {
-        if (!cancelled) {
-          setOrdersLoading(false);
-          setPageReady(true); // in case localStorage was empty
-        }
+        if (!cancelled) { setOrdersLoading(false); setPageReady(true); }
       }
     }
 
     void loadProfile();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   async function handleLogout() {
@@ -316,11 +281,11 @@ export default function ProfilePage() {
           </div>
 
           {ordersLoading ? (
-            <div className={`mt-5 flex gap-3 overflow-hidden ${desktop ? "" : ""}`}>
+            <div className="mt-5 flex gap-3 overflow-hidden">
               {Array.from({ length: desktop ? 3 : 2 }).map((_, index) => (
                 <div
                   key={index}
-                  className={`h-[196px] shrink-0 animate-pulse rounded-[1.35rem] bg-[#f0f3f0] ${
+                  className={`kab-shimmer h-[196px] shrink-0 rounded-[1.35rem] bg-[#eef1ee] ${
                     desktop ? "w-[calc(33.333%-0.75rem)]" : "w-[258px]"
                   }`}
                 />
@@ -425,7 +390,7 @@ export default function ProfilePage() {
                                 src={item.image_url}
                                 alt={item.product_name}
                                 className="h-full w-full object-contain"
-                                loading="lazy"
+                                loading="eager" decoding="async"
                               />
                             ) : (
                               <FaBoxOpen className="text-lg text-[#9aaba0]" />
@@ -481,133 +446,31 @@ export default function ProfilePage() {
   if (!pageReady) {
     return (
       <main className="min-h-screen bg-[#f4f5f1]">
-
-        {/* ── Mobile skeleton ─────────────────────────────── */}
         <div className="lg:hidden">
-
-          {/* Green header — matches <header className="bg-[#155b38] ..."> */}
-          <div className="bg-[#155b38] px-5 pb-5 pt-6">
-            <div className="mx-auto flex max-w-md justify-center">
-              <div className="kab-shimmer h-5 w-24 rounded-full bg-[#1e7048]" />
-            </div>
-          </div>
-
-          {/* User card — matches the white bg-white px-4 pb-5 pt-5 block */}
-          <div className="bg-white px-4 pb-5 pt-5">
-            <div className="mx-auto flex max-w-md items-center gap-3.5">
-              <div className="kab-shimmer h-16 w-16 shrink-0 rounded-full bg-[#eef1ee]" />
-              <div className="flex-1 space-y-2.5">
-                <div className="kab-shimmer h-4 w-36 rounded-full bg-[#eef1ee]" />
-                <div className="kab-shimmer h-3 w-24 rounded-full bg-[#eef1ee]" />
-              </div>
-            </div>
-          </div>
-
-          {/* Latest orders section — matches border-b-[10px] bg-white section */}
-          <div className="border-b-[10px] border-[#eceee9] bg-white px-4 py-6">
-            <div className="mx-auto max-w-md">
-              <div className="flex items-end justify-between gap-4">
-                <div className="kab-shimmer h-5 w-32 rounded-full bg-[#eef1ee]" />
-                <div className="kab-shimmer h-3 w-14 rounded-full bg-[#eef1ee]" />
-              </div>
-              <div className="mt-5 flex gap-3 overflow-hidden">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="kab-shimmer h-[196px] w-[258px] shrink-0 rounded-[1.35rem] bg-[#eef1ee]" />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Account center — matches bg-white px-4 py-6 section */}
-          <div className="bg-white px-4 py-6">
-            <div className="mx-auto max-w-md">
-              <div className="kab-shimmer mb-4 h-5 w-36 rounded-full bg-[#eef1ee]" />
-              {/* 2-col tile grid — 6 tiles matching mobileTileClass */}
-              <div className="grid grid-cols-2 gap-2.5">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex min-h-[72px] items-center gap-2.5 rounded-[1.25rem] border border-[#d8dfda] bg-white px-3.5 py-3">
-                    <div className="kab-shimmer h-9 w-9 shrink-0 rounded-full bg-[#eef1ee]" />
-                    <div className="kab-shimmer h-3 w-20 rounded-full bg-[#eef1ee]" />
-                  </div>
-                ))}
-              </div>
+          <div className="h-[92px] animate-pulse bg-[#155b38]" />
+          <div className="space-y-4 px-4 py-5">
+            <div className="h-24 animate-pulse rounded-[1.5rem] bg-white" />
+            <div className="h-20 animate-pulse rounded-[1.4rem] bg-[#20231f]" />
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-24 animate-pulse rounded-[1.6rem] bg-white"
+                />
+              ))}
             </div>
           </div>
         </div>
 
-        {/* ── Desktop skeleton ─────────────────────────────── */}
         <div className="mx-auto hidden max-w-[1380px] px-8 py-12 lg:block">
-
-          {/* Hero card — matches rounded-[2rem] border bg-[#fbfcf9] section */}
-          {/* Split: green left panel + white right panel */}
-          <div className="overflow-hidden rounded-[2rem] border border-[#dce4de]" style={{ minHeight: 330 }}>
-            <div className="grid grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]" style={{ minHeight: 330 }}>
-              {/* Left green panel */}
-              <div className="bg-[#155b38] px-10 py-11 xl:px-14">
-                <div className="kab-shimmer mb-7 h-3 w-44 rounded-full bg-[#1e7048]" />
-                <div className="kab-shimmer mb-3 h-10 w-3/4 rounded-full bg-[#1e7048]" />
-                <div className="kab-shimmer mb-2 h-3 w-full rounded-full bg-[#1e7048]" />
-                <div className="kab-shimmer mb-8 h-3 w-2/3 rounded-full bg-[#1e7048]" />
-                <div className="flex gap-3">
-                  <div className="kab-shimmer h-12 w-32 rounded-full bg-[#1e7048]" />
-                  <div className="kab-shimmer h-12 w-36 rounded-full bg-[#1e7048]" />
-                </div>
-              </div>
-              {/* Right benefits panel */}
-              <div className="flex flex-col justify-center px-9 py-10 xl:px-12">
-                <div className="kab-shimmer mb-3 h-3 w-32 rounded-full bg-[#eef1ee]" />
-                <div className="kab-shimmer mb-6 h-6 w-56 rounded-full bg-[#eef1ee]" />
-                <div className="grid gap-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 rounded-[1.2rem] border border-[#e0e6e2] bg-white px-4 py-3.5">
-                      <div className="kab-shimmer h-10 w-10 shrink-0 rounded-full bg-[#eef1ee]" />
-                      <div className="flex-1 space-y-2">
-                        <div className="kab-shimmer h-3.5 w-28 rounded-full bg-[#eef1ee]" />
-                        <div className="kab-shimmer h-3 w-44 rounded-full bg-[#eef1ee]" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* "Manage your account" section */}
-          <div className="mt-6 grid items-stretch gap-x-4 gap-y-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-            {/* Main column */}
-            <div>
-              <div className="flex items-end justify-between gap-6">
-                <div className="space-y-2">
-                  <div className="kab-shimmer h-3 w-36 rounded-full bg-[#e2e6e3]" />
-                  <div className="kab-shimmer h-7 w-64 rounded-full bg-[#e2e6e3]" />
-                </div>
-              </div>
-              {/* 3-col desktopTileClass grid */}
-              <div className="mt-4 grid grid-cols-3 gap-3.5">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex min-h-[118px] flex-col justify-between rounded-[1.35rem] border border-[#dde4df] bg-white p-5">
-                    <div className="kab-shimmer h-9 w-9 rounded-full bg-[#eef1ee]" />
-                    <div className="space-y-2">
-                      <div className="kab-shimmer h-4 w-28 rounded-full bg-[#eef1ee]" />
-                      <div className="kab-shimmer h-3 w-36 rounded-full bg-[#eef1ee]" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Sidebar — 3 rows matching desktopSidebarTileClass */}
-            <div className="grid grid-rows-3 gap-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 rounded-[1rem] border border-[#dde4df] bg-white px-4 py-2">
-                  <div className="flex items-center gap-3">
-                    <div className="kab-shimmer h-8 w-8 shrink-0 rounded-full bg-[#eef1ee]" />
-                    <div className="kab-shimmer h-3.5 w-20 rounded-full bg-[#eef1ee]" />
-                  </div>
-                  <div className="kab-shimmer h-3 w-8 rounded-full bg-[#eef1ee]" />
-                </div>
-              ))}
-            </div>
+          <div className="h-60 animate-pulse rounded-[2rem] bg-[#155b38]" />
+          <div className="mt-7 grid grid-cols-3 gap-5">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-40 animate-pulse rounded-[1.65rem] bg-white"
+              />
+            ))}
           </div>
         </div>
       </main>
