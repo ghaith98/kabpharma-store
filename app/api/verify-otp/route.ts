@@ -337,11 +337,12 @@ export async function POST(request: Request) {
     /*
       Create the secure signed customer session.
     */
-    const token =
-      await createCustomerSessionToken({
-        profileId: Number(profile.id),
-        phone: String(profile.phone),
-      });
+  const token =
+  await createCustomerSessionToken({
+    method: "phone",
+    profileId: Number(profile.id),
+    phone: String(profile.phone),
+  });
 
     const response = NextResponse.json({
       success: true,
