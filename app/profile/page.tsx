@@ -492,7 +492,7 @@ export default function ProfilePage() {
   return (
     <main
       dir={isArabic ? "rtl" : "ltr"}
-      className={`min-h-screen bg-[#f4f5f1] pb-20 text-[#17221b] ${
+      className={`${user ? "min-h-screen pb-20" : ""} bg-[#f4f5f1] text-[#17221b] ${
         isArabic ? "[font-family:var(--font-arabic)]" : ""
       }`}
     >
@@ -764,59 +764,45 @@ export default function ProfilePage() {
 
       {/* Desktop account dashboard */}
       <div className="mx-auto hidden max-w-[1380px] px-6 pb-14 pt-10 lg:block xl:px-10">
-        <section className="relative overflow-hidden rounded-[2.1rem] bg-[#155b38] text-white shadow-[0_25px_70px_rgba(9,61,39,0.16)]">
-          <div className="absolute -end-24 -top-40 h-96 w-96 rounded-full border-[70px] border-white/[0.035]" />
-          <div className="absolute bottom-0 start-[42%] h-40 w-40 rounded-full bg-[#a2c84c]/10 blur-3xl" />
+        {user ? (
+          <section className="relative overflow-hidden rounded-[2.1rem] bg-[#155b38] text-white shadow-[0_25px_70px_rgba(9,61,39,0.16)]">
+            <div className="absolute -end-24 -top-40 h-96 w-96 rounded-full border-[70px] border-white/[0.035]" />
+            <div className="absolute bottom-0 start-[42%] h-40 w-40 rounded-full bg-[#a2c84c]/10 blur-3xl" />
 
-          <div className="relative grid min-h-[248px] grid-cols-[minmax(0,1fr)_auto] items-center gap-10 px-10 py-9 xl:px-14">
-            <div>
-              <p
-                className={`text-xs font-extrabold uppercase text-[#b9d9c6] ${
-                  isArabic ? "tracking-normal" : "tracking-[0.2em]"
-                }`}
-              >
-                KAB Pharma · {isArabic ? "مركز الحساب" : "Account center"}
-              </p>
+            <div className="relative grid min-h-[248px] grid-cols-[minmax(0,1fr)_auto] items-center gap-10 px-10 py-9 xl:px-14">
+              <div>
+                <p
+                  className={`text-xs font-extrabold uppercase text-[#b9d9c6] ${
+                    isArabic ? "tracking-normal" : "tracking-[0.2em]"
+                  }`}
+                >
+                  KAB Pharma · {isArabic ? "مركز الحساب" : "Account center"}
+                </p>
 
-              <div className="mt-7 flex items-center gap-5">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-3xl font-extrabold uppercase backdrop-blur-sm">
-                  {user ? profileInitial : <FaUserCircle />}
-                </div>
+                <div className="mt-7 flex items-center gap-5">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-3xl font-extrabold uppercase backdrop-blur-sm">
+                    {profileInitial}
+                  </div>
 
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-white/60">
-                    {user
-                      ? isArabic
-                        ? "تم تسجيل الدخول باسم"
-                        : "Signed in as"
-                      : isArabic
-                        ? "مرحباً بك"
-                        : "Welcome"}
-                  </p>
-                  <h1 className="mt-1 truncate text-4xl font-extrabold tracking-[-0.035em]">
-                    {user
-                      ? user.full_name
-                      : isArabic
-                        ? "حساب KAB الخاص بك"
-                        : "Your KAB account"}
-                  </h1>
-                  <p
-                    dir={user ? "ltr" : undefined}
-                    className={`mt-2 text-sm text-white/60 ${
-                      user && isArabic ? "text-right" : ""
-                    }`}
-                  >
-                    {user
-                      ? `+${user.phone.replace(/^\+/, "")}`
-                      : isArabic
-                        ? "كل ما تحتاجه للطلبات والمفضلة في مكان واحد."
-                        : "Orders, favorites, and support in one place."}
-                  </p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-white/60">
+                      {isArabic ? "تم تسجيل الدخول باسم" : "Signed in as"}
+                    </p>
+                    <h1 className="mt-1 truncate text-4xl font-extrabold tracking-[-0.035em]">
+                      {user.full_name}
+                    </h1>
+                    <p
+                      dir="ltr"
+                      className={`mt-2 text-sm text-white/60 ${
+                        isArabic ? "text-right" : ""
+                      }`}
+                    >
+                      +{user.phone.replace(/^\+/, "")}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {user ? (
               <button
                 type="button"
                 onClick={handleLogout}
@@ -825,30 +811,127 @@ export default function ProfilePage() {
                 <FaSignOutAlt />
                 {isArabic ? "تسجيل الخروج" : "Sign out"}
               </button>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/login"
-                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 text-sm font-extrabold text-[#155b38] transition hover:bg-[#f0f5f1]"
-                >
-                  {isArabic ? "تسجيل الدخول" : "Sign in"}
-                </Link>
-                <Link
-                  href="/signup"
-                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/35 px-7 text-sm font-extrabold text-white transition hover:bg-white/10"
-                >
-                  {isArabic ? "إنشاء حساب" : "Create account"}
-                </Link>
-              </div>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+        ) : (
+          <section className="overflow-hidden rounded-[2rem] border border-[#dce4de] bg-[#fbfcf9] shadow-[0_20px_55px_rgba(11,66,46,0.08)]">
+            <div className="grid min-h-[330px] grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
+              <div className="relative flex flex-col justify-center overflow-hidden bg-[#155b38] px-10 py-11 text-white xl:px-14">
+                <div className="absolute -end-20 -top-24 h-64 w-64 rounded-full border-[52px] border-white/[0.04]" />
+                <div className="absolute -bottom-24 start-16 h-48 w-48 rounded-full bg-[#a2c84c]/10 blur-3xl" />
 
-        <div className="mt-7">
-          {renderLatestOrders({
-            desktop: true,
-          })}
-        </div>
+                <div className="relative max-w-xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xl">
+                    <FaUserCircle />
+                  </div>
+                  <p
+                    className={`mt-6 text-[11px] font-extrabold uppercase text-[#b9d9c6] ${
+                      isArabic ? "tracking-normal" : "tracking-[0.2em]"
+                    }`}
+                  >
+                    KAB Pharma · {isArabic ? "مركز الحساب" : "Account center"}
+                  </p>
+                  <h1 className="mt-2.5 text-4xl font-extrabold tracking-[-0.035em] xl:text-[42px]">
+                    {isArabic ? "مرحباً بك في KAB" : "Welcome to KAB"}
+                  </h1>
+                  <p className="mt-3 max-w-lg text-sm leading-6 text-white/70">
+                    {isArabic
+                      ? "سجّل دخولك لمتابعة طلباتك، حفظ منتجاتك المفضلة، وإدارة حسابك بسهولة."
+                      : "Sign in to track every order, keep your favorite products, and manage your account with ease."}
+                  </p>
+
+                  <div className="mt-7 flex items-center gap-3">
+                    <Link
+                      href="/login"
+                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-7 text-sm font-extrabold text-[#155b38] transition hover:bg-[#f0f5f1]"
+                    >
+                      {isArabic ? "تسجيل الدخول" : "Sign in"}
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/35 px-7 text-sm font-extrabold text-white transition hover:bg-white/10"
+                    >
+                      {isArabic ? "إنشاء حساب" : "Create account"}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-center px-9 py-10 xl:px-12">
+                <p
+                  className={`text-[11px] font-extrabold uppercase text-[#155b38] ${
+                    isArabic ? "tracking-normal" : "tracking-[0.18em]"
+                  }`}
+                >
+                  {isArabic ? "مزايا حسابك" : "Your account benefits"}
+                </p>
+                <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.025em]">
+                  {isArabic
+                    ? "تسوّق أسهل، ومتابعة أوضح"
+                    : "A simpler way to shop"}
+                </h2>
+
+                <div className="mt-6 grid gap-3">
+                  <div className="flex items-center gap-4 rounded-[1.2rem] border border-[#e0e6e2] bg-white px-4 py-3.5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                      <FaBoxOpen />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-extrabold">
+                        {isArabic ? "متابعة الطلبات" : "Track your orders"}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-[#68736c]">
+                        {isArabic
+                          ? "اعرف حالة طلبك في كل خطوة."
+                          : "See every update from review to delivery."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 rounded-[1.2rem] border border-[#e0e6e2] bg-white px-4 py-3.5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                      <FaHeart />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-extrabold">
+                        {isArabic ? "حفظ المفضلة" : "Save your favorites"}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-[#68736c]">
+                        {isArabic
+                          ? "احتفظ بالمنتجات التي تحبها."
+                          : "Keep the products you love close at hand."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 rounded-[1.2rem] border border-[#e0e6e2] bg-white px-4 py-3.5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                      <FaUserEdit />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-extrabold">
+                        {isArabic ? "إدارة الحساب" : "Manage account details"}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-[#68736c]">
+                        {isArabic
+                          ? "حدّث معلوماتك من مكان واحد."
+                          : "Keep your account information up to date."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {user && (
+          <div className="mt-7">
+            {renderLatestOrders({
+              desktop: true,
+            })}
+          </div>
+        )}
 
         <div className="mt-6 grid items-stretch gap-x-4 gap-y-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
           <section className="contents">
