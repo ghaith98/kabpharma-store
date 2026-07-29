@@ -191,10 +191,10 @@ export default function ProfilePage() {
   const arrowClass = isArabic ? "rotate-180" : "";
 
   const mobileTileClass =
-    "group flex min-h-[94px] items-center justify-between gap-3 rounded-[1.6rem] border border-[#d8dfda] bg-white px-5 py-4 text-start transition duration-200 active:scale-[0.985] active:border-[#0b5d41] active:bg-[#f4f8f5]";
+    "group flex min-h-[72px] items-center justify-between gap-2.5 rounded-[1.25rem] border border-[#d8dfda] bg-white px-3.5 py-3 text-start transition duration-200 active:scale-[0.985] active:border-[#0b5d41] active:bg-[#f4f8f5]";
 
   const desktopTileClass =
-    "group flex min-h-[148px] flex-col justify-between rounded-[1.65rem] border border-[#dde4df] bg-white p-6 text-start transition duration-300 hover:-translate-y-1 hover:border-[#aac2b4] hover:shadow-[0_18px_45px_rgba(11,66,46,0.09)]";
+    "group flex min-h-[118px] flex-col justify-between rounded-[1.35rem] border border-[#dde4df] bg-white p-5 text-start transition duration-300 hover:border-[#aac2b4] hover:shadow-[0_12px_30px_rgba(11,66,46,0.07)]";
 
   const mobilePolicyClass =
     "group flex min-h-[64px] items-center justify-between gap-4 border-t border-[#e8ece9] px-5 py-3.5 transition active:bg-[#f3f6f4]";
@@ -319,24 +319,10 @@ export default function ProfilePage() {
             <Swiper
               key={`${lang}-${desktop ? "desktop" : "mobile"}`}
               dir={isArabic ? "rtl" : "ltr"}
-              slidesPerView={desktop ? 3 : "auto"}
-              spaceBetween={desktop ? 16 : 12}
+              slidesPerView="auto"
+              spaceBetween={desktop ? 14 : 12}
               grabCursor
               watchOverflow
-              breakpoints={
-                desktop
-                  ? {
-                      1180: {
-                        slidesPerView: 3.05,
-                        spaceBetween: 16,
-                      },
-                      1380: {
-                        slidesPerView: 3.2,
-                        spaceBetween: 18,
-                      },
-                    }
-                  : undefined
-              }
               className="mt-5"
             >
               {recentOrders.map((order) => {
@@ -358,7 +344,9 @@ export default function ProfilePage() {
                   <SwiperSlide
                     key={order.id}
                     className={`!h-auto ${
-                      desktop ? "" : "!w-[258px]"
+                      desktop
+                        ? "!w-[276px] xl:!w-[288px]"
+                        : "!w-[258px]"
                     }`}
                   >
                     <Link
@@ -368,7 +356,9 @@ export default function ProfilePage() {
                           ? `عرض تفاصيل الطلب ${order.id}`
                           : `View order ${order.id} details`
                       }
-                      className="group flex h-full min-h-[196px] flex-col rounded-[1.35rem] border border-[#dfe5e1] bg-[#fbfcfa] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#adc4b6] hover:bg-white hover:shadow-[0_15px_35px_rgba(11,66,46,0.08)]"
+                      className={`group flex h-full flex-col rounded-[1.35rem] border border-[#dfe5e1] bg-[#fbfcfa] p-4 transition-[border-color,box-shadow] duration-300 hover:border-[#adc4b6] hover:shadow-[0_10px_26px_rgba(11,66,46,0.07)] ${
+                        desktop ? "min-h-[210px]" : "min-h-[196px]"
+                      }`}
                     >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -588,15 +578,17 @@ export default function ProfilePage() {
 
             <nav
               aria-label={isArabic ? "روابط الحساب" : "Account links"}
-              className="grid grid-cols-2 gap-3"
+              className="grid grid-cols-2 gap-2.5"
             >
               <Link
                 href="/account-information"
                 className={mobileTileClass}
               >
-                <div>
-                  <FaUserEdit className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                    <FaUserEdit />
+                  </span>
+                  <span className="text-[13px] font-extrabold leading-4">
                     {isArabic ? "معلومات الحساب" : "Account details"}
                   </span>
                 </div>
@@ -606,9 +598,11 @@ export default function ProfilePage() {
               </Link>
 
               <Link href="/orders" className={mobileTileClass}>
-                <div>
-                  <FaBoxOpen className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                    <FaBoxOpen />
+                  </span>
+                  <span className="text-[13px] font-extrabold leading-4">
                     {isArabic ? "الطلبات" : "Orders"}
                   </span>
                 </div>
@@ -618,9 +612,11 @@ export default function ProfilePage() {
               </Link>
 
               <Link href="/wishlist" className={mobileTileClass}>
-                <div>
-                  <FaHeart className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                    <FaHeart />
+                  </span>
+                  <span className="text-[13px] font-extrabold leading-4">
                     {isArabic ? "قائمتي" : "Wishlist"}
                   </span>
                 </div>
@@ -630,14 +626,13 @@ export default function ProfilePage() {
               </Link>
 
               <Link href="/contact" className={mobileTileClass}>
-                <div>
-                  <FaHeadset className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                    <FaHeadset />
+                  </span>
+                  <span className="text-[13px] font-extrabold leading-4">
                     {isArabic ? "تواصل معنا" : "Contact us"}
                   </span>
-                  <p className="mt-1 text-[11px] font-bold text-[#36a369]">
-                    {isArabic ? "نحن هنا للمساعدة" : "We’re here to help"}
-                  </p>
                 </div>
                 <FaChevronRight
                   className={`${arrowClass} shrink-0 text-xs text-[#8d9790] transition group-active:text-[#155b38]`}
@@ -651,9 +646,11 @@ export default function ProfilePage() {
                 aria-controls="mobile-profile-policies"
                 className={mobileTileClass}
               >
-                <div>
-                  <FaFileContract className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                    <FaFileContract />
+                  </span>
+                  <span className="text-[13px] font-extrabold leading-4">
                     {isArabic ? "السياسات" : "Policies"}
                   </span>
                 </div>
@@ -664,41 +661,44 @@ export default function ProfilePage() {
                 />
               </button>
 
-              <div className="flex min-h-[118px] min-w-0 flex-col justify-between rounded-[1.6rem] border border-[#d8dfda] bg-white px-5 py-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <FaGlobe className="shrink-0 text-xl text-[#155b38]" />
-                  <span className="whitespace-nowrap text-[15px] font-extrabold">
+              <div className="flex min-h-[72px] min-w-0 items-center gap-2.5 rounded-[1.25rem] border border-[#d8dfda] bg-white px-3 py-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
+                  <FaGlobe />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <span className="block whitespace-nowrap text-[12px] font-extrabold leading-none">
                     {isArabic ? "اللغة" : "Language"}
                   </span>
-                </div>
-                <div
-                  dir="ltr"
-                  className="mt-3 grid w-full grid-cols-2 rounded-full bg-[#edf1ee] p-1"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setLang("en")}
-                    aria-pressed={lang === "en"}
-                    className={`flex h-8 min-w-0 items-center justify-center rounded-full px-2 text-[10px] font-extrabold transition ${
-                      lang === "en"
-                        ? "bg-[#155b38] text-white"
-                        : "text-[#68736c]"
-                    }`}
+                  <div
+                    dir="ltr"
+                    aria-label={isArabic ? "اختيار اللغة" : "Choose language"}
+                    className="mt-1.5 grid min-w-0 grid-cols-2 rounded-full bg-[#edf1ee] p-0.5"
                   >
-                    EN
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLang("ar")}
-                    aria-pressed={lang === "ar"}
-                    className={`flex h-8 min-w-0 items-center justify-center rounded-full px-2 text-[10px] font-extrabold transition ${
-                      lang === "ar"
-                        ? "bg-[#155b38] text-white"
-                        : "text-[#68736c]"
-                    }`}
-                  >
-                    AR
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setLang("en")}
+                      aria-pressed={lang === "en"}
+                      className={`flex h-5 min-w-0 items-center justify-center rounded-full px-1 text-[8px] font-extrabold transition ${
+                        lang === "en"
+                          ? "bg-[#155b38] text-white"
+                          : "text-[#68736c]"
+                      }`}
+                    >
+                      EN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLang("ar")}
+                      aria-pressed={lang === "ar"}
+                      className={`flex h-5 min-w-0 items-center justify-center rounded-full px-1 text-[8px] font-extrabold transition ${
+                        lang === "ar"
+                          ? "bg-[#155b38] text-white"
+                          : "text-[#68736c]"
+                      }`}
+                    >
+                      AR
+                    </button>
+                  </div>
                 </div>
               </div>
             </nav>
@@ -847,8 +847,8 @@ export default function ProfilePage() {
           })}
         </div>
 
-        <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_350px]">
-          <section className="rounded-[2rem] border border-[#e0e5e1] bg-[#fafbf9] p-7 xl:p-9">
+        <div className="mt-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="rounded-[1.65rem] border border-[#e0e5e1] bg-[#fafbf9] p-6">
             <div className="flex items-end justify-between gap-6">
               <div>
                 <p
@@ -858,7 +858,7 @@ export default function ProfilePage() {
                 >
                   {isArabic ? "إدارة حسابك" : "Manage your account"}
                 </p>
-                <h2 className="mt-2 text-3xl font-extrabold tracking-[-0.03em]">
+                <h2 className="mt-1.5 text-[26px] font-extrabold tracking-[-0.03em]">
                   {isArabic ? "كل شيء في مكان واحد" : "Everything in one place"}
                 </h2>
               </div>
@@ -866,18 +866,18 @@ export default function ProfilePage() {
 
             <nav
               aria-label={isArabic ? "روابط الحساب" : "Account links"}
-              className="mt-7 grid grid-cols-3 gap-4"
+              className="mt-5 grid grid-cols-3 gap-3.5"
             >
               <Link
                 href="/account-information"
                 className={desktopTileClass}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
                   <FaUserEdit />
                 </div>
-                <div className="mt-5 flex items-end justify-between gap-4">
+                <div className="mt-3.5 flex items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-extrabold">
+                    <h3 className="text-base font-extrabold">
                       {isArabic ? "معلومات الحساب" : "Account details"}
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-[#68736c]">
@@ -893,12 +893,12 @@ export default function ProfilePage() {
               </Link>
 
               <Link href="/orders" className={desktopTileClass}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
                   <FaBoxOpen />
                 </div>
-                <div className="mt-5 flex items-end justify-between gap-4">
+                <div className="mt-3.5 flex items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-extrabold">
+                    <h3 className="text-base font-extrabold">
                       {isArabic ? "الطلبات" : "Orders"}
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-[#68736c]">
@@ -914,12 +914,12 @@ export default function ProfilePage() {
               </Link>
 
               <Link href="/wishlist" className={desktopTileClass}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
                   <FaHeart />
                 </div>
-                <div className="mt-5 flex items-end justify-between gap-4">
+                <div className="mt-3.5 flex items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-extrabold">
+                    <h3 className="text-base font-extrabold">
                       {isArabic ? "قائمتي" : "Wishlist"}
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-[#68736c]">
@@ -936,16 +936,16 @@ export default function ProfilePage() {
             </nav>
           </section>
 
-          <aside className="grid gap-4">
+          <aside className="grid gap-3.5 lg:mt-[94px]">
               <div className={desktopTileClass}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
                   <FaGlobe />
                 </div>
 
-                <div className="mt-5">
+                <div className="mt-3.5">
                   <div className="flex items-end justify-between gap-4">
                     <div>
-                      <h3 className="text-lg font-extrabold">
+                      <h3 className="text-base font-extrabold">
                         {isArabic ? "اللغة" : "Language"}
                       </h3>
                       <p className="mt-1 text-xs leading-5 text-[#68736c]">
@@ -958,13 +958,13 @@ export default function ProfilePage() {
 
                   <div
                     dir="ltr"
-                    className="mt-4 grid grid-cols-2 gap-2"
+                    className="mt-3 grid grid-cols-2 gap-2"
                   >
                     <button
                       type="button"
                       onClick={() => setLang("en")}
                       aria-pressed={lang === "en"}
-                      className={`min-h-9 rounded-full px-4 text-[11px] font-extrabold transition ${
+                      className={`min-h-8 rounded-full px-3 text-[10px] font-extrabold transition ${
                         lang === "en"
                           ? "bg-[#155b38] text-white"
                           : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
@@ -976,7 +976,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => setLang("ar")}
                       aria-pressed={lang === "ar"}
-                      className={`min-h-9 rounded-full px-4 text-[11px] font-extrabold transition ${
+                      className={`min-h-8 rounded-full px-3 text-[10px] font-extrabold transition ${
                         lang === "ar"
                           ? "bg-[#155b38] text-white"
                           : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
@@ -989,12 +989,12 @@ export default function ProfilePage() {
               </div>
 
               <Link href="/contact" className={desktopTileClass}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
                   <FaHeadset />
                 </div>
-                <div className="mt-5 flex items-end justify-between gap-4">
+                <div className="mt-3.5 flex items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-extrabold">
+                    <h3 className="text-base font-extrabold">
                       {isArabic ? "تواصل معنا" : "Contact us"}
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-[#36a369]">
@@ -1016,12 +1016,12 @@ export default function ProfilePage() {
                 aria-controls="desktop-profile-policies"
                 className={desktopTileClass}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
                   <FaFileContract />
                 </div>
-                <div className="mt-5 flex w-full items-end justify-between gap-4">
+                <div className="mt-3.5 flex w-full items-end justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-extrabold">
+                    <h3 className="text-base font-extrabold">
                       {isArabic ? "السياسات" : "Policies"}
                     </h3>
                     <p className="mt-1 text-xs leading-5 text-[#68736c]">
