@@ -3,18 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-// How long after a click before we show the bar.
-// 0ms = instant — shows on every navigation, even cached ones.
-// Keep at 0 for "Amazon-tier" feel: instant feedback, no white-screen limbo.
-const SHOW_DELAY_MS = 0;
-const COMPLETE_HOLD_MS = 320;   // how long the full bar stays visible before fading
+const COMPLETE_HOLD_MS = 320;
 const SAFETY_TIMEOUT_MS = 8_000;
 
 export default function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // phase: "idle" | "loading" | "completing" | "done"
   const [phase, setPhase] = useState<"idle" | "loading" | "completing" | "done">("idle");
 
   const showTimer    = useRef<number | null>(null);
@@ -30,25 +25,27 @@ export default function NavigationProgress() {
     });
   }
 
-  // When the route settles → animate the bar to 100% then fade it out.
+  // When the route settles → animate the bar to 100% then fade out.
   useEffect(() => {
     if (phase === "idle" || phase === "done") return;
 
     clear();
-    setPhase("completing");
 
+    // Defer setState to avoid the synchronous-setState-in-effect lint error.
     completeTimer.current = window.setTimeout(() => {
-      setPhase("done");
+      setPhase("completing");
 
-      // After fade-out completes, reset so the bar is fully hidden.
       completeTimer.current = window.setTimeout(() => {
-        setPhase("idle");
-      }, 400);
-    }, COMPLETE_HOLD_MS);
+        setPhase("done");
+
+        completeTimer.current = window.setTimeout(() => {
+          setPhase("idle");
+        }, 400);
+      }, COMPLETE_HOLD_MS);
+    }, 0);
 
     return clear;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for internal link clicks → start the bar immediately.
   useEffect(() => {
@@ -93,14 +90,8 @@ export default function NavigationProgress() {
       window.removeEventListener("popstate", startProgress);
       clear();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+  }, [phase]);  
 
-  // Width by phase:
-  //  idle       → 0%   (hidden, no transition)
-  //  loading    → 72%  (fast initial fill, then trickles via CSS)
-  //  completing → 100%
-  //  done       → 100% (opacity fades to 0)
   const widthClass =
     phase === "idle"
       ? "w-0"
@@ -113,17 +104,16 @@ export default function NavigationProgress() {
 
   const transitionClass =
     phase === "idle"
-      ? "" // no transition when resetting — instant hide
+      ? ""
       : phase === "loading"
-        ? "transition-[width] duration-[380ms] ease-out" // fast initial fill
-        : "transition-[width] duration-[260ms] ease-out"; // quick slam to 100%
+        ? "transition-[width] duration-[380ms] ease-out"
+        : "transition-[width] duration-[260ms] ease-out";
 
   return (
     <div
       aria-hidden="true"
       className={`pointer-events-none fixed inset-x-0 top-0 z-[10000] h-[2px] ${opacityClass} transition-opacity duration-300`}
     >
-      {/* Main bar */}
       <div
         className={`h-full ${widthClass} bg-[#0a583b] ${transitionClass}`}
         style={{
@@ -131,7 +121,6 @@ export default function NavigationProgress() {
         }}
       />
 
-      {/* Leading glow dot — only during loading phase */}
       {(phase === "loading" || phase === "completing") && (
         <div
           className={`absolute top-[-1px] h-[4px] w-[60px] rounded-full bg-[#3db87a] opacity-80 ${widthClass} ${transitionClass}`}

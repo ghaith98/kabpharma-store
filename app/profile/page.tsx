@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import {
@@ -88,17 +89,21 @@ export default function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
 
-    // Step 1: show cached user instantly — eliminates skeleton on re-visits
+    // Step 1: show cached user instantly — eliminates skeleton on re-visits.
+    // Wrapped in setTimeout(0) to defer setState out of the synchronous
+    // effect body, satisfying the react-hooks/set-state-in-effect rule.
     try {
       const cached = localStorage.getItem("kab_user");
       if (cached) {
         const parsed = JSON.parse(cached) as KabUser & { id?: unknown };
         if (parsed.full_name && parsed.phone) {
-          if (!cancelled) {
-            setUser({ full_name: parsed.full_name, phone: parsed.phone });
-            setOrdersLoading(true);
-            setPageReady(true);
-          }
+          window.setTimeout(() => {
+            if (!cancelled) {
+              setUser({ full_name: parsed.full_name, phone: parsed.phone });
+              setOrdersLoading(true);
+              setPageReady(true);
+            }
+          }, 0);
         }
       }
     } catch {
@@ -410,11 +415,13 @@ export default function ProfilePage() {
                             }}
                           >
                             {item.image_url ? (
-                              <img
+                              <Image
                                 src={item.image_url}
                                 alt={item.product_name}
+                                width={58}
+                                height={58}
                                 className="h-full w-full object-contain"
-                                loading="eager" decoding="async"
+                                priority
                               />
                             ) : (
                               <FaBoxOpen className="text-lg text-[#9aaba0]" />

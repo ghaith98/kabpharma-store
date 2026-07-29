@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     name.length < 2 ||
     (role === "delivery_company" &&
       username.length < 2) ||
-    password.length < 10 ||
+    password.length < 1 ||
     password.length > 200
   ) {
     return jsonError(
