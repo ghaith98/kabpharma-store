@@ -1,32 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
+import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import {
+  createCustomerSessionToken,
+  customerSessionCookieOptions,
+  CUSTOMER_SESSION_COOKIE,
+} from "@/lib/customer-session";
+import { cookies } from "next/headers";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Simple in-memory brute-force protection: max 10 attempts per email per 15 min
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(email: string): { allowed: boolean; retryAfter?: number } {
+function checkLoginRateLimit(email: string): { allowed: boolean; retryAfter?: number } {
   const now = Date.now();
   const key = email.toLowerCase();
-  const entry = rateLimitMap.get(key);
+  const entry = loginAttempts.get(key);
 
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + 10 * 60 * 1000 });
+    loginAttempts.set(key, { count: 1, resetAt: now + 15 * 60 * 1000 });
     return { allowed: true };
   }
 
-  if (entry.count >= 3) {
+  if (entry.count >= 10) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
     return { allowed: false, retryAfter };
   }
 
   entry.count++;
   return { allowed: true };
-}
-
-function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 export async function POST(req: NextRequest) {
@@ -39,13 +40,14 @@ export async function POST(req: NextRequest) {
 
   const b = body as Record<string, unknown>;
   const email = typeof b.email === "string" ? b.email.trim().toLowerCase() : "";
+  const password = typeof b.password === "string" ? b.password : "";
 
-  if (!email) {
-    return NextResponse.json({ error: "Email is required." }, { status: 422 });
+  if (!email || !password) {
+    return NextResponse.json({ error: "Email and password are required." }, { status: 422 });
   }
 
-  // ── Rate limit ────────────────────────────────────────────────────────────────
-  const rl = checkRateLimit(email);
+  // ── Rate limit ───────────────────────────────────────────────────────────────
+  const rl = checkLoginRateLimit(email);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: `Too many attempts. Try again in ${rl.retryAfter}s.`, retryAfter: rl.retryAfter },
@@ -53,56 +55,50 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── Make sure profile exists and isn't already verified ──────────────────────
+  // ── Fetch profile ─────────────────────────────────────────────────────────────
   const { data: profile } = await supabaseAdmin
     .from("profiles")
-    .select("id, full_name, email_verified")
+    .select("id, full_name, phone, email, password_hash, email_verified")
     .eq("email", email)
     .maybeSingle();
 
-  if (!profile) {
-    return NextResponse.json({ error: "No account found for this email." }, { status: 404 });
+  // Generic error — don't reveal whether email exists
+  const invalidCredentials = NextResponse.json(
+    { error: "Incorrect email or password." },
+    { status: 401 }
+  );
+
+  if (!profile || !profile.password_hash) return invalidCredentials;
+
+  if (!profile.email_verified) {
+    return NextResponse.json(
+      { error: "Please verify your email before signing in.", needsVerification: true, email },
+      { status: 403 }
+    );
   }
 
-  if (profile.email_verified) {
-    return NextResponse.json({ error: "Email already verified." }, { status: 409 });
-  }
+  // ── Check password ────────────────────────────────────────────────────────────
+  const passwordMatch = await bcrypt.compare(password, profile.password_hash);
+  if (!passwordMatch) return invalidCredentials;
 
-  // ── Invalidate old codes & generate new OTP ───────────────────────────────────
-  await supabaseAdmin
-    .from("email_verification_codes")
-    .update({ used: true })
-    .eq("email", email)
-    .eq("used", false);
-
-  const otp = generateOtp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-  await supabaseAdmin
-    .from("email_verification_codes")
-    .insert({ email, code: otp, expires_at: expiresAt });
-
-  // ── Send email ────────────────────────────────────────────────────────────────
-  const { error: emailError } = await resend.emails.send({
-    from: "KAB Pharma <noreply@kabpharma.com>", // ← replace with your verified domain
-    to: email,
-    subject: "Your KAB Pharma verification code",
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#ffffff">
-        <p style="font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#0a583b;margin:0">KAB Pharma</p>
-        <h1 style="font-size:28px;font-weight:800;color:#142019;margin:16px 0 8px;letter-spacing:-0.03em">Verify your email</h1>
-        <p style="font-size:14px;color:#647168;line-height:1.7;margin:0 0 28px">Hi ${profile.full_name}, here is your new verification code. It expires in 10 minutes.</p>
-        <div style="background:#f5f6f3;border-radius:16px;padding:28px;text-align:center;margin-bottom:28px">
-          <p style="font-size:42px;font-weight:800;letter-spacing:0.15em;color:#0a583b;margin:0">${otp}</p>
-        </div>
-        <p style="font-size:12px;color:#9aaa9e;line-height:1.6;margin:0">If you didn't request this, you can safely ignore this email.</p>
-      </div>
-    `,
+  // ── Issue session cookie ──────────────────────────────────────────────────────
+  const token = await createCustomerSessionToken({
+    method: "email",
+    profileId: profile.id,
+    email: profile.email,
+    phone: profile.phone,
   });
 
-  if (emailError) {
-    return NextResponse.json({ error: "Could not send verification email." }, { status: 500 });
-  }
+  const cookieStore = await cookies();
+  cookieStore.set(CUSTOMER_SESSION_COOKIE, token, customerSessionCookieOptions);
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({
+    success: true,
+    user: {
+      id: profile.id,
+      full_name: profile.full_name,
+      phone: profile.phone,
+      email: profile.email,
+    },
+  });
 }

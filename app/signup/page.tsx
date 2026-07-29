@@ -95,8 +95,8 @@ export default function SignupPage() {
         setShowCountryPicker(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
   // ── Countdown ─────────────────────────────────────────────────────────────────
@@ -706,7 +706,7 @@ export default function SignupPage() {
                     {/* Phone with country picker */}
                     <label className="block">
                       <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Phone number", "رقم الهاتف")}</span>
-                      <div dir="ltr" className="flex min-h-[56px] overflow-hidden rounded-2xl border border-[#cfd6d1] bg-white transition focus-within:border-[#0a583b] focus-within:ring-4 focus-within:ring-[#e7f0ea]">
+                      <div dir="ltr" className="flex min-h-[56px] overflow-visible rounded-2xl border border-[#cfd6d1] bg-white transition focus-within:border-[#0a583b] focus-within:ring-4 focus-within:ring-[#e7f0ea]">
                         {/* Country picker button */}
                         <div className="relative" ref={countryPickerRef}>
                           <button
@@ -720,7 +720,7 @@ export default function SignupPage() {
                           </button>
 
                           {showCountryPicker && (
-                            <div className="absolute start-0 top-full z-50 mt-1 max-h-60 w-52 overflow-y-auto rounded-2xl border border-[#dfe4e0] bg-white shadow-lg">
+                            <div className="absolute start-0 top-full z-[999] mt-1 max-h-60 w-52 overflow-y-auto rounded-2xl border border-[#dfe4e0] bg-white shadow-lg">
                               {COUNTRY_CODES.map((country) => (
                                 <button
                                   key={`${country.code}-${country.name}`}

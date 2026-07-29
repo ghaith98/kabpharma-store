@@ -1,163 +1,119 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
-import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getCustomerSession } from "@/lib/customer-session";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+export const dynamic = "force-dynamic";
 
-// Rate limit: max 3 OTP sends per email per 10 minutes
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+export async function GET() {
+  const session = await getCustomerSession();
 
-function checkRateLimit(email: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const key = email.toLowerCase();
-  const entry = rateLimitMap.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + 10 * 60 * 1000 });
-    return { allowed: true };
+  if (!session) {
+    return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
   }
 
-  if (entry.count >= 3) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return { allowed: false, retryAfter };
+  // Build query based on session method
+  const query = supabaseAdmin
+    .from("profiles")
+    .select("id, full_name, phone, email")
+    .eq("id", session.profileId);
+
+  // Extra verification: ensure the session token matches what's in the DB
+  if (session.method === "phone") {
+    query.eq("phone", session.phone);
+  } else {
+    query.eq("email", session.email);
   }
 
-  entry.count++;
-  return { allowed: true };
+  const { data: profile, error } = await query.maybeSingle();
+
+  if (error || !profile) {
+    return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
+  }
+
+  return NextResponse.json({
+    authenticated: true,
+    user: {
+      id: profile.id,
+      full_name: profile.full_name,
+      phone: profile.phone,
+      email: profile.email ?? null,
+    },
+  });
 }
 
-function generateOtp(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
+export async function PATCH(req: NextRequest) {
+  const session = await getCustomerSession();
 
-export async function POST(req: NextRequest) {
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const b = body as Record<string, unknown>;
+  const full_name =
+    typeof (body as Record<string, unknown>).full_name === "string"
+      ? ((body as Record<string, unknown>).full_name as string).trim()
+      : null;
 
-  const email =
-    typeof b.email === "string" ? b.email.trim().toLowerCase() : "";
-  const fullName =
-    typeof b.fullName === "string" ? b.fullName.trim() : "";
-  const phone =
-    typeof b.phone === "string" ? b.phone.trim() : "";
-  const password =
-    typeof b.password === "string" ? b.password : "";
-
-  // ── Validation ──────────────────────────────────────────────────────────────
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: "Please enter a valid email address." }, { status: 422 });
-  }
-
-  if (!fullName || fullName.length < 2 || fullName.length > 80) {
-    return NextResponse.json({ error: "Name must be between 2 and 80 characters." }, { status: 422 });
-  }
-
-  if (!phone || phone.length < 7 || phone.length > 20) {
-    return NextResponse.json({ error: "Please enter a valid phone number." }, { status: 422 });
-  }
-
-  if (!password || password.length < 8) {
-    return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 422 });
-  }
-
-  // ── Rate limit ──────────────────────────────────────────────────────────────
-  const rl = checkRateLimit(email);
-  if (!rl.allowed) {
+  if (!full_name || full_name.length < 2 || full_name.length > 80) {
     return NextResponse.json(
-      { error: `Too many attempts. Try again in ${rl.retryAfter}s.`, retryAfter: rl.retryAfter },
-      { status: 429 }
+      { error: "Name must be between 2 and 80 characters." },
+      { status: 422 }
     );
   }
 
-  // ── Check if email already verified (existing account) ──────────────────────
-  const { data: existing } = await supabaseAdmin
+  const updateQuery = supabaseAdmin
     .from("profiles")
-    .select("id, email_verified")
-    .eq("email", email)
-    .maybeSingle();
+    .update({ full_name })
+    .eq("id", session.profileId);
 
-  if (existing?.email_verified) {
+  if (session.method === "phone") {
+    updateQuery.eq("phone", session.phone);
+  } else {
+    updateQuery.eq("email", session.email);
+  }
+
+  const { error } = await updateQuery;
+
+  if (error) {
     return NextResponse.json(
-      { error: "An account with this email already exists. Please sign in." },
-      { status: 409 }
+      { error: "Failed to update name. Please try again." },
+      { status: 500 }
     );
   }
 
-  // ── Hash password ────────────────────────────────────────────────────────────
-  const passwordHash = await bcrypt.hash(password, 12);
+  // Sync name to orders (phone users only — orders are linked by phone)
+  if (session.method === "phone") {
+    const phoneWithPlus = session.phone.startsWith("+")
+      ? session.phone
+      : "+" + session.phone;
+    const phoneWithout = session.phone.startsWith("+")
+      ? session.phone.slice(1)
+      : session.phone;
 
-  // ── Upsert profile (create or update unverified) ────────────────────────────
-  if (existing) {
-    // Update existing unverified record
     await supabaseAdmin
-      .from("profiles")
-      .update({ full_name: fullName, phone, password_hash: passwordHash, email_verified: false })
-      .eq("id", existing.id);
+      .from("orders")
+      .update({ customer_name: full_name })
+      .or(`phone.eq.${phoneWithPlus},phone.eq.${phoneWithout}`);
   } else {
-    // Create new unverified profile
-    const { error: insertError } = await supabaseAdmin
-      .from("profiles")
-      .insert({ full_name: fullName, email, phone, password_hash: passwordHash, email_verified: false });
+    // Email users: sync by phone stored in their profile
+    const phoneWithPlus = session.phone.startsWith("+")
+      ? session.phone
+      : "+" + session.phone;
+    const phoneWithout = session.phone.startsWith("+")
+      ? session.phone.slice(1)
+      : session.phone;
 
-    if (insertError) {
-      // Could be a phone conflict — surface it
-      if (insertError.code === "23505") {
-        return NextResponse.json(
-          { error: "This phone number is already linked to another account." },
-          { status: 409 }
-        );
-      }
-      return NextResponse.json({ error: "Could not create account. Please try again." }, { status: 500 });
-    }
+    await supabaseAdmin
+      .from("orders")
+      .update({ customer_name: full_name })
+      .or(`phone.eq.${phoneWithPlus},phone.eq.${phoneWithout}`);
   }
 
-  // ── Generate & store OTP ─────────────────────────────────────────────────────
-  const otp = generateOtp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
-
-  // Invalidate any previous unused codes for this email
-  await supabaseAdmin
-    .from("email_verification_codes")
-    .update({ used: true })
-    .eq("email", email)
-    .eq("used", false);
-
-  const { error: otpError } = await supabaseAdmin
-    .from("email_verification_codes")
-    .insert({ email, code: otp, expires_at: expiresAt });
-
-  if (otpError) {
-    return NextResponse.json({ error: "Could not generate verification code." }, { status: 500 });
-  }
-
-  // ── Send email via Resend ────────────────────────────────────────────────────
-  const { error: emailError } = await resend.emails.send({
-    from: "KAB Pharma <noreply@kabpharma.com>", // ← replace with your verified domain
-    to: email,
-    subject: "Your KAB Pharma verification code",
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#ffffff">
-        <p style="font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#0a583b;margin:0">KAB Pharma</p>
-        <h1 style="font-size:28px;font-weight:800;color:#142019;margin:16px 0 8px;letter-spacing:-0.03em">Verify your email</h1>
-        <p style="font-size:14px;color:#647168;line-height:1.7;margin:0 0 28px">Hi ${fullName}, use the code below to verify your email address. It expires in 10 minutes.</p>
-        <div style="background:#f5f6f3;border-radius:16px;padding:28px;text-align:center;margin-bottom:28px">
-          <p style="font-size:42px;font-weight:800;letter-spacing:0.15em;color:#0a583b;margin:0">${otp}</p>
-        </div>
-        <p style="font-size:12px;color:#9aaa9e;line-height:1.6;margin:0">If you didn't request this, you can safely ignore this email.</p>
-      </div>
-    `,
-  });
-
-  if (emailError) {
-    return NextResponse.json({ error: "Could not send verification email." }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, full_name });
 }

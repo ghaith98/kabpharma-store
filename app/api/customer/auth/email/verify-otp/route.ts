@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
   createCustomerSessionToken,
@@ -7,28 +6,6 @@ import {
   CUSTOMER_SESSION_COOKIE,
 } from "@/lib/customer-session";
 import { cookies } from "next/headers";
-
-// Simple in-memory brute-force protection: max 10 attempts per email per 15 min
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-
-function checkLoginRateLimit(email: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const key = email.toLowerCase();
-  const entry = loginAttempts.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(key, { count: 1, resetAt: now + 15 * 60 * 1000 });
-    return { allowed: true };
-  }
-
-  if (entry.count >= 10) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return { allowed: false, retryAfter };
-  }
-
-  entry.count++;
-  return { allowed: true };
-}
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -40,48 +17,54 @@ export async function POST(req: NextRequest) {
 
   const b = body as Record<string, unknown>;
   const email = typeof b.email === "string" ? b.email.trim().toLowerCase() : "";
-  const password = typeof b.password === "string" ? b.password : "";
+  const code = typeof b.code === "string" ? b.code.trim() : "";
 
-  if (!email || !password) {
-    return NextResponse.json({ error: "Email and password are required." }, { status: 422 });
+  if (!email || !code || code.length !== 6) {
+    return NextResponse.json({ error: "Invalid request." }, { status: 422 });
   }
 
-  // ── Rate limit ───────────────────────────────────────────────────────────────
-  const rl = checkLoginRateLimit(email);
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: `Too many attempts. Try again in ${rl.retryAfter}s.`, retryAfter: rl.retryAfter },
-      { status: 429 }
-    );
-  }
+  // ── Get Supabase current time to avoid server clock issues ───────────────────
+  const { data: nowData } = await supabaseAdmin.rpc("now") as { data: string };
+  const now = new Date(nowData);
 
-  // ── Fetch profile ─────────────────────────────────────────────────────────────
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("id, full_name, phone, email, password_hash, email_verified")
+  // ── Look up the most recent valid OTP ────────────────────────────────────────
+  const { data: otpRow } = await supabaseAdmin
+    .from("email_verification_codes")
+    .select("id, code, expires_at, used")
     .eq("email", email)
+    .eq("used", false)
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  // Generic error — don't reveal whether email exists
-  const invalidCredentials = NextResponse.json(
-    { error: "Incorrect email or password." },
-    { status: 401 }
-  );
-
-  if (!profile || !profile.password_hash) return invalidCredentials;
-
-  if (!profile.email_verified) {
-    return NextResponse.json(
-      { error: "Please verify your email before signing in.", needsVerification: true, email },
-      { status: 403 }
-    );
+  if (!otpRow) {
+    return NextResponse.json({ error: "Invalid or expired verification code." }, { status: 400 });
   }
 
-  // ── Check password ────────────────────────────────────────────────────────────
-  const passwordMatch = await bcrypt.compare(password, profile.password_hash);
-  if (!passwordMatch) return invalidCredentials;
+  if (new Date(otpRow.expires_at) < now) {
+    return NextResponse.json({ error: "Verification code has expired. Please request a new one." }, { status: 400 });
+  }
 
-  // ── Issue session cookie ──────────────────────────────────────────────────────
+  if (otpRow.code !== code) {
+    return NextResponse.json({ error: "Incorrect verification code." }, { status: 400 });
+  }
+
+  await supabaseAdmin
+    .from("email_verification_codes")
+    .update({ used: true })
+    .eq("id", otpRow.id);
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .update({ email_verified: true })
+    .eq("email", email)
+    .select("id, full_name, phone, email")
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    return NextResponse.json({ error: "Account not found." }, { status: 404 });
+  }
+
   const token = await createCustomerSessionToken({
     method: "email",
     profileId: profile.id,
