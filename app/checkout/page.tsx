@@ -134,6 +134,13 @@ export default function CheckoutPage() {
   const [address, setAddress] =
     useState("");
 
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
   const [
     checkingBan,
     setCheckingBan,
@@ -572,6 +579,49 @@ export default function CheckoutPage() {
     productsTotal +
     deliveryFee;
 
+  function requestLocation() {
+    setLocationError("");
+    setLocationLoading(true);
+
+    if (!navigator.geolocation) {
+      setLocationError(
+        isArabic
+          ? "المتصفح لا يدعم تحديد الموقع."
+          : "Your browser doesn't support location sharing."
+      );
+      setLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setLocationLoading(false);
+        setLocationError("");
+      },
+      (err) => {
+        setLocationLoading(false);
+        if (err.code === 1) {
+          setLocationError(
+            isArabic
+              ? "تم رفض إذن الموقع. يرجى السماح بالوصول إلى الموقع من إعدادات المتصفح."
+              : "Location permission denied. Please allow location access in your browser settings."
+          );
+        } else {
+          setLocationError(
+            isArabic
+              ? "تعذر تحديد موقعك. حاول مرة أخرى."
+              : "Could not get your location. Please try again."
+          );
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
   async function handleSubmit(
     event:
       React.FormEvent<HTMLFormElement>
@@ -727,6 +777,12 @@ export default function CheckoutPage() {
 
           delivery_fee:
             deliveryFee,
+
+          customer_lat:
+            location?.lat ?? null,
+
+          customer_lng:
+            location?.lng ?? null,
         })
       );
 
@@ -1231,6 +1287,62 @@ export default function CheckoutPage() {
                   {address.length}/500
                 </p>
               </label>
+
+              {/* Location sharing */}
+              <div className="rounded-xl border border-[#dfe4e0] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={15} className="shrink-0 text-[#0a583b]" />
+                    <div>
+                      <p className="text-sm font-extrabold text-[#142019]">
+                        {isArabic ? "مشاركة الموقع" : "Share location"}
+                      </p>
+                      <p className="text-xs text-[#9aa39d]">
+                        {isArabic
+                          ? "اختياري — يساعد على التوصيل بدقة أكبر"
+                          : "Optional — helps the driver find you more accurately"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {location ? (
+                    <button
+                      type="button"
+                      onClick={() => { setLocation(null); setLocationError(""); }}
+                      className="shrink-0 rounded-full border border-[#dfe4e0] bg-white px-3 py-1.5 text-xs font-bold text-[#647168] transition hover:border-red-300 hover:text-red-600"
+                    >
+                      {isArabic ? "إزالة" : "Remove"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={requestLocation}
+                      disabled={locationLoading}
+                      className="shrink-0 rounded-full bg-[#0a583b] px-4 py-2 text-xs font-extrabold text-white transition hover:bg-[#073f2c] disabled:opacity-60"
+                    >
+                      {locationLoading
+                        ? (isArabic ? "جاري..." : "Getting...")
+                        : (isArabic ? "تحديد موقعي" : "Share my location")}
+                    </button>
+                  )}
+                </div>
+
+                {location && (
+                  <a
+                    href={`https://maps.google.com/?q=${location.lat},${location.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center gap-1.5 text-xs font-bold text-[#0a583b] underline decoration-[#a8c5b4] underline-offset-2 hover:text-[#073f2c]"
+                  >
+                    <MapPin size={11} />
+                    {isArabic ? "عرض موقعك على الخريطة" : "View your pin on Google Maps"}
+                  </a>
+                )}
+
+                {locationError && (
+                  <p className="mt-2 text-xs font-bold text-red-600">{locationError}</p>
+                )}
+              </div>
 
               {/* Desktop submit */}
               <button

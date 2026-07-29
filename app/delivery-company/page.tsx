@@ -37,6 +37,8 @@ type Order = {
   total_price: number;
   status: OrderStatus;
   order_items?: OrderItem[];
+  customer_lat?: number | null;
+  customer_lng?: number | null;
 };
 
 type DeliveryCompany = {
