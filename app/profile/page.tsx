@@ -82,22 +82,60 @@ export default function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
 
+    // ── Step 1: show cached user instantly from localStorage ──────────
+    // This eliminates the skeleton flash on every re-visit.
+    // The user sees their name/UI immediately while we verify in the background.
+    try {
+      const cached = localStorage.getItem("kab_user");
+      if (cached) {
+        const parsed = JSON.parse(cached) as KabUser & { id?: unknown };
+        if (parsed.full_name && parsed.phone) {
+          if (!cancelled) {
+            setUser({ full_name: parsed.full_name, phone: parsed.phone });
+            setOrdersLoading(true);
+            setPageReady(true); // show UI immediately — no skeleton
+          }
+        }
+      }
+    } catch {
+      // localStorage unavailable — fall through to full load
+    }
+
+    // ── Step 2: verify session + fetch orders in parallel ────────────
+    // Both requests fire at the same time instead of sequentially.
+    // cache: "default" lets the browser use its own HTTP cache for /me
+    // (the response headers from the API control how long it's valid).
     async function loadProfile() {
       try {
-        const response = await fetch("/api/customer/me", {
-          credentials: "include",
-          cache: "no-store",
-        });
+        const [meResponse, ordersResponse] = await Promise.all([
+          fetch("/api/customer/me", {
+            credentials: "include",
+            cache: "default",
+          }),
+          fetch("/api/customer/orders?view=profile", {
+            credentials: "include",
+            cache: "default",
+          }),
+        ]);
 
-        if (!response.ok) {
+        // Auth check
+        if (!meResponse.ok) {
           localStorage.removeItem("kab_user");
+          if (!cancelled) {
+            setUser(null);
+            setRecentOrders([]);
+          }
           return;
         }
 
-        const result = await response.json();
+        const result = await meResponse.json();
 
         if (!result.authenticated || !result.user) {
           localStorage.removeItem("kab_user");
+          if (!cancelled) {
+            setUser(null);
+            setRecentOrders([]);
+          }
           return;
         }
 
@@ -108,34 +146,19 @@ export default function ProfilePage() {
 
         localStorage.setItem(
           "kab_user",
-          JSON.stringify({
-            id: result.user.id,
-            ...verifiedUser,
-          })
+          JSON.stringify({ id: result.user.id, ...verifiedUser })
         );
 
         if (!cancelled) {
           setUser(verifiedUser);
-          setOrdersLoading(true);
         }
 
-        const ordersResponse = await fetch(
-          "/api/customer/orders?view=profile",
-          {
-            credentials: "include",
-            cache: "no-store",
-          }
-        );
-
+        // Orders
         if (ordersResponse.ok) {
-          const ordersResult =
-            await ordersResponse.json();
-
+          const ordersResult = await ordersResponse.json();
           if (!cancelled) {
             setRecentOrders(
-              Array.isArray(ordersResult.orders)
-                ? ordersResult.orders
-                : []
+              Array.isArray(ordersResult.orders) ? ordersResult.orders : []
             );
           }
         }
@@ -147,7 +170,7 @@ export default function ProfilePage() {
       } finally {
         if (!cancelled) {
           setOrdersLoading(false);
-          setPageReady(true);
+          setPageReady(true); // in case localStorage was empty
         }
       }
     }
