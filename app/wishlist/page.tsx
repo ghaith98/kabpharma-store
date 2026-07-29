@@ -56,6 +56,40 @@ export default function WishlistPage() {
     return `${Number(value).toLocaleString()} SYP`;
   }
 
+  if (loaded && wishlist.length === 0) {
+    return (
+      <main
+        dir={isArabic ? "rtl" : "ltr"}
+        className="flex min-h-[65vh] items-center justify-center bg-[#f7f8f6] px-5 py-14 sm:px-6 sm:py-20"
+      >
+        <section className="w-full max-w-lg text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5f0] text-[#075b40]">
+            <Heart className="h-6 w-6" strokeWidth={1.8} />
+          </div>
+
+          <h1 className="mt-7 text-2xl font-extrabold tracking-tight text-[#102019] sm:text-[1.75rem]">
+            {isArabic
+              ? "قائمة المفضلة فارغة"
+              : "Your wishlist is empty"}
+          </h1>
+
+          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#6f7b73]">
+            {isArabic
+              ? "اضغط على أيقونة القلب بجانب أي منتج لحفظه هنا."
+              : "Select the heart icon beside any product to save it here."}
+          </p>
+
+          <Link
+            href="/products"
+            className="mt-8 inline-flex min-h-12 items-center justify-center bg-[#075b40] px-9 text-sm font-extrabold text-white transition-colors hover:bg-[#064a35] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#075b40]"
+          >
+            {isArabic ? "تصفح المنتجات" : "Explore products"}
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main
       dir={isArabic ? "rtl" : "ltr"}
@@ -105,38 +139,6 @@ export default function WishlistPage() {
                 ? "جاري تحميل قائمة المفضلة..."
                 : "Loading your wishlist..."}
             </p>
-          </section>
-        ) : wishlist.length === 0 ? (
-          <section className="mt-8 flex min-h-[360px] flex-col items-center justify-center rounded-[1.75rem] border border-[#dfe4e0] bg-white px-6 py-14 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-              <Heart size={25} />
-            </div>
-
-            <h2 className="mt-6 text-2xl font-extrabold tracking-tight text-[#142019]">
-              {isArabic
-                ? "قائمة المفضلة فارغة"
-                : "Your wishlist is empty"}
-            </h2>
-
-            <p className="mt-3 max-w-md text-sm leading-7 text-[#647168]">
-              {isArabic
-                ? "اضغط على أيقونة القلب بجانب أي منتج لحفظه هنا."
-                : "Select the heart icon beside a product to save it here."}
-            </p>
-
-            <Link
-              href="/products"
-              className="group mt-7 flex min-h-[50px] items-center justify-center gap-3 rounded-full bg-[#0a583b] px-7 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#073f2c]"
-            >
-              <span>
-                {isArabic ? "تصفح المنتجات" : "Explore products"}
-              </span>
-
-              <ContinueArrow
-                size={15}
-                className="transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1"
-              />
-            </Link>
           </section>
         ) : (
           <>
@@ -269,4 +271,3 @@ export default function WishlistPage() {
     </main>
   );
 }
-

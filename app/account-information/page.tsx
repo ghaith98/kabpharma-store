@@ -1,206 +1,122 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
+import { useEffect, useState } from "react";
 import Link from "next/link";
-
 import {
-  FaCheckCircle,
-  FaChevronLeft,
-  FaLock,
-  FaPencilAlt,
-  FaTimesCircle,
-  FaUserEdit,
-} from "react-icons/fa";
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Phone,
+  UserRound,
+  UserRoundPen,
+} from "lucide-react";
 
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
-type KabUser = {
-  id: number;
+type AccountUser = {
   full_name: string;
   phone: string;
 };
 
-type Status = "idle" | "saving" | "success" | "error";
-
 export default function AccountInformationPage() {
   const { lang } = useLanguage();
   const isArabic = lang === "ar";
+  const BackArrow = isArabic ? ArrowRight : ArrowLeft;
 
-  const [user, setUser] = useState<KabUser | null>(null);
-  const [pageReady, setPageReady] = useState(false);
-
-  // Editing state
-  const [editing, setEditing] = useState(false);
-  const [nameValue, setNameValue] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [errorMsg, setErrorMsg] = useState("");
-
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [user, setUser] = useState<AccountUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadProfile() {
+    async function loadAccount() {
       try {
-        const res = await fetch("/api/customer/me", {
+        const response = await fetch("/api/customer/me", {
           credentials: "include",
           cache: "no-store",
         });
 
-        if (!res.ok) {
-          if (!cancelled) setPageReady(true);
+        if (!response.ok) {
+          if (!cancelled) {
+            setUser(null);
+          }
           return;
         }
 
-        const result = await res.json();
-
-        if (!result.authenticated || !result.user) {
-          if (!cancelled) setPageReady(true);
-          return;
-        }
+        const result = await response.json();
 
         if (!cancelled) {
-          setUser(result.user);
-          setNameValue(result.user.full_name);
+          setUser(
+            result.authenticated && result.user
+              ? {
+                  full_name: result.user.full_name,
+                  phone: result.user.phone,
+                }
+              : null
+          );
         }
       } catch {
-        // network error — page still renders (guest state)
+        if (!cancelled) {
+          setUser(null);
+        }
       } finally {
-        if (!cancelled) setPageReady(true);
-      }
-    }
-
-    void loadProfile();
-    return () => { cancelled = true; };
-  }, []);
-
-  // Focus input when edit mode opens
-  useEffect(() => {
-    if (editing) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [editing]);
-
-  function startEditing() {
-    if (!user) return;
-    setNameValue(user.full_name);
-    setStatus("idle");
-    setErrorMsg("");
-    setEditing(true);
-  }
-
-  function cancelEditing() {
-    setEditing(false);
-    setStatus("idle");
-    setErrorMsg("");
-  }
-
-  async function saveName() {
-    if (!user) return;
-
-    const trimmed = nameValue.trim();
-
-    if (trimmed.length < 2 || trimmed.length > 80) {
-      setErrorMsg(
-        isArabic
-          ? "الاسم يجب أن يكون بين 2 و 80 حرفاً."
-          : "Name must be between 2 and 80 characters."
-      );
-      return;
-    }
-
-    if (trimmed === user.full_name) {
-      setEditing(false);
-      return;
-    }
-
-    setStatus("saving");
-    setErrorMsg("");
-
-    try {
-      const res = await fetch("/api/customer/me", {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: trimmed }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setStatus("error");
-        setErrorMsg(
-          data?.error ||
-            (isArabic
-              ? "تعذر تحديث الاسم. حاول مجدداً."
-              : "Failed to update name. Please try again.")
-        );
-        return;
-      }
-
-      // Update local state + localStorage cache
-      const updated = { ...user, full_name: data.full_name };
-      setUser(updated);
-
-      const stored = localStorage.getItem("kab_user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          localStorage.setItem(
-            "kab_user",
-            JSON.stringify({ ...parsed, full_name: data.full_name })
-          );
-        } catch {
-          // ignore
+        if (!cancelled) {
+          setLoading(false);
         }
       }
-
-      setStatus("success");
-      setEditing(false);
-
-      // Reset success indicator after 3s
-      setTimeout(() => setStatus("idle"), 3000);
-    } catch {
-      setStatus("error");
-      setErrorMsg(
-        isArabic
-          ? "خطأ في الشبكة. تحقق من اتصالك وحاول مجدداً."
-          : "Network error. Check your connection and try again."
-      );
     }
+
+    void loadAccount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function displayPhone(phone: string) {
+    const normalized = phone.trim();
+
+    return normalized.startsWith("+") ? normalized : `+${normalized}`;
   }
 
-  // ─── Loading skeleton ────────────────────────────────────────────────────────
-  if (!pageReady) {
+  if (loading) {
     return (
-      <main dir="ltr" className="min-h-screen bg-[#f7f7f3]">
-        <div className="mx-auto max-w-xl px-4 py-10">
-          <div className="h-5 w-24 animate-pulse rounded-full bg-[#e0e5e1]" />
-          <div className="mt-8 h-[200px] animate-pulse rounded-[1.5rem] bg-white" />
+      <main
+        dir={isArabic ? "rtl" : "ltr"}
+        aria-busy="true"
+        aria-label={
+          isArabic
+            ? "جاري تحميل معلومات الحساب"
+            : "Loading account information"
+        }
+        className="min-h-[65vh] bg-[#f7f8f6] px-5 py-14 sm:px-6 sm:py-20"
+      >
+        <div className="mx-auto flex max-w-lg animate-pulse flex-col items-center">
+          <div className="h-16 w-16 rounded-full bg-[#e2eae5]" />
+          <div className="mt-7 h-8 w-56 rounded-lg bg-[#e2e8e4]" />
+          <div className="mt-4 h-4 w-80 max-w-full rounded-full bg-[#e7ebe8]" />
+          <div className="mt-8 h-12 w-36 bg-[#dce5df]" />
         </div>
       </main>
     );
   }
 
-  // ─── Not logged in ───────────────────────────────────────────────────────────
   if (!user) {
     return (
       <main
-        className={`min-h-screen bg-[#f7f7f3] ${
-          isArabic ? "[font-family:var(--font-arabic)]" : ""
-        }`}
+        dir={isArabic ? "rtl" : "ltr"}
+        className="flex min-h-[65vh] items-center justify-center bg-[#f7f8f6] px-5 py-14 sm:px-6 sm:py-20"
       >
-        <div className="mx-auto flex max-w-xl flex-col items-center justify-center px-4 py-24 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5f0] text-2xl text-[#0a583b]">
-            <FaUserEdit />
+        <section className="w-full max-w-lg text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5f0] text-[#075b40]">
+            <UserRoundPen className="h-6 w-6" strokeWidth={1.8} />
           </div>
 
-          <h1 className="mt-5 text-2xl font-extrabold text-[#142019]">
+          <h1 className="mt-7 text-2xl font-extrabold tracking-tight text-[#102019] sm:text-[1.75rem]">
             {isArabic ? "تسجيل الدخول مطلوب" : "Sign in required"}
           </h1>
 
-          <p className="mt-2 text-sm leading-6 text-[#647168]">
+          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#6f7b73]">
             {isArabic
               ? "يرجى تسجيل الدخول لعرض معلومات حسابك."
               : "Please sign in to view your account information."}
@@ -208,221 +124,93 @@ export default function AccountInformationPage() {
 
           <Link
             href="/login"
-            className="mt-8 inline-flex min-h-12 items-center justify-center bg-[#0a583b] px-8 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
+            className="mt-8 inline-flex min-h-12 items-center justify-center bg-[#075b40] px-9 text-sm font-extrabold text-white transition-colors hover:bg-[#064a35] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#075b40]"
           >
             {isArabic ? "تسجيل الدخول" : "Sign in"}
           </Link>
-        </div>
+        </section>
       </main>
     );
   }
 
-  // ─── Main page ───────────────────────────────────────────────────────────────
   return (
     <main
-      dir="ltr"
-      className={`min-h-screen bg-[#f7f7f3] pb-20 ${
-        isArabic ? "[font-family:var(--font-arabic)]" : ""
-      }`}
+      dir={isArabic ? "rtl" : "ltr"}
+      className="min-h-[65vh] bg-[#f7f8f6] px-4 pb-24 pt-8 sm:px-6 sm:py-12 lg:px-8"
     >
-      <div className="mx-auto max-w-xl px-4 pt-8 lg:max-w-2xl lg:pt-12">
-
-        {/* Back link */}
+      <div className="mx-auto max-w-[920px]">
         <Link
           href="/profile"
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#647168] transition hover:text-[#0a583b]"
+          className="inline-flex items-center gap-2 text-sm font-extrabold text-[#526058] transition-colors hover:text-[#075b40]"
         >
-          <FaChevronLeft className="text-[10px]" />
-          {isArabic ? "الرجوع إلى حسابي" : "Back to my account"}
+          <BackArrow className="h-4 w-4" />
+          {isArabic ? "العودة إلى حسابي" : "Back to my account"}
         </Link>
 
-        {/* Page header */}
-        <div className="mt-6">
-          <div className="flex items-center gap-3">
-            <span className="h-px w-8 bg-[#0a583b]" />
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#0a583b]">
-              KAB Pharma
-            </p>
-          </div>
-
-          <h1 className="mt-3 text-[2rem] font-extrabold tracking-[-0.04em] text-[#142019] lg:text-[2.5rem]">
+        <header className="mt-7 border-b border-[#dfe4e0] pb-7 sm:pb-9">
+          <p
+            className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+              isArabic ? "tracking-normal" : "tracking-[0.18em]"
+            }`}
+          >
+            KAB Pharma
+          </p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-[#142019] sm:text-5xl">
             {isArabic ? "معلومات الحساب" : "Account information"}
           </h1>
-
-          <p className="mt-2 text-sm leading-6 text-[#647168]">
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
             {isArabic
-              ? "عرض وتعديل بيانات حسابك الشخصي."
-              : "View and update your personal account details."}
+              ? "اطّلع على البيانات الأساسية المرتبطة بحسابك."
+              : "Review the essential information linked to your account."}
           </p>
-        </div>
+        </header>
 
-        {/* Info card */}
-        <div className="mt-8 overflow-hidden rounded-[1.5rem] border border-[#dde4df] bg-white shadow-[0_8px_30px_rgba(20,32,25,0.05)]">
+        <section className="mt-8 overflow-hidden rounded-[1.6rem] border border-[#dfe4e0] bg-white">
+          <div className="flex items-center gap-4 border-b border-[#e7ebe8] px-5 py-5 sm:px-7 sm:py-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#075b40]">
+              <UserRound className="h-5 w-5" strokeWidth={1.8} />
+            </div>
 
-          {/* Card header */}
-          <div className="border-b border-[#edf0ed] px-6 py-5 sm:px-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
-                <FaUserEdit />
-              </div>
-              <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#0a583b]">
-                  {isArabic ? "بيانات الحساب" : "Account details"}
-                </p>
-                <h2 className="text-base font-extrabold text-[#142019]">
-                  {user.full_name}
-                </h2>
-              </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-[#78847c]">
+                {isArabic ? "الاسم الكامل" : "Full name"}
+              </p>
+              <p className="mt-1 truncate text-base font-extrabold text-[#142019] sm:text-lg">
+                {user.full_name}
+              </p>
             </div>
           </div>
 
-          {/* Fields */}
-          <div className="divide-y divide-[#edf0ed]">
-
-            {/* Full name row */}
-            <div className="px-6 py-5 sm:px-8">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#99a89c]">
-                    {isArabic ? "الاسم الكامل" : "Full name"}
-                  </p>
-
-                  {editing ? (
-                    <div className="mt-2">
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={nameValue}
-                        onChange={(e) => {
-                          setNameValue(e.target.value);
-                          setErrorMsg("");
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") void saveName();
-                          if (e.key === "Escape") cancelEditing();
-                        }}
-                        maxLength={80}
-                        placeholder={
-                          isArabic ? "أدخل اسمك الكامل" : "Enter your full name"
-                        }
-                        className="w-full rounded-xl border border-[#c8d4ca] bg-[#f7fbf8] px-4 py-3 text-sm font-bold text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-2 focus:ring-[#0a583b]/15"
-                      />
-
-                      {errorMsg && (
-                        <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-red-600">
-                          <FaTimesCircle className="shrink-0" />
-                          {errorMsg}
-                        </p>
-                      )}
-
-                      <div className="mt-3 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void saveName()}
-                          disabled={status === "saving"}
-                          className="inline-flex min-h-9 items-center justify-center rounded-full bg-[#0a583b] px-5 text-xs font-extrabold text-white transition hover:bg-[#073f2c] disabled:opacity-60"
-                        >
-                          {status === "saving"
-                            ? isArabic
-                              ? "جاري الحفظ..."
-                              : "Saving..."
-                            : isArabic
-                            ? "حفظ"
-                            : "Save"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={cancelEditing}
-                          disabled={status === "saving"}
-                          className="inline-flex min-h-9 items-center justify-center rounded-full border border-[#d5ddd7] px-5 text-xs font-extrabold text-[#526057] transition hover:border-[#b0bdb3] hover:text-[#142019] disabled:opacity-60"
-                        >
-                          {isArabic ? "إلغاء" : "Cancel"}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-1 flex items-center gap-2">
-                      <p className="text-base font-bold text-[#142019]">
-                        {user.full_name}
-                      </p>
-
-                      {status === "success" && (
-                        <span className="flex items-center gap-1 text-xs font-bold text-[#22a66f]">
-                          <FaCheckCircle />
-                          {isArabic ? "تم الحفظ" : "Saved"}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {!editing && (
-                  <button
-                    type="button"
-                    onClick={startEditing}
-                    className="group mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#dde4df] text-xs text-[#8a9990] transition hover:border-[#0a583b] hover:bg-[#f0f7f3] hover:text-[#0a583b]"
-                    aria-label={isArabic ? "تعديل الاسم" : "Edit name"}
-                  >
-                    <FaPencilAlt />
-                  </button>
-                )}
-              </div>
+          <div className="flex items-center gap-4 px-5 py-5 sm:px-7 sm:py-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#075b40]">
+              <Phone className="h-5 w-5" strokeWidth={1.8} />
             </div>
 
-            {/* Phone row — read-only */}
-            <div className="px-6 py-5 sm:px-8">
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#99a89c]">
-                    {isArabic ? "رقم الهاتف" : "Phone number"}
-                  </p>
-
-                  <p
-                    dir="ltr"
-                    className="mt-1 text-base font-bold text-[#142019]"
-                  >
-                    +{user.phone.replace(/^\+/, "")}
-                  </p>
-
-                  <p className="mt-1 text-xs text-[#99a89c]">
-                    {isArabic
-                      ? "لا يمكن تغيير رقم الهاتف. تواصل مع الدعم إذا احتجت مساعدة."
-                      : "Phone number cannot be changed. Contact support if you need help."}
-                  </p>
-                </div>
-
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#edf0ed] text-xs text-[#c5cfc7]">
-                  <FaLock />
-                </div>
-              </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-[#78847c]">
+                {isArabic ? "رقم الهاتف" : "Phone number"}
+              </p>
+              <p
+                dir="ltr"
+                className={`mt-1 truncate text-base font-extrabold text-[#142019] sm:text-lg ${
+                  isArabic ? "text-right" : "text-left"
+                }`}
+              >
+                {displayPhone(user.phone)}
+              </p>
             </div>
+
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#edf5f0] px-3 py-1.5 text-[11px] font-extrabold text-[#075b40]">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {isArabic ? "موثّق" : "Verified"}
+            </span>
           </div>
-        </div>
+        </section>
 
-        {/* Support note */}
-        <p className="mt-6 text-center text-xs leading-5 text-[#99a89c]">
-          {isArabic ? (
-            <>
-              هل تحتاج مساعدة؟{" "}
-              <Link
-                href="/contact"
-                className="font-bold text-[#0a583b] underline-offset-2 hover:underline"
-              >
-                تواصل مع خدمة العملاء
-              </Link>
-            </>
-          ) : (
-            <>
-              Need help?{" "}
-              <Link
-                href="/contact"
-                className="font-bold text-[#0a583b] underline-offset-2 hover:underline"
-              >
-                Contact customer care
-              </Link>
-            </>
-          )}
+        <p className="mt-4 text-xs leading-6 text-[#78847c]">
+          {isArabic
+            ? "يُستخدم رقم الهاتف الموثّق لتسجيل الدخول وربط طلباتك بحسابك."
+            : "Your verified phone number is used to sign in and link your orders to your account."}
         </p>
       </div>
     </main>
