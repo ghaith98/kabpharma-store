@@ -291,11 +291,11 @@ export default function ProfilePage() {
 
           {ordersLoading ? (
             <div className={`mt-5 flex gap-3 overflow-hidden ${desktop ? "" : ""}`}>
-              {Array.from({ length: 2 }).map((_, index) => (
+              {Array.from({ length: desktop ? 3 : 2 }).map((_, index) => (
                 <div
                   key={index}
-                  className={`h-44 shrink-0 animate-pulse rounded-[1.45rem] bg-[#f0f3f0] ${
-                    desktop ? "w-[calc(50%-0.375rem)]" : "w-[88%]"
+                  className={`h-[196px] shrink-0 animate-pulse rounded-[1.35rem] bg-[#f0f3f0] ${
+                    desktop ? "w-[calc(33.333%-0.75rem)]" : "w-[258px]"
                   }`}
                 />
               ))}
@@ -319,16 +319,20 @@ export default function ProfilePage() {
             <Swiper
               key={`${lang}-${desktop ? "desktop" : "mobile"}`}
               dir={isArabic ? "rtl" : "ltr"}
-              slidesPerView={desktop ? 2 : 1.08}
-              spaceBetween={12}
+              slidesPerView={desktop ? 3 : "auto"}
+              spaceBetween={desktop ? 16 : 12}
               grabCursor
               watchOverflow
               breakpoints={
                 desktop
                   ? {
                       1180: {
-                        slidesPerView: 2.2,
+                        slidesPerView: 3.05,
                         spaceBetween: 16,
+                      },
+                      1380: {
+                        slidesPerView: 3.2,
+                        spaceBetween: 18,
                       },
                     }
                   : undefined
@@ -351,7 +355,12 @@ export default function ProfilePage() {
                   (isArabic ? "قيد المعالجة" : "Processing");
 
                 return (
-                  <SwiperSlide key={order.id} className="!h-auto">
+                  <SwiperSlide
+                    key={order.id}
+                    className={`!h-auto ${
+                      desktop ? "" : "!w-[258px]"
+                    }`}
+                  >
                     <Link
                       href={`/orders/${order.id}`}
                       aria-label={
@@ -359,7 +368,7 @@ export default function ProfilePage() {
                           ? `عرض تفاصيل الطلب ${order.id}`
                           : `View order ${order.id} details`
                       }
-                      className="group flex h-full min-h-[174px] flex-col rounded-[1.45rem] border border-[#dfe5e1] bg-[#fbfcfa] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#adc4b6] hover:bg-white hover:shadow-[0_15px_35px_rgba(11,66,46,0.08)] sm:p-5"
+                      className="group flex h-full min-h-[196px] flex-col rounded-[1.35rem] border border-[#dfe5e1] bg-[#fbfcfa] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#adc4b6] hover:bg-white hover:shadow-[0_15px_35px_rgba(11,66,46,0.08)]"
                     >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -372,7 +381,7 @@ export default function ProfilePage() {
                       </div>
 
                       <span
-                        className={`rounded-full px-3 py-1.5 text-[10px] font-extrabold ${
+                        className={`max-w-[112px] rounded-full px-2.5 py-1.5 text-center text-[9px] font-extrabold leading-3 ${
                           orderStatusClass[order.status] ||
                           "bg-[#edf0ee] text-[#657068]"
                         }`}
@@ -381,65 +390,66 @@ export default function ProfilePage() {
                       </span>
                     </div>
 
-                    <div className="mt-auto flex items-end justify-between gap-4 pt-4">
-                      <div className="flex min-w-0 items-center">
-                        {visibleItems.length > 0 ? (
-                          visibleItems.map((item, index) => (
-                            <div
-                              key={item.id}
-                              title={item.product_name}
-                              className={`relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1rem] border-[3px] border-[#fbfcfa] bg-white p-1.5 shadow-sm ${
-                                index > 0 ? "-ms-3" : ""
-                              }`}
-                              style={{
-                                zIndex:
-                                  visibleItems.length - index,
-                              }}
-                            >
-                              {item.image_url ? (
-                                <img
-                                  src={item.image_url}
-                                  alt={item.product_name}
-                                  className="h-full w-full object-contain"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <FaBoxOpen className="text-lg text-[#9aaba0]" />
-                              )}
-                              {Number(item.quantity || 0) > 1 && (
-                                <span className="absolute bottom-0.5 end-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#155b38] px-1 text-[9px] font-extrabold text-white">
-                                  ×{item.quantity}
-                                </span>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="flex h-16 w-16 items-center justify-center rounded-[1rem] bg-[#eaf2ed] text-[#155b38]">
-                            <FaBoxOpen />
+                    <div className="mt-4 flex min-w-0 items-center">
+                      {visibleItems.length > 0 ? (
+                        visibleItems.map((item, index) => (
+                          <div
+                            key={item.id}
+                            title={item.product_name}
+                            className={`relative flex h-[58px] w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-[0.9rem] border-[3px] border-[#fbfcfa] bg-white p-1.5 shadow-sm ${
+                              index > 0 ? "-ms-2.5" : ""
+                            }`}
+                            style={{
+                              zIndex:
+                                visibleItems.length - index,
+                            }}
+                          >
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.product_name}
+                                className="h-full w-full object-contain"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <FaBoxOpen className="text-lg text-[#9aaba0]" />
+                            )}
+                            {Number(item.quantity || 0) > 1 && (
+                              <span className="absolute bottom-0.5 end-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#155b38] px-1 text-[9px] font-extrabold text-white">
+                                ×{item.quantity}
+                              </span>
+                            )}
                           </div>
-                        )}
+                        ))
+                      ) : (
+                        <div className="flex h-[58px] w-[58px] items-center justify-center rounded-[0.9rem] bg-[#eaf2ed] text-[#155b38]">
+                          <FaBoxOpen />
+                        </div>
+                      )}
 
-                        {hiddenItemCount > 0 && (
-                          <span className="-ms-2 flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white bg-[#edf1ee] px-1 text-[10px] font-extrabold text-[#526058]">
-                            +{hiddenItemCount}
-                          </span>
-                        )}
-                      </div>
+                      {hiddenItemCount > 0 && (
+                        <span className="-ms-2 flex h-8 min-w-8 items-center justify-center rounded-full border-2 border-white bg-[#edf1ee] px-1 text-[9px] font-extrabold text-[#526058]">
+                          +{hiddenItemCount}
+                        </span>
+                      )}
+                    </div>
 
-                      <div className="shrink-0 text-end">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8a958e]">
+                    <div className="mt-auto flex items-end justify-between gap-3 border-t border-[#e7ebe8] pt-3">
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#8a958e]">
                           {isArabic ? "الإجمالي" : "Total"}
                         </p>
-                        <p className="mt-1 text-sm font-extrabold text-[#17221b]">
+                        <p className="mt-0.5 truncate text-[13px] font-extrabold text-[#17221b]">
                           {formattedOrderTotal(order.total_price)}
                         </p>
-                        <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#155b38]">
-                          {isArabic ? "التفاصيل" : "Details"}
-                          <FaChevronRight
-                            className={`${arrowClass} text-[9px] transition-transform group-hover:translate-x-0.5`}
-                          />
-                        </span>
                       </div>
+
+                      <span className="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-extrabold text-[#155b38]">
+                        {isArabic ? "التفاصيل" : "Details"}
+                        <FaChevronRight
+                          className={`${arrowClass} text-[8px] transition-transform group-hover:translate-x-0.5`}
+                        />
+                      </span>
                     </div>
                     </Link>
                   </SwiperSlide>
@@ -580,11 +590,38 @@ export default function ProfilePage() {
               aria-label={isArabic ? "روابط الحساب" : "Account links"}
               className="grid grid-cols-2 gap-3"
             >
+              <Link
+                href="/account-information"
+                className={mobileTileClass}
+              >
+                <div>
+                  <FaUserEdit className="mb-3 text-xl text-[#155b38]" />
+                  <span className="text-[15px] font-extrabold">
+                    {isArabic ? "معلومات الحساب" : "Account details"}
+                  </span>
+                </div>
+                <FaChevronRight
+                  className={`${arrowClass} shrink-0 text-xs text-[#8d9790] transition group-active:text-[#155b38]`}
+                />
+              </Link>
+
               <Link href="/orders" className={mobileTileClass}>
                 <div>
                   <FaBoxOpen className="mb-3 text-xl text-[#155b38]" />
                   <span className="text-[15px] font-extrabold">
                     {isArabic ? "الطلبات" : "Orders"}
+                  </span>
+                </div>
+                <FaChevronRight
+                  className={`${arrowClass} shrink-0 text-xs text-[#8d9790] transition group-active:text-[#155b38]`}
+                />
+              </Link>
+
+              <Link href="/wishlist" className={mobileTileClass}>
+                <div>
+                  <FaHeart className="mb-3 text-xl text-[#155b38]" />
+                  <span className="text-[15px] font-extrabold">
+                    {isArabic ? "قائمتي" : "Wishlist"}
                   </span>
                 </div>
                 <FaChevronRight
@@ -607,32 +644,25 @@ export default function ProfilePage() {
                 />
               </Link>
 
-              <Link href="/wishlist" className={mobileTileClass}>
-                <div>
-                  <FaHeart className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
-                    {isArabic ? "قائمتي" : "Wishlist"}
-                  </span>
-                </div>
-                <FaChevronRight
-                  className={`${arrowClass} shrink-0 text-xs text-[#8d9790] transition group-active:text-[#155b38]`}
-                />
-              </Link>
-
-              <Link
-                href="/account-information"
+              <button
+                type="button"
+                onClick={() => setPoliciesOpen((current) => !current)}
+                aria-expanded={policiesOpen}
+                aria-controls="mobile-profile-policies"
                 className={mobileTileClass}
               >
                 <div>
-                  <FaUserEdit className="mb-3 text-xl text-[#155b38]" />
+                  <FaFileContract className="mb-3 text-xl text-[#155b38]" />
                   <span className="text-[15px] font-extrabold">
-                    {isArabic ? "معلومات الحساب" : "Account details"}
+                    {isArabic ? "السياسات" : "Policies"}
                   </span>
                 </div>
-                <FaChevronRight
-                  className={`${arrowClass} shrink-0 text-xs text-[#8d9790] transition group-active:text-[#155b38]`}
+                <FaChevronDown
+                  className={`shrink-0 text-xs text-[#8d9790] transition-transform duration-300 ${
+                    policiesOpen ? "rotate-180" : ""
+                  }`}
                 />
-              </Link>
+              </button>
 
               <div className="flex min-h-[118px] min-w-0 flex-col justify-between rounded-[1.6rem] border border-[#d8dfda] bg-white px-5 py-4">
                 <div className="flex min-w-0 items-center gap-3">
@@ -641,7 +671,6 @@ export default function ProfilePage() {
                     {isArabic ? "اللغة" : "Language"}
                   </span>
                 </div>
-
                 <div
                   dir="ltr"
                   className="mt-3 grid w-full grid-cols-2 rounded-full bg-[#edf1ee] p-1"
@@ -672,26 +701,6 @@ export default function ProfilePage() {
                   </button>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setPoliciesOpen((current) => !current)}
-                aria-expanded={policiesOpen}
-                aria-controls="mobile-profile-policies"
-                className={mobileTileClass}
-              >
-                <div>
-                  <FaFileContract className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
-                    {isArabic ? "السياسات" : "Policies"}
-                  </span>
-                </div>
-                <FaChevronDown
-                  className={`shrink-0 text-xs text-[#8d9790] transition-transform duration-300 ${
-                    policiesOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
             </nav>
 
             <div
@@ -838,7 +847,7 @@ export default function ProfilePage() {
           })}
         </div>
 
-        <div className="mt-7 grid grid-cols-[minmax(0,1fr)_330px] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_350px]">
           <section className="rounded-[2rem] border border-[#e0e5e1] bg-[#fafbf9] p-7 xl:p-9">
             <div className="flex items-end justify-between gap-6">
               <div>
@@ -857,8 +866,32 @@ export default function ProfilePage() {
 
             <nav
               aria-label={isArabic ? "روابط الحساب" : "Account links"}
-              className="mt-7 grid grid-cols-2 gap-4 xl:grid-cols-3"
+              className="mt-7 grid grid-cols-3 gap-4"
             >
+              <Link
+                href="/account-information"
+                className={desktopTileClass}
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                  <FaUserEdit />
+                </div>
+                <div className="mt-5 flex items-end justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-extrabold">
+                      {isArabic ? "معلومات الحساب" : "Account details"}
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-[#68736c]">
+                      {isArabic
+                        ? "حدّث اسمك ورقم هاتفك."
+                        : "Update your name and phone."}
+                    </p>
+                  </div>
+                  <FaChevronRight
+                    className={`${arrowClass} shrink-0 text-xs text-[#95a098] transition group-hover:text-[#155b38]`}
+                  />
+                </div>
+              </Link>
+
               <Link href="/orders" className={desktopTileClass}>
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
                   <FaBoxOpen />
@@ -900,30 +933,60 @@ export default function ProfilePage() {
                   />
                 </div>
               </Link>
+            </nav>
+          </section>
 
-              <Link
-                href="/account-information"
-                className={desktopTileClass}
-              >
+          <aside className="grid gap-4">
+              <div className={desktopTileClass}>
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
-                  <FaUserEdit />
+                  <FaGlobe />
                 </div>
-                <div className="mt-5 flex items-end justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-extrabold">
-                      {isArabic ? "معلومات الحساب" : "Account details"}
-                    </h3>
-                    <p className="mt-1 text-xs leading-5 text-[#68736c]">
-                      {isArabic
-                        ? "حدّث اسمك ورقم هاتفك."
-                        : "Update your name and phone."}
-                    </p>
+
+                <div className="mt-5">
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-extrabold">
+                        {isArabic ? "اللغة" : "Language"}
+                      </h3>
+                      <p className="mt-1 text-xs leading-5 text-[#68736c]">
+                        {isArabic
+                          ? "اختر لغة الموقع."
+                          : "Choose your site language."}
+                      </p>
+                    </div>
                   </div>
-                  <FaChevronRight
-                    className={`${arrowClass} shrink-0 text-xs text-[#95a098] transition group-hover:text-[#155b38]`}
-                  />
+
+                  <div
+                    dir="ltr"
+                    className="mt-4 grid grid-cols-2 gap-2"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setLang("en")}
+                      aria-pressed={lang === "en"}
+                      className={`min-h-9 rounded-full px-4 text-[11px] font-extrabold transition ${
+                        lang === "en"
+                          ? "bg-[#155b38] text-white"
+                          : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLang("ar")}
+                      aria-pressed={lang === "ar"}
+                      className={`min-h-9 rounded-full px-4 text-[11px] font-extrabold transition ${
+                        lang === "ar"
+                          ? "bg-[#155b38] text-white"
+                          : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
+                      }`}
+                    >
+                      العربية
+                    </button>
+                  </div>
                 </div>
-              </Link>
+              </div>
 
               <Link href="/contact" className={desktopTileClass}>
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
@@ -974,7 +1037,6 @@ export default function ProfilePage() {
                   />
                 </div>
               </button>
-            </nav>
 
             <div
               id="desktop-profile-policies"
@@ -985,7 +1047,7 @@ export default function ProfilePage() {
               }`}
             >
               <div className="overflow-hidden">
-                <nav className="grid grid-cols-3 gap-3 rounded-[1.4rem] border border-[#dce3de] bg-white p-3">
+                <nav className="grid gap-1 rounded-[1.4rem] border border-[#dce3de] bg-white p-3">
                   <Link
                     href="/privacy-policy"
                     className="flex min-h-14 items-center justify-between gap-3 rounded-xl px-4 text-sm font-bold transition hover:bg-[#f1f5f2]"
@@ -1016,51 +1078,6 @@ export default function ProfilePage() {
                 </nav>
               </div>
             </div>
-          </section>
-
-          <aside>
-            <section className="rounded-[2rem] border border-[#dfe5e1] bg-white p-7">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
-                  <FaGlobe />
-                </div>
-                <div>
-                  <h2 className="font-extrabold">
-                    {isArabic ? "اللغة" : "Language"}
-                  </h2>
-                  <p className="mt-0.5 text-xs text-[#68736c]">
-                    {isArabic ? "اختر لغة الموقع" : "Choose your site language"}
-                  </p>
-                </div>
-              </div>
-
-              <div dir="ltr" className="mt-5 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setLang("en")}
-                  aria-pressed={lang === "en"}
-                  className={`min-h-11 rounded-full text-xs font-extrabold transition ${
-                    lang === "en"
-                      ? "bg-[#155b38] text-white"
-                      : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
-                  }`}
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLang("ar")}
-                  aria-pressed={lang === "ar"}
-                  className={`min-h-11 rounded-full text-xs font-extrabold transition ${
-                    lang === "ar"
-                      ? "bg-[#155b38] text-white"
-                      : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
-                  }`}
-                >
-                  العربية
-                </button>
-              </div>
-            </section>
           </aside>
         </div>
       </div>
