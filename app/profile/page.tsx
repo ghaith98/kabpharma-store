@@ -196,6 +196,9 @@ export default function ProfilePage() {
   const desktopTileClass =
     "group flex min-h-[118px] flex-col justify-between rounded-[1.35rem] border border-[#dde4df] bg-white p-5 text-start transition duration-300 hover:border-[#aac2b4] hover:shadow-[0_12px_30px_rgba(11,66,46,0.07)]";
 
+  const desktopSidebarTileClass =
+    "group flex min-h-0 w-full items-center justify-between gap-3 rounded-[1rem] border border-[#dde4df] bg-white px-4 py-2 text-start transition duration-200 hover:border-[#aac2b4] hover:bg-[#f8faf8]";
+
   const mobilePolicyClass =
     "group flex min-h-[64px] items-center justify-between gap-4 border-t border-[#e8ece9] px-5 py-3.5 transition active:bg-[#f3f6f4]";
 
@@ -503,7 +506,7 @@ export default function ProfilePage() {
           </div>
         </header>
 
-        <div className="border-b-[10px] border-[#eceee9] bg-white px-4 pb-5 pt-5">
+        <div className="bg-white px-4 pb-5 pt-5">
           <div className="mx-auto max-w-md">
             {user ? (
               <div className="flex items-center gap-3.5">
@@ -847,8 +850,8 @@ export default function ProfilePage() {
           })}
         </div>
 
-        <div className="mt-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="rounded-[1.65rem] border border-[#e0e5e1] bg-[#fafbf9] p-6">
+        <div className="mt-6 grid items-stretch gap-x-4 gap-y-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="contents">
             <div className="flex items-end justify-between gap-6">
               <div>
                 <p
@@ -866,7 +869,7 @@ export default function ProfilePage() {
 
             <nav
               aria-label={isArabic ? "روابط الحساب" : "Account links"}
-              className="mt-5 grid grid-cols-3 gap-3.5"
+              className="grid grid-cols-3 gap-3.5 lg:col-start-1 lg:row-start-2"
             >
               <Link
                 href="/account-information"
@@ -936,77 +939,61 @@ export default function ProfilePage() {
             </nav>
           </section>
 
-          <aside className="grid gap-3.5 lg:mt-[94px]">
-              <div className={desktopTileClass}>
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
-                  <FaGlobe />
+          <aside className="relative grid h-full grid-rows-3 gap-2 lg:col-start-2 lg:row-start-2">
+              <div className={desktopSidebarTileClass}>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-xs text-[#155b38]">
+                    <FaGlobe />
+                  </span>
+                  <h3 className="truncate text-sm font-extrabold">
+                    {isArabic ? "اللغة" : "Language"}
+                  </h3>
                 </div>
 
-                <div className="mt-3.5">
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <h3 className="text-base font-extrabold">
-                        {isArabic ? "اللغة" : "Language"}
-                      </h3>
-                      <p className="mt-1 text-xs leading-5 text-[#68736c]">
-                        {isArabic
-                          ? "اختر لغة الموقع."
-                          : "Choose your site language."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div
-                    dir="ltr"
-                    className="mt-3 grid grid-cols-2 gap-2"
+                <div
+                  dir="ltr"
+                  aria-label={isArabic ? "اختيار اللغة" : "Choose language"}
+                  className="grid shrink-0 grid-cols-2 rounded-full bg-[#edf1ee] p-0.5"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setLang("en")}
+                    aria-pressed={lang === "en"}
+                    className={`flex h-6 min-w-9 items-center justify-center rounded-full px-1.5 text-[8px] font-extrabold transition ${
+                      lang === "en"
+                        ? "bg-[#155b38] text-white"
+                        : "text-[#59665e]"
+                    }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setLang("en")}
-                      aria-pressed={lang === "en"}
-                      className={`min-h-8 rounded-full px-3 text-[10px] font-extrabold transition ${
-                        lang === "en"
-                          ? "bg-[#155b38] text-white"
-                          : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
-                      }`}
-                    >
-                      English
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLang("ar")}
-                      aria-pressed={lang === "ar"}
-                      className={`min-h-8 rounded-full px-3 text-[10px] font-extrabold transition ${
-                        lang === "ar"
-                          ? "bg-[#155b38] text-white"
-                          : "bg-[#edf1ee] text-[#59665e] hover:bg-[#e3e9e5]"
-                      }`}
-                    >
-                      العربية
-                    </button>
-                  </div>
+                    EN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLang("ar")}
+                    aria-pressed={lang === "ar"}
+                    className={`flex h-6 min-w-9 items-center justify-center rounded-full px-1.5 text-[8px] font-extrabold transition ${
+                      lang === "ar"
+                        ? "bg-[#155b38] text-white"
+                        : "text-[#59665e]"
+                    }`}
+                  >
+                    AR
+                  </button>
                 </div>
               </div>
 
-              <Link href="/contact" className={desktopTileClass}>
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
-                  <FaHeadset />
+              <Link href="/contact" className={desktopSidebarTileClass}>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-xs text-[#155b38]">
+                    <FaHeadset />
+                  </span>
+                  <h3 className="truncate text-sm font-extrabold">
+                    {isArabic ? "تواصل معنا" : "Contact us"}
+                  </h3>
                 </div>
-                <div className="mt-3.5 flex items-end justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-extrabold">
-                      {isArabic ? "تواصل معنا" : "Contact us"}
-                    </h3>
-                    <p className="mt-1 text-xs leading-5 text-[#36a369]">
-                      {isArabic
-                        ? "فريقنا جاهز لمساعدتك."
-                        : "Our team is ready to help."}
-                    </p>
-                  </div>
-                  <FaChevronRight
-                    className={`${arrowClass} shrink-0 text-xs text-[#95a098] transition group-hover:text-[#155b38]`}
-                  />
-                </div>
+                <FaChevronRight
+                  className={`${arrowClass} shrink-0 text-[10px] text-[#95a098] transition group-hover:text-[#155b38]`}
+                />
               </Link>
 
               <button
@@ -1014,43 +1001,36 @@ export default function ProfilePage() {
                 onClick={() => setPoliciesOpen((current) => !current)}
                 aria-expanded={policiesOpen}
                 aria-controls="desktop-profile-policies"
-                className={desktopTileClass}
+                className={desktopSidebarTileClass}
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf2ed] text-sm text-[#155b38]">
-                  <FaFileContract />
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eaf2ed] text-xs text-[#155b38]">
+                    <FaFileContract />
+                  </span>
+                  <h3 className="truncate text-sm font-extrabold">
+                    {isArabic ? "السياسات" : "Policies"}
+                  </h3>
                 </div>
-                <div className="mt-3.5 flex w-full items-end justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-extrabold">
-                      {isArabic ? "السياسات" : "Policies"}
-                    </h3>
-                    <p className="mt-1 text-xs leading-5 text-[#68736c]">
-                      {isArabic
-                        ? "الخصوصية والشروط والاسترجاع."
-                        : "Privacy, terms, and returns."}
-                    </p>
-                  </div>
-                  <FaChevronDown
-                    className={`shrink-0 text-xs text-[#95a098] transition-transform duration-300 ${
-                      policiesOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </div>
+                <FaChevronDown
+                  className={`shrink-0 text-[10px] text-[#95a098] transition-transform duration-300 ${
+                    policiesOpen ? "rotate-180" : ""
+                  }`}
+                />
               </button>
 
             <div
               id="desktop-profile-policies"
-              className={`grid transition-all duration-300 ease-in-out ${
+              className={`absolute end-0 top-[calc(100%+0.75rem)] z-20 grid w-full transition-all duration-300 ease-in-out ${
                 policiesOpen
-                  ? "mt-4 grid-rows-[1fr] opacity-100"
-                  : "grid-rows-[0fr] opacity-0"
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "pointer-events-none grid-rows-[0fr] opacity-0"
               }`}
             >
               <div className="overflow-hidden">
-                <nav className="grid gap-1 rounded-[1.4rem] border border-[#dce3de] bg-white p-3">
+                <nav className="grid gap-1 rounded-[1.4rem] border border-[#dce3de] bg-white p-3 shadow-[0_18px_45px_rgba(11,66,46,0.12)]">
                   <Link
                     href="/privacy-policy"
-                    className="flex min-h-14 items-center justify-between gap-3 rounded-xl px-4 text-sm font-bold transition hover:bg-[#f1f5f2]"
+                    className="flex min-h-12 items-center justify-between gap-3 rounded-xl px-4 text-sm font-bold transition hover:bg-[#f1f5f2]"
                   >
                     <span>{isArabic ? "سياسة الخصوصية" : "Privacy policy"}</span>
                     <FaChevronRight
@@ -1059,7 +1039,7 @@ export default function ProfilePage() {
                   </Link>
                   <Link
                     href="/terms"
-                    className="flex min-h-14 items-center justify-between gap-3 rounded-xl px-4 text-sm font-bold transition hover:bg-[#f1f5f2]"
+                    className="flex min-h-12 items-center justify-between gap-3 rounded-xl px-4 text-sm font-bold transition hover:bg-[#f1f5f2]"
                   >
                     <span>{isArabic ? "الشروط والأحكام" : "Terms & conditions"}</span>
                     <FaChevronRight
@@ -1068,7 +1048,7 @@ export default function ProfilePage() {
                   </Link>
                   <Link
                     href="/refund-policy"
-                    className="flex min-h-14 items-center justify-between gap-3 rounded-xl px-4 text-sm font-bold transition hover:bg-[#f1f5f2]"
+                    className="flex min-h-12 items-center justify-between gap-3 rounded-xl px-4 text-sm font-bold transition hover:bg-[#f1f5f2]"
                   >
                     <span>{isArabic ? "سياسة الاسترجاع" : "Refund policy"}</span>
                     <FaChevronRight
