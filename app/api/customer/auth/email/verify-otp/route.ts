@@ -66,11 +66,11 @@ export async function POST(req: NextRequest) {
   }
 
   const token = await createCustomerSessionToken({
-    method: "email",
-    profileId: profile.id,
-    email: profile.email,
-    phone: profile.phone,
-  });
+  method: "email",
+  profileId: profile.id,
+  email: profile.email,
+  phone: profile.phone,
+});
 
   const cookieStore = await cookies();
   cookieStore.set(CUSTOMER_SESSION_COOKIE, token, customerSessionCookieOptions);
