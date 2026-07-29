@@ -401,7 +401,7 @@ export default function AboutPage() {
               {t.storyTitle}
             </h2>
             <div className="mt-10 grid gap-7 border-t border-[#dce4df] pt-8 sm:grid-cols-2 sm:gap-12">
-              <p className="text-[15px] leading-8 text-[#636158]">
+              <p className="text-[15px] leading-8 text-[#536158]">
                 {t.storyParagraph1}
               </p>
               <p className="text-[15px] leading-8 text-[#536158]">
