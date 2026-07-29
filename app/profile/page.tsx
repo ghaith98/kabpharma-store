@@ -337,14 +337,14 @@ export default function ProfilePage() {
             </div>
           ) : (
             <Swiper
-              key={`${lang}-${desktop ? "desktop" : "mobile"}`}
-              dir={isArabic ? "rtl" : "ltr"}
-              slidesPerView="auto"
-              spaceBetween={desktop ? 14 : 12}
-              grabCursor
-              watchOverflow
-              className="mt-5"
-            >
+  key={desktop ? "desktop" : "mobile"}   // ← remove lang from the key
+  dir={isArabic ? "rtl" : "ltr"}
+  slidesPerView="auto"
+  spaceBetween={desktop ? 14 : 12}
+  grabCursor
+  watchOverflow
+  className="mt-5"
+>
               {recentOrders.map((order) => {
                 const items = Array.isArray(order.order_items)
                   ? order.order_items
