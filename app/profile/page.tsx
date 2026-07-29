@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
 import {
   FaBoxOpen,
   FaChevronDown,
@@ -288,15 +290,13 @@ export default function ProfilePage() {
           </div>
 
           {ordersLoading ? (
-            <div
-              className={`mt-5 grid gap-3 ${
-                desktop ? "xl:grid-cols-2" : ""
-              }`}
-            >
+            <div className={`mt-5 flex gap-3 overflow-hidden ${desktop ? "" : ""}`}>
               {Array.from({ length: 2 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-44 animate-pulse rounded-[1.45rem] bg-[#f0f3f0]"
+                  className={`h-44 shrink-0 animate-pulse rounded-[1.45rem] bg-[#f0f3f0] ${
+                    desktop ? "w-[calc(50%-0.375rem)]" : "w-[88%]"
+                  }`}
                 />
               ))}
             </div>
@@ -316,10 +316,24 @@ export default function ProfilePage() {
               </Link>
             </div>
           ) : (
-            <div
-              className={`mt-5 grid gap-3 ${
-                desktop ? "xl:grid-cols-2" : ""
-              }`}
+            <Swiper
+              key={`${lang}-${desktop ? "desktop" : "mobile"}`}
+              dir={isArabic ? "rtl" : "ltr"}
+              slidesPerView={desktop ? 2 : 1.08}
+              spaceBetween={12}
+              grabCursor
+              watchOverflow
+              breakpoints={
+                desktop
+                  ? {
+                      1180: {
+                        slidesPerView: 2.2,
+                        spaceBetween: 16,
+                      },
+                    }
+                  : undefined
+              }
+              className="mt-5"
             >
               {recentOrders.map((order) => {
                 const items = Array.isArray(order.order_items)
@@ -337,16 +351,16 @@ export default function ProfilePage() {
                   (isArabic ? "قيد المعالجة" : "Processing");
 
                 return (
-                  <Link
-                    key={order.id}
-                    href={`/orders/${order.id}`}
-                    aria-label={
-                      isArabic
-                        ? `عرض تفاصيل الطلب ${order.id}`
-                        : `View order ${order.id} details`
-                    }
-                    className="group rounded-[1.45rem] border border-[#dfe5e1] bg-[#fbfcfa] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#adc4b6] hover:bg-white hover:shadow-[0_15px_35px_rgba(11,66,46,0.08)] sm:p-5"
-                  >
+                  <SwiperSlide key={order.id} className="!h-auto">
+                    <Link
+                      href={`/orders/${order.id}`}
+                      aria-label={
+                        isArabic
+                          ? `عرض تفاصيل الطلب ${order.id}`
+                          : `View order ${order.id} details`
+                      }
+                      className="group flex h-full min-h-[174px] flex-col rounded-[1.45rem] border border-[#dfe5e1] bg-[#fbfcfa] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#adc4b6] hover:bg-white hover:shadow-[0_15px_35px_rgba(11,66,46,0.08)] sm:p-5"
+                    >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-[11px] font-bold text-[#7a867e]">
@@ -367,7 +381,7 @@ export default function ProfilePage() {
                       </span>
                     </div>
 
-                    <div className="mt-4 flex items-end justify-between gap-4">
+                    <div className="mt-auto flex items-end justify-between gap-4 pt-4">
                       <div className="flex min-w-0 items-center">
                         {visibleItems.length > 0 ? (
                           visibleItems.map((item, index) => (
@@ -427,10 +441,11 @@ export default function ProfilePage() {
                         </span>
                       </div>
                     </div>
-                  </Link>
+                    </Link>
+                  </SwiperSlide>
                 );
               })}
-            </div>
+            </Swiper>
           )}
         </div>
       </section>
@@ -550,29 +565,10 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <Link
-              href="/products"
-              className="group mt-5 flex min-h-[76px] items-center justify-between gap-4 rounded-[1.05rem] bg-[#20231f] px-5 py-4 text-white shadow-[0_12px_24px_rgba(18,26,21,0.12)]"
-            >
-              <div>
-                <p className="text-[15px] font-extrabold leading-5">
-                  {isArabic
-                    ? "اختاري العناية المناسبة لاحتياجاتك"
-                    : "Find care made for your needs"}
-                </p>
-                <p className="mt-1 text-xs text-white/55">
-                  {isArabic
-                    ? "تصفحي المنتجات حسب احتياج بشرتك"
-                    : "Shop products by skin concern"}
-                </p>
-              </div>
-
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-sm text-white transition group-active:bg-white/15">
-                <FaChevronRight className={arrowClass} />
-              </span>
-            </Link>
           </div>
         </div>
+
+        {renderLatestOrders({})}
 
         <section className="border-b-[10px] border-[#eceee9] bg-white px-4 py-6">
           <div className="mx-auto max-w-md">
@@ -638,26 +634,23 @@ export default function ProfilePage() {
                 />
               </Link>
 
-              <div className={mobileTileClass}>
-                <div>
-                  <FaGlobe className="mb-3 text-xl text-[#155b38]" />
-                  <span className="text-[15px] font-extrabold">
+              <div className="flex min-h-[118px] min-w-0 flex-col justify-between rounded-[1.6rem] border border-[#d8dfda] bg-white px-5 py-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <FaGlobe className="shrink-0 text-xl text-[#155b38]" />
+                  <span className="whitespace-nowrap text-[15px] font-extrabold">
                     {isArabic ? "اللغة" : "Language"}
                   </span>
-                  <p dir="ltr" className="mt-1 text-xs text-[#68736c]">
-                    EN | AR
-                  </p>
                 </div>
 
                 <div
                   dir="ltr"
-                  className="flex rounded-full bg-[#edf1ee] p-1"
+                  className="mt-3 grid w-full grid-cols-2 rounded-full bg-[#edf1ee] p-1"
                 >
                   <button
                     type="button"
                     onClick={() => setLang("en")}
                     aria-pressed={lang === "en"}
-                    className={`flex h-8 min-w-10 items-center justify-center rounded-full px-2 text-[10px] font-extrabold transition ${
+                    className={`flex h-8 min-w-0 items-center justify-center rounded-full px-2 text-[10px] font-extrabold transition ${
                       lang === "en"
                         ? "bg-[#155b38] text-white"
                         : "text-[#68736c]"
@@ -669,7 +662,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={() => setLang("ar")}
                     aria-pressed={lang === "ar"}
-                    className={`flex h-8 min-w-10 items-center justify-center rounded-full px-2 text-[10px] font-extrabold transition ${
+                    className={`flex h-8 min-w-0 items-center justify-center rounded-full px-2 text-[10px] font-extrabold transition ${
                       lang === "ar"
                         ? "bg-[#155b38] text-white"
                         : "text-[#68736c]"
@@ -755,7 +748,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {renderLatestOrders({})}
       </div>
 
       {/* Desktop account dashboard */}
@@ -813,23 +805,14 @@ export default function ProfilePage() {
             </div>
 
             {user ? (
-              <div className="flex flex-col items-end gap-4">
-                <Link
-                  href="/account-information"
-                  className="inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-extrabold text-[#155b38] transition hover:bg-[#f0f5f1]"
-                >
-                  <FaUserEdit />
-                  {isArabic ? "تعديل الحساب" : "Edit account"}
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="inline-flex items-center gap-2 text-xs font-bold text-white/55 transition hover:text-white"
-                >
-                  <FaSignOutAlt />
-                  {isArabic ? "تسجيل الخروج" : "Sign out"}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-3 text-xs font-bold text-white/75 transition hover:bg-white/10 hover:text-white"
+              >
+                <FaSignOutAlt />
+                {isArabic ? "تسجيل الخروج" : "Sign out"}
+              </button>
             ) : (
               <div className="flex items-center gap-3">
                 <Link
@@ -848,6 +831,12 @@ export default function ProfilePage() {
             )}
           </div>
         </section>
+
+        <div className="mt-7">
+          {renderLatestOrders({
+            desktop: true,
+          })}
+        </div>
 
         <div className="mt-7 grid grid-cols-[minmax(0,1fr)_330px] gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-[2rem] border border-[#e0e5e1] bg-[#fafbf9] p-7 xl:p-9">
@@ -957,27 +946,6 @@ export default function ProfilePage() {
                 </div>
               </Link>
 
-              <Link href="/products" className={desktopTileClass}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
-                  <FaShieldAlt />
-                </div>
-                <div className="mt-5 flex items-end justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-extrabold">
-                      {isArabic ? "تسوّق حسب الاحتياج" : "Shop by need"}
-                    </h3>
-                    <p className="mt-1 text-xs leading-5 text-[#68736c]">
-                      {isArabic
-                        ? "اكتشف عناية تناسب بشرتك."
-                        : "Find care suited to your skin."}
-                    </p>
-                  </div>
-                  <FaChevronRight
-                    className={`${arrowClass} shrink-0 text-xs text-[#95a098] transition group-hover:text-[#155b38]`}
-                  />
-                </div>
-              </Link>
-
               <button
                 type="button"
                 onClick={() => setPoliciesOpen((current) => !current)}
@@ -1050,34 +1018,7 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <aside className="space-y-5">
-            <section className="rounded-[2rem] bg-[#20231f] p-7 text-white shadow-[0_20px_50px_rgba(22,29,24,0.12)]">
-              <p
-                className={`text-[10px] font-extrabold uppercase text-[#a9cc75] ${
-                  isArabic ? "tracking-normal" : "tracking-[0.18em]"
-                }`}
-              >
-                {isArabic ? "اختيار أسهل" : "Made for you"}
-              </p>
-              <h2 className="mt-4 text-2xl font-extrabold leading-tight">
-                {isArabic
-                  ? "ابحث عن العناية المناسبة لاحتياجاتك"
-                  : "Find care that fits your needs"}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-white/55">
-                {isArabic
-                  ? "تصفّح مجموعات مختارة حسب احتياج بشرتك وشعرك."
-                  : "Explore curated products by skin and hair concern."}
-              </p>
-              <Link
-                href="/products"
-                className="mt-7 inline-flex min-h-11 items-center gap-3 rounded-full bg-white px-5 text-sm font-extrabold text-[#20231f] transition hover:bg-[#edf2ed]"
-              >
-                {isArabic ? "اكتشف الآن" : "Explore now"}
-                <FaChevronRight className={arrowClass} />
-              </Link>
-            </section>
-
+          <aside>
             <section className="rounded-[2rem] border border-[#dfe5e1] bg-white p-7">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
@@ -1121,12 +1062,6 @@ export default function ProfilePage() {
               </div>
             </section>
           </aside>
-        </div>
-
-        <div className="mt-6">
-          {renderLatestOrders({
-            desktop: true,
-          })}
         </div>
       </div>
     </main>

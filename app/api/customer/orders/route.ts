@@ -264,7 +264,7 @@ export async function GET(request: Request) {
         .order("id", {
           ascending: false,
         })
-        .limit(2);
+        .limit(6);
 
     if (error) {
       console.error(
