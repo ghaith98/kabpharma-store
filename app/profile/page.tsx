@@ -21,6 +21,8 @@ import {
 
 import { useLanguage } from "../../context/LanguageContext";
 
+// Module-level cache — survives component unmount/remount (navigation).
+// Cleared on logout so stale orders never show for a new session.
 type KabUser = {
   full_name: string;
   phone: string;
@@ -40,6 +42,10 @@ type RecentOrder = {
   created_at: string | null;
   order_items: RecentOrderItem[];
 };
+
+let _cachedOrders: RecentOrder[] | null = null;
+let _ordersTimestamp = 0;
+const ORDERS_TTL_MS = 60_000; // re-fetch after 1 minute
 
 const orderStatus = {
   en: {
@@ -100,15 +106,29 @@ export default function ProfilePage() {
     }
 
     // Step 2: verify session + fetch orders in parallel
+    // Orders are cached at module level — re-used on remount, only re-fetched after TTL
     async function loadProfile() {
       try {
-        const [meResponse, ordersResponse] = await Promise.all([
-          fetch("/api/customer/me", { credentials: "include", cache: "default" }),
-          fetch("/api/customer/orders?view=profile", { credentials: "include", cache: "default" }),
-        ]);
+        const now = Date.now();
+        const ordersAreFresh =
+          _cachedOrders !== null && now - _ordersTimestamp < ORDERS_TTL_MS;
+
+        // Show cached orders immediately if we have them
+        if (ordersAreFresh && !cancelled) {
+          setRecentOrders(_cachedOrders!);
+          setOrdersLoading(false);
+        }
+
+        const mePromise = fetch("/api/customer/me", { credentials: "include", cache: "default" });
+        const ordersPromise = ordersAreFresh
+          ? Promise.resolve(null)
+          : fetch("/api/customer/orders?view=profile", { credentials: "include", cache: "default" });
+
+        const [meResponse, ordersResponse] = await Promise.all([mePromise, ordersPromise]);
 
         if (!meResponse.ok) {
           localStorage.removeItem("kab_user");
+          _cachedOrders = null;
           if (!cancelled) { setUser(null); setRecentOrders([]); }
           return;
         }
@@ -117,6 +137,7 @@ export default function ProfilePage() {
 
         if (!result.authenticated || !result.user) {
           localStorage.removeItem("kab_user");
+          _cachedOrders = null;
           if (!cancelled) { setUser(null); setRecentOrders([]); }
           return;
         }
@@ -129,11 +150,12 @@ export default function ProfilePage() {
         localStorage.setItem("kab_user", JSON.stringify({ id: result.user.id, ...verifiedUser }));
         if (!cancelled) setUser(verifiedUser);
 
-        if (ordersResponse.ok) {
+        if (ordersResponse && ordersResponse.ok) {
           const ordersResult = await ordersResponse.json();
-          if (!cancelled) {
-            setRecentOrders(Array.isArray(ordersResult.orders) ? ordersResult.orders : []);
-          }
+          const orders = Array.isArray(ordersResult.orders) ? ordersResult.orders : [];
+          _cachedOrders = orders;
+          _ordersTimestamp = Date.now();
+          if (!cancelled) setRecentOrders(orders);
         }
       } catch {
         if (!cancelled) { setUser(null); setRecentOrders([]); }
@@ -159,6 +181,8 @@ export default function ProfilePage() {
       }
 
       localStorage.removeItem("kab_user");
+      _cachedOrders = null;
+      _ordersTimestamp = 0;
       setUser(null);
       setRecentOrders([]);
 
