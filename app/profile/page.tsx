@@ -573,7 +573,7 @@ export default function ProfilePage() {
 
         {renderLatestOrders({})}
 
-        <section className="border-b-[10px] border-[#eceee9] bg-white px-4 py-6">
+        <section className="bg-white px-4 py-6">
           <div className="mx-auto max-w-md">
             <h2 className="mb-4 text-xl font-extrabold">
               {isArabic ? "مركز الحساب" : "Account center"}

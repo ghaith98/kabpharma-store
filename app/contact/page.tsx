@@ -116,6 +116,8 @@ export default function ContactPage() {
       whatsappText:
         "Start a direct conversation with our customer care team for help with products or orders.",
 
+        whatsappButton: "Start conversation",
+
       whatsappSupport:
         "Product and order support",
 
