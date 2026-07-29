@@ -134,24 +134,6 @@ export default function CheckoutPage() {
   const [address, setAddress] =
     useState("");
 
-  // Saved addresses
-  const [
-    savedAddresses,
-    setSavedAddresses,
-  ] = useState<
-    Array<{
-      label: string;
-      governorate: string;
-      delivery_area: string;
-      address: string;
-    }>
-  >([]);
-
-  const [
-    savedAddrOpen,
-    setSavedAddrOpen,
-  ] = useState(false);
-
   const [
     checkingBan,
     setCheckingBan,
@@ -231,20 +213,6 @@ export default function CheckoutPage() {
         );
 
         setPhone(accountPhone);
-
-        // Load saved addresses
-        try {
-          const addrRes = await fetch("/api/customer/addresses", {
-            credentials: "include",
-            cache: "no-store",
-          });
-          if (addrRes.ok) {
-            const addrData = (await addrRes.json()) as { addresses?: Array<{ label: string; governorate: string; delivery_area: string; address: string }> };
-            if (!cancelled && Array.isArray(addrData.addresses) && addrData.addresses.length > 0) {
-              setSavedAddresses(addrData.addresses);
-            }
-          }
-        } catch { /* non-critical */ }
 
         const savedCheckout =
           localStorage.getItem("checkout");
@@ -1018,96 +986,6 @@ export default function CheckoutPage() {
             </div>
 
             <div className="space-y-5 p-5 sm:p-7">
-              {/* Saved addresses dropdown */}
-              {savedAddresses.length > 0 && (
-                <div className="overflow-hidden rounded-xl border border-[#dfe4e0]">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSavedAddrOpen(
-                        (o) => !o
-                      )
-                    }
-                    className="flex w-full items-center justify-between gap-3 bg-[#f3f7f4] px-4 py-3 text-left transition hover:bg-[#edf5f0]"
-                  >
-                    <div className="flex items-center gap-2">
-                      <MapPin
-                        size={14}
-                        className="shrink-0 text-[#0a583b]"
-                      />
-
-                      <span className="text-sm font-extrabold text-[#142019]">
-                        {isArabic
-                          ? "استخدام عنوان محفوظ"
-                          : "Use a saved address"}
-                      </span>
-                    </div>
-
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`shrink-0 text-[#647168] transition-transform duration-200 ${
-                        savedAddrOpen
-                          ? "rotate-180"
-                          : ""
-                      }`}
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-
-                  {savedAddrOpen && (
-                    <div className="divide-y divide-[#edf0ed]">
-                      {savedAddresses.map(
-                        (addr, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              setGovernorate(
-                                addr.governorate
-                              );
-                              setDeliveryArea(
-                                ""
-                              );
-                              setAddress(
-                                addr.address
-                              );
-                              setSavedAddrOpen(
-                                false
-                              );
-                            }}
-                            className="flex w-full flex-col items-start gap-0.5 px-4 py-3.5 text-left transition hover:bg-[#f7fbf8]"
-                          >
-                            <span className="text-sm font-extrabold text-[#0a583b]">
-                              {addr.label}
-                            </span>
-
-                            <span className="text-xs text-[#526057]">
-                              {addr.governorate}
-                              {addr.delivery_area
-                                ? `, ${addr.delivery_area}`
-                                : ""}
-                            </span>
-
-                            <span className="text-xs text-[#526057]">
-                              {addr.address}
-                            </span>
-                          </button>
-                        )
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Full name */}
               <label className="block">
                 <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
