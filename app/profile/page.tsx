@@ -24,11 +24,56 @@ type KabUser = {
   phone: string;
 };
 
+type RecentOrderItem = {
+  id: string | number;
+  product_name: string;
+  quantity: number;
+  image_url: string | null;
+};
+
+type RecentOrder = {
+  id: string | number;
+  total_price: number;
+  status: string;
+  created_at: string | null;
+  order_items: RecentOrderItem[];
+};
+
+const orderStatus = {
+  en: {
+    pending: "Under review",
+    accepted: "Order accepted",
+    out_for_delivery: "Out for delivery",
+    delivered: "Delivered",
+    rejected: "Not approved",
+    cancelled_by_customer: "Cancelled",
+  },
+  ar: {
+    pending: "قيد المراجعة",
+    accepted: "تم قبول الطلب",
+    out_for_delivery: "قيد التوصيل",
+    delivered: "تم التسليم",
+    rejected: "لم تتم الموافقة",
+    cancelled_by_customer: "تم الإلغاء",
+  },
+};
+
+const orderStatusClass: Record<string, string> = {
+  pending: "bg-[#fff6dc] text-[#806018]",
+  accepted: "bg-[#eaf4ed] text-[#155b38]",
+  out_for_delivery: "bg-[#e8f3f7] text-[#275f73]",
+  delivered: "bg-[#e3f1e8] text-[#0d6a43]",
+  rejected: "bg-[#fff0ee] text-[#a2473e]",
+  cancelled_by_customer: "bg-[#edf0ee] text-[#657068]",
+};
+
 export default function ProfilePage() {
   const { lang, setLang } = useLanguage();
   const [user, setUser] = useState<KabUser | null>(null);
   const [pageReady, setPageReady] = useState(false);
   const [policiesOpen, setPoliciesOpen] = useState(false);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const isArabic = lang === "ar";
 
@@ -69,13 +114,37 @@ export default function ProfilePage() {
 
         if (!cancelled) {
           setUser(verifiedUser);
+          setOrdersLoading(true);
+        }
+
+        const ordersResponse = await fetch(
+          "/api/customer/orders?view=profile",
+          {
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+
+        if (ordersResponse.ok) {
+          const ordersResult =
+            await ordersResponse.json();
+
+          if (!cancelled) {
+            setRecentOrders(
+              Array.isArray(ordersResult.orders)
+                ? ordersResult.orders
+                : []
+            );
+          }
         }
       } catch {
         if (!cancelled) {
           setUser(null);
+          setRecentOrders([]);
         }
       } finally {
         if (!cancelled) {
+          setOrdersLoading(false);
           setPageReady(true);
         }
       }
@@ -101,6 +170,7 @@ export default function ProfilePage() {
 
       localStorage.removeItem("kab_user");
       setUser(null);
+      setRecentOrders([]);
 
       window.dispatchEvent(new Event("cartUpdated"));
       window.dispatchEvent(new Event("wishlistUpdated"));
@@ -126,6 +196,246 @@ export default function ProfilePage() {
 
   const mobilePolicyClass =
     "group flex min-h-[64px] items-center justify-between gap-4 border-t border-[#e8ece9] px-5 py-3.5 transition active:bg-[#f3f6f4]";
+
+  function formattedOrderDate(value: string | null) {
+    if (!value) {
+      return isArabic ? "تاريخ غير متوفر" : "Date unavailable";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return isArabic ? "تاريخ غير متوفر" : "Date unavailable";
+    }
+
+    return new Intl.DateTimeFormat(
+      isArabic ? "ar-SY" : "en-GB",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }
+    ).format(date);
+  }
+
+  function formattedOrderTotal(value: number) {
+    const amount = new Intl.NumberFormat(
+      isArabic ? "ar-SY" : "en-US",
+      {
+        maximumFractionDigits: 0,
+      }
+    ).format(Number(value || 0));
+
+    return isArabic
+      ? `${amount} ليرة سورية`
+      : `${amount} SYP`;
+  }
+
+  function renderLatestOrders({
+    desktop = false,
+  }: {
+    desktop?: boolean;
+  }) {
+    if (!user) {
+      return null;
+    }
+
+    const statusLabels =
+      orderStatus[isArabic ? "ar" : "en"];
+
+    return (
+      <section
+        className={
+          desktop
+            ? "rounded-[2rem] border border-[#e0e5e1] bg-white p-7 xl:p-9"
+            : "border-b-[10px] border-[#eceee9] bg-white px-4 py-6"
+        }
+      >
+        <div className={desktop ? "" : "mx-auto max-w-md"}>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              {desktop && (
+                <p
+                  className={`text-[11px] font-extrabold uppercase text-[#155b38] ${
+                    isArabic
+                      ? "tracking-normal"
+                      : "tracking-[0.18em]"
+                  }`}
+                >
+                  {isArabic ? "طلباتك" : "Your orders"}
+                </p>
+              )}
+              <h2
+                className={
+                  desktop
+                    ? "mt-2 text-3xl font-extrabold tracking-[-0.03em]"
+                    : "text-xl font-extrabold"
+                }
+              >
+                {isArabic ? "أحدث الطلبات" : "Latest orders"}
+              </h2>
+            </div>
+
+            <Link
+              href="/orders"
+              className="group inline-flex items-center gap-2 text-xs font-extrabold text-[#155b38] transition hover:text-[#0b452f]"
+            >
+              {isArabic ? "عرض الكل" : "View all"}
+              <FaChevronRight
+                className={`${arrowClass} text-[10px] transition-transform group-hover:translate-x-0.5`}
+              />
+            </Link>
+          </div>
+
+          {ordersLoading ? (
+            <div
+              className={`mt-5 grid gap-3 ${
+                desktop ? "xl:grid-cols-2" : ""
+              }`}
+            >
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-44 animate-pulse rounded-[1.45rem] bg-[#f0f3f0]"
+                />
+              ))}
+            </div>
+          ) : recentOrders.length === 0 ? (
+            <div className="mt-5 rounded-[1.45rem] border border-dashed border-[#cfd8d1] bg-[#fafbf9] px-5 py-8 text-center">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ed] text-[#155b38]">
+                <FaBoxOpen />
+              </div>
+              <p className="mt-3 text-sm font-extrabold">
+                {isArabic ? "لا توجد طلبات بعد" : "No orders yet"}
+              </p>
+              <Link
+                href="/products"
+                className="mt-2 inline-block text-xs font-bold text-[#155b38] underline decoration-[#aac2b4] underline-offset-4"
+              >
+                {isArabic ? "ابدأ التسوق" : "Start shopping"}
+              </Link>
+            </div>
+          ) : (
+            <div
+              className={`mt-5 grid gap-3 ${
+                desktop ? "xl:grid-cols-2" : ""
+              }`}
+            >
+              {recentOrders.map((order) => {
+                const items = Array.isArray(order.order_items)
+                  ? order.order_items
+                  : [];
+                const visibleItems = items.slice(0, 3);
+                const hiddenItemCount = Math.max(
+                  0,
+                  items.length - visibleItems.length
+                );
+                const status =
+                  statusLabels[
+                    order.status as keyof typeof statusLabels
+                  ] ||
+                  (isArabic ? "قيد المعالجة" : "Processing");
+
+                return (
+                  <Link
+                    key={order.id}
+                    href={`/orders/${order.id}`}
+                    aria-label={
+                      isArabic
+                        ? `عرض تفاصيل الطلب ${order.id}`
+                        : `View order ${order.id} details`
+                    }
+                    className="group rounded-[1.45rem] border border-[#dfe5e1] bg-[#fbfcfa] p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#adc4b6] hover:bg-white hover:shadow-[0_15px_35px_rgba(11,66,46,0.08)] sm:p-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-bold text-[#7a867e]">
+                          {isArabic ? "رقم الطلب" : "Order"} #{order.id}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-[#4e5d54]">
+                          {formattedOrderDate(order.created_at)}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`rounded-full px-3 py-1.5 text-[10px] font-extrabold ${
+                          orderStatusClass[order.status] ||
+                          "bg-[#edf0ee] text-[#657068]"
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex items-end justify-between gap-4">
+                      <div className="flex min-w-0 items-center">
+                        {visibleItems.length > 0 ? (
+                          visibleItems.map((item, index) => (
+                            <div
+                              key={item.id}
+                              title={item.product_name}
+                              className={`relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1rem] border-[3px] border-[#fbfcfa] bg-white p-1.5 shadow-sm ${
+                                index > 0 ? "-ms-3" : ""
+                              }`}
+                              style={{
+                                zIndex:
+                                  visibleItems.length - index,
+                              }}
+                            >
+                              {item.image_url ? (
+                                <img
+                                  src={item.image_url}
+                                  alt={item.product_name}
+                                  className="h-full w-full object-contain"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <FaBoxOpen className="text-lg text-[#9aaba0]" />
+                              )}
+                              {Number(item.quantity || 0) > 1 && (
+                                <span className="absolute bottom-0.5 end-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#155b38] px-1 text-[9px] font-extrabold text-white">
+                                  ×{item.quantity}
+                                </span>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex h-16 w-16 items-center justify-center rounded-[1rem] bg-[#eaf2ed] text-[#155b38]">
+                            <FaBoxOpen />
+                          </div>
+                        )}
+
+                        {hiddenItemCount > 0 && (
+                          <span className="-ms-2 flex h-9 min-w-9 items-center justify-center rounded-full border-2 border-white bg-[#edf1ee] px-1 text-[10px] font-extrabold text-[#526058]">
+                            +{hiddenItemCount}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="shrink-0 text-end">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8a958e]">
+                          {isArabic ? "الإجمالي" : "Total"}
+                        </p>
+                        <p className="mt-1 text-sm font-extrabold text-[#17221b]">
+                          {formattedOrderTotal(order.total_price)}
+                        </p>
+                        <span className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#155b38]">
+                          {isArabic ? "التفاصيل" : "Details"}
+                          <FaChevronRight
+                            className={`${arrowClass} text-[9px] transition-transform group-hover:translate-x-0.5`}
+                          />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   if (!pageReady) {
     return (
@@ -444,6 +754,8 @@ export default function ProfilePage() {
             )}
           </div>
         </section>
+
+        {renderLatestOrders({})}
       </div>
 
       {/* Desktop account dashboard */}
@@ -809,6 +1121,12 @@ export default function ProfilePage() {
               </div>
             </section>
           </aside>
+        </div>
+
+        <div className="mt-6">
+          {renderLatestOrders({
+            desktop: true,
+          })}
         </div>
       </div>
     </main>

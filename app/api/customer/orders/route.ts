@@ -227,13 +227,67 @@ async function getVerifiedProfile() {
   return error ? null : profile;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const profile = await getVerifiedProfile();
 
   if (!profile) {
     return jsonError(
       "Authentication required",
       401
+    );
+  }
+
+  const profileSummary =
+    new URL(request.url).searchParams.get(
+      "view"
+    ) === "profile";
+
+  if (profileSummary) {
+    const { data: orders, error } =
+      await supabaseAdmin
+        .from("orders")
+        .select(
+          `
+            id,
+            total_price,
+            status,
+            created_at,
+            order_items (
+              id,
+              product_name,
+              quantity,
+              image_url
+            )
+          `
+        )
+        .eq("phone", profile.phone)
+        .order("id", {
+          ascending: false,
+        })
+        .limit(2);
+
+    if (error) {
+      console.error(
+        "Customer profile order summary lookup failed:",
+        error
+      );
+
+      return jsonError(
+        "Could not load recent orders",
+        500
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        orders: orders || [],
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
     );
   }
 
