@@ -604,21 +604,28 @@ export default function CheckoutPage() {
       },
       (err) => {
         setLocationLoading(false);
+        console.warn("Geolocation error:", err.code, err.message);
         if (err.code === 1) {
           setLocationError(
             isArabic
-              ? "تم رفض إذن الموقع. يرجى السماح بالوصول إلى الموقع من إعدادات المتصفح."
-              : "Location permission denied. Please allow location access in your browser settings."
+              ? "تم رفض إذن الموقع. يمكنك مشاركة رابط Google Maps يدوياً في حقل العنوان."
+              : "Location blocked. You can paste a Google Maps link in the address field instead."
+          );
+        } else if (err.code === 2) {
+          setLocationError(
+            isArabic
+              ? "تعذر تحديد موقعك. تأكد من تفعيل GPS على جهازك."
+              : "Position unavailable. Make sure GPS is enabled on your device."
           );
         } else {
           setLocationError(
             isArabic
-              ? "تعذر تحديد موقعك. حاول مرة أخرى."
-              : "Could not get your location. Please try again."
+              ? "انتهت مهلة تحديد الموقع. حاول مرة أخرى."
+              : "Location timed out. Please try again."
           );
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
     );
   }
 
