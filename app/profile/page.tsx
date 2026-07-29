@@ -763,7 +763,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#d5ddd7] bg-white text-sm font-bold text-[#59665e] transition active:bg-[#edf1ee]"
+                className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#155b38] bg-white text-sm font-bold text-[#155b38] transition active:bg-[#edf5f0]"
               >
                 <FaSignOutAlt />
                 {isArabic ? "تسجيل الخروج" : "Sign out"}

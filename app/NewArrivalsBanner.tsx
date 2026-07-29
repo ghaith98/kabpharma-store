@@ -357,8 +357,7 @@ export default function NewArrivalsBanner({
           />
         </picture>
 
-        {/* Mobile subtle readability */}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(255,255,255,0.22)_42%,rgba(255,255,255,0)_70%)] md:hidden" />
+
 
         {/* Desktop readability */}
         <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(90deg,rgba(245,246,244,0.98)_0%,rgba(245,246,244,0.92)_31%,rgba(245,246,244,0.55)_46%,rgba(245,246,244,0)_64%)] md:block" />
