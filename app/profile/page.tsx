@@ -182,8 +182,8 @@ export default function ProfilePage() {
       ════════════════════════════════════════════════════════════════════════ */}
       <div className="lg:hidden">
 
-        {/* Green header bar */}
-        <div className="bg-[#073f2c] px-4 pb-6 pt-5 text-white">
+        {/* Green header bar — tall enough for card to overlap nicely */}
+        <div className="bg-[#073f2c] px-4 pb-16 pt-5 text-white">
           <div className="mx-auto max-w-md">
             <p className={`text-center text-base font-extrabold ${isArabic ? "[font-family:var(--font-arabic)]" : "tracking-[-0.01em]"}`}>
               {isArabic ? "حسابي" : "My account"}
@@ -193,9 +193,9 @@ export default function ProfilePage() {
 
         <div className="mx-auto max-w-md px-4">
 
-          {/* User card — floats over the green header */}
+          {/* User card — overlaps the green header */}
           {user ? (
-            <div className="-mt-1 overflow-hidden rounded-[1.5rem] border border-[#e2e7e3] bg-white shadow-[0_8px_30px_rgba(20,32,25,0.08)]">
+            <div className="-mt-12 overflow-hidden rounded-[1.5rem] border border-[#e2e7e3] bg-white shadow-[0_8px_30px_rgba(20,32,25,0.12)]">
               <div className="flex items-center gap-4 p-5">
                 {/* Avatar */}
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#073f2c] text-xl font-extrabold uppercase text-white">
@@ -266,7 +266,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             /* Guest card */
-            <div className="-mt-1 overflow-hidden rounded-[1.5rem] border border-[#e2e7e3] bg-white shadow-[0_8px_30px_rgba(20,32,25,0.08)]">
+            <div className="-mt-12 overflow-hidden rounded-[1.5rem] border border-[#e2e7e3] bg-white shadow-[0_8px_30px_rgba(20,32,25,0.12)]">
               <div className="p-5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-xl text-[#0a583b]">
