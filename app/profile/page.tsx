@@ -23,7 +23,7 @@ import {
 import { useLanguage } from "../../context/LanguageContext";
 
 // Module-level cache — survives component unmount/remount (navigation).
-// Cleared on logout so stale orders never show for a new session.
+// Cleared on logout so stale data never shows for a new session.
 type KabUser = {
   full_name: string;
   phone: string;
@@ -44,6 +44,8 @@ type RecentOrder = {
   order_items: RecentOrderItem[];
 };
 
+let _cachedUser: KabUser | null = null;
+let _pageWasReady = false;
 let _cachedOrders: RecentOrder[] | null = null;
 let _ordersTimestamp = 0;
 const ORDERS_TTL_MS = 60_000; // re-fetch after 1 minute
@@ -78,10 +80,12 @@ const orderStatusClass: Record<string, string> = {
 
 export default function ProfilePage() {
   const { lang, setLang } = useLanguage();
-  const [user, setUser] = useState<KabUser | null>(null);
-  const [pageReady, setPageReady] = useState(false);
+
+  // Initialize directly from module-level cache — no loading flash on re-visits
+  const [user, setUser] = useState<KabUser | null>(_cachedUser);
+  const [pageReady, setPageReady] = useState(_pageWasReady);
   const [policiesOpen, setPoliciesOpen] = useState(false);
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>(_cachedOrders ?? []);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
   const isArabic = lang === "ar";
@@ -89,39 +93,15 @@ export default function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
 
-    // Step 1: show cached user instantly — eliminates skeleton on re-visits.
-    // Wrapped in setTimeout(0) to defer setState out of the synchronous
-    // effect body, satisfying the react-hooks/set-state-in-effect rule.
-    try {
-      const cached = localStorage.getItem("kab_user");
-      if (cached) {
-        const parsed = JSON.parse(cached) as KabUser & { id?: unknown };
-        if (parsed.full_name && parsed.phone) {
-          window.setTimeout(() => {
-            if (!cancelled) {
-              setUser({ full_name: parsed.full_name, phone: parsed.phone });
-              setOrdersLoading(true);
-              setPageReady(true);
-            }
-          }, 0);
-        }
-      }
-    } catch {
-      // localStorage unavailable — fall through to full load
-    }
-
-    // Step 2: verify session + fetch orders in parallel
-    // Orders are cached at module level — re-used on remount, only re-fetched after TTL
     async function loadProfile() {
       try {
         const now = Date.now();
         const ordersAreFresh =
           _cachedOrders !== null && now - _ordersTimestamp < ORDERS_TTL_MS;
 
-        // Show cached orders immediately if we have them
-        if (ordersAreFresh && !cancelled) {
-          setRecentOrders(_cachedOrders!);
-          setOrdersLoading(false);
+        // If we have no cached data at all, show orders loading state
+        if (!ordersAreFresh && !cancelled) {
+          setOrdersLoading(true);
         }
 
         const mePromise = fetch("/api/customer/me", { credentials: "include", cache: "default" });
@@ -133,7 +113,9 @@ export default function ProfilePage() {
 
         if (!meResponse.ok) {
           localStorage.removeItem("kab_user");
+          _cachedUser = null;
           _cachedOrders = null;
+          _pageWasReady = false;
           if (!cancelled) { setUser(null); setRecentOrders([]); }
           return;
         }
@@ -142,7 +124,9 @@ export default function ProfilePage() {
 
         if (!result.authenticated || !result.user) {
           localStorage.removeItem("kab_user");
+          _cachedUser = null;
           _cachedOrders = null;
+          _pageWasReady = false;
           if (!cancelled) { setUser(null); setRecentOrders([]); }
           return;
         }
@@ -153,6 +137,7 @@ export default function ProfilePage() {
         };
 
         localStorage.setItem("kab_user", JSON.stringify({ id: result.user.id, ...verifiedUser }));
+        _cachedUser = verifiedUser;
         if (!cancelled) setUser(verifiedUser);
 
         if (ordersResponse && ordersResponse.ok) {
@@ -165,6 +150,7 @@ export default function ProfilePage() {
       } catch {
         if (!cancelled) { setUser(null); setRecentOrders([]); }
       } finally {
+        _pageWasReady = true;
         if (!cancelled) { setOrdersLoading(false); setPageReady(true); }
       }
     }
@@ -186,6 +172,8 @@ export default function ProfilePage() {
       }
 
       localStorage.removeItem("kab_user");
+      _cachedUser = null;
+      _pageWasReady = false;
       _cachedOrders = null;
       _ordersTimestamp = 0;
       setUser(null);
@@ -337,14 +325,14 @@ export default function ProfilePage() {
             </div>
           ) : (
             <Swiper
-  key={desktop ? "desktop" : "mobile"}   // ← remove lang from the key
-  dir={isArabic ? "rtl" : "ltr"}
-  slidesPerView="auto"
-  spaceBetween={desktop ? 14 : 12}
-  grabCursor
-  watchOverflow
-  className="mt-5"
->
+              key={desktop ? "desktop" : "mobile"}
+              dir={isArabic ? "rtl" : "ltr"}
+              slidesPerView="auto"
+              spaceBetween={desktop ? 14 : 12}
+              grabCursor
+              watchOverflow
+              className="mt-5"
+            >
               {recentOrders.map((order) => {
                 const items = Array.isArray(order.order_items)
                   ? order.order_items
