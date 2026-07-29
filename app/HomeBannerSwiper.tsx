@@ -398,14 +398,14 @@ export default function HomeBannerSwiper({
                   <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-white/25 via-transparent to-transparent md:block" />
                 </div>
 
-                <div className="relative z-10 mx-auto flex min-h-[308px] w-full max-w-[1440px] px-5 py-8 sm:px-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
+                <div className="relative z-10 mx-auto flex w-full max-w-[1440px] px-5 pb-7 pt-8 sm:px-8 sm:pb-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
                   <div
                     dir={
                       isArabic
                         ? "rtl"
                         : "ltr"
                     }
-                    className={`flex min-h-[244px] w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
+                    className={`flex min-h-[220px] w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
                       isArabic
                         ? "text-right"
                         : "text-left"
