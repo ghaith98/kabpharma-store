@@ -74,10 +74,12 @@ export default function HomeBannerSwiper({ banners }: HomeBannerSwiperProps) {
       dir="ltr"
       modules={[Autoplay, Navigation, Pagination]}
       slidesPerView={1}
-      loop={hasMultipleBanners}
-      speed={400}
+      loop
+      speed={300}
       resistance={false}
-      touchRatio={1}
+      touchRatio={1.5}
+      shortSwipes
+      threshold={5}
       grabCursor
       autoplay={
         hasMultipleBanners
