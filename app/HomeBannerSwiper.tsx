@@ -304,7 +304,7 @@ export default function HomeBannerSwiper({
       autoplay={
         hasMultipleBanners
           ? {
-              delay: 6000,
+              delay: 4000,
 
               disableOnInteraction:
                 false,
