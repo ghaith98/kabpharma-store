@@ -711,7 +711,7 @@ export default function SignupPage() {
                         <button
                           type="button"
                           onClick={() => setShowCountryPicker((v) => !v)}
-                          className="flex h-full items-center gap-1.5 border-r border-[#dfe4e0] bg-[#f6f7f5] px-3 text-sm font-extrabold text-[#26352d] transition hover:bg-[#edf0ec] rounded-s-2xl shrink-0"
+                          className="flex min-h-[56px] items-center gap-1.5 border-r border-[#dfe4e0] bg-[#f6f7f5] px-4 text-sm font-extrabold text-[#26352d] transition hover:bg-[#edf0ec] shrink-0"
                         >
                           <span>{selectedCountry.flag}</span>
                           <span>{selectedCountry.code}</span>
