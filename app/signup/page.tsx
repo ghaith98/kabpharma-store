@@ -704,40 +704,19 @@ export default function SignupPage() {
                     </label>
 
                     {/* Phone with country picker */}
-                    <label className="block">
+                    <div className="relative block" ref={countryPickerRef}>
                       <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Phone number", "رقم الهاتف")}</span>
-                      <div dir="ltr" className="flex min-h-[56px] overflow-visible rounded-2xl border border-[#cfd6d1] bg-white transition focus-within:border-[#0a583b] focus-within:ring-4 focus-within:ring-[#e7f0ea]">
+                      <div dir="ltr" className="flex min-h-[56px] overflow-hidden rounded-2xl border border-[#cfd6d1] bg-white transition focus-within:border-[#0a583b] focus-within:ring-4 focus-within:ring-[#e7f0ea]">
                         {/* Country picker button */}
-                        <div className="relative" ref={countryPickerRef}>
-                          <button
-                            type="button"
-                            onClick={() => setShowCountryPicker((v) => !v)}
-                            className="flex h-full items-center gap-1.5 border-r border-[#dfe4e0] bg-[#f6f7f5] px-3 text-sm font-extrabold text-[#26352d] transition hover:bg-[#edf0ec]"
-                          >
-                            <span>{selectedCountry.flag}</span>
-                            <span>{selectedCountry.code}</span>
-                            <ChevronDown size={12} className={`transition-transform ${showCountryPicker ? "rotate-180" : ""}`} />
-                          </button>
-
-                          {showCountryPicker && (
-                            <div className="absolute start-0 top-full z-[999] mt-1 max-h-60 w-52 overflow-y-auto rounded-2xl border border-[#dfe4e0] bg-white shadow-lg">
-                              {COUNTRY_CODES.map((country) => (
-                                <button
-                                  key={`${country.code}-${country.name}`}
-                                  type="button"
-                                  onClick={() => { setSelectedCountry(country); setShowCountryPicker(false); }}
-                                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition hover:bg-[#f5f6f3] ${
-                                    selectedCountry.name === country.name ? "text-[#0a583b]" : "text-[#26352d]"
-                                  }`}
-                                >
-                                  <span>{country.flag}</span>
-                                  <span className="flex-1">{country.name}</span>
-                                  <span className="text-xs text-[#7a857e]">{country.code}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowCountryPicker((v) => !v)}
+                          className="flex h-full items-center gap-1.5 border-r border-[#dfe4e0] bg-[#f6f7f5] px-3 text-sm font-extrabold text-[#26352d] transition hover:bg-[#edf0ec] rounded-s-2xl shrink-0"
+                        >
+                          <span>{selectedCountry.flag}</span>
+                          <span>{selectedCountry.code}</span>
+                          <ChevronDown size={12} className={`transition-transform ${showCountryPicker ? "rotate-180" : ""}`} />
+                        </button>
 
                         <input
                           type="tel"
@@ -749,7 +728,26 @@ export default function SignupPage() {
                           className="min-w-0 flex-1 bg-transparent px-4 text-base font-bold text-[#142019] outline-none placeholder:text-[#a2aaa4]"
                         />
                       </div>
-                    </label>
+
+                      {showCountryPicker && (
+                        <div className="absolute start-0 top-full z-[999] mt-1 max-h-60 w-52 overflow-y-auto rounded-2xl border border-[#dfe4e0] bg-white shadow-lg">
+                          {COUNTRY_CODES.map((country) => (
+                            <button
+                              key={`${country.code}-${country.name}`}
+                              type="button"
+                              onClick={() => { setSelectedCountry(country); setShowCountryPicker(false); }}
+                              className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-bold transition hover:bg-[#f5f6f3] ${
+                                selectedCountry.name === country.name ? "text-[#0a583b]" : "text-[#26352d]"
+                              }`}
+                            >
+                              <span>{country.flag}</span>
+                              <span className="flex-1">{country.name}</span>
+                              <span className="text-xs text-[#7a857e]">{country.code}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Password */}
                     <label className="block">
