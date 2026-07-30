@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+} from "react";
 
 import type {
   Swiper as SwiperInstance,
@@ -56,17 +60,50 @@ export default function ProductSwiper({
     setCanSlideNext,
   ] = useState(false);
 
-  function updateNavigation(
-    swiper: SwiperInstance
-  ) {
-    setCanSlidePrevious(
-      !swiper.isBeginning
-    );
+  const navigationState =
+    useRef({
+      previous: false,
+      next: false,
+    });
 
-    setCanSlideNext(
-      !swiper.isEnd
+  const updateNavigation =
+    useCallback(
+      (
+        swiper: SwiperInstance
+      ) => {
+        const previous =
+          !swiper.isBeginning;
+
+        const next =
+          !swiper.isEnd;
+
+        if (
+          navigationState
+            .current
+            .previous !==
+          previous
+        ) {
+          navigationState.current.previous =
+            previous;
+          setCanSlidePrevious(
+            previous
+          );
+        }
+
+        if (
+          navigationState
+            .current.next !==
+          next
+        ) {
+          navigationState.current.next =
+            next;
+          setCanSlideNext(
+            next
+          );
+        }
+      },
+      []
     );
-  }
 
   if (!products?.length) {
     return null;
@@ -79,27 +116,31 @@ export default function ProductSwiper({
         spaceBetween={14}
         slidesPerView={1.55}
         slidesPerGroup={1}
+        speed={350}
+        threshold={4}
+        touchRatio={1}
+        followFinger
+        shortSwipes
+        longSwipes
+        longSwipesMs={250}
+        longSwipesRatio={0.25}
+        touchStartPreventDefault={
+          false
+        }
+        touchMoveStopPropagation={
+          false
+        }
+        passiveListeners
         watchOverflow
         onSwiper={(swiper) => {
           setSwiperInstance(swiper);
-
-          window.requestAnimationFrame(
-            () => {
-              swiper.update();
-              updateNavigation(swiper);
-            }
-          );
+          updateNavigation(swiper);
         }}
         onSlideChange={updateNavigation}
         onResize={updateNavigation}
-        onBreakpoint={(swiper) => {
-          window.requestAnimationFrame(
-            () => {
-              swiper.update();
-              updateNavigation(swiper);
-            }
-          );
-        }}
+        onBreakpoint={
+          updateNavigation
+        }
         breakpoints={{
           480: {
             slidesPerView: 1.8,
@@ -149,7 +190,7 @@ export default function ProductSwiper({
           onClick={() =>
             swiperInstance?.slidePrev()
           }
-          className="absolute left-2 top-[36%] z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#dfe5e1] bg-white text-[#142019] shadow-[0_8px_24px_rgba(20,32,25,0.12)] transition hover:border-[#0a583b] hover:text-[#0a583b] sm:left-3 sm:h-12 sm:w-12"
+          className="absolute left-3 top-[36%] z-30 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#dfe5e1] bg-white text-[#142019] shadow-[0_8px_24px_rgba(20,32,25,0.12)] transition hover:border-[#0a583b] hover:text-[#0a583b] md:flex"
         >
           <ChevronLeft
             aria-hidden="true"
@@ -169,7 +210,7 @@ export default function ProductSwiper({
           onClick={() =>
             swiperInstance?.slideNext()
           }
-          className="absolute right-2 top-[36%] z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#dfe5e1] bg-white text-[#142019] shadow-[0_8px_24px_rgba(20,32,25,0.12)] transition hover:border-[#0a583b] hover:text-[#0a583b] sm:right-3 sm:h-12 sm:w-12"
+          className="absolute right-3 top-[36%] z-30 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[#dfe5e1] bg-white text-[#142019] shadow-[0_8px_24px_rgba(20,32,25,0.12)] transition hover:border-[#0a583b] hover:text-[#0a583b] md:flex"
         >
           <ChevronRight
             aria-hidden="true"
