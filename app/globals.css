@@ -115,6 +115,11 @@ a {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+  }
+
+  *:not(.swiper-wrapper),
+  *::before,
+  *::after {
     transition-duration: 0.01ms !important;
   }
 }
@@ -149,9 +154,20 @@ img {
 
 .kab-campaign-swiper .swiper-wrapper {
   will-change: transform;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .kab-campaign-swiper .swiper-slide {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.kab-product-swiper .swiper-wrapper {
+  will-change: transform;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kab-product-swiper .swiper-slide {
   backface-visibility: hidden;
   transform: translateZ(0);
 }

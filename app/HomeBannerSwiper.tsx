@@ -303,7 +303,7 @@ export default function HomeBannerSwiper({
           ? 1
           : 0
       }
-      speed={700}
+      speed={900}
       threshold={4}
       resistance={false}
       roundLengths

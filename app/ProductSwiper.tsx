@@ -116,7 +116,7 @@ export default function ProductSwiper({
         spaceBetween={14}
         slidesPerView={1.55}
         slidesPerGroup={1}
-        speed={350}
+        speed={700}
         threshold={4}
         touchRatio={1}
         followFinger
@@ -163,7 +163,7 @@ export default function ProductSwiper({
             spaceBetween: 20,
           },
         }}
-        className="!overflow-hidden"
+        className="kab-product-swiper !overflow-hidden"
       >
         {products.map((product) => (
           <SwiperSlide
