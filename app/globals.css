@@ -143,6 +143,8 @@ img {
   width: 100%;
   overflow: hidden;
   touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .kab-campaign-swiper .swiper-wrapper {
@@ -161,41 +163,68 @@ img {
   backface-visibility: hidden;
 }
 
-.kab-campaign-swiper .swiper-pagination {
-  bottom: 18px !important;
+.kab-banner-pagination {
+  position: absolute;
+  right: 0;
+  bottom: 20px;
+  left: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  pointer-events: none;
 }
 
-.kab-campaign-swiper .swiper-pagination-bullet {
+.kab-banner-pagination-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(31, 31, 31, 0.72);
+  border-radius: 50%;
+  background: transparent;
+  opacity: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: border-color 180ms ease;
+}
+
+.kab-banner-pagination-dot::after {
   width: 7px;
   height: 7px;
-  margin: 0 4px !important;
-  border: 0;
-  background: rgba(10, 88, 59, 0.4);
-  opacity: 1;
+  border-radius: 50%;
+  background: #111111;
+  content: "";
+  opacity: 0;
+  transform: scale(0.6);
   transition:
-    width 200ms ease,
-    background-color 200ms ease;
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
-.kab-campaign-swiper
-  .swiper-pagination-bullet-active {
-  width: 26px;
-  border-radius: 999px;
-  background: #0a583b;
+.kab-banner-pagination-dot.is-active {
+  border-color: #111111;
 }
 
-/* Keep the desktop dot design on mobile; only adjust its position. */
+.kab-banner-pagination-dot.is-active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
 @media (max-width: 767px) {
-  .kab-campaign-swiper .swiper-pagination {
-    top: 374px !important;
-    right: 0 !important;
-    left: 0 !important;
-    bottom: auto !important;
-    z-index: 30 !important;
-    pointer-events: auto;
+  .kab-banner-pagination {
+    top: calc(100vw - 28px);
+    bottom: auto;
+  }
+
+  .kab-banner-pagination-dot {
+    width: 14px;
+    height: 14px;
   }
 }
 
