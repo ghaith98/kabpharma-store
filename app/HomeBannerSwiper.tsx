@@ -242,53 +242,6 @@ export default function HomeBannerSwiper({
     return null;
   }
 
-  /*
-   * Use one visual copy at each edge instead of Swiper's internal loop.
-   * Once an edge copy finishes moving into view, we jump to its matching
-   * real slide with a zero-duration transition. The image and content are
-   * identical, so the reset is invisible and both swipe directions stay
-   * available at the first and last real banners.
-   */
-  const carouselBanners =
-    hasMultipleBanners
-      ? [
-          renderableBanners[
-            renderableBanners.length -
-              1
-          ]!,
-          ...renderableBanners,
-          renderableBanners[0]!,
-        ]
-      : renderableBanners;
-
-  const realBannerCount =
-    renderableBanners.length;
-
-  const getRealBannerIndex = (
-    carouselIndex: number
-  ) => {
-    if (
-      !hasMultipleBanners
-    ) {
-      return 0;
-    }
-
-    if (carouselIndex === 0) {
-      return (
-        realBannerCount - 1
-      );
-    }
-
-    if (
-      carouselIndex ===
-      realBannerCount + 1
-    ) {
-      return 0;
-    }
-
-    return carouselIndex - 1;
-  };
-
   return (
     <Swiper
       dir="ltr"
@@ -298,11 +251,6 @@ export default function HomeBannerSwiper({
       ]}
       slidesPerView={1}
       slidesPerGroup={1}
-      initialSlide={
-        hasMultipleBanners
-          ? 1
-          : 0
-      }
       speed={900}
       threshold={4}
       resistance={false}
@@ -312,54 +260,24 @@ export default function HomeBannerSwiper({
       allowTouchMove
       oneWayMovement={false}
       lazyPreloadPrevNext={1}
-      loop={false}
+      loop={
+        hasMultipleBanners
+      }
+      loopAdditionalSlides={1}
       onSwiper={(swiper) => {
         swiperRef.current =
           swiper;
 
         setActiveBannerIndex(
-          getRealBannerIndex(
-            swiper.activeIndex
-          )
+          swiper.realIndex
         );
       }}
       onSlideChange={(
         swiper
       ) => {
         setActiveBannerIndex(
-          getRealBannerIndex(
-            swiper.activeIndex
-          )
+          swiper.realIndex
         );
-      }}
-      onTransitionEnd={(
-        swiper
-      ) => {
-        if (
-          !hasMultipleBanners
-        ) {
-          return;
-        }
-
-        if (
-          swiper.activeIndex ===
-          0
-        ) {
-          swiper.slideTo(
-            realBannerCount,
-            0,
-            false
-          );
-        } else if (
-          swiper.activeIndex ===
-          realBannerCount + 1
-        ) {
-          swiper.slideTo(
-            1,
-            0,
-            false
-          );
-        }
       }}
       autoplay={
         hasMultipleBanners
@@ -387,10 +305,10 @@ export default function HomeBannerSwiper({
       }
       className="kab-campaign-swiper relative m-0 block w-full max-w-none overflow-hidden"
     >
-      {carouselBanners.map(
+      {renderableBanners.map(
         (
           slide,
-          carouselIndex
+          index
         ) => {
           const title =
             (
@@ -470,15 +388,11 @@ export default function HomeBannerSwiper({
           });
 
           const shouldPrioritize =
-            hasMultipleBanners
-              ? carouselIndex ===
-                1
-              : carouselIndex ===
-                0;
+            index === 0;
 
           return (
             <SwiperSlide
-              key={`${slide.id}-${carouselIndex}`}
+              key={slide.id}
               className="w-full"
             >
               <article
@@ -627,10 +541,8 @@ export default function HomeBannerSwiper({
                       : undefined
                   }
                   onClick={() => {
-                    swiperRef.current?.slideTo(
-                      hasMultipleBanners
-                        ? index + 1
-                        : index
+                    swiperRef.current?.slideToLoop(
+                      index
                     );
                   }}
                   className={`kab-banner-pagination-dot ${
