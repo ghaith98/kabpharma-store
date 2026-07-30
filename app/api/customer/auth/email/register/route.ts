@@ -132,7 +132,7 @@ const expiresAt = new Date(new Date(timeData).getTime() + 10 * 60 * 1000).toISOS
   const { error: emailError } = await resend.emails.send({
     from: "KAB Pharma <noreply@mail.kabpharma.com>",
     to: email,
-    subject: "Your KAB Pharma verification code",
+    subject: `KAB Pharma – Confirm your account (${otp})`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#ffffff">
         <p style="font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#0a583b;margin:0">KAB Pharma</p>

@@ -235,6 +235,25 @@ export default function HomeBannerSwiper({
     renderableBanners.length >
     1;
 
+  /*
+   * Swiper's native loop needs more slides than a two-banner campaign
+   * provides. Render a second internal copy only for that case. The
+   * pagination and active index still use the real banner count.
+   */
+  const loopBanners =
+    renderableBanners.length === 2
+      ? [
+          ...renderableBanners,
+          ...renderableBanners,
+        ]
+      : renderableBanners;
+
+  const getRealBannerIndex = (
+    swiperIndex: number
+  ) =>
+    swiperIndex %
+    renderableBanners.length;
+
   if (
     renderableBanners.length ===
     0
@@ -263,20 +282,23 @@ export default function HomeBannerSwiper({
       loop={
         hasMultipleBanners
       }
-      loopAdditionalSlides={1}
       onSwiper={(swiper) => {
         swiperRef.current =
           swiper;
 
         setActiveBannerIndex(
-          swiper.realIndex
+          getRealBannerIndex(
+            swiper.realIndex
+          )
         );
       }}
       onSlideChange={(
         swiper
       ) => {
         setActiveBannerIndex(
-          swiper.realIndex
+          getRealBannerIndex(
+            swiper.realIndex
+          )
         );
       }}
       autoplay={
@@ -305,7 +327,7 @@ export default function HomeBannerSwiper({
       }
       className="kab-campaign-swiper relative m-0 block w-full max-w-none overflow-hidden"
     >
-      {renderableBanners.map(
+      {loopBanners.map(
         (
           slide,
           index
@@ -392,7 +414,7 @@ export default function HomeBannerSwiper({
 
           return (
             <SwiperSlide
-              key={slide.id}
+              key={`${slide.id}-${index}`}
               className="w-full"
             >
               <article
