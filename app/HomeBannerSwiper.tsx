@@ -303,7 +303,7 @@ export default function HomeBannerSwiper({
           ? 1
           : 0
       }
-      speed={450}
+      speed={700}
       threshold={4}
       resistance={false}
       roundLengths
@@ -364,7 +364,7 @@ export default function HomeBannerSwiper({
       autoplay={
         hasMultipleBanners
           ? {
-              delay: 4000,
+              delay: 6000,
 
               disableOnInteraction:
                 false,

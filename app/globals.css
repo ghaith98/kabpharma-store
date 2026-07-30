@@ -195,8 +195,8 @@ img {
 }
 
 .kab-banner-pagination-dot::after {
-  width: 7px;
-  height: 7px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: #111111;
   content: "";
