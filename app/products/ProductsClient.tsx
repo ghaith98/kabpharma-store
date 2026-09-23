@@ -24,6 +24,10 @@ import { useDialogFocus } from "@/lib/use-dialog-focus";
 import EditorialProductCard from "./EditorialProductCard";
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import RoutineBanner from "./RoutineBanner";
+import {
+  DiscoveryTile,
+  type DiscoveryBanner,
+} from "../new-arrivals/NewArrivalsCollection";
 import type {
   EditorialProduct,
 } from "./EditorialProductCard";
@@ -35,6 +39,7 @@ type ProductsClientProps = {
   bestSellerIds?: number[];
   showHeader?: boolean;
   standaloneCollection?: boolean;
+  collectionDiscoveryBanner?: DiscoveryBanner | null;
   concern?: {
     id: number;
     name_ar: string | null;
@@ -100,6 +105,7 @@ export default function ProductsClient({
   showHeader = true,
   bestSellerIds = [],
   standaloneCollection = false,
+  collectionDiscoveryBanner = null,
   concern = null,
 }: ProductsClientProps) {
   const searchParams = useSearchParams();
@@ -916,7 +922,7 @@ export default function ProductsClient({
             )}
           </section>
         ) : (
-         <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
+        <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
   {filteredProducts.map(
     (product, index) => (
       <Fragment key={product.id}>
@@ -931,6 +937,12 @@ export default function ProductsClient({
               <RoutineBanner />
             </div>
           )}
+
+        {standaloneCollection && collectionDiscoveryBanner && index === 1 && (
+          <div className="col-span-2">
+            <DiscoveryTile banner={collectionDiscoveryBanner} />
+          </div>
+        )}
       </Fragment>
     )
   )}

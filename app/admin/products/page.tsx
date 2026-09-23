@@ -33,6 +33,7 @@ type AdminProduct = {
   sale_percent?: number | string | null;
   image_url?: string | null;
   category_id?: number | null;
+  brand_id?: number | null;
   featured?: boolean | null;
   is_new_arrival?: boolean | null;
   is_out_of_stock?: boolean | null;
@@ -41,6 +42,14 @@ type AdminProduct = {
 type Category = {
   id: number;
   name: string;
+  brand_id: number;
+};
+
+type Brand = {
+  id: number;
+  name: string;
+  name_ar?: string | null;
+  name_en?: string | null;
 };
 
 type ProductImage = {
@@ -91,6 +100,7 @@ type ProductUpdateData = {
   warnings_ar: string;
   warnings_en: string;
   category_id: number;
+  brand_id: number;
   price: number;
   sale_percent: number;
   image_url?: string;
@@ -101,11 +111,13 @@ export default function AdminProductsPage() {
 
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
   const [productVariantImages, setProductVariantImages] = useState<ProductVariantImage[]>([]);
 
   const [categoryId, setCategoryId] = useState("");
+  const [brandId, setBrandId] = useState("");
 
   const [nameAr, setNameAr] = useState("");
   const [nameEn, setNameEn] = useState("");
@@ -149,6 +161,15 @@ export default function AdminProductsPage() {
   const [editPrice, setEditPrice] = useState("");
   const [editSalePercent, setEditSalePercent] = useState("0");
   const [editCategoryId, setEditCategoryId] = useState("");
+  const [editBrandId, setEditBrandId] = useState("");
+
+  const availableCategories = categories.filter(
+    (category) => String(category.brand_id) === brandId
+  );
+
+  const availableEditCategories = categories.filter(
+    (category) => String(category.brand_id) === editBrandId
+  );
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
 
   const [editVariants, setEditVariants] = useState<VariantInput[]>([]);
@@ -167,6 +188,7 @@ export default function AdminProductsPage() {
 
     await loadProducts();
     await loadCategories();
+    await loadBrands();
     await loadProductImages();
     await loadProductVariants();
     await loadProductVariantImages();
@@ -198,6 +220,20 @@ export default function AdminProductsPage() {
     }
 
     setCategories(data || []);
+  }
+
+  async function loadBrands() {
+    const { data, error } = await supabase
+      .from("brands")
+      .select("id, name, name_ar, name_en")
+      .order("id");
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setBrands(data || []);
   }
 
   async function loadProductImages() {
@@ -381,6 +417,21 @@ export default function AdminProductsPage() {
   async function addProduct(e: FormEvent) {
     e.preventDefault();
 
+    if (!brandId) {
+      alert("Please select a brand first");
+      return;
+    }
+
+    if (!categoryId) {
+      alert("Please select a category for this brand");
+      return;
+    }
+
+    if (!availableCategories.some((category) => String(category.id) === categoryId)) {
+      alert("The selected category does not belong to the selected brand");
+      return;
+    }
+
     const cleanedVariants = variants.filter(
       (v) =>
         v.label_ar.trim() ||
@@ -476,6 +527,7 @@ export default function AdminProductsPage() {
           sale_percent: Number(salePercent),
           image_url: productImageUrl,
           category_id: Number(categoryId),
+          brand_id: Number(brandId),
           featured: false,
         })
         .select("id")
@@ -536,6 +588,7 @@ export default function AdminProductsPage() {
       setPrice("");
       setSalePercent("0");
       setCategoryId("");
+      setBrandId("");
       setImageFile(null);
       setVariants([]);
 
@@ -570,6 +623,7 @@ export default function AdminProductsPage() {
     setEditWarningsEn(product.warnings_en || "");
 
     setEditCategoryId(String(product.category_id || ""));
+    setEditBrandId(String(product.brand_id || ""));
     setEditPrice(String(product.price || ""));
     setEditSalePercent(String(product.sale_percent || 0));
     setEditImageFile(null);
@@ -591,6 +645,16 @@ export default function AdminProductsPage() {
 
   async function updateProduct() {
     if (!editingId) return;
+
+    if (!editBrandId || !editCategoryId) {
+      alert("Please select a brand first, then a category");
+      return;
+    }
+
+    if (!availableEditCategories.some((category) => String(category.id) === editCategoryId)) {
+      alert("The selected category does not belong to the selected brand");
+      return;
+    }
 
     const cleanedEditVariants = editVariants.filter(
       (v) =>
@@ -684,6 +748,7 @@ export default function AdminProductsPage() {
         warnings_en: editWarningsEn.trim(),
 
         category_id: Number(editCategoryId),
+        brand_id: Number(editBrandId),
         price: finalBasePrice,
         sale_percent: Number(editSalePercent),
       };
@@ -969,14 +1034,32 @@ export default function AdminProductsPage() {
             />
 
             <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              value={brandId}
+              onChange={(e) => {
+                setBrandId(e.target.value);
+                setCategoryId("");
+              }}
               required
               className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             >
-              <option value="">Select Category</option>
+              <option value="">Select Brand</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name_en || brand.name}
+                </option>
+              ))}
+            </select>
 
-              {categories.map((cat) => (
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              required
+              disabled={!brandId}
+              className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">{brandId ? "Select Category" : "Select Brand first"}</option>
+
+              {availableCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>
@@ -1602,13 +1685,31 @@ export default function AdminProductsPage() {
             </div>
 
             <select
-              value={editCategoryId}
-              onChange={(e) => setEditCategoryId(e.target.value)}
+              value={editBrandId}
+              onChange={(e) => {
+                setEditBrandId(e.target.value);
+                setEditCategoryId("");
+              }}
+              required
               className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             >
-              <option value="">Select Category</option>
+              <option value="">Select Brand</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name_en || brand.name}
+                </option>
+              ))}
+            </select>
 
-              {categories.map((cat) => (
+            <select
+              value={editCategoryId}
+              onChange={(e) => setEditCategoryId(e.target.value)}
+              disabled={!editBrandId}
+              className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">{editBrandId ? "Select Category" : "Select Brand first"}</option>
+
+              {availableEditCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>

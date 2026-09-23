@@ -28,7 +28,7 @@ import type {
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 
-type DiscoveryBanner = {
+export type DiscoveryBanner = {
   id: number;
   placement: string | null;
   image_url: string | null;
@@ -133,7 +133,7 @@ function getProductPrice(
     : originalPrice;
 }
 
-function DiscoveryTile({
+export function DiscoveryTile({
   banner,
 }: {
   banner: DiscoveryBanner;

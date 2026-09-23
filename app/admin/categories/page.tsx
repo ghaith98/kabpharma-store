@@ -10,18 +10,29 @@ type Category = {
   name: string;
   name_ar?: string | null;
   name_en?: string | null;
+  brand_id: number;
+};
+
+type Brand = {
+  id: number;
+  name: string;
+  name_ar?: string | null;
+  name_en?: string | null;
 };
 
 export default function AdminCategoriesPage() {
   const router = useRouter();
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [brandId, setBrandId] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [nameEn, setNameEn] = useState("");
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editNameAr, setEditNameAr] = useState("");
   const [editNameEn, setEditNameEn] = useState("");
+  const [editBrandId, setEditBrandId] = useState("");
 
   const [loading, setLoading] = useState(false);
 
@@ -39,6 +50,20 @@ export default function AdminCategoriesPage() {
     setCategories(data || []);
   }, []);
 
+  const loadBrands = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("brands")
+      .select("id, name, name_ar, name_en")
+      .order("id");
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setBrands(data || []);
+  }, []);
+
   const checkAdmin = useCallback(async () => {
     const { data } = await supabase.auth.getUser();
 
@@ -47,13 +72,13 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    await loadCategories();
-  }, [loadCategories, router]);
+    await Promise.all([loadCategories(), loadBrands()]);
+  }, [loadBrands, loadCategories, router]);
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!nameAr.trim() && !nameEn.trim()) return;
+    if (!brandId || (!nameAr.trim() && !nameEn.trim())) return;
 
     setLoading(true);
 
@@ -61,6 +86,7 @@ export default function AdminCategoriesPage() {
       name: nameEn.trim() || nameAr.trim(),
       name_ar: nameAr.trim(),
       name_en: nameEn.trim(),
+      brand_id: Number(brandId),
     });
 
     if (error) {
@@ -71,6 +97,7 @@ export default function AdminCategoriesPage() {
 
     setNameAr("");
     setNameEn("");
+    setBrandId("");
     setLoading(false);
     loadCategories();
   }
@@ -79,11 +106,12 @@ export default function AdminCategoriesPage() {
     setEditingId(category.id);
     setEditNameAr(category.name_ar || "");
     setEditNameEn(category.name_en || category.name || "");
+    setEditBrandId(String(category.brand_id));
   }
 
   async function updateCategory() {
     if (!editingId) return;
-    if (!editNameAr.trim() && !editNameEn.trim()) return;
+    if (!editBrandId || (!editNameAr.trim() && !editNameEn.trim())) return;
 
     const { error } = await supabase
       .from("categories")
@@ -91,6 +119,7 @@ export default function AdminCategoriesPage() {
         name: editNameEn.trim() || editNameAr.trim(),
         name_ar: editNameAr.trim(),
         name_en: editNameEn.trim(),
+        brand_id: Number(editBrandId),
       })
       .eq("id", editingId);
 
@@ -102,6 +131,7 @@ export default function AdminCategoriesPage() {
     setEditingId(null);
     setEditNameAr("");
     setEditNameEn("");
+    setEditBrandId("");
     loadCategories();
   }
 
@@ -156,6 +186,20 @@ export default function AdminCategoriesPage() {
       >
         <h2 className="mb-5 text-xl font-bold text-gray-900">Add Category</h2>
 
+        <select
+          value={brandId}
+          onChange={(e) => setBrandId(e.target.value)}
+          required
+          className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+        >
+          <option value="">Select Brand first</option>
+          {brands.map((brand) => (
+            <option key={brand.id} value={brand.id}>
+              {brand.name_en || brand.name}
+            </option>
+          ))}
+        </select>
+
         <input
           type="text"
           placeholder="Category name Arabic"
@@ -193,7 +237,7 @@ export default function AdminCategoriesPage() {
           >
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                Category
+                {brands.find((brand) => brand.id === category.brand_id)?.name_en || "Brand"} · Category
               </p>
 
               <h2 className="mt-1 text-xl font-bold text-gray-900">
@@ -244,6 +288,19 @@ export default function AdminCategoriesPage() {
               className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
             />
 
+            <select
+              value={editBrandId}
+              onChange={(e) => setEditBrandId(e.target.value)}
+              className="mb-4 w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-black shadow-sm outline-none transition focus:border-green-600"
+            >
+              <option value="">Select Brand</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name_en || brand.name}
+                </option>
+              ))}
+            </select>
+
             <input
               value={editNameEn}
               onChange={(e) => setEditNameEn(e.target.value)}
@@ -273,4 +330,3 @@ export default function AdminCategoriesPage() {
     </main>
   );
 }
-

@@ -23,6 +23,7 @@ import {
   FiChevronRight,
   FiUserCheck,
   FiTag,
+  FiLayers,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 
@@ -75,6 +76,11 @@ const navigationGroups: NavigationGroup[] = [
         href: "/admin/categories",
         label: "Categories",
         icon: FiGrid,
+      },
+      {
+        href: "/admin/brands",
+        label: "Brands",
+        icon: FiLayers,
       },
       {
         href: "/admin/concerns",

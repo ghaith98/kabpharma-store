@@ -3,9 +3,10 @@ import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [productsResult, concernsResult] = await Promise.all([
+  const [productsResult, concernsResult, brandsResult] = await Promise.all([
     supabase.from("products").select("id"),
     supabase.from("concerns").select("id"),
+    supabase.from("brands").select("slug"),
   ]);
 
   if (productsResult.error) {
@@ -32,6 +33,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/products`,
       changeFrequency: "daily",
       priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/brands`,
+      changeFrequency: "weekly",
+      priority: 0.8,
     },
     {
       url: `${SITE_URL}/new-arrivals`,
@@ -84,5 +90,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.75,
     }));
 
-  return [...staticPages, ...productPages, ...concernPages];
+  const brandPages: MetadataRoute.Sitemap =
+    (brandsResult.data || []).map((brand) => ({
+      url: `${SITE_URL}/brands/${brand.slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.75,
+    }));
+
+  return [...staticPages, ...productPages, ...concernPages, ...brandPages];
 }

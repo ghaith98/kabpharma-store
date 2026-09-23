@@ -88,6 +88,7 @@ const [
     en: {
       home: "Home",
       products: "Products",
+      brands: "Brands",
       allProducts: "All products",
       bestSellers: "Best Sellers",
       newArrivals: "New Arrivals",
@@ -130,6 +131,7 @@ const [
     ar: {
       home: "الرئيسية",
       products: "المنتجات",
+      brands: "العلامات التجارية",
       allProducts: "جميع المنتجات",
       bestSellers: "الأكثر مبيعاً",
       newArrivals: "وصل حديثاً",
@@ -183,6 +185,10 @@ const [
   {
     label: t.products,
     href: "/products",
+  },
+  {
+    label: t.brands,
+    href: "/brands",
   },
   {
     label: t.bestSellers,
@@ -310,8 +316,9 @@ const [
       } = await supabase
         .from("categories")
         .select(
-          "id, name, name_ar, name_en"
+          "id, name, name_ar, name_en, brands!inner(slug)"
         )
+        .eq("brands.slug", "kab-pharma")
         .order("id", {
           ascending: true,
         });
@@ -1544,4 +1551,3 @@ const [
     </>
   );
 }
-
