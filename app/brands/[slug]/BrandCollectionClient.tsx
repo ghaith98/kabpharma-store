@@ -41,6 +41,6 @@ export default function BrandCollectionClient({ brand, products }: { brand: Bran
 
   return <main dir={isArabic ? "rtl" : "ltr"} className="min-h-screen overflow-hidden bg-white pb-24">
     {hero && <NewArrivalsBanner banner={{ image_url: hero, image_url_mobile: mobileHero, title_ar: brand.name_ar || brand.name, title_en: brand.name_en || brand.name, text_ar: brand.description_ar || null, text_en: brand.description_en || null }} pageType="brand" />}
-    <section id="brand-products" className="pt-5"><div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8"><h2 className="text-2xl font-extrabold text-[#142019] sm:text-3xl">{isArabic ? "المنتجات" : "Products"}</h2></div><ProductsClient products={products} showSearch={false} showCategories={false} showHeader={false} standaloneCollection standaloneNewArrivalsLayout collectionDiscoveryBanner={collectionDiscoveryBanner} /></section>
+    <section id="brand-products" className="pt-5"><ProductsClient products={products} showSearch={false} showCategories={false} showHeader={false} standaloneCollection standaloneNewArrivalsLayout collectionDiscoveryBanner={collectionDiscoveryBanner} /></section>
   </main>;
 }
