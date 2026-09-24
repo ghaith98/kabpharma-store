@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import PrintOrderButton from "./PrintOrderButton";
 
 const SIGNED_URL_EXPIRY_SECONDS = 10 * 60;
 
@@ -31,6 +32,8 @@ const governorates = [
 type OrderItem = {
   id: number;
   product_name: string | null;
+  variant_label_ar: string | null;
+  variant_label_en: string | null;
   quantity: number;
   unit_price: number;
 };
@@ -108,6 +111,8 @@ export default function AdminOrdersPage() {
         order_items (
           id,
           product_name,
+          variant_label_ar,
+          variant_label_en,
           quantity,
           unit_price
         )
@@ -665,6 +670,8 @@ export default function AdminOrdersPage() {
                   </p>
                 )}
               </div>
+
+              <PrintOrderButton order={order} />
 
               {/* Secure payment proof button */}
               {order.payment_proof_path &&

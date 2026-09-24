@@ -168,12 +168,6 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col">
-        <a
-          href="#main-content"
-          className="kab-skip-link"
-        >
-          Skip to content / الانتقال إلى المحتوى
-        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -192,4 +186,3 @@ export default function RootLayout({
     </html>
   );
 }
-
