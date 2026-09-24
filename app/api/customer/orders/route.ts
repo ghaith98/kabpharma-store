@@ -9,6 +9,7 @@ import {
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getArchivedOrderSummariesForCustomer } from "@/lib/order-archive";
 
 export const dynamic = "force-dynamic";
 
@@ -120,11 +121,25 @@ export async function GET(request: Request) {
     return jsonError("Could not load orders", 500);
   }
 
+  let archivedOrders: Awaited<
+    ReturnType<typeof getArchivedOrderSummariesForCustomer>
+  > = [];
+  try {
+    archivedOrders = await getArchivedOrderSummariesForCustomer(profile.phone);
+  } catch (archiveError) {
+    // The live order list remains available if the optional archive is offline.
+    console.error("Archived customer orders lookup failed:", archiveError);
+  }
+
+  const allOrders = [...(orders || []), ...archivedOrders].sort(
+    (a, b) => Number(b.id) - Number(a.id)
+  );
+
   return NextResponse.json(
     {
       success: true,
       user: { full_name: profile.full_name, phone: profile.phone },
-      orders: orders || [],
+      orders: allOrders,
     },
     { headers: { "Cache-Control": "no-store" } }
   );

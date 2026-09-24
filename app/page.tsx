@@ -62,8 +62,8 @@ export default async function Home() {
       .limit(8),
 
     supabase
-      .from("order_items")
-      .select("product_id, quantity"),
+      .from("product_sales_totals")
+      .select("product_id, quantity:units_sold"),
 
     supabase
       .from("products")
@@ -200,4 +200,3 @@ export default async function Home() {
     />
   );
 }
-

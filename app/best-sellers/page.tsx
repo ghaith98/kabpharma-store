@@ -81,8 +81,8 @@ export default async function BestSellersPage() {
     // Order items are private data. Read the aggregate source only on the
     // server, so public RLS rules cannot make this collection look empty.
     supabaseAdmin
-      .from("order_items")
-      .select("product_id, quantity"),
+      .from("product_sales_totals")
+      .select("product_id, quantity:units_sold"),
 
     supabase
       .from("home_banners")

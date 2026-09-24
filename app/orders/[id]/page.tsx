@@ -1,5 +1,6 @@
 import { getCustomerSession } from "@/lib/customer-session";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getArchivedOrderForCustomer } from "@/lib/order-archive";
 import OrderDetailsLanguageClient from "./OrderDetailsLanguageClient";
 
 const statusMap = {
@@ -108,13 +109,24 @@ export default async function OrderPage({
     .eq("phone", session.phone)
     .maybeSingle();
 
-  if (error || !order) {
+  if (!error && order) {
+    return (
+      <OrderDetailsLanguageClient
+        order={order}
+        statusMap={statusMap}
+        timelineSteps={timelineSteps}
+      />
+    );
+  }
+
+  const archivedOrder = await getArchivedOrderForCustomer(id, session.phone);
+  if (!archivedOrder) {
     return <OrderDetailsLanguageClient order={null} />;
   }
 
   return (
     <OrderDetailsLanguageClient
-      order={order}
+      order={archivedOrder as Parameters<typeof OrderDetailsLanguageClient>[0]["order"]}
       statusMap={statusMap}
       timelineSteps={timelineSteps}
     />

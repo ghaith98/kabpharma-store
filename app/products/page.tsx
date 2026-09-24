@@ -110,9 +110,9 @@ export default async function ProductsPage() {
       }),
 
     supabase
-      .from("order_items")
+      .from("product_sales_totals")
       .select(
-        "product_id, quantity"
+        "product_id, quantity:units_sold"
       ),
 
   ]);

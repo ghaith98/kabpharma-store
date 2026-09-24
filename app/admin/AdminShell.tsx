@@ -24,6 +24,7 @@ import {
   FiUserCheck,
   FiTag,
   FiLayers,
+  FiArchive,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 
@@ -61,6 +62,11 @@ const navigationGroups: NavigationGroup[] = [
         href: "/admin/orders",
         label: "Shop Orders",
         icon: FiShoppingBag,
+      },
+      {
+        href: "/admin/archived-orders",
+        label: "Archived Orders",
+        icon: FiArchive,
       },
     ],
   },
