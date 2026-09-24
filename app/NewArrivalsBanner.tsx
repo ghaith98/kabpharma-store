@@ -121,7 +121,8 @@ export default function NewArrivalsBanner({
   pageType?:
     | "new-arrivals"
     | "best-sellers"
-    | "concern";
+    | "concern"
+    | "brand";
   useBannerCopy?: boolean;
 }) {
   const { lang } =
@@ -145,8 +146,11 @@ export default function NewArrivalsBanner({
   const isConcern =
     pageType === "concern";
 
+  const isBrand =
+    pageType === "brand";
+
   const defaultTitle =
-    isConcern
+    isConcern || isBrand
       ? ""
       : isArabic
         ? isBestSellers
@@ -157,7 +161,7 @@ export default function NewArrivalsBanner({
           : "New Arrivals";
 
   const defaultDescription =
-    isConcern
+    isConcern || isBrand
       ? ""
       : isArabic
         ? isBestSellers
@@ -295,7 +299,7 @@ export default function NewArrivalsBanner({
           aria-current="page"
           className="font-bold text-[#26352d]"
         >
-          {isConcern
+          {isConcern || isBrand
             ? title
             : isArabic
               ? isBestSellers

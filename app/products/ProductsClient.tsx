@@ -39,6 +39,7 @@ type ProductsClientProps = {
   bestSellerIds?: number[];
   showHeader?: boolean;
   standaloneCollection?: boolean;
+  standaloneNewArrivalsLayout?: boolean;
   collectionDiscoveryBanner?: DiscoveryBanner | null;
   concern?: {
     id: number;
@@ -105,6 +106,7 @@ export default function ProductsClient({
   showHeader = true,
   bestSellerIds = [],
   standaloneCollection = false,
+  standaloneNewArrivalsLayout = false,
   collectionDiscoveryBanner = null,
   concern = null,
 }: ProductsClientProps) {
@@ -922,7 +924,7 @@ export default function ProductsClient({
             )}
           </section>
         ) : (
-        <div className="grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4">
+        <div className={`grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 ${standaloneNewArrivalsLayout ? "lg:grid-cols-4 lg:gap-x-8" : "lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4"}`}>
   {filteredProducts.map(
     (product, index) => (
       <Fragment key={product.id}>
