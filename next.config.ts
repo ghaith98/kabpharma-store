@@ -16,8 +16,8 @@ const supabaseWs = supabaseOrigin.replace(
 // during development so the dev server works; production stays strict.
 const isDev = process.env.NODE_ENV !== "production";
 const scriptSrc = isDev
-  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-  : "script-src 'self' 'unsafe-inline'";
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms"
+  : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms";
 
 // Content-Security-Policy.
 // NOTE: script-src/style-src keep 'unsafe-inline' because Next.js injects
@@ -35,7 +35,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${supabaseOrigin}`.trim(),
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin} ${supabaseWs}`.trim(),
+  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://www.google-analytics.com https://region1.google-analytics.com https://www.clarity.ms https://*.clarity.ms`.trim(),
   "upgrade-insecure-requests",
 ].join("; ");
 

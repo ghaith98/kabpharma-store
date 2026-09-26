@@ -24,7 +24,9 @@ export function trackEvent(name: string, params: EventParams = {}) {
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || ((...args: unknown[]) => window.dataLayer?.push(args));
   window.gtag("event", name, clean(params));
-  window.clarity?.("event", name);
+  if (typeof window.clarity === "function") {
+    window.clarity("event", name);
+  }
 }
 
 export function trackPageView(path: string) {
