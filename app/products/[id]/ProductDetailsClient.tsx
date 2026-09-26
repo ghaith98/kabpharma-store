@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -11,6 +12,7 @@ import ShareProductButton from "./ShareProductButton";
 import WishlistButton from "../WishlistButton";
 
 import { useLanguage } from "../../../context/LanguageContext";
+import { trackProductView } from "@/lib/analytics";
 
 type ProductCategory = {
   name?: string | null;
@@ -140,6 +142,13 @@ export default function ProductDetailsClient({
 
   const isArabic =
     lang === "ar";
+
+  useEffect(() => {
+    trackProductView(
+      product.id,
+      product.categories?.name_en || product.categories?.name || product.categories?.name_ar
+    );
+  }, [product.categories?.name, product.categories?.name_ar, product.categories?.name_en, product.id]);
 
   const sortedVariants =
     useMemo(() => {

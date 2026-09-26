@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "../../context/LanguageContext";
+import { trackCheckoutStart, trackPurchase } from "@/lib/analytics";
 
 const COD_FEE = 50;
 const COD_IDEMPOTENCY_KEY = "kab_cod_idempotency_key";
@@ -107,6 +108,8 @@ export default function PaymentPage() {
         setCheckout(parsedCheckout);
         setCart(getCart() as CartItemWithVariant[]);
         setPageReady(true);
+        const initialCart = getCart() as CartItemWithVariant[];
+        trackCheckoutStart(initialCart.reduce((sum, item) => sum + Number(item.quantity || 0), 0));
         await loadPaymentSettings();
       } catch (error) {
         console.error("Failed to initialize payment:", error);
@@ -253,6 +256,7 @@ export default function PaymentPage() {
         }
 
         saveCart([]);
+        trackPurchase();
         window.dispatchEvent(new Event("cartUpdated"));
         localStorage.removeItem("checkout");
         sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
@@ -284,6 +288,7 @@ export default function PaymentPage() {
       }
 
       saveCart([]);
+      trackPurchase();
       window.dispatchEvent(new Event("cartUpdated"));
       localStorage.removeItem("checkout");
       sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);

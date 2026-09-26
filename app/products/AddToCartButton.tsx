@@ -22,6 +22,7 @@ import type {
 } from "@/lib/cart";
 
 import { useLanguage } from "../../context/LanguageContext";
+import { trackAddToCart } from "@/lib/analytics";
 
 type ProductVariant = {
   id: number | string;
@@ -277,6 +278,7 @@ export default function AddToCartButton({
       cartItem,
       1
     );
+    trackAddToCart(product.id, 1);
 
     setQuantity(
       getCartItemQuantity(

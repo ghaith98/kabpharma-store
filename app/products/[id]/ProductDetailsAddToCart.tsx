@@ -18,6 +18,7 @@ import {
 import { addToCart } from "@/lib/cart";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { useLanguage } from "../../../context/LanguageContext";
+import { trackAddToCart } from "@/lib/analytics";
 
 import type {
   ProductDetailVariant,
@@ -137,6 +138,7 @@ export default function ProductDetailsAddToCart({
       itemToAdd,
       quantity
     );
+    trackAddToCart(product.id, quantity);
 
     window.dispatchEvent(
       new Event("cartUpdated")

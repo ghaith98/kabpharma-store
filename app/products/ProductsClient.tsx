@@ -21,6 +21,7 @@ import { X } from "lucide-react";
 
 import { useLanguage } from "../../context/LanguageContext";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
+import { trackSearch } from "@/lib/analytics";
 import EditorialProductCard from "./EditorialProductCard";
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import RoutineBanner from "./RoutineBanner";
@@ -127,6 +128,10 @@ export default function ProductsClient({
   const search = standaloneCollection
     ? ""
     : searchParams.get("search") || "";
+
+  useEffect(() => {
+    if (search) trackSearch(search);
+  }, [search]);
   const selectedCategoryIds = useMemo(
     () =>
       standaloneCollection

@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { trackBrandView } from "@/lib/analytics";
 import ProductsClient from "@/app/products/ProductsClient";
 import type { EditorialProduct } from "@/app/products/EditorialProductCard";
 import type { DiscoveryBanner } from "@/app/new-arrivals/NewArrivalsCollection";
@@ -15,6 +17,7 @@ type Brand = {
 
 export default function BrandCollectionClient({ brand, products }: { brand: Brand; products: EditorialProduct[] }) {
   const { lang } = useLanguage();
+  useEffect(() => { trackBrandView(brand.name); }, [brand.name]);
   const isArabic = lang === "ar";
   const hero = brand.banner_image_url;
   const mobileHero = brand.banner_image_url_mobile || hero;

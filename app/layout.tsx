@@ -11,6 +11,7 @@ import "./globals.css";
 import LayoutShell from "./LayoutShell";
 import { LanguageProvider } from "../context/LanguageContext";
 import { SITE_URL } from "@/lib/site";
+import Analytics from "./Analytics";
 
 const siteTitle =
   "KAB Pharma | منتجات العناية بالبشرة والشعر";
@@ -182,6 +183,7 @@ export default function RootLayout({
             {children}
           </LayoutShell>
         </LanguageProvider>
+        <Analytics />
       </body>
     </html>
   );
