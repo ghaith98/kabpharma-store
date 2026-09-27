@@ -575,6 +575,26 @@ export default function CheckoutPage() {
   );
   const displayedItemsCount = itemsCount + freeItemsCount;
 
+  const freeItemRows = freePromotions.map((promotion) => {
+    const item = cart.find(
+      (candidate) =>
+        Number(candidate.id) === promotion.productId &&
+        (promotion.variantId == null
+          ? candidate.variant_id == null
+          : Number(candidate.variant_id) === promotion.variantId)
+    );
+
+    return {
+      promotion,
+      item,
+      name:
+        item?.product_name ||
+        item?.name ||
+        (isArabic ? "منتج مجاني" : "Free item"),
+      variantLabel: item ? getVariantLabel(item) : null,
+    };
+  });
+
   const areasForGovernorate =
     deliveryAreas.filter(
       (area) =>
@@ -1448,6 +1468,62 @@ export default function CheckoutPage() {
                     );
                   }
                 )
+              )}
+
+              {freeItemRows.length > 0 && (
+                <div className="border-t border-dashed border-[#cfe2d5] pt-4">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0a583b]">
+                    {isArabic ? "هداياك المجانية" : "Your free items"}
+                  </p>
+
+                  <div className="mt-3 space-y-3">
+                    {freeItemRows.map(({ promotion, item, name, variantLabel }) => (
+                      <div
+                        key={promotion.promotionId}
+                        className="flex min-w-0 gap-3 rounded-2xl border border-[#d8eadc] bg-[#f7fbf8] p-3"
+                      >
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5">
+                          {item?.image_url ? (
+                            <Image
+                              src={item.image_url}
+                              alt={name}
+                              width={112}
+                              height={112}
+                              sizes="56px"
+                              className="h-full w-full object-contain"
+                            />
+                          ) : (
+                            <Package size={19} className="text-[#a2aaa4]" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="line-clamp-2 text-sm font-extrabold leading-5 text-[#142019]">
+                              {name}
+                            </p>
+                            <span className="shrink-0 rounded-full bg-[#e8f4eb] px-2.5 py-1 text-[11px] font-extrabold text-[#0a583b]">
+                              {isArabic
+                                ? `+${promotion.affectedQuantity} مجاناً`
+                                : `+${promotion.affectedQuantity} free`}
+                            </span>
+                          </div>
+
+                          {variantLabel && (
+                            <p className="mt-1 text-xs font-bold text-[#0a583b]">
+                              {isArabic ? "الخيار: " : "Option: "}
+                              {variantLabel}
+                            </p>
+                          )}
+
+                          <p className="mt-1 text-xs font-bold text-[#0a583b]">
+                            {promotion.promotionName}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
