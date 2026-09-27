@@ -104,7 +104,20 @@ export default async function OrderPage({
 
   const { data: order, error } = await supabaseAdmin
     .from("orders")
-    .select("*")
+    .select(`
+      *,
+      order_items (
+        id,
+        product_id,
+        variant_id,
+        product_name,
+        variant_label_ar,
+        variant_label_en,
+        image_url,
+        quantity,
+        unit_price
+      )
+    `)
     .eq("id", id)
     .eq("phone", session.phone)
     .maybeSingle();

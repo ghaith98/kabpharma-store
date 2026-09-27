@@ -14,6 +14,7 @@ export type PromotionOrderItem = {
   product_name: string | null;
   variant_label_ar?: string | null;
   variant_label_en?: string | null;
+  image_url?: string | null;
   quantity: number;
   unit_price: number;
 };

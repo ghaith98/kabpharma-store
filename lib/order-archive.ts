@@ -159,7 +159,7 @@ export async function getArchivedOrderForCustomer(
 
   const { data, error } = await getArchiveAdmin()
     .from("archived_orders")
-    .select("order_data")
+    .select("order_data, items_data")
     .eq("source_order_id", numericId)
     .eq("phone", phone)
     .maybeSingle();
@@ -168,7 +168,10 @@ export async function getArchivedOrderForCustomer(
     return null;
   }
 
-  return data.order_data as Record<string, unknown>;
+  return {
+    ...(data.order_data as Record<string, unknown>),
+    order_items: Array.isArray(data.items_data) ? data.items_data : [],
+  };
 }
 
 export async function getArchivedOrderSummariesForCustomer(phone: string) {

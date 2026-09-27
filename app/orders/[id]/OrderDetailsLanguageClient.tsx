@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +22,10 @@ import {
 
 import CancelOrderClient from "../CancelOrderClient";
 import { useLanguage } from "../../../context/LanguageContext";
+import {
+  buildOrderItemPresentation,
+  type StoredPromotionDetail,
+} from "@/lib/order-promotion-display";
 
 type SupportedLanguage = "en" | "ar";
 
@@ -32,6 +37,20 @@ type OrderDetails = {
   customer_name: string | null;
   phone: string | null;
   address: string | null;
+  promotion_details?: StoredPromotionDetail[] | null;
+  order_items?: OrderItem[] | null;
+};
+
+type OrderItem = {
+  id: number | string;
+  product_id: number | string | null;
+  variant_id: number | string | null;
+  product_name: string | null;
+  variant_label_ar: string | null;
+  variant_label_en: string | null;
+  image_url: string | null;
+  quantity: number;
+  unit_price: number;
 };
 
 type StatusInformation = {
@@ -246,6 +265,12 @@ export default function OrderDetailsLanguageClient({
     },
   ];
 
+  const itemPresentation = buildOrderItemPresentation(
+    order.order_items,
+    order.promotion_details
+  );
+  const orderedItems = itemPresentation.items;
+
   return (
     <main
       dir={isArabic ? "rtl" : "ltr"}
@@ -346,6 +371,85 @@ export default function OrderDetailsLanguageClient({
                   </div>
                 )}
               </div>
+            </section>
+
+            <section className="rounded-[1.75rem] border border-[#dfe4e0] bg-white p-6 sm:p-8">
+              <div className="flex items-end justify-between gap-4 border-b border-[#edf0ed] pb-5">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#7b867e]">
+                    {isArabic ? "محتويات الطلب" : "Order items"}
+                  </p>
+                  <h2 className="mt-2 text-xl font-extrabold text-[#142019]">
+                    {isArabic ? "المنتجات التي طلبتها" : "Items in your order"}
+                  </h2>
+                </div>
+                <Package className="h-5 w-5 text-[#8b958e]" />
+              </div>
+
+              {orderedItems.length > 0 ? (
+                <div className="divide-y divide-[#edf0ed]">
+                  {orderedItems.map((item) => {
+                    const variantLabel = isArabic
+                      ? item.variant_label_ar || item.variant_label_en
+                      : item.variant_label_en || item.variant_label_ar;
+                    const lineTotal = Number(item.unit_price || 0) * Number(item.quantity || 0);
+
+                    return (
+                      <article key={item.id} className="flex gap-4 py-5 first:pt-5 last:pb-0">
+                        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#e6ebe7] bg-[#fafbf9] p-2">
+                          {item.image_url ? (
+                            <Image
+                              src={item.image_url}
+                              alt={item.product_name || "KAB Pharma product"}
+                              width={72}
+                              height={72}
+                              className="h-full w-full object-contain"
+                            />
+                          ) : (
+                            <Package className="h-6 w-6 text-[#9aaba0]" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                            <div className="min-w-0">
+                              <p className="break-words text-sm font-extrabold leading-6 text-[#142019]">
+                                {item.product_name || (isArabic ? "منتج KAB Pharma" : "KAB Pharma product")}
+                              </p>
+                              {variantLabel && (
+                                <p className="mt-0.5 text-xs font-bold text-[#718077]">
+                                  {variantLabel}
+                                </p>
+                              )}
+                            </div>
+                            {item.isPromotionGift ? (
+                              <span className="shrink-0 rounded-full bg-[#edf5f0] px-2.5 py-1 text-[11px] font-extrabold text-[#0a583b]">
+                                {isArabic ? "هدية مجانية" : "Free gift"}
+                              </span>
+                            ) : (
+                              <span dir="ltr" className="shrink-0 text-sm font-extrabold text-[#142019]">
+                                {lineTotal.toLocaleString()} SYP
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-2 text-xs font-bold text-[#647168]">
+                            {isArabic ? `الكمية: ${item.quantity}` : `Qty: ${item.quantity}`}
+                            {item.isPromotionGift && item.promotionName
+                              ? ` · ${item.promotionName}`
+                              : ""}
+                          </p>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="pt-5 text-sm leading-6 text-[#647168]">
+                  {isArabic
+                    ? "لا تتوفر تفاصيل المنتجات لهذا الطلب حالياً."
+                    : "Item details are not available for this order yet."}
+                </p>
+              )}
             </section>
 
             {!isTerminal && (
