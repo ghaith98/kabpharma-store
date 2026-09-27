@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { buildOrderItemPresentation, type StoredPromotionDetail } from "@/lib/order-promotion-display";
 import PrintOrderButton from "./PrintOrderButton";
 
 const SIGNED_URL_EXPIRY_SECONDS = 10 * 60;
@@ -31,6 +32,8 @@ const governorates = [
 
 type OrderItem = {
   id: number;
+  product_id: number | null;
+  variant_id: number | null;
   product_name: string | null;
   variant_label_ar: string | null;
   variant_label_en: string | null;
@@ -49,6 +52,9 @@ type AdminOrder = {
   cod_fee: number | null;
   payment_method: string | null;
   coupon_code: string | null;
+  promotion_name: string | null;
+  promotion_details: StoredPromotionDetail[] | null;
+  promotion_discount_amount: number | null;
   discount_amount: number | null;
   products_subtotal: number | null;
   total_price: number | null;
@@ -99,6 +105,9 @@ export default function AdminOrdersPage() {
         cod_fee,
         payment_method,
         coupon_code,
+        promotion_name,
+        promotion_details,
+        promotion_discount_amount,
         discount_amount,
         products_subtotal,
         total_price,
@@ -110,6 +119,8 @@ export default function AdminOrdersPage() {
         payment_proof_deleted_at,
         order_items (
           id,
+          product_id,
+          variant_id,
           product_name,
           variant_label_ar,
           variant_label_en,
@@ -518,6 +529,18 @@ export default function AdminOrdersPage() {
 
           const isOpeningProof =
             openingProofOrderId === order.id;
+          const itemPresentation = buildOrderItemPresentation(
+            order.order_items,
+            order.promotion_details
+          );
+          const displayedProductsSubtotal = Math.max(
+            0,
+            Number(order.products_subtotal || 0) - itemPresentation.giftValue
+          );
+          const displayedDiscountAmount = Math.max(
+            0,
+            Number(order.discount_amount || 0) - itemPresentation.giftValue
+          );
 
           return (
             <article
@@ -599,24 +622,24 @@ export default function AdminOrdersPage() {
                   </p>
                 )}
 
-                {order.coupon_code && (
+                {(order.coupon_code || order.promotion_name) && (
                   <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
                     <p>
-                      <strong>Coupon code:</strong>{" "}
+                      <strong>{order.promotion_name ? "Promotion:" : "Coupon code:"}</strong>{" "}
                       <span className="font-mono font-extrabold">
-                        {order.coupon_code}
+                        {order.promotion_name || order.coupon_code}
                       </span>
                     </p>
                     <p className="mt-1">
                       <strong>Products subtotal:</strong>{" "}
                       {Number(
-                        order.products_subtotal || 0
+                        displayedProductsSubtotal
                       ).toLocaleString()} SYP
                     </p>
                     <p className="mt-1">
-                      <strong>Coupon discount:</strong>{" "}
+                      <strong>{order.promotion_name ? "Promotion discount:" : "Coupon discount:"}</strong>{" "}
                       −{Number(
-                        order.discount_amount || 0
+                        displayedDiscountAmount
                       ).toLocaleString()} SYP
                     </p>
                   </div>
@@ -714,7 +737,7 @@ export default function AdminOrdersPage() {
                     </h3>
 
                     <div className="space-y-3">
-                      {order.order_items.map((item) => (
+                      {itemPresentation.items.map((item) => (
                         <div
                           key={item.id}
                           className="flex items-center justify-between border-b border-gray-200 pb-2 last:border-b-0"
@@ -722,19 +745,20 @@ export default function AdminOrdersPage() {
                           <div>
                             <p className="font-bold text-gray-900">
                               {item.product_name}
+                              {item.isPromotionGift ? " — Free gift" : ""}
                             </p>
 
                             <p className="text-sm text-gray-600">
                               Quantity: {item.quantity}
                             </p>
+                            {item.isPromotionGift && <p className="mt-1 text-xs font-bold text-emerald-700">{item.promotionName}</p>}
                           </div>
 
                           <p className="font-bold text-green-700">
-                            {(
+                            {item.isPromotionGift ? "Free" : (
                               Number(item.unit_price) *
                               Number(item.quantity)
-                            ).toLocaleString()}{" "}
-                            SYP
+                            ).toLocaleString() + " SYP"}
                           </p>
                         </div>
                       ))}

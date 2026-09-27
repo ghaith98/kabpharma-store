@@ -82,6 +82,16 @@ type StoredCheckout = {
   address?: string;
 };
 
+type CheckoutPromotion = {
+  promotionId: string;
+  promotionName: string;
+  discountAmount: number;
+  affectedQuantity: number;
+  productId: number;
+  variantId: number | null;
+  type: "buy_2_get_1" | "buy_1_second_50";
+};
+
 export default function CheckoutPage() {
   const { lang } =
     useLanguage();
@@ -114,6 +124,8 @@ export default function CheckoutPage() {
     freeShippingThreshold,
     setFreeShippingThreshold,
   ] = useState(0);
+
+  const [promotions, setPromotions] = useState<CheckoutPromotion[]>([]);
 
   const [name, setName] =
     useState("");
@@ -303,6 +315,22 @@ export default function CheckoutPage() {
       );
     }
   }, [deliveryAreas]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function previewPromotions() {
+      if (!cart.length) { setPromotions([]); return; }
+      const response = await fetch("/api/customer/promotions/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variant_id, quantity: item.quantity })) }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!cancelled) setPromotions(Array.isArray(result?.promotions) ? result.promotions : []);
+    }
+    void previewPromotions();
+    return () => { cancelled = true; };
+  }, [cart]);
 
   async function checkCurrentUserBan(
     accountPhone: string
@@ -527,6 +555,11 @@ export default function CheckoutPage() {
       0
     );
 
+  const paidPromotions = promotions.filter((promotion) => promotion.type === "buy_1_second_50");
+  const freePromotions = promotions.filter((promotion) => promotion.type === "buy_2_get_1");
+  const promotionDiscount = paidPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
+  const payableProductsTotal = Math.max(0, productsTotal - promotionDiscount);
+
   const itemsCount =
     cart.reduce(
       (sum, item) =>
@@ -536,6 +569,11 @@ export default function CheckoutPage() {
         ),
       0
     );
+  const freeItemsCount = freePromotions.reduce(
+    (sum, promotion) => sum + Number(promotion.affectedQuantity || 0),
+    0
+  );
+  const displayedItemsCount = itemsCount + freeItemsCount;
 
   const areasForGovernorate =
     deliveryAreas.filter(
@@ -560,7 +598,7 @@ export default function CheckoutPage() {
   const hasFreeShipping =
     freeShippingThreshold >
       0 &&
-    productsTotal >=
+    payableProductsTotal >=
       freeShippingThreshold;
 
   const deliveryFee =
@@ -569,7 +607,7 @@ export default function CheckoutPage() {
       : rawDeliveryFee;
 
   const total =
-    productsTotal +
+    payableProductsTotal +
     deliveryFee;
 
   async function handleSubmit(
@@ -1288,9 +1326,9 @@ export default function CheckoutPage() {
 
               <span className="text-xs font-bold text-[#7a857e]">
                 {isArabic
-                  ? `${itemsCount} قطعة`
-                  : `${itemsCount} ${
-                      itemsCount ===
+                  ? `${displayedItemsCount} قطعة`
+                  : `${displayedItemsCount} ${
+                      displayedItemsCount ===
                       1
                         ? "item"
                         : "items"
@@ -1428,6 +1466,20 @@ export default function CheckoutPage() {
                   )}
                 </span>
               </div>
+
+              {freePromotions.map((promotion) => (
+                <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                  <span>{promotion.promotionName}</span>
+                  <span className="font-bold">+{promotion.affectedQuantity} {isArabic ? "مجاناً" : "free"}</span>
+                </div>
+              ))}
+
+              {paidPromotions.map((promotion) => (
+                <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                  <span>{promotion.promotionName}</span>
+                  <span className="font-bold">−{formatPrice(promotion.discountAmount)}</span>
+                </div>
+              ))}
 
               <div className="flex items-center justify-between gap-4 text-[#526057]">
                 <span>

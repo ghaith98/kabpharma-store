@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { buildOrderItemPresentation, type StoredPromotionDetail } from "@/lib/order-promotion-display";
 
-type OrderItem = { id: number; product_name: string | null; variant_label_ar: string | null; variant_label_en: string | null; quantity: number; unit_price: number };
+type OrderItem = { id: number; product_id: number | null; variant_id: number | null; product_name: string | null; variant_label_ar: string | null; variant_label_en: string | null; quantity: number; unit_price: number };
 type PrintableOrder = {
   id: number; customer_name: string | null; phone: string | null;
   governorate: string | null; delivery_area: string | null; address: string | null;
   delivery_fee: number | null; cod_fee: number | null; payment_method: string | null;
-  coupon_code: string | null; discount_amount: number | null; products_subtotal: number | null;
+  coupon_code: string | null; promotion_name?: string | null; promotion_details?: StoredPromotionDetail[] | null; promotion_discount_amount?: number | null; discount_amount: number | null; products_subtotal: number | null;
   total_price: number | null; status: string; created_at: string | null; order_items: OrderItem[];
 };
 
@@ -59,8 +60,10 @@ export default function PrintOrderPage() {
     return <main className="grid min-h-screen place-items-center bg-[#f5f7f6] p-6"><div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm"><h1 className="text-xl font-bold">لم يتم اختيار فاتورة</h1><button type="button" onClick={() => router.push("/admin/orders")} className="mt-5 rounded-xl bg-[#0a583b] px-5 py-2.5 font-bold text-white">العودة للطلبات</button></div></main>;
   }
 
+  const presentation = buildOrderItemPresentation(order.order_items, order.promotion_details);
   const itemsSubtotal = order.order_items.reduce((total, item) => total + Number(item.unit_price || 0) * Number(item.quantity || 0), 0);
-  const productsSubtotal = Number(order.products_subtotal ?? itemsSubtotal);
+  const productsSubtotal = Math.max(0, Number(order.products_subtotal ?? itemsSubtotal) - presentation.giftValue);
+  const displayDiscountAmount = Math.max(0, Number(order.discount_amount || 0) - presentation.giftValue);
   const deliveryAddress = [order.governorate, order.delivery_area, order.address].filter(Boolean).join(" — ");
 
   return (
@@ -102,9 +105,9 @@ export default function PrintOrderPage() {
               <tr><th className="w-10 px-3 py-3">#</th><th className="px-3 py-3">المنتج</th><th className="w-16 px-3 py-3">الكمية</th><th className="w-28 px-3 py-3">سعر القطعة</th><th className="w-28 px-3 py-3">المجموع</th></tr>
             </thead>
             <tbody>
-              {order.order_items.map((item, index) => (
+              {presentation.items.map((item, index) => (
                 <tr key={item.id} className="border-t border-[#e4ece6] even:bg-[#fbfdfb]">
-                  <td className="px-3 py-3">{index + 1}</td><td className="px-3 py-3"><p className="font-bold">{item.product_name || "—"}</p>{(item.variant_label_ar || item.variant_label_en) && <p className="mt-0.5 text-xs text-slate-500">{item.variant_label_ar || item.variant_label_en}</p>}</td><td className="px-3 py-3">{item.quantity}</td><td className="px-3 py-3" dir="ltr">{money(item.unit_price)}</td><td className="px-3 py-3 font-bold" dir="ltr">{money(Number(item.unit_price || 0) * Number(item.quantity || 0))}</td>
+                  <td className="px-3 py-3">{index + 1}</td><td className="px-3 py-3"><p className="font-bold">{item.product_name || "—"}{item.isPromotionGift ? " — هدية مجانية" : ""}</p>{(item.variant_label_ar || item.variant_label_en) && <p className="mt-0.5 text-xs text-slate-500">{item.variant_label_ar || item.variant_label_en}</p>}{item.isPromotionGift && <p className="mt-0.5 text-xs font-bold text-[#0a583b]">{item.promotionName}</p>}</td><td className="px-3 py-3">{item.quantity}</td><td className="px-3 py-3 font-bold text-[#0a583b]" dir="ltr">{item.isPromotionGift ? "مجاني" : money(item.unit_price)}</td><td className="px-3 py-3 font-bold" dir="ltr">{money(Number(item.unit_price || 0) * Number(item.quantity || 0))}</td>
                 </tr>
               ))}
             </tbody>
@@ -113,7 +116,7 @@ export default function PrintOrderPage() {
 
         <section className="mt-5 mr-auto w-full max-w-[330px] overflow-hidden rounded-2xl border border-[#dce7df] bg-[#fbfdfb]">
           <div className="border-b border-[#dce7df] px-4 py-3 text-sm font-extrabold text-[#0a583b]">ملخص الطلب</div>
-          <div className="px-4"><TotalRow label="مجموع المنتجات" value={money(productsSubtotal)} />{Number(order.discount_amount || 0) > 0 && <div className="border-t border-[#e4ece6]"><TotalRow label={`الحسم${order.coupon_code ? ` (${order.coupon_code})` : ""}`} value={`−${money(order.discount_amount)}`} /></div>}<div className="border-t border-[#e4ece6]"><TotalRow label="رسوم التوصيل" value={money(order.delivery_fee)} /></div>{Number(order.cod_fee || 0) > 0 && <div className="border-t border-[#e4ece6]"><TotalRow label="رسم الدفع عند الاستلام" value={money(order.cod_fee)} /></div>}<div className="mt-1 border-t-2 border-[#0a583b]"><TotalRow label="الإجمالي" value={money(order.total_price)} strong /></div></div>
+          <div className="px-4"><TotalRow label="مجموع المنتجات" value={money(productsSubtotal)} />{displayDiscountAmount > 0 && <div className="border-t border-[#e4ece6]"><TotalRow label={order.promotion_name ? `حسم العرض (${order.promotion_name})` : `الحسم${order.coupon_code ? ` (${order.coupon_code})` : ""}`} value={`−${money(displayDiscountAmount)}`} /></div>}<div className="border-t border-[#e4ece6]"><TotalRow label="رسوم التوصيل" value={money(order.delivery_fee)} /></div>{Number(order.cod_fee || 0) > 0 && <div className="border-t border-[#e4ece6]"><TotalRow label="رسم الدفع عند الاستلام" value={money(order.cod_fee)} /></div>}<div className="mt-1 border-t-2 border-[#0a583b]"><TotalRow label="الإجمالي" value={money(order.total_price)} strong /></div></div>
         </section>
 
         <footer className="mt-8 border-t border-[#d9e5dc] pt-4 text-center text-xs text-slate-500">شكراً لثقتكم بـ KAB Pharma — الجودة لحياة أكثر صحة</footer>

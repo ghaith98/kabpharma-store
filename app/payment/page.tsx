@@ -40,6 +40,16 @@ type CartItemWithVariant = CartItem & {
   variant_label_en?: string | null;
 };
 
+type CheckoutPromotion = {
+  promotionId: string;
+  promotionName: string;
+  discountAmount: number;
+  affectedQuantity: number;
+  productId: number;
+  variantId: number | null;
+  type: "buy_2_get_1" | "buy_1_second_50";
+};
+
 type CheckoutData = {
   name?: string;
   phone?: string;
@@ -71,6 +81,7 @@ export default function PaymentPage() {
   const [transactionError, setTransactionError] = useState("");
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [appliedPromotions, setAppliedPromotions] = useState<CheckoutPromotion[]>([]);
   const [couponError, setCouponError] = useState("");
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [couponOpen, setCouponOpen] = useState(false);
@@ -121,6 +132,22 @@ export default function PaymentPage() {
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [router]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function previewPromotion() {
+      if (!cart.length) { setAppliedPromotions([]); return; }
+      const response = await fetch("/api/customer/promotions/preview", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variant_id, quantity: item.quantity })) }),
+      });
+      const result = await response.json().catch(() => null);
+      if (cancelled) return;
+      setAppliedPromotions(Array.isArray(result?.promotions) ? result.promotions : []);
+    }
+    void previewPromotion();
+    return () => { cancelled = true; };
+  }, [cart]);
+
   function formatPrice(value: number) {
     return `${Math.round(Number(value || 0)).toLocaleString()} SYP`;
   }
@@ -152,9 +179,26 @@ export default function PaymentPage() {
 
   const deliveryFee = Number(checkout.delivery_fee || 0);
   const productsTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
-  const total = Math.max(0, productsTotal - (appliedCoupon?.discountAmount || 0)) + deliveryFee + (paymentMethod === "cod" ? COD_FEE : 0);
+  const paidPromotions = appliedPromotions.filter((promotion) => promotion.type === "buy_1_second_50");
+  const freePromotions = appliedPromotions.filter((promotion) => promotion.type === "buy_2_get_1");
+  const promotionValue = appliedPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
+  const promotionDiscount = paidPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
+  const promotionWins = promotionValue > (appliedCoupon?.discountAmount || 0);
+  const selectedDiscount = promotionWins ? promotionDiscount : (appliedCoupon?.discountAmount || 0);
+  const total = Math.max(0, productsTotal - selectedDiscount) + deliveryFee + (paymentMethod === "cod" ? COD_FEE : 0);
   const itemsCount = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const freeItemsCount = promotionWins
+    ? freePromotions.reduce((sum, promotion) => sum + Number(promotion.affectedQuantity || 0), 0)
+    : 0;
+  const displayedItemsCount = itemsCount + freeItemsCount;
   const deliveryLocation = [checkout.delivery_area, checkout.governorate].filter(Boolean).join("، ");
+
+  function promotionDescription(promotion: CheckoutPromotion) {
+    const item = cart.find((candidate) => Number(candidate.id) === promotion.productId && (promotion.variantId == null ? candidate.variant_id == null : Number(candidate.variant_id) === promotion.variantId));
+    const productName = item?.product_name || item?.name || (isArabic ? "هذا المنتج" : "This product");
+    if (promotion.type === "buy_2_get_1") return isArabic ? `${productName}: قطعة مجانية` : `${productName}: one item free`;
+    return isArabic ? `${productName}: حسم 50% على القطعة الثانية` : `${productName}: 50% off the second item`;
+  }
 
   async function applyCoupon() {
     const code = couponInput.trim().toUpperCase();
@@ -505,7 +549,7 @@ export default function PaymentPage() {
           {/* Right: Order summary */}
           <aside className="rounded-[1.75rem] border border-[#dfe4e0] bg-white p-5 sm:p-7 lg:sticky lg:top-8">
             <p className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${isArabic ? "tracking-normal" : "tracking-[0.15em]"}`}>{t("Order summary", "ملخص الطلب")}</p>
-            <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#142019]">{t(`${itemsCount} item${itemsCount !== 1 ? "s" : ""}`, `${itemsCount} منتج`)}</h2>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#142019]">{t(`${displayedItemsCount} item${displayedItemsCount !== 1 ? "s" : ""}`, `${displayedItemsCount} منتج`)}</h2>
 
             <ul className="mt-5 space-y-4 border-b border-[#e7ebe8] pb-5">
               {cart.map((item) => {
@@ -564,7 +608,8 @@ export default function PaymentPage() {
             {/* Totals */}
             <div className="mt-5 space-y-3.5 text-sm">
               <div className="flex items-center justify-between gap-4 text-[#526057]"><span>{t("Products", "المنتجات")}</span><span className="font-bold text-[#142019]">{formatPrice(productsTotal)}</span></div>
-              {appliedCoupon && <div className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{t(`Discount (${appliedCoupon.code})`, `خصم (${appliedCoupon.code})`)}</span><span className="font-bold">−{formatPrice(appliedCoupon.discountAmount)}</span></div>}
+              {promotionWins && freePromotions.map((promotion) => <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">+{promotion.affectedQuantity} {t("free", "مجاناً")}</span></div>)}
+              {promotionWins ? paidPromotions.map((promotion) => <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">−{formatPrice(promotion.discountAmount)}</span></div>) : selectedDiscount > 0 && <div className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{t(`Discount (${appliedCoupon?.code})`, `خصم (${appliedCoupon?.code})`)}</span><span className="font-bold">−{formatPrice(selectedDiscount)}</span></div>}
               <div className="flex items-center justify-between gap-4 text-[#526057]"><span>{t("Delivery", "التوصيل")}</span><span className="font-bold text-[#142019]">{deliveryFee > 0 ? formatPrice(deliveryFee) : t("Free", "مجاني")}</span></div>
               {paymentMethod === "cod" && <div className="flex items-center justify-between gap-4 text-[#526057]"><span className="text-[#0a583b]">{t("Cash on delivery fee", "رسوم الدفع عند الاستلام")}</span><span className="font-bold text-[#0a583b]">{formatPrice(COD_FEE)}</span></div>}
             </div>

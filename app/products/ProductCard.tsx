@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import AddToCartButton from "./AddToCartButton";
 import WishlistButton from "./WishlistButton";
+import ProductPromotionNotice from "./[id]/ProductPromotionNotice";
 
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -266,7 +267,7 @@ export default function ProductCard({
             <span className="inline-flex rounded-full border border-red-100 bg-white/95 px-2.5 py-1.5 text-[9px] font-extrabold text-red-600 shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
               -{salePercent}%
             </span>
-          ) : null}
+          ) : <ProductPromotionNotice productId={product.id} summary />}
         </div>
       </div>
 

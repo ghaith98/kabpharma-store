@@ -6,6 +6,7 @@ import { hasTrustedOrigin, jsonError } from "@/lib/http";
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getPromotionEvaluation, type PromotionCartLine } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
@@ -270,7 +271,7 @@ export async function POST(request: Request) {
     supabaseAdmin
       .from("products")
       .select(
-        "id, name, name_ar, name_en, price, sale_percent, image_url, is_out_of_stock"
+        "id, name, name_ar, name_en, price, sale_percent, image_url, is_out_of_stock, category_id"
       )
       .in("id", productIds),
     supabaseAdmin
@@ -324,6 +325,7 @@ export async function POST(request: Request) {
   }
 
   const validatedItems: DatabaseRecord[] = [];
+  const promotionLines: PromotionCartLine[] = [];
   let productsTotal = 0;
 
   for (const item of normalizedItems) {
@@ -377,7 +379,7 @@ export async function POST(request: Request) {
 
     const unitPrice = finalPrice(
       variant?.price ?? product.price,
-      variant?.sale_percent ?? product.sale_percent
+      product.sale_percent
     );
 
     if (unitPrice <= 0) {
@@ -408,6 +410,13 @@ export async function POST(request: Request) {
       quantity: item.quantity,
       unit_price: unitPrice,
     });
+    promotionLines.push({
+      productId: Number(product.id),
+      variantId: variant?.id != null ? Number(variant.id) : null,
+      quantity: item.quantity,
+      unitPrice,
+      hasSalePrice: Number(product.sale_percent ?? 0) > 0,
+    });
   }
 
   const deliveryArea = (areaResult.data || []).find(
@@ -418,17 +427,9 @@ export async function POST(request: Request) {
     return jsonError("Delivery area is unavailable", 409);
   }
 
-  const freeShippingThreshold = Number(
-    thresholdResult.data?.value || 0
-  );
-  const configuredDeliveryFee = Number(
-    deliveryArea.delivery_fee || 0
-  );
-  const deliveryFee =
-    freeShippingThreshold > 0 &&
-    productsTotal >= freeShippingThreshold
-      ? 0
-      : configuredDeliveryFee;
+  const promotionEvaluation = await getPromotionEvaluation(promotionLines);
+  const promotions = promotionEvaluation.promotions;
+  const promotionDiscount = promotionEvaluation.discountAmount;
   let coupon;
   try {
     coupon = await getCouponDiscount(
@@ -442,7 +443,26 @@ export async function POST(request: Request) {
       400
     );
   }
-  const discountAmount = coupon?.discountAmount || 0;
+  const couponDiscount = coupon?.discountAmount || 0;
+  const usePromotion = promotionDiscount > couponDiscount;
+  const payablePromotionDiscount = usePromotion
+    ? promotions.filter((promotion) => promotion.type === "buy_1_second_50").reduce((sum, promotion) => sum + promotion.discountAmount, 0)
+    : couponDiscount;
+  const qualifyingSubtotal = Math.max(0, productsTotal - payablePromotionDiscount);
+  const freeShippingThreshold = Number(thresholdResult.data?.value || 0);
+  const configuredDeliveryFee = Number(deliveryArea.delivery_fee || 0);
+  const deliveryFee = freeShippingThreshold > 0 && qualifyingSubtotal >= freeShippingThreshold
+    ? 0
+    : configuredDeliveryFee;
+  if (usePromotion) for (const addition of promotionEvaluation.autoAdditions) {
+    const line = promotionLines.find((candidate) => candidate.productId === addition.productId && candidate.variantId === addition.variantId);
+    const item = validatedItems.find((candidate) => Number(candidate.product_id) === addition.productId && Number(candidate.variant_id) === Number(addition.variantId));
+    if (!line || !item) continue;
+    line.quantity += addition.quantity;
+    item.quantity = Number(item.quantity) + addition.quantity;
+    productsTotal += line.unitPrice * addition.quantity;
+  }
+  const discountAmount = usePromotion ? promotionDiscount : couponDiscount;
   const orderTotal = Math.max(
     0,
     productsTotal - discountAmount + deliveryFee + COD_FEE
@@ -466,7 +486,7 @@ export async function POST(request: Request) {
       },
       p_items: validatedItems,
       p_idempotency_key: idempotencyKey,
-      p_coupon_code: coupon?.code || null,
+      p_coupon_code: usePromotion ? null : coupon?.code || null,
       p_discount_amount: discountAmount,
       p_products_subtotal: productsTotal,
       p_customer_profile_id: profile.id,
@@ -483,6 +503,14 @@ export async function POST(request: Request) {
 
   if (!created?.id) {
     return jsonError("Could not create order", 500);
+  }
+  if (usePromotion) {
+    await supabaseAdmin.from("orders").update({
+      promotion_id: promotions.length === 1 ? promotions[0].promotionId : null,
+      promotion_name: promotions.map((promotion) => promotion.promotionName).join(" + "),
+      promotion_discount_amount: promotionDiscount,
+      promotion_details: promotions,
+    }).eq("id", created.id);
   }
 
   return NextResponse.json(

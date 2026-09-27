@@ -25,6 +25,8 @@ import {
   FiTag,
   FiLayers,
   FiArchive,
+  FiMenu,
+  FiX,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 
@@ -40,16 +42,6 @@ type NavigationGroup = {
 };
 
 const navigationGroups: NavigationGroup[] = [
-  {
-    title: "Overview",
-    links: [
-      {
-        href: "/admin",
-        label: "Dashboard",
-        icon: FiHome,
-      },
-    ],
-  },
   {
     title: "Orders",
     links: [
@@ -96,6 +88,21 @@ const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
+    title: "Content",
+    links: [
+      {
+        href: "/admin/banners",
+        label: "Banners",
+        icon: FiImage,
+      },
+      {
+        href: "/admin/reviews",
+        label: "Reviews",
+        icon: FiStar,
+      },
+    ],
+  },
+  {
     title: "Delivery",
     links: [
       {
@@ -121,8 +128,23 @@ const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    title: "Marketing",
+    title: "Customers",
     links: [
+      {
+        href: "/admin/users",
+        label: "Customers",
+        icon: FiUserCheck,
+      },
+    ],
+  },
+  {
+    title: "Promotions",
+    links: [
+      {
+        href: "/admin/promotions",
+        label: "Promotions",
+        icon: FiTag,
+      },
       {
         href: "/admin/coupons",
         label: "Coupons",
@@ -131,33 +153,13 @@ const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
-    title: "Content",
+    title: "Reports & Settings",
     links: [
       {
-        href: "/admin/banners",
-        label: "Banners",
-        icon: FiImage,
+        href: "/admin",
+        label: "Dashboard",
+        icon: FiHome,
       },
-      {
-        href: "/admin/reviews",
-        label: "Reviews",
-        icon: FiStar,
-      },
-    ],
-  },
-  {
-    title: "Accounts",
-    links: [
-      {
-        href: "/admin/users",
-        label: "Users",
-        icon: FiUserCheck,
-      },
-    ],
-  },
-  {
-    title: "Settings",
-    links: [
       {
         href: "/admin/payment-settings",
         label: "Payment Settings",
@@ -178,6 +180,7 @@ export default function AdminShell({
   const [authState, setAuthState] = useState<
     "checking" | "authenticated"
   >("checking");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isLoginPage =
     pathname === "/admin/login" ||
@@ -376,6 +379,7 @@ export default function AdminShell({
                       <Link
                         key={link.href}
                         href={link.href}
+                        onClick={() => setMobileMenuOpen(false)}
                         className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition ${
                           active
                             ? "bg-green-500 text-white shadow-lg shadow-green-950/20"
@@ -463,7 +467,7 @@ export default function AdminShell({
         {/* Mobile admin bar */}
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
           <Link
-            href="/admin-mobile"
+            href="/admin"
             className="flex items-center gap-3"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 font-extrabold text-white">
@@ -481,13 +485,35 @@ export default function AdminShell({
             </div>
           </Link>
 
-          <Link
-            href="/admin-mobile"
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
             className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-extrabold text-gray-700"
           >
-            Menu
-          </Link>
+            <span className="inline-flex items-center gap-2">{mobileMenuOpen ? <FiX /> : <FiMenu />}{mobileMenuOpen ? "Close" : "Menu"}</span>
+          </button>
         </header>
+
+        {mobileMenuOpen && (
+          <div className="fixed inset-x-0 bottom-0 top-[69px] z-30 overflow-y-auto bg-[#f4f7f5] px-4 py-5 lg:hidden">
+            <nav className="mx-auto max-w-xl space-y-5 pb-8">
+              {navigationGroups.map((group) => (
+                <section key={group.title} className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+                  <p className="px-2 pb-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-gray-500">{group.title}</p>
+                  <div className="space-y-1">
+                    {group.links.map((link) => {
+                      const Icon = link.icon;
+                      const active = isActiveLink(link.href);
+                      return <Link key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold ${active ? "bg-green-600 text-white" : "text-gray-700 hover:bg-green-50 hover:text-green-700"}`}><Icon className="text-lg" /><span>{link.label}</span></Link>;
+                    })}
+                  </div>
+                </section>
+              ))}
+              <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-700"><FiExternalLink />Open Website</a>
+              <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-2xl bg-red-50 px-4 py-3 text-left text-sm font-extrabold text-red-700"><FiLogOut />Logout</button>
+            </nav>
+          </div>
+        )}
 
         <div className="min-w-0">{children}</div>
       </div>

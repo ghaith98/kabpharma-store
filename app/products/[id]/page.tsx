@@ -594,11 +594,7 @@ export default async function ProductPage({
           0
       );
 
-      const variantDiscount =
-        Number(
-          variant.sale_percent ??
-            salePercent
-        );
+      const variantDiscount = salePercent;
 
       const finalVariantPrice =
         calculateFinalPrice(
@@ -621,13 +617,7 @@ export default async function ProductPage({
         variant.label ||
         variant.variant_label;
 
-      const variantIsOutOfStock =
-        typeof variant.is_out_of_stock ===
-        "boolean"
-          ? variant.is_out_of_stock
-          : Boolean(
-              product.is_out_of_stock
-            );
+      const variantIsOutOfStock = Boolean(product.is_out_of_stock);
 
       variantOffers.push(
         createOffer({

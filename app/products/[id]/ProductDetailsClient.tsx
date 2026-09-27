@@ -7,6 +7,7 @@ import {
 } from "react";
 
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
+import ProductPromotionNotice from "./ProductPromotionNotice";
 import ProductGallery from "./ProductGallery";
 import ShareProductButton from "./ShareProductButton";
 import WishlistButton from "../WishlistButton";
@@ -55,49 +56,9 @@ export type ProductDetailVariant = {
 
   images?: string[] | null;
 
-  is_out_of_stock?:
-    | boolean
-    | null;
-
-  stock_quantity?:
-    | number
-    | string
-    | null;
-
-  stock?:
-    | number
-    | string
-    | null;
 };
 
-function isVariantOutOfStock(
-  variant: ProductDetailVariant
-) {
-  if (
-    variant.is_out_of_stock ===
-    true
-  ) {
-    return true;
-  }
-
-  if (
-    variant.stock_quantity != null
-  ) {
-    return (
-      Number(
-        variant.stock_quantity
-      ) <= 0
-    );
-  }
-
-  if (variant.stock != null) {
-    return (
-      Number(variant.stock) <= 0
-    );
-  }
-
-  return false;
-}
+function isVariantOutOfStock(_variant: ProductDetailVariant) { return false; }
 
 function getVariantLabel(
   variant: ProductDetailVariant,
@@ -306,6 +267,8 @@ export default function ProductDetailsClient({
           safeSalePercent / 100
         )
       : originalPrice;
+
+  const selectedVariantSalePercent = safeSalePercent;
 
   const finalImage =
     galleryImages[0] ||
@@ -544,7 +507,7 @@ export default function ProductDetailsClient({
                           : ""
                       }`}
                     >
-                      {label}
+                      <span>{label}</span>
                     </button>
                   );
                 }
@@ -612,6 +575,7 @@ export default function ProductDetailsClient({
             isOutOfStock
           }
         />
+        <ProductPromotionNotice productId={product.id} variantId={selectedVariant?.id != null ? Number(selectedVariant.id) : null} hidden={selectedVariantSalePercent > 0 || isOutOfStock} />
       </aside>
     </div>
   );

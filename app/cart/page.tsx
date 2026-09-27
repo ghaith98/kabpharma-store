@@ -51,6 +51,16 @@ type CartItemWithVariant =
       | null;
   };
 
+type CartPromotion = {
+  promotionId: string;
+  promotionName: string;
+  discountAmount: number;
+  affectedQuantity: number;
+  productId: number;
+  variantId: number | null;
+  type: "buy_2_get_1" | "buy_1_second_50";
+};
+
 export default function CartPage() {
   const { lang } =
     useLanguage();
@@ -70,6 +80,7 @@ export default function CartPage() {
     freeShippingThreshold,
     setFreeShippingThreshold,
   ] = useState(0);
+  const [promotions, setPromotions] = useState<CartPromotion[]>([]);
 
   const [
     showAccountModal,
@@ -138,6 +149,22 @@ export default function CartPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function previewPromotion() {
+      if (!cart.length) { setPromotions([]); return; }
+      const response = await fetch("/api/customer/promotions/preview", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variant_id, quantity: item.quantity })) }),
+      });
+      const result = await response.json().catch(() => null);
+      if (cancelled) return;
+      setPromotions(Array.isArray(result?.promotions) ? result.promotions : []);
+    }
+    void previewPromotion();
+    return () => { cancelled = true; };
+  }, [cart]);
 
   useEffect(() => {
     if (!showAccountModal) {
@@ -304,6 +331,17 @@ export default function CartPage() {
           ),
       0
     );
+  const paidPromotions = promotions.filter((promotion) => promotion.type === "buy_1_second_50");
+  const freePromotions = promotions.filter((promotion) => promotion.type === "buy_2_get_1");
+  const promotionDiscount = paidPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
+  const payableTotal = Math.max(0, total - promotionDiscount);
+
+  function promotionDescription(promotion: CartPromotion) {
+    const item = cart.find((candidate) => Number(candidate.id) === promotion.productId && (promotion.variantId == null ? candidate.variant_id == null : Number(candidate.variant_id) === promotion.variantId));
+    const productName = item?.product_name || item?.name || (isArabic ? "هذا المنتج" : "This product");
+    if (promotion.type === "buy_2_get_1") return isArabic ? `${productName}: +${promotion.affectedQuantity} مجاناً` : `${productName}: +${promotion.affectedQuantity} free`;
+    return isArabic ? `${productName}: حسم 50% على القطعة الثانية` : `${productName}: 50% off the second item`;
+  }
 
   const itemsCount =
     cart.reduce(
@@ -314,18 +352,23 @@ export default function CartPage() {
         ),
       0
     );
+  const freeItemsCount = freePromotions.reduce(
+    (sum, promotion) => sum + Number(promotion.affectedQuantity || 0),
+    0
+  );
+  const displayedItemsCount = itemsCount + freeItemsCount;
 
   const remainingForFreeDelivery =
     Math.max(
       freeShippingThreshold -
-        total,
+        payableTotal,
       0
     );
 
   const freeDeliveryProgress =
     freeShippingThreshold > 0
       ? Math.min(
-          (total /
+          (payableTotal /
             freeShippingThreshold) *
             100,
           100
@@ -334,7 +377,7 @@ export default function CartPage() {
 
   const hasFreeDelivery =
     freeShippingThreshold > 0 &&
-    total >=
+    payableTotal >=
       freeShippingThreshold;
 
   function goToCheckout(
@@ -411,9 +454,9 @@ export default function CartPage() {
             <p className="mt-3 text-sm leading-7 text-[#647168] sm:text-base">
               {cart.length > 0
                 ? isArabic
-                  ? `${itemsCount.toLocaleString()} قطعة في سلتك`
-                  : `${itemsCount.toLocaleString()} ${
-                      itemsCount === 1
+                  ? `${displayedItemsCount.toLocaleString()} قطعة في سلتك`
+                  : `${displayedItemsCount.toLocaleString()} ${
+                      displayedItemsCount === 1
                         ? "item"
                         : "items"
                     } in your bag`
@@ -863,6 +906,18 @@ export default function CartPage() {
                       );
                     }
                   )}
+                  {freePromotions.length > 0 && <div className="border-t border-[#dfe9e1] bg-[#f6faf7] p-4 sm:p-6">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#0a583b]">{isArabic ? "هداياك المجانية" : "Your free items"}</p>
+                    <div className="mt-3 space-y-2.5">{freePromotions.map((promotion) => {
+                      const item = cart.find((candidate) => Number(candidate.id) === promotion.productId && (promotion.variantId == null ? candidate.variant_id == null : Number(candidate.variant_id) === promotion.variantId));
+                      const name = item?.product_name || item?.name || (isArabic ? "منتج مجاني" : "Free item");
+                      return <div key={promotion.promotionId} className="flex items-center gap-3 rounded-2xl border border-[#d8eadc] bg-white px-3 py-3 sm:px-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f7f8f6] p-1.5">{item?.image_url ? <Image src={item.image_url} alt={name} width={80} height={80} className="h-full w-full object-contain" /> : <Package size={18} className="text-[#a2aaa4]" />}</div>
+                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-[#142019]">{name}</p><p className="mt-0.5 text-xs font-bold text-[#0a583b]">Buy 2+1 Free</p></div>
+                        <span className="shrink-0 rounded-full bg-[#e8f4eb] px-2.5 py-1 text-xs font-extrabold text-[#0a583b]">{isArabic ? `+${promotion.affectedQuantity} مجاناً` : `+${promotion.affectedQuantity} free`}</span>
+                      </div>;
+                    })}</div>
+                  </div>}
                 </section>
               </div>
 
@@ -896,7 +951,7 @@ export default function CartPage() {
 
                     <span className="font-bold text-[#142019]">
                       {
-                        itemsCount
+                        displayedItemsCount
                       }
                     </span>
                   </div>
@@ -933,6 +988,20 @@ export default function CartPage() {
                     </div>
                   )}
 
+                  {paidPromotions.map((promotion) => (
+                    <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                      <span>{promotionDescription(promotion)}</span>
+                      <span className="font-extrabold">−{formatPrice(promotion.discountAmount)}</span>
+                    </div>
+                  ))}
+
+                  {freePromotions.map((promotion) => (
+                    <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                      <span>{promotionDescription(promotion)}</span>
+                      <span className="font-extrabold">{isArabic ? "مجاناً" : "Free"}</span>
+                    </div>
+                  ))}
+
                   <div className="flex items-center justify-between gap-4 text-[#526057]">
                     <span>
                       {isArabic
@@ -963,7 +1032,7 @@ export default function CartPage() {
 
                   <span className="text-xl font-extrabold text-[#0a583b]">
                     {formatPrice(
-                      total
+                        payableTotal
                     )}
                   </span>
                 </div>
@@ -1041,7 +1110,7 @@ export default function CartPage() {
 
               <p className="mt-0.5 whitespace-nowrap text-base font-extrabold text-[#142019]">
                 {formatPrice(
-                  total
+                  payableTotal
                 )}
               </p>
             </div>
@@ -1186,4 +1255,3 @@ export default function CartPage() {
     </main>
   );
 }
-

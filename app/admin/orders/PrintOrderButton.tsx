@@ -1,7 +1,7 @@
 "use client";
 
-type OrderItem = { id: number; product_name: string | null; variant_label_ar: string | null; variant_label_en: string | null; quantity: number; unit_price: number };
-type PrintableOrder = { id: number; customer_name: string | null; phone: string | null; governorate: string | null; delivery_area: string | null; address: string | null; delivery_fee: number | null; cod_fee: number | null; payment_method: string | null; coupon_code: string | null; discount_amount: number | null; products_subtotal: number | null; total_price: number | null; status: string; created_at: string | null; order_items: OrderItem[] };
+type OrderItem = { id: number; product_id: number | null; variant_id: number | null; product_name: string | null; variant_label_ar: string | null; variant_label_en: string | null; quantity: number; unit_price: number };
+type PrintableOrder = { id: number; customer_name: string | null; phone: string | null; governorate: string | null; delivery_area: string | null; address: string | null; delivery_fee: number | null; cod_fee: number | null; payment_method: string | null; coupon_code: string | null; promotion_name?: string | null; promotion_details?: unknown[] | null; promotion_discount_amount?: number | null; discount_amount: number | null; products_subtotal: number | null; total_price: number | null; status: string; created_at: string | null; order_items: OrderItem[] };
 
 export default function PrintOrderButton({ order }: { order: PrintableOrder }) {
   function openInvoice() {

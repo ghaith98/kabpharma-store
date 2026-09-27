@@ -11,6 +11,7 @@ import { ChevronDown } from "lucide-react";
 
 import AddToCartButton from "./AddToCartButton";
 import WishlistButton from "./WishlistButton";
+import ProductPromotionNotice from "./[id]/ProductPromotionNotice";
 
 import type {
   ProductCardProduct,
@@ -34,12 +35,6 @@ export type EditorialProductVariant =
     label?: string | null;
     name?: string | null;
     images?: string[] | null;
-    is_out_of_stock?: boolean | null;
-    stock_quantity?:
-      | number
-      | string
-      | null;
-    stock?: number | string | null;
   };
 
 export type EditorialProduct =
@@ -58,29 +53,7 @@ type EditorialProductCardProps = {
   imageSizes?: string;
 };
 
-function isVariantOutOfStock(
-  variant: EditorialProductVariant
-) {
-  if (
-    variant.is_out_of_stock === true
-  ) {
-    return true;
-  }
-
-  if (
-    variant.stock_quantity != null
-  ) {
-    return (
-      Number(variant.stock_quantity) <= 0
-    );
-  }
-
-  if (variant.stock != null) {
-    return Number(variant.stock) <= 0;
-  }
-
-  return false;
-}
+function isVariantOutOfStock(_variant: EditorialProductVariant) { return false; }
 
 function getVariantLabel(
   variant: EditorialProductVariant,
@@ -211,18 +184,7 @@ export default function EditorialProductCard({
         (1 - salePercent / 100)
       : originalPrice;
 
-  const variantsHaveStockData =
-    variants.some(
-      (variant) =>
-        variant.is_out_of_stock != null ||
-        variant.stock_quantity != null ||
-        variant.stock != null
-    );
-
-  const allVariantsOutOfStock =
-    variants.length > 0 &&
-    variantsHaveStockData &&
-    variants.every(isVariantOutOfStock);
+  const allVariantsOutOfStock = false;
 
   const isOutOfStock =
     Boolean(product.is_out_of_stock) ||
@@ -325,7 +287,7 @@ export default function EditorialProductCard({
             <span className="inline-flex bg-white px-2 py-1 text-[9px] font-medium text-red-600 shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]">
               -{salePercent}%
             </span>
-          ) : null}
+          ) : <ProductPromotionNotice productId={product.id} summary />}
         </div>
       </div>
 
@@ -498,7 +460,7 @@ export default function EditorialProductCard({
                               : ""
                           }`}
                         >
-                          {label}
+                          <span>{label}</span>
                         </button>
                       );
                     }
