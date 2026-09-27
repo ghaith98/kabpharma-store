@@ -4,6 +4,7 @@ export type StoredPromotionDetail = {
   productId?: number | string;
   variantId?: number | string | null;
   affectedQuantity?: number | string;
+  discountAmount?: number | string;
   type?: "buy_2_get_1" | "buy_1_second_50";
 };
 
@@ -22,6 +23,7 @@ export type PromotionOrderItem = {
 export type DisplayOrderItem = PromotionOrderItem & {
   isPromotionGift?: boolean;
   promotionName?: string;
+  promotionDiscount?: number;
 };
 
 function sameOptionalId(first: number | string | null | undefined, second: number | string | null | undefined) {
@@ -38,18 +40,55 @@ export function buildOrderItemPresentation(
   const items: DisplayOrderItem[] = [];
 
   for (const item of orderItems || []) {
+    const paidPromotionDetails = details.filter(
+        (promotion) =>
+          promotion.type === "buy_1_second_50" &&
+          Number(promotion.productId) === Number(item.product_id) &&
+          sameOptionalId(promotion.variantId, item.variant_id)
+      );
+    const paidPromotionName = paidPromotionDetails
+      .map((promotion) => promotion.promotionName)
+      .filter((name): name is string => Boolean(name))
+      .join(" + ");
+    const itemPromotionDiscount = paidPromotionDetails.reduce((sum, promotion) => {
+        const storedDiscount = Number(promotion.discountAmount);
+        if (Number.isFinite(storedDiscount) && storedDiscount > 0) {
+          return sum + storedDiscount;
+        }
+
+        return (
+          sum +
+          Math.round(
+            Number(item.unit_price || 0) *
+              Math.max(0, Number(promotion.affectedQuantity || 0)) *
+              0.5
+          )
+        );
+      }, 0);
+
     const giftQuantity = details
       .filter((promotion) => promotion.type === "buy_2_get_1" && Number(promotion.productId) === Number(item.product_id) && sameOptionalId(promotion.variantId, item.variant_id))
       .reduce((sum, promotion) => sum + Math.max(0, Number(promotion.affectedQuantity || 0)), 0);
     const appliedGiftQuantity = Math.min(Math.max(0, Number(item.quantity || 0)), giftQuantity);
 
     if (!appliedGiftQuantity) {
-      items.push(item);
+      items.push({
+        ...item,
+        promotionName: paidPromotionName || undefined,
+        promotionDiscount: itemPromotionDiscount,
+      });
       continue;
     }
 
     const paidQuantity = Math.max(0, Number(item.quantity || 0) - appliedGiftQuantity);
-    if (paidQuantity) items.push({ ...item, quantity: paidQuantity });
+    if (paidQuantity) {
+      items.push({
+        ...item,
+        quantity: paidQuantity,
+        promotionName: paidPromotionName || undefined,
+        promotionDiscount: itemPromotionDiscount,
+      });
+    }
 
     const matchingPromotion = details.find(
       (promotion) => promotion.type === "buy_2_get_1" && Number(promotion.productId) === Number(item.product_id) && sameOptionalId(promotion.variantId, item.variant_id)

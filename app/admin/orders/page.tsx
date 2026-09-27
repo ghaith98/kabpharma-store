@@ -752,13 +752,16 @@ export default function AdminOrdersPage() {
                               Quantity: {item.quantity}
                             </p>
                             {item.isPromotionGift && <p className="mt-1 text-xs font-bold text-emerald-700">{item.promotionName}</p>}
+                            {!item.isPromotionGift && Number(item.promotionDiscount || 0) > 0 && <p className="mt-1 text-xs font-bold text-emerald-700">{item.promotionName || "Promotion discount"}: −{Number(item.promotionDiscount).toLocaleString()} SYP</p>}
                           </div>
 
                           <p className="font-bold text-green-700">
                             {item.isPromotionGift ? "Free" : (
-                              Number(item.unit_price) *
-                              Number(item.quantity)
-                            ).toLocaleString() + " SYP"}
+                              Math.max(
+                                0,
+                                Number(item.unit_price) * Number(item.quantity) - Number(item.promotionDiscount || 0)
+                              ).toLocaleString() + " SYP"
+                            )}
                           </p>
                         </div>
                       ))}

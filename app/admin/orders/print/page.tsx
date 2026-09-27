@@ -105,11 +105,31 @@ export default function PrintOrderPage() {
               <tr><th className="w-10 px-3 py-3">#</th><th className="px-3 py-3">المنتج</th><th className="w-16 px-3 py-3">الكمية</th><th className="w-28 px-3 py-3">سعر القطعة</th><th className="w-28 px-3 py-3">المجموع</th></tr>
             </thead>
             <tbody>
-              {presentation.items.map((item, index) => (
-                <tr key={item.id} className="border-t border-[#e4ece6] even:bg-[#fbfdfb]">
-                  <td className="px-3 py-3">{index + 1}</td><td className="px-3 py-3"><p className="font-bold">{item.product_name || "—"}{item.isPromotionGift ? " — هدية مجانية" : ""}</p>{(item.variant_label_ar || item.variant_label_en) && <p className="mt-0.5 text-xs text-slate-500">{item.variant_label_ar || item.variant_label_en}</p>}{item.isPromotionGift && <p className="mt-0.5 text-xs font-bold text-[#0a583b]">{item.promotionName}</p>}</td><td className="px-3 py-3">{item.quantity}</td><td className="px-3 py-3 font-bold text-[#0a583b]" dir="ltr">{item.isPromotionGift ? "مجاني" : money(item.unit_price)}</td><td className="px-3 py-3 font-bold" dir="ltr">{money(Number(item.unit_price || 0) * Number(item.quantity || 0))}</td>
-                </tr>
-              ))}
+              {presentation.items.map((item, index) => {
+                const originalLineTotal =
+                  Number(item.unit_price || 0) * Number(item.quantity || 0);
+                const finalLineTotal = Math.max(
+                  0,
+                  originalLineTotal - Number(item.promotionDiscount || 0)
+                );
+
+                return (
+                  <tr key={item.id} className="border-t border-[#e4ece6] even:bg-[#fbfdfb]">
+                    <td className="px-3 py-3">{index + 1}</td>
+                    <td className="px-3 py-3">
+                      <p className="font-bold">{item.product_name || "—"}{item.isPromotionGift ? " — هدية مجانية" : ""}</p>
+                      {(item.variant_label_ar || item.variant_label_en) && <p className="mt-0.5 text-xs text-slate-500">{item.variant_label_ar || item.variant_label_en}</p>}
+                      {item.isPromotionGift && <p className="mt-0.5 text-xs font-bold text-[#0a583b]">{item.promotionName}</p>}
+                      {!item.isPromotionGift && Number(item.promotionDiscount || 0) > 0 && <p className="mt-0.5 text-xs font-bold text-[#0a583b]">{item.promotionName || "خصم العرض"} — {`−${money(item.promotionDiscount)}`}</p>}
+                    </td>
+                    <td className="px-3 py-3">{item.quantity}</td>
+                    <td className="px-3 py-3 font-bold text-[#0a583b]" dir="ltr">{item.isPromotionGift ? "مجاني" : money(item.unit_price)}</td>
+                    <td className="px-3 py-3 font-bold" dir="ltr">
+                      {item.isPromotionGift ? money(0) : Number(item.promotionDiscount || 0) > 0 ? <><span className="block text-xs font-medium text-slate-400 line-through">{money(originalLineTotal)}</span><span className="text-[#0a583b]">{money(finalLineTotal)}</span></> : money(originalLineTotal)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>

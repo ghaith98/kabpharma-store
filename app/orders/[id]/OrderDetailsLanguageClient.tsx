@@ -37,6 +37,12 @@ type OrderDetails = {
   customer_name: string | null;
   phone: string | null;
   address: string | null;
+  delivery_fee?: number | string | null;
+  cod_fee?: number | string | null;
+  products_subtotal?: number | string | null;
+  discount_amount?: number | string | null;
+  promotion_name?: string | null;
+  coupon_code?: string | null;
   promotion_details?: StoredPromotionDetail[] | null;
   order_items?: OrderItem[] | null;
 };
@@ -270,6 +276,26 @@ export default function OrderDetailsLanguageClient({
     order.promotion_details
   );
   const orderedItems = itemPresentation.items;
+  const rawItemsSubtotal = (order.order_items || []).reduce(
+    (sum, item) =>
+      sum +
+      Number(item.unit_price || 0) *
+        Number(item.quantity || 0),
+    0
+  );
+  const productsSubtotal = Math.max(
+    0,
+    Number(order.products_subtotal ?? rawItemsSubtotal) -
+      itemPresentation.giftValue
+  );
+  const displayDiscountAmount = Math.max(
+    0,
+    Number(order.discount_amount || 0) -
+      itemPresentation.giftValue
+  );
+  const discountLabel = order.promotion_name
+    ? order.promotion_name
+    : order.coupon_code || null;
 
   return (
     <main
@@ -393,6 +419,10 @@ export default function OrderDetailsLanguageClient({
                       ? item.variant_label_ar || item.variant_label_en
                       : item.variant_label_en || item.variant_label_ar;
                     const lineTotal = Number(item.unit_price || 0) * Number(item.quantity || 0);
+                    const finalLineTotal = Math.max(
+                      0,
+                      lineTotal - Number(item.promotionDiscount || 0)
+                    );
 
                     return (
                       <article key={item.id} className="flex gap-4 py-5 first:pt-5 last:pb-0">
@@ -427,9 +457,16 @@ export default function OrderDetailsLanguageClient({
                                 {isArabic ? "هدية مجانية" : "Free gift"}
                               </span>
                             ) : (
-                              <span dir="ltr" className="shrink-0 text-sm font-extrabold text-[#142019]">
-                                {lineTotal.toLocaleString()} SYP
-                              </span>
+                              <div dir="ltr" className="shrink-0 text-right">
+                                {Number(item.promotionDiscount || 0) > 0 && (
+                                  <p className="text-xs font-bold text-[#8b958e] line-through">
+                                    {lineTotal.toLocaleString()} SYP
+                                  </p>
+                                )}
+                                <p className="text-sm font-extrabold text-[#142019]">
+                                  {finalLineTotal.toLocaleString()} SYP
+                                </p>
+                              </div>
                             )}
                           </div>
                           <p className="mt-2 text-xs font-bold text-[#647168]">
@@ -438,6 +475,17 @@ export default function OrderDetailsLanguageClient({
                               ? ` · ${item.promotionName}`
                               : ""}
                           </p>
+                          {!item.isPromotionGift &&
+                            Number(item.promotionDiscount || 0) > 0 && (
+                              <p className="mt-1 text-xs font-extrabold text-[#0a583b]">
+                                {item.promotionName ||
+                                  (isArabic
+                                    ? "خصم العرض"
+                                    : "Promotion discount")}
+                                {" · "}
+                                −{Number(item.promotionDiscount).toLocaleString()} SYP
+                              </p>
+                            )}
                         </div>
                       </article>
                     );
@@ -597,15 +645,52 @@ export default function OrderDetailsLanguageClient({
               </div>
             </div>
 
-            <div className="border-b border-[#edf0ed] py-5">
-              <div className="flex items-end justify-between gap-4">
-                <span className="text-sm font-bold text-[#647168]">
+            <div className="space-y-3 border-b border-[#edf0ed] py-5 text-sm">
+              <div className="flex items-center justify-between gap-4 text-[#647168]">
+                <span>{isArabic ? "المنتجات" : "Products"}</span>
+                <span dir="ltr" className="font-bold text-[#142019]">
+                  {productsSubtotal.toLocaleString()} SYP
+                </span>
+              </div>
+              {displayDiscountAmount > 0 && (
+                <div className="flex items-center justify-between gap-4 text-[#0a583b]">
+                  <span>
+                    {discountLabel
+                      ? `${isArabic ? "خصم" : "Discount"} (${discountLabel})`
+                      : isArabic
+                        ? "خصم العرض"
+                        : "Promotion discount"}
+                  </span>
+                  <span dir="ltr" className="font-extrabold">
+                    −{displayDiscountAmount.toLocaleString()} SYP
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-4 text-[#647168]">
+                <span>{isArabic ? "التوصيل" : "Delivery"}</span>
+                <span dir="ltr" className="font-bold text-[#142019]">
+                  {Number(order.delivery_fee || 0) === 0
+                    ? isArabic
+                      ? "مجاني"
+                      : "Free"
+                    : `${Number(order.delivery_fee || 0).toLocaleString()} SYP`}
+                </span>
+              </div>
+              {Number(order.cod_fee || 0) > 0 && (
+                <div className="flex items-center justify-between gap-4 text-[#647168]">
+                  <span>
+                    {isArabic ? "رسم الدفع عند الاستلام" : "Cash on delivery fee"}
+                  </span>
+                  <span dir="ltr" className="font-bold text-[#142019]">
+                    {Number(order.cod_fee).toLocaleString()} SYP
+                  </span>
+                </div>
+              )}
+              <div className="flex items-end justify-between gap-4 border-t border-[#dfe4e0] pt-4">
+                <span className="font-extrabold text-[#142019]">
                   {isArabic ? "المبلغ الإجمالي" : "Total amount"}
                 </span>
-                <span
-                  dir="ltr"
-                  className="text-xl font-extrabold text-[#0a583b]"
-                >
+                <span dir="ltr" className="text-xl font-extrabold text-[#0a583b]">
                   {Number(order.total_price || 0).toLocaleString()} SYP
                 </span>
               </div>
