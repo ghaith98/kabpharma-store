@@ -33,6 +33,8 @@ import type {
   EditorialProduct,
 } from "./EditorialProductCard";
 
+const PRODUCTS_PAGE_SIZE = 24;
+
 type ProductsClientProps = {
   products: EditorialProduct[];
   showSearch?: boolean;
@@ -673,6 +675,62 @@ export default function ProductsClient({
           bestSellerIds,
         ]);
 
+      /*
+        Incremental rendering ("load more").
+        Filtering and sorting still run over the whole catalog instantly, but
+        only the first PAGE_SIZE matching cards are mounted; more are added as
+        the visitor reaches the end of the grid (or taps "Show more").
+        The page resets to the first batch whenever the filtered result
+        changes. Stored with the result key so no effect/setState is needed.
+      */
+      const resultKey = useMemo(
+        () => filteredProducts.map((product) => product.id).join(","),
+        [filteredProducts]
+      );
+
+      const [pageState, setPageState] = useState({
+        key: resultKey,
+        count: PRODUCTS_PAGE_SIZE,
+      });
+
+      const visibleCount =
+        pageState.key === resultKey
+          ? pageState.count
+          : PRODUCTS_PAGE_SIZE;
+
+      const visibleProducts = filteredProducts.slice(0, visibleCount);
+      const remainingCount = filteredProducts.length - visibleProducts.length;
+
+      const showMore = useCallback(() => {
+        setPageState((current) => ({
+          key: resultKey,
+          count:
+            (current.key === resultKey
+              ? current.count
+              : PRODUCTS_PAGE_SIZE) + PRODUCTS_PAGE_SIZE,
+        }));
+      }, [resultKey]);
+
+      const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+      useEffect(() => {
+        const sentinel = loadMoreRef.current;
+        if (!sentinel || remainingCount <= 0) return;
+        if (typeof IntersectionObserver === "undefined") return;
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+              showMore();
+            }
+          },
+          { rootMargin: "600px 0px" }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+      }, [remainingCount, showMore]);
+
       return (
         <>
           {concern && activeConcernName && (
@@ -932,7 +990,7 @@ export default function ProductsClient({
           </section>
         ) : (
         <div className={`grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 ${standaloneNewArrivalsLayout ? "lg:grid-cols-4 lg:gap-x-8" : "lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4"}`}>
-  {filteredProducts.map(
+  {visibleProducts.map(
     (product, index) => (
       <Fragment key={product.id}>
         <EditorialProductCard
@@ -957,6 +1015,23 @@ export default function ProductsClient({
     )
   )}
 </div>
+      )}
+
+      {remainingCount > 0 && (
+        <div
+          ref={loadMoreRef}
+          className="mt-10 flex justify-center"
+        >
+          <button
+            type="button"
+            onClick={showMore}
+            className="min-h-11 border border-[#0a583b] px-8 py-2.5 text-sm font-extrabold text-[#0a583b] transition hover:bg-[#0a583b] hover:text-white"
+          >
+            {isArabic
+              ? `عرض المزيد (${remainingCount})`
+              : `Show more (${remainingCount})`}
+          </button>
+        </div>
       )}
 
       {!standaloneCollection && filtersOpen && (

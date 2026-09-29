@@ -50,3 +50,39 @@ Files: `app/products/EditorialProductCard.tsx`, `app/products/[id]/ProductGaller
   transfers cannot be claimed.
 - Remove unused dependencies `leaflet`, `react-leaflet`, `@types/leaflet`
   (run `npm uninstall` so the lockfile updates) and unused `app/CustomerServiceWidget.tsx`.
+
+---
+
+# Update 2 — language cookie, product pagination, admin clean-up
+
+## 1. Language is now a cookie (no Arabic→English flash)
+- `proxy.ts` (Next.js 16 name for middleware) reads the `lang` cookie and
+  internally serves `/ar/...` or `/en/...`. Visitors still see clean URLs.
+- Storefront pages moved under `app/[lang]/` (only page/layout/loading/error
+  files moved; components stayed where they were). Each page is pre-rendered
+  and cached once per language.
+- Back-office pages (admin, admin-mobile, driver, delivery-company, delivery)
+  moved to `app/(backoffice)/` with their own root layout (never indexed).
+- `lib/use-app-pathname.ts` replaces `usePathname()` in shared components so
+  the server and browser agree on the current path.
+- Switching language sets the cookie and reloads the page.
+- Old visitors' saved localStorage choice is migrated to the cookie once.
+- Shareable language links: `/en/products` saves English and redirects to
+  `/products`.
+- About, Terms, Privacy Policy and Refund Policy are now server components
+  (no page JavaScript sent to the browser).
+
+## 2. Products grid: load more
+`ProductsClient` renders the first 24 matching products and adds 24 more
+automatically as the visitor scrolls (or taps "Show more"). Search, filters
+and sorting still work across the whole catalog instantly.
+
+## 3. Admin: payment proofs removed
+Payment Proofs page, sidebar/mobile links, dashboard inboxes and the
+"View payment proof" button are removed. Orders now show "Cash on Delivery"
+or "Sham Cash — verified transaction #…". The dashboard's live alert now
+fires for every new order (it previously fired only for proof uploads).
+
+Not done, on purpose: moving admin edits behind server API routes. The RLS
+audit showed every admin write already requires the admin role at the
+database level, so this would be a large rewrite for little security gain.

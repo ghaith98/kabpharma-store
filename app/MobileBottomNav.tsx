@@ -4,7 +4,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 
 import Link from "next/link";
 
-import { usePathname } from "next/navigation";
+
 
 import {
   Home,
@@ -15,9 +15,10 @@ import {
 
 import { useLanguage } from "../context/LanguageContext";
 import { useCartCount } from "./useStoreCounts";
+import { useAppPathname } from "@/lib/use-app-pathname";
 
 export default function MobileBottomNav() {
-  const pathname = usePathname();
+  const pathname = useAppPathname();
   const { lang } = useLanguage();
 
   const currentLang =

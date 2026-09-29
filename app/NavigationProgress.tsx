@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAppPathname } from "@/lib/use-app-pathname";
 
 const COMPLETE_HOLD_MS = 320;
 const SAFETY_TIMEOUT_MS = 8_000;
 
 export default function NavigationProgress() {
-  const pathname = usePathname();
+  const pathname = useAppPathname();
   const searchParams = useSearchParams();
 
   const [phase, setPhase] = useState<"idle" | "loading" | "completing" | "done">("idle");

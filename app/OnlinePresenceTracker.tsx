@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { supabase } from "@/lib/supabase";
+import { useAppPathname } from "@/lib/use-app-pathname";
 
 /*
   Storefront "online users" presence.
@@ -59,7 +60,7 @@ function isCustomerLoggedIn() {
 }
 
 export default function OnlinePresenceTracker() {
-  const pathname = usePathname();
+  const pathname = useAppPathname();
   const pathnameRef = useRef(pathname || "/");
   const channelRef = useRef<RealtimeChannel | null>(null);
   const subscribedRef = useRef(false);

@@ -10,10 +10,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import {
-  usePathname,
-  useRouter,
-} from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import {
   ChevronDown,
@@ -32,6 +29,7 @@ import {
   useCartCount,
   useWishlistCount,
 } from "./useStoreCounts";
+import { useAppPathname } from "@/lib/use-app-pathname";
 type Category = {
   id: number;
   name?: string | null;
@@ -45,7 +43,7 @@ export default function Navbar() {
     setLang,
   } = useLanguage();
 
-  const pathname = usePathname();
+  const pathname = useAppPathname();
   const router = useRouter();
 
   const isArabic = lang === "ar";

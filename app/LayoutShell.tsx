@@ -2,19 +2,20 @@
 
 import { Suspense } from "react";
 
-import { usePathname } from "next/navigation";
+
 import Navbar from "./Navbar";
 import Footer from "./FooterComponent";
 import MobileBottomNav from "./MobileBottomNav";
 import OnlinePresenceTracker from "./OnlinePresenceTracker";
 import NavigationProgress from "./NavigationProgress";
+import { useAppPathname } from "@/lib/use-app-pathname";
 
 export default function LayoutShell({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const pathname = useAppPathname();
 
   const isDriverPage         = pathname.startsWith("/driver");
   const isAdminPage          = pathname.startsWith("/admin");

@@ -2,13 +2,14 @@
 
 import Script from "next/script";
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+
 import { trackPageView } from "@/lib/analytics";
+import { useAppPathname } from "@/lib/use-app-pathname";
 
 const sensitiveRoutes = ["/checkout", "/payment", "/profile", "/orders"];
 
 export default function Analytics() {
-  const pathname = usePathname();
+  const pathname = useAppPathname();
   const gaId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
   const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
   const isBackOffice = pathname.startsWith("/admin") || pathname.startsWith("/driver");
