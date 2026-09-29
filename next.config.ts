@@ -138,6 +138,10 @@ const nextConfig: NextConfig = {
 
   images: {
     formats: ["image/avif", "image/webp"],
+    // Next.js 16 only serves qualities listed here; anything else is
+    // clamped to the nearest value. 75 = product cards and thumbnails,
+    // 90 = full-width hero banners, where softness is most visible.
+    qualities: [75, 90],
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy:

@@ -394,6 +394,7 @@ export default function HomeBannerSwiper({
             width: 1600,
             height: 620,
             sizes: "100vw",
+            quality: 90,
           });
 
           const {
@@ -407,6 +408,7 @@ export default function HomeBannerSwiper({
             width: 393,
             height: 680,
             sizes: "100vw",
+            quality: 90,
           });
 
           const shouldPrioritize =

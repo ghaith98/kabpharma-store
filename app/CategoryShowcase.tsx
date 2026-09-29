@@ -87,6 +87,7 @@ export default function CategoryShowcase({
                     alt=""
                     fill
                     sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                    quality={90}
                     className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                   />
                 </span>

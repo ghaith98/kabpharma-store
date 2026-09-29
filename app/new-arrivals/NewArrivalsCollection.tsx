@@ -193,7 +193,7 @@ export function DiscoveryTile({
     height: 576,
     sizes:
       "(max-width: 1023px) 100vw, 50vw",
-    quality: 82,
+    quality: 90,
   });
 
   const {
@@ -206,7 +206,7 @@ export function DiscoveryTile({
     width: 800,
     height: 1000,
     sizes: "100vw",
-    quality: 82,
+    quality: 90,
   });
 
   return (

@@ -235,6 +235,7 @@ export default function NewArrivalsBanner({
     width: 1600,
     height: 620,
     sizes: "100vw",
+    quality: 90,
   });
 
   /*
@@ -253,6 +254,7 @@ export default function NewArrivalsBanner({
     width: 800,
     height: 400,
     sizes: "100vw",
+    quality: 90,
   });
 
   function renderBreadcrumb() {
