@@ -36,6 +36,8 @@ export type EditorialProductVariant =
     label?: string | null;
     name?: string | null;
     images?: string[] | null;
+    // Listings send each option's main image here (not a full gallery).
+    image_url?: string | null;
   };
 
 export type EditorialProduct =
@@ -220,6 +222,7 @@ export default function EditorialProductCard({
 
   const selectedImage =
     selectedVariant?.images?.[0] ||
+    selectedVariant?.image_url ||
     product.image_url ||
     null;
 
