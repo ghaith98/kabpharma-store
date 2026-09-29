@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasMainSize } from "@/lib/product-options";
 
 import { getCustomerSession } from "@/lib/customer-session";
 import { getCouponDiscount } from "@/lib/coupons";
@@ -271,7 +272,7 @@ export async function POST(request: Request) {
     supabaseAdmin
       .from("products")
       .select(
-        "id, name, name_ar, name_en, price, sale_percent, image_url, is_out_of_stock, category_id"
+        "id, name, name_ar, name_en, price, sale_percent, size_ar, size_en, image_url, is_out_of_stock, category_id"
       )
       .in("id", productIds),
     supabaseAdmin
@@ -352,7 +353,9 @@ export async function POST(request: Request) {
           409
         );
       }
-    } else if (productVariants.length > 0) {
+    } else if (productVariants.length > 0 && !hasMainSize(product)) {
+      // No option chosen and no main size: use the cheapest option (older
+      // products). With a main size, "no option" means the main size.
       variant =
         [...productVariants]
           .filter((candidate) => !isUnavailable(candidate))
@@ -401,10 +404,10 @@ export async function POST(request: Request) {
       variant_id: variant?.id ?? null,
       variant_label_ar: variant
         ? variantLabel(variant, "ar")
-        : null,
+        : cleanText(product.size_ar || product.size_en, 80) || null,
       variant_label_en: variant
         ? variantLabel(variant, "en")
-        : null,
+        : cleanText(product.size_en || product.size_ar, 80) || null,
       image_url:
         variant?.image_url || product.image_url || null,
       quantity: item.quantity,

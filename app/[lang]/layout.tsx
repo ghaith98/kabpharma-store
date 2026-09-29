@@ -167,6 +167,7 @@ export default async function StorefrontLayout({
     <html
       lang={lang}
       dir={lang === "ar" ? "rtl" : "ltr"}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${sans.variable} ${arabic.variable} h-full antialiased`}
     >

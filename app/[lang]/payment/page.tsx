@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BackLink from "@/app/BackLink";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -631,10 +632,10 @@ export default function PaymentPage() {
               </div>
             )}
 
-            <Link href="/checkout" className="group mt-6 inline-flex items-center gap-2 text-xs font-extrabold text-[#526057] transition hover:text-[#0a583b]">
+            <BackLink href="/checkout" onlyFrom="/checkout" className="group mt-6 inline-flex items-center gap-2 text-xs font-extrabold text-[#526057] transition hover:text-[#0a583b]">
               <BackArrow size={14} className="transition-transform group-hover:-translate-x-1 rtl:group-hover:translate-x-1" />
               <span>{t("Edit delivery information", "تعديل معلومات الطلب")}</span>
-            </Link>
+            </BackLink>
           </aside>
         </div>
       </div>

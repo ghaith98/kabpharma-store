@@ -528,20 +528,30 @@ export default function AdminProductsPage() {
       return;
     }
 
-    if (cleanedVariants.length === 0 && !price.trim()) {
-      alert("Please enter base price or add product options");
+    // Main size: the product's own size, price and image. Required when
+    // there are no options; optional (as an extra choice) when there are.
+    const hasMainSizeInput = Boolean(sizeAr.trim() || sizeEn.trim());
+    const usesMainSize = cleanedVariants.length === 0 || hasMainSizeInput;
+
+    if (usesMainSize && !price.trim()) {
+      alert(
+        cleanedVariants.length === 0
+          ? "Please enter base price or add product options"
+          : "Please enter the main size price"
+      );
       return;
     }
 
-    if (cleanedVariants.length === 0 && !imageFile) {
-      alert("Please upload product image");
+    if (usesMainSize && !imageFile) {
+      alert(
+        cleanedVariants.length === 0
+          ? "Please upload product image"
+          : "Please upload the main size image"
+      );
       return;
     }
 
-    if (
-      cleanedVariants.length === 0 &&
-      (!sizeAr.trim() || !sizeEn.trim())
-    ) {
+    if (usesMainSize && (!sizeAr.trim() || !sizeEn.trim())) {
       alert("Please enter the product size in Arabic and English (e.g. 200 مل / 200 ml)");
       return;
     }
@@ -580,7 +590,10 @@ export default function AdminProductsPage() {
 
         basePrice = Number(cheapestVariant.price);
         productImageUrl = cheapestVariant.image_url;
-      } else {
+      }
+
+      // With a main size, keep the product's own price and image.
+      if (usesMainSize) {
         productImageUrl = await uploadProductImage(imageFile!);
         basePrice = Number(price);
       }
@@ -767,8 +780,21 @@ export default function AdminProductsPage() {
       return;
     }
 
-    if (cleanedEditVariants.length === 0 && !editPrice.trim()) {
-      alert("Please enter base price or add product options");
+    const editHasMainSize = Boolean(editSizeAr.trim() || editSizeEn.trim());
+    const editUsesMainSize =
+      cleanedEditVariants.length === 0 || editHasMainSize;
+
+    if (editUsesMainSize && !editPrice.trim()) {
+      alert(
+        cleanedEditVariants.length === 0
+          ? "Please enter base price or add product options"
+          : "Please enter the main size price"
+      );
+      return;
+    }
+
+    if (editHasMainSize && (!editSizeAr.trim() || !editSizeEn.trim())) {
+      alert("Please enter the product size in Arabic and English (e.g. 200 مل / 200 ml)");
       return;
     }
 
@@ -808,7 +834,9 @@ export default function AdminProductsPage() {
       let finalBasePrice = Number(editPrice);
       let finalProductImageUrl: string | undefined = normalProductImageUrl;
 
-      if (uploadedEditVariants.length > 0) {
+      // Without a main size, the product takes its cheapest option's price
+      // and image (as before). With a main size, keep its own.
+      if (uploadedEditVariants.length > 0 && !editUsesMainSize) {
         const cheapestVariant = [...uploadedEditVariants].sort(
           (a, b) => Number(a.price) - Number(b.price)
         )[0];
@@ -1120,7 +1148,7 @@ export default function AdminProductsPage() {
 
             <input
               type="number"
-              placeholder="Base Price - only if no options"
+              placeholder="Base / main size price"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
@@ -1128,7 +1156,7 @@ export default function AdminProductsPage() {
 
             <input
               type="text"
-              placeholder="Size Arabic - e.g. 200 مل (only if no options)"
+              placeholder="Main size Arabic - e.g. 200 مل"
               value={sizeAr}
               onChange={(e) => setSizeAr(e.target.value)}
               dir="rtl"
@@ -1137,7 +1165,7 @@ export default function AdminProductsPage() {
 
             <input
               type="text"
-              placeholder="Size English - e.g. 200 ml (only if no options)"
+              placeholder="Main size English - e.g. 200 ml"
               value={sizeEn}
               onChange={(e) => setSizeEn(e.target.value)}
               dir="ltr"
@@ -1766,7 +1794,7 @@ export default function AdminProductsPage() {
               type="number"
               value={editPrice}
               onChange={(e) => setEditPrice(e.target.value)}
-              placeholder="Base Price - only if no options"
+              placeholder="Base / main size price"
               className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             />
 
@@ -1774,7 +1802,7 @@ export default function AdminProductsPage() {
               type="text"
               value={editSizeAr}
               onChange={(e) => setEditSizeAr(e.target.value)}
-              placeholder="Size Arabic - e.g. 200 مل (only if no options)"
+              placeholder="Main size Arabic - e.g. 200 مل"
               dir="rtl"
               className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             />
@@ -1783,7 +1811,7 @@ export default function AdminProductsPage() {
               type="text"
               value={editSizeEn}
               onChange={(e) => setEditSizeEn(e.target.value)}
-              placeholder="Size English - e.g. 200 ml (only if no options)"
+              placeholder="Main size English - e.g. 200 ml"
               dir="ltr"
               className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             />

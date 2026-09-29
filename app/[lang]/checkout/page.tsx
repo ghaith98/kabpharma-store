@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import BackLink from "@/app/BackLink";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -1595,8 +1596,9 @@ export default function CheckoutPage() {
               </span>
             </div>
 
-            <Link
+            <BackLink
               href="/cart"
+              onlyFrom="/cart"
               className="group mt-6 inline-flex items-center gap-2 text-xs font-extrabold text-[#526057] transition hover:text-[#0a583b]"
             >
               <BackArrow
@@ -1609,7 +1611,7 @@ export default function CheckoutPage() {
                   ? "العودة إلى السلة"
                   : "Back to cart"}
               </span>
-            </Link>
+            </BackLink>
           </aside>
         </div>
       </div>

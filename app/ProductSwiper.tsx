@@ -28,6 +28,11 @@ import type {
 } from "./products/EditorialProductCard";
 
 import { useLanguage } from "../context/LanguageContext";
+import {
+  isRestoringNavigation,
+  readPageNumber,
+  writePageNumber,
+} from "@/lib/navigation-memory";
 
 type ProductSwiperProps = {
   products: EditorialProduct[];
@@ -59,6 +64,12 @@ export default function ProductSwiper({
     canSlideNext,
     setCanSlideNext,
   ] = useState(false);
+
+  // One memory slot per slider on the page, identified by its products.
+  const sliderMemoryKey = `kab_slider:${(products || [])
+    .slice(0, 6)
+    .map((product) => product.id)
+    .join("-")}:`;
 
   const navigationState =
     useRef({
@@ -134,9 +145,21 @@ export default function ProductSwiper({
         watchOverflow
         onSwiper={(swiper) => {
           setSwiperInstance(swiper);
+
+          // Back from a product: return to the same place in the slider.
+          if (isRestoringNavigation()) {
+            const savedIndex = readPageNumber(sliderMemoryKey);
+            if (savedIndex > 0) {
+              swiper.slideTo(savedIndex, 0, false);
+            }
+          }
+
           updateNavigation(swiper);
         }}
-        onSlideChange={updateNavigation}
+        onSlideChange={(swiper) => {
+          writePageNumber(sliderMemoryKey, swiper.activeIndex);
+          updateNavigation(swiper);
+        }}
         onResize={updateNavigation}
         onBreakpoint={
           updateNavigation

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { hasMainSize } from "@/lib/product-options";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getPromotionEvaluation, type PromotionCartLine } from "@/lib/promotions";
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!productIds.length) return NextResponse.json({ promotions: [], discountAmount: 0, autoAdditions: [] });
 
     const [{ data: products, error: productsError }, { data: variants, error: variantsError }] = await Promise.all([
-      supabaseAdmin.from("products").select("id,price,sale_percent,category_id,is_out_of_stock").in("id", productIds),
+      supabaseAdmin.from("products").select("id,price,sale_percent,size_ar,size_en,category_id,is_out_of_stock").in("id", productIds),
       supabaseAdmin.from("product_variants").select("*").in("product_id", productIds),
     ]);
     if (productsError || variantsError) throw new Error("Promotion preview lookup failed");
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const product = productMap.get(Number(item.productId));
       const requestedVariant = item.variantId == null ? null : variantMap.get(Number(item.variantId));
-      const variant = requestedVariant || (item.variantId == null
+      const variant = requestedVariant || (item.variantId == null && !hasMainSize(product)
         ? [...(variantsByProduct.get(Number(item.productId)) || [])]
             .sort((first, second) => Number(first.price || 0) - Number(second.price || 0))[0] || null
         : null);

@@ -26,6 +26,11 @@ import EditorialProductCard from "./EditorialProductCard";
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import RoutineBanner from "./RoutineBanner";
 import {
+  isRestoringNavigation,
+  readPageNumber,
+  writePageNumber,
+} from "@/lib/navigation-memory";
+import {
   DiscoveryTile,
   type DiscoveryBanner,
 } from "../new-arrivals/NewArrivalsCollection";
@@ -710,6 +715,27 @@ export default function ProductsClient({
               : PRODUCTS_PAGE_SIZE) + PRODUCTS_PAGE_SIZE,
         }));
       }, [resultKey]);
+
+      // Back from a product: show as many products as were open before,
+      // so the page is tall enough to return to the same spot.
+      useEffect(() => {
+        if (!isRestoringNavigation()) return;
+
+        const savedCount = readPageNumber("kab_products_shown:");
+        if (savedCount <= PRODUCTS_PAGE_SIZE) return;
+
+        const timer = window.setTimeout(() => {
+          setPageState({ key: resultKey, count: savedCount });
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+        // Only on arrival; later changes follow the normal flow.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      useEffect(() => {
+        writePageNumber("kab_products_shown:", visibleCount);
+      }, [visibleCount]);
 
       const loadMoreRef = useRef<HTMLDivElement | null>(null);
 

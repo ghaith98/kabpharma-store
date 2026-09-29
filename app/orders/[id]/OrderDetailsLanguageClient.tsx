@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BackLink from "@/app/BackLink";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -303,8 +304,9 @@ export default function OrderDetailsLanguageClient({
       className="min-h-screen bg-[#f7f7f3] px-4 pb-20 pt-7 sm:px-6 sm:pb-24 sm:pt-11 lg:px-8"
     >
       <div className="mx-auto max-w-[1180px]">
-        <Link
+        <BackLink
           href="/orders"
+          onlyFrom="/orders"
           className="inline-flex items-center gap-2 text-sm font-extrabold text-[#526057] transition hover:text-[#0a583b]"
         >
           {isArabic ? (
@@ -313,7 +315,7 @@ export default function OrderDetailsLanguageClient({
             <ArrowLeft className="h-4 w-4" />
           )}
           {isArabic ? "العودة إلى طلباتي" : "Back to my orders"}
-        </Link>
+        </BackLink>
 
         <header className="mt-7 flex flex-col gap-6 border-b border-[#dfe4e0] pb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-10">
           <div>

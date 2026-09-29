@@ -15,6 +15,7 @@ import WishlistButton from "../WishlistButton";
 
 import { useLanguage } from "../../../context/LanguageContext";
 import { trackProductView } from "@/lib/analytics";
+import { buildMainOption, hasMainSize, optionIdToNumber } from "@/lib/product-options";
 
 type ProductCategory = {
   name?: string | null;
@@ -126,9 +127,20 @@ export default function ProductDetailsClient({
 
   const sortedVariants =
     useMemo(() => {
-      return [
+      const options: ProductDetailVariant[] = [
         ...(productVariants || []),
-      ].sort(
+      ];
+
+      // Main size + extra options: offer the main size as a choice too.
+      // Its images are the product's normal gallery.
+      if (options.length > 0 && hasMainSize(product)) {
+        options.push({
+          ...buildMainOption(product),
+          images: null,
+        });
+      }
+
+      return options.sort(
         (
           first,
           second
@@ -136,7 +148,7 @@ export default function ProductDetailsClient({
           Number(first.price) -
           Number(second.price)
       );
-    }, [productVariants]);
+    }, [productVariants, product]);
 
   const defaultVariant =
     useMemo(() => {
@@ -542,7 +554,7 @@ export default function ProductDetailsClient({
 
             <p
               dir={isArabic ? "rtl" : "ltr"}
-              className="inline-block border-b border-[#142019] pb-1.5 text-sm font-semibold text-[#142019]"
+              className="inline-block border-b border-[#142019] pb-1.5 text-[#142019]"
             >
               {isArabic
                 ? product.size_ar || product.size_en
@@ -579,12 +591,9 @@ export default function ProductDetailsClient({
               finalImage,
 
             variant_id:
-              selectedVariant?.id !=
-              null
-                ? Number(
-                    selectedVariant.id
-                  )
-                : null,
+              optionIdToNumber(
+                selectedVariant?.id
+              ),
 
             variant_label_ar:
               selectedVariantLabelAr ||
@@ -610,7 +619,7 @@ export default function ProductDetailsClient({
             isOutOfStock
           }
         />
-        <ProductPromotionNotice productId={product.id} variantId={selectedVariant?.id != null ? Number(selectedVariant.id) : null} hidden={selectedVariantSalePercent > 0 || isOutOfStock} />
+        <ProductPromotionNotice productId={product.id} variantId={optionIdToNumber(selectedVariant?.id)} hidden={selectedVariantSalePercent > 0 || isOutOfStock} />
       </aside>
     </div>
   );

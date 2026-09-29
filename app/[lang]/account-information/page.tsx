@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import BackLink from "@/app/BackLink";
 import {
   ArrowLeft,
   ArrowRight,
@@ -139,13 +140,14 @@ export default function AccountInformationPage() {
       className="min-h-[65vh] bg-[#f7f8f6] px-4 pb-24 pt-8 sm:px-6 sm:py-12 lg:px-8"
     >
       <div className="mx-auto max-w-[920px]">
-        <Link
+        <BackLink
           href="/profile"
+          onlyFrom="/profile"
           className="inline-flex items-center gap-2 text-sm font-extrabold text-[#526058] transition-colors hover:text-[#075b40]"
         >
           <BackArrow className="h-4 w-4" />
           {isArabic ? "العودة إلى حسابي" : "Back to my account"}
-        </Link>
+        </BackLink>
 
         <header className="mt-7 border-b border-[#dfe4e0] pb-7 sm:pb-9">
           <p

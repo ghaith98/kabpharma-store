@@ -19,6 +19,7 @@ import { addToCart } from "@/lib/cart";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { useLanguage } from "../../../context/LanguageContext";
 import { trackAddToCart } from "@/lib/analytics";
+import { optionIdToNumber } from "@/lib/product-options";
 
 import type {
   ProductDetailVariant,
@@ -124,7 +125,7 @@ export default function ProductDetailsAddToCart({
 
       variant_id:
         selectedVariant?.id != null
-          ? Number(selectedVariant.id)
+          ? optionIdToNumber(selectedVariant.id)
           : product.variant_id ?? null,
 
       variant_label_ar:

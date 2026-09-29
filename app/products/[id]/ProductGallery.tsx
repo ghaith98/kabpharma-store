@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import BackLink from "@/app/BackLink";
 
 import {
   ArrowLeft,
@@ -46,7 +46,7 @@ export default function ProductGallery({
   return (
     <div className="min-w-0">
       <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-white">
-        <Link
+        <BackLink
   href={backHref}
   aria-label={backLabel}
   className="absolute left-3 top-3 z-20 flex h-10 w-10 items-center justify-center border border-[#dfe4e0] bg-white/95 text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b] sm:left-4 sm:top-4 sm:h-11 sm:w-11"
@@ -55,7 +55,7 @@ export default function ProductGallery({
     size={19}
     strokeWidth={1.8}
   />
-</Link>
+</BackLink>
         {selectedImage ? (
           <Image
             src={selectedImage}

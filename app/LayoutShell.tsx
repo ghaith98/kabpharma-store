@@ -8,6 +8,7 @@ import Footer from "./FooterComponent";
 import MobileBottomNav from "./MobileBottomNav";
 import OnlinePresenceTracker from "./OnlinePresenceTracker";
 import NavigationProgress from "./NavigationProgress";
+import ScrollRestoration from "./ScrollRestoration";
 import { useAppPathname } from "@/lib/use-app-pathname";
 
 export default function LayoutShell({
@@ -41,6 +42,8 @@ export default function LayoutShell({
       <Suspense fallback={null}>
         <NavigationProgress />
       </Suspense>
+
+      <ScrollRestoration />
 
       {shouldTrackPresence && (
         <OnlinePresenceTracker />

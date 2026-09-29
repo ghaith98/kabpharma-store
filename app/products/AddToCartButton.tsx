@@ -23,6 +23,7 @@ import type {
 
 import { useLanguage } from "../../context/LanguageContext";
 import { trackAddToCart } from "@/lib/analytics";
+import { optionIdToNumber } from "@/lib/product-options";
 
 type ProductVariant = {
   id: number | string;
@@ -170,12 +171,11 @@ export default function AddToCartButton({
         : variantOriginalPrice
       : Number(product.price);
 
+  // The main size is the product itself (no option id).
   const variantId =
-    finalVariant?.id != null
-      ? Number(
-          finalVariant.id
-        )
-      : null;
+    optionIdToNumber(
+      finalVariant?.id
+    );
 
   const cartItem: Omit<
     CartItem,

@@ -18,6 +18,7 @@ import type {
 } from "./ProductCard";
 
 import { useLanguage } from "../../context/LanguageContext";
+import { buildMainOption, hasMainSize } from "@/lib/product-options";
 
 type BaseProductVariant =
   NonNullable<
@@ -102,14 +103,23 @@ export default function EditorialProductCard({
   const variants = useMemo<
     EditorialProductVariant[]
   >(() => {
-    return [
+    const options: EditorialProductVariant[] = [
       ...(product.product_variants || []),
-    ].sort(
+    ];
+
+    // Main size + extra options: offer the main size as a choice too.
+    if (options.length > 0 && hasMainSize(product)) {
+      options.push(
+        buildMainOption(product) as EditorialProductVariant
+      );
+    }
+
+    return options.sort(
       (first, second) =>
         Number(first.price) -
         Number(second.price)
     );
-  }, [product.product_variants]);
+  }, [product]);
 
   const defaultVariant =
     useMemo(() => {
@@ -484,7 +494,7 @@ export default function EditorialProductCard({
               /* Single-size product: show its size where options would be. */
               <p
                 dir={isArabic ? "rtl" : "ltr"}
-                className="min-w-0 truncate border-b border-[#142019] pb-1 text-xs font-semibold text-[#142019] sm:text-sm"
+                className="min-w-0 truncate border-b border-[#142019] pb-1 text-[#142019]"
               >
                 {productSize}
               </p>
