@@ -177,7 +177,7 @@ export default function WishlistPage() {
                   >
                     <Link
                       href={`/products/${product.id}`}
-                      className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[1.25rem] bg-[#f7f8f6] p-3 sm:p-5"
+                      className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[1.25rem] bg-white"
                     >
                       {hasSale && (
                         <span className="absolute left-2 top-2 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-extrabold text-red-600">

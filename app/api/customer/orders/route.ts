@@ -263,7 +263,15 @@ export async function POST(request: Request) {
     .eq("shamcash_transaction_id", shamcashTransactionId)
     .maybeSingle();
 
-  if (existingOrder) {
+  // Also check the permanent ledger (covers orders that were archived).
+  // Ignored if the 202609290001 migration has not been run yet.
+  const { data: usedTransaction } = await supabaseAdmin
+    .from("used_shamcash_transactions")
+    .select("transaction_id")
+    .eq("transaction_id", shamcashTransactionId)
+    .maybeSingle();
+
+  if (existingOrder || usedTransaction) {
     return jsonError("This transaction number has already been used for another order.", 409);
   }
 
@@ -433,7 +441,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: `Payment amount does not match. Expected ${orderTotal} SYP but transaction shows ${txAmount} SYP.`,
+          error: `Payment amount does not match the order total of ${orderTotal} SYP.`,
           code: "AMOUNT_MISMATCH",
         },
         { status: 409 }
@@ -491,6 +499,11 @@ export async function POST(request: Request) {
       { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    // Unique violation from the used_shamcash_transactions ledger: the same
+    // transaction number was submitted twice at the same time.
+    if ((error as { code?: string } | null)?.code === "23505") {
+      return jsonError("This transaction number has already been used for another order.", 409);
+    }
     console.error("Order creation failed:", error);
     return jsonError("Could not create order", 500);
   }

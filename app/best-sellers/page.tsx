@@ -7,6 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import NewArrivalsCollection from "../new-arrivals/NewArrivalsCollection";
+import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
 
 export const revalidate = 60;
 
@@ -61,18 +62,7 @@ export default async function BestSellersPage() {
   ] = await Promise.all([
     supabase
       .from("products")
-      .select(`
-        *,
-        categories (
-          id,
-          name,
-          name_ar,
-          name_en
-        ),
-        product_variants (
-          *
-        )
-      `)
+      .select(PRODUCT_LIST_SELECT)
       .eq("is_out_of_stock", false)
       .order("id", {
         ascending: false,

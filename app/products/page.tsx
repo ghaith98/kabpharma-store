@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/site";
 import { rankBestSellerProductIds } from "@/lib/best-sellers";
 
 import ProductsClient from "./ProductsClient";
+import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
 
 export const revalidate = 60;
 
@@ -93,18 +94,7 @@ export default async function ProductsPage() {
   const [productsResult, orderItemsResult] = await Promise.all([
     supabase
       .from("products")
-      .select(`
-        *,
-        categories (
-          id,
-          name,
-          name_ar,
-          name_en
-        ),
-        product_variants (
-          *
-        )
-      `)
+      .select(PRODUCT_LIST_SELECT)
       .order("id", {
         ascending: true,
       }),

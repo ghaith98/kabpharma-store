@@ -241,20 +241,20 @@ export default function EditorialProductCard({
       dir={isArabic ? "rtl" : "ltr"}
       className="group flex h-full flex-col bg-white"
     >
-      <div className="relative aspect-square shrink-0 overflow-hidden bg-[#f7f8f6]">
+      <div className="relative aspect-square shrink-0 overflow-hidden bg-white">
         <Link
           href={productHref}
+          prefetch={false}
           aria-label={productName}
-          className="flex h-full w-full items-center justify-center p-2 sm:p-3 lg:p-4"
+          className="absolute inset-0 flex items-center justify-center"
         >
           {selectedImage ? (
             <Image
               src={selectedImage}
               alt={productName}
-              width={700}
-              height={700}
+              fill
               sizes={imageSizes}
-              className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.025] ${
+              className={`object-contain transition duration-500 group-hover:scale-[1.025] ${
                 isOutOfStock
                   ? "opacity-55 grayscale-[25%]"
                   : ""
@@ -318,6 +318,7 @@ export default function EditorialProductCard({
 
         <Link
           href={productHref}
+          prefetch={false}
           className={
             categoryName
               ? "mt-1.5 sm:mt-2"

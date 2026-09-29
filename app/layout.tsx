@@ -4,7 +4,6 @@ import type {
 } from "next";
 import {
   Manrope,
-  Fraunces,
   Tajawal,
 } from "next/font/google";
 import "./globals.css";
@@ -23,13 +22,6 @@ const sans = Manrope({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const display = Fraunces({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -158,7 +150,7 @@ export default function RootLayout({
       lang="ar"
       dir="rtl"
       suppressHydrationWarning
-      className={`${sans.variable} ${display.variable} ${arabic.variable} h-full antialiased`}
+      className={`${sans.variable} ${arabic.variable} h-full antialiased`}
     >
       <head>
         <script

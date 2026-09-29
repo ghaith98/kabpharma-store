@@ -713,7 +713,7 @@ export default function CartPage() {
                             aria-label={
                               displayName
                             }
-                            className="flex aspect-square items-center justify-center overflow-hidden rounded-[1.25rem] bg-[#f7f8f6] p-3 sm:p-4"
+                            className="flex aspect-square items-center justify-center overflow-hidden rounded-[1.25rem] bg-white"
                           >
                             {item.image_url ? (
                               <Image

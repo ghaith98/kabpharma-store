@@ -1,46 +1,49 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-} from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { supabase } from "@/lib/supabase";
 
-const ONLINE_PRESENCE_CHANNEL =
-  "kab-store-online-users-v3";
-const PRESENCE_ID_STORAGE_KEY =
-  "kab_presence_id";
-const START_DELAY_MS = 1_500;
+/*
+  Storefront "online users" presence.
+
+  Every open tab holds a Supabase Realtime websocket and every presence
+  change is fanned out to every member of the channel, so cost grows with
+  (visitors x visitors). To keep that bounded:
+
+  - The socket opens only after the page is idle and the tab is visible.
+  - It is closed when the tab stays hidden for HIDDEN_DISCONNECT_MS, and
+    reopened when the visitor returns. Quick tab switches do nothing.
+  - Presence is re-sent only when the route changes (no focus/visibility
+    re-broadcasts).
+  - NEXT_PUBLIC_ENABLE_PRESENCE="false" turns the feature off entirely.
+*/
+
+const ONLINE_PRESENCE_CHANNEL = "kab-store-online-users-v3";
+const PRESENCE_ID_STORAGE_KEY = "kab_presence_id";
+const START_DELAY_MS = 4_000;
+const HIDDEN_DISCONNECT_MS = 60_000;
+
+const PRESENCE_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_PRESENCE !== "false";
 
 function createPresenceId() {
   if (typeof crypto?.randomUUID === "function") {
     return crypto.randomUUID();
   }
 
-  return `${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2)}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function getOrCreatePresenceId() {
   try {
-    const savedId = localStorage.getItem(
-      PRESENCE_ID_STORAGE_KEY
-    );
-
+    const savedId = localStorage.getItem(PRESENCE_ID_STORAGE_KEY);
     if (savedId) return savedId;
 
     const id = createPresenceId();
-
-    localStorage.setItem(
-      PRESENCE_ID_STORAGE_KEY,
-      id
-    );
-
+    localStorage.setItem(PRESENCE_ID_STORAGE_KEY, id);
     return id;
   } catch {
     return createPresenceId();
@@ -61,70 +64,48 @@ export default function OnlinePresenceTracker() {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const subscribedRef = useRef(false);
 
-  const trackCurrentPresence = useCallback(async () => {
+  const track = useCallback(() => {
     const channel = channelRef.current;
-
     if (!channel || !subscribedRef.current) return;
 
-    try {
-      await channel.track({
+    void channel
+      .track({
         page: pathnameRef.current,
         is_logged_in: isCustomerLoggedIn(),
         online_at: new Date().toISOString(),
-      });
-    } catch {
-      // Presence analytics must never affect storefront UX.
-    }
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
     pathnameRef.current = pathname || "/";
-
-    if (subscribedRef.current) {
-      void trackCurrentPresence();
-    }
-  }, [pathname, trackCurrentPresence]);
+    track();
+  }, [pathname, track]);
 
   useEffect(() => {
+    if (!PRESENCE_ENABLED) return;
+
     let disposed = false;
-    let channel: RealtimeChannel | null = null;
+    let startTimer: number | null = null;
+    let hiddenTimer: number | null = null;
 
-    function handleFocus() {
-      if (!disposed) {
-        void trackCurrentPresence();
-      }
-    }
+    function connect() {
+      if (disposed || channelRef.current) return;
 
-    function handleVisibilityChange() {
-      if (
-        !disposed &&
-        document.visibilityState === "visible"
-      ) {
-        void trackCurrentPresence();
-      }
-    }
+      const channel = supabase.channel(ONLINE_PRESENCE_CHANNEL, {
+        config: {
+          presence: { key: getOrCreatePresenceId() },
+        },
+      });
 
-    const startTimer = window.setTimeout(() => {
-      if (disposed) return;
-
-      channel = supabase.channel(
-        ONLINE_PRESENCE_CHANNEL,
-        {
-          config: {
-            presence: {
-              key: getOrCreatePresenceId(),
-            },
-          },
-        }
-      );
       channelRef.current = channel;
 
-      channel.subscribe(async (status) => {
-        if (disposed) return;
+      channel.subscribe((status) => {
+        if (disposed || channelRef.current !== channel) return;
 
         if (status === "SUBSCRIBED") {
           subscribedRef.current = true;
-          await trackCurrentPresence();
+          track();
         } else if (
           status === "CHANNEL_ERROR" ||
           status === "TIMED_OUT" ||
@@ -133,37 +114,57 @@ export default function OnlinePresenceTracker() {
           subscribedRef.current = false;
         }
       });
+    }
 
-      window.addEventListener("focus", handleFocus);
-      document.addEventListener(
-        "visibilitychange",
-        handleVisibilityChange
-      );
-    }, START_DELAY_MS);
-
-    return () => {
-      disposed = true;
+    function disconnect() {
+      const channel = channelRef.current;
+      channelRef.current = null;
       subscribedRef.current = false;
-      window.clearTimeout(startTimer);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibilityChange
-      );
-
-      if (channelRef.current === channel) {
-        channelRef.current = null;
-      }
 
       if (channel) {
         void channel.untrack().catch(() => undefined);
-        void supabase
-          .removeChannel(channel)
-          .catch(() => undefined);
+        void supabase.removeChannel(channel).catch(() => undefined);
       }
+    }
+
+    function scheduleConnect(delay: number) {
+      if (startTimer !== null) window.clearTimeout(startTimer);
+      startTimer = window.setTimeout(() => {
+        startTimer = null;
+        if (document.visibilityState === "visible") connect();
+      }, delay);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        if (hiddenTimer === null) {
+          hiddenTimer = window.setTimeout(() => {
+            hiddenTimer = null;
+            disconnect();
+          }, HIDDEN_DISCONNECT_MS);
+        }
+        return;
+      }
+
+      if (hiddenTimer !== null) {
+        window.clearTimeout(hiddenTimer);
+        hiddenTimer = null;
+      }
+
+      if (!channelRef.current) scheduleConnect(500);
+    }
+
+    scheduleConnect(START_DELAY_MS);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      disposed = true;
+      if (startTimer !== null) window.clearTimeout(startTimer);
+      if (hiddenTimer !== null) window.clearTimeout(hiddenTimer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      disconnect();
     };
-  }, [trackCurrentPresence]);
+  }, [track]);
 
   return null;
 }
-

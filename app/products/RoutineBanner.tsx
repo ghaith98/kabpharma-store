@@ -21,7 +21,7 @@ export default function RoutineBanner() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url('/images/kab-skin-consultation-hero.png')",
+            "url('/images/kab-skin-consultation-hero.webp')",
         }}
       />
 

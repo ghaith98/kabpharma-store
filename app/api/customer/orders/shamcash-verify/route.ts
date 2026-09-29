@@ -1,6 +1,7 @@
     import { NextRequest, NextResponse } from "next/server";
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
 import { getCustomerSession } from "@/lib/customer-session";
+import { takeRateLimitDb } from "@/lib/rate-limit-db";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,21 @@ export async function POST(req: NextRequest) {
   const session = await getCustomerSession();
   if (!session) return jsonError("Authentication required", 401);
 
+  // Each call hits the Sham Cash API and reveals whether a transaction ID
+  // exists and its amount, so scanning IDs must be throttled.
+  const sessionKey = String(session.profileId || session.phone || "unknown");
+  const rate = await takeRateLimitDb({
+    key: `shamcash-verify:${sessionKey}`,
+    limit: 10,
+    windowSeconds: 900,
+  });
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Too many attempts. Please wait a few minutes and try again.", code: "RATE_LIMITED" },
+      { status: 429, headers: { "Retry-After": String(Math.max(1, rate.retryAfterSeconds)) } }
+    );
+  }
+
   let body: unknown;
   try { body = await req.json(); } catch { return jsonError("Invalid request body", 400); }
 
@@ -76,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     if (diff > 100) {
       return NextResponse.json(
-        { success: false, error: `Payment amount does not match. Expected ${expectedAmount} SYP but transaction shows ${txAmount} SYP.`, code: "AMOUNT_MISMATCH" },
+        { success: false, error: `Payment amount does not match the order total of ${expectedAmount} SYP.`, code: "AMOUNT_MISMATCH" },
         { status: 409 }
       );
     }

@@ -5,6 +5,7 @@ import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 import ProductsClient from "@/app/products/ProductsClient";
+import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
 
 export const revalidate = 60;
 
@@ -124,18 +125,7 @@ export default async function ShopByNeedPage({
     productIds.length > 0
       ? await supabase
           .from("products")
-          .select(`
-            *,
-            categories (
-              id,
-              name,
-              name_ar,
-              name_en
-            ),
-            product_variants (
-              *
-            )
-          `)
+          .select(PRODUCT_LIST_SELECT)
           .in("id", productIds)
           .order("id", { ascending: true })
       : { data: [], error: null };

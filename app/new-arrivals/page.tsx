@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/site";
 
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import NewArrivalsCollection from "./NewArrivalsCollection";
+import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
 
 export const revalidate = 60;
 
@@ -81,18 +82,7 @@ export default async function NewArrivalsPage() {
   ] = await Promise.all([
     supabase
       .from("products")
-      .select(`
-        *,
-        categories (
-          id,
-          name,
-          name_ar,
-          name_en
-        ),
-        product_variants (
-          *
-        )
-      `)
+      .select(PRODUCT_LIST_SELECT)
       .eq(
         "is_new_arrival",
         true

@@ -45,7 +45,7 @@ export default function ProductGallery({
 
   return (
     <div className="min-w-0">
-      <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-[#f7f8f6]">
+      <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-white">
         <Link
   href={backHref}
   aria-label={backLabel}
@@ -63,7 +63,7 @@ export default function ProductGallery({
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 56vw"
-            className="h-full w-full object-contain p-2 transition duration-500 sm:p-3 lg:p-4"
+            className="h-full w-full object-contain transition duration-500"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm font-medium text-[#909991]">
@@ -116,7 +116,7 @@ export default function ProductGallery({
                 aria-label={`View product image ${
                   index + 1
                 }`}
-                className={`h-[72px] w-[72px] shrink-0 overflow-hidden border bg-[#f7f8f6] transition sm:h-20 sm:w-20 ${
+                className={`h-[72px] w-[72px] shrink-0 overflow-hidden border bg-white transition sm:h-20 sm:w-20 ${
                   selected
                     ? "border-[#0a583b] ring-1 ring-[#0a583b]"
                     : "border-[#dfe4e0] hover:border-[#8c978f]"
@@ -128,7 +128,7 @@ export default function ProductGallery({
                   width={96}
                   height={96}
                   sizes="96px"
-                  className="h-full w-full object-contain p-1.5"
+                  className="h-full w-full object-contain"
                 />
               </button>
             );

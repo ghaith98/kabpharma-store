@@ -4,13 +4,24 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "../../../context/LanguageContext";
 
 type Promotion = { product_id: number; variant_id: number | null; type: "buy_2_get_1" | "buy_1_second_50"; name?: string | null };
+// One shared request for every badge on the page. Refreshed after
+// PROMOTIONS_TTL_MS so a long browsing session picks up new promotions
+// without re-fetching for every card.
+const PROMOTIONS_TTL_MS = 60_000;
 let activePromotions: Promise<Promotion[]> | null = null;
+let fetchedAt = 0;
 
 function getPromotions() {
-  activePromotions ||= fetch("/api/customer/promotions/active", { cache: "no-store" })
-    .then((response) => response.json())
-    .then((result) => result?.promotions || [])
-    .catch(() => []);
+  if (!activePromotions || Date.now() - fetchedAt > PROMOTIONS_TTL_MS) {
+    fetchedAt = Date.now();
+    activePromotions = fetch("/api/customer/promotions/active")
+      .then((response) => response.json())
+      .then((result) => result?.promotions || [])
+      .catch(() => {
+        fetchedAt = 0;
+        return [];
+      });
+  }
   return activePromotions;
 }
 

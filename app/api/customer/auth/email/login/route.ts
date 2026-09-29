@@ -7,30 +7,13 @@ import {
   CUSTOMER_SESSION_COOKIE,
 } from "@/lib/customer-session";
 import { cookies } from "next/headers";
-
-// Simple in-memory brute-force protection: max 10 attempts per email per 15 min
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-
-function checkLoginRateLimit(email: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const key = email.toLowerCase();
-  const entry = loginAttempts.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(key, { count: 1, resetAt: now + 15 * 60 * 1000 });
-    return { allowed: true };
-  }
-
-  if (entry.count >= 10) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return { allowed: false, retryAfter };
-  }
-
-  entry.count++;
-  return { allowed: true };
-}
+import { hasTrustedOrigin, jsonError } from "@/lib/http";
+import { getRequestIp } from "@/lib/rate-limit";
+import { takeRateLimitDb } from "@/lib/rate-limit-db";
 
 export async function POST(req: NextRequest) {
+  if (!hasTrustedOrigin(req)) return jsonError("Invalid request origin", 403);
+
   let body: unknown;
   try {
     body = await req.json();
@@ -46,12 +29,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 422 });
   }
 
-  // ── Rate limit ───────────────────────────────────────────────────────────────
-  const rl = checkLoginRateLimit(email);
-  if (!rl.allowed) {
+  // ── Rate limit (shared across all server instances) ───────────────────────
+  // 10 attempts per email and 30 per IP in 15 minutes. The old in-memory
+  // Map reset on every cold start and was per-instance on Vercel.
+  const [emailLimit, ipLimit] = await Promise.all([
+    takeRateLimitDb({ key: `email-login:${email}`, limit: 10, windowSeconds: 900 }),
+    takeRateLimitDb({ key: `email-login-ip:${getRequestIp(req)}`, limit: 30, windowSeconds: 900 }),
+  ]);
+  const blocked = !emailLimit.allowed ? emailLimit : !ipLimit.allowed ? ipLimit : null;
+  if (blocked) {
+    const retryAfter = Math.max(1, blocked.retryAfterSeconds);
     return NextResponse.json(
-      { error: `Too many attempts. Try again in ${rl.retryAfter}s.`, retryAfter: rl.retryAfter },
-      { status: 429 }
+      {
+        error: blocked.unavailable
+          ? "Sign-in is temporarily unavailable. Please try again shortly."
+          : `Too many attempts. Try again in ${retryAfter}s.`,
+        retryAfter,
+      },
+      { status: blocked.unavailable ? 503 : 429, headers: { "Retry-After": String(retryAfter) } }
     );
   }
 

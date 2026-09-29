@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 import { rankBestSellerProductIds } from "@/lib/best-sellers";
 import { attachConcernProducts } from "@/lib/concerns";
+import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
 
 export const revalidate = 60;
 
@@ -27,36 +28,14 @@ export default async function Home() {
   ] = await Promise.all([
     supabase
       .from("products")
-      .select(`
-        *,
-        categories (
-          id,
-          name,
-          name_ar,
-          name_en
-        ),
-        product_variants (
-          *
-        )
-      `)
+      .select(PRODUCT_LIST_SELECT)
       .eq("is_new_arrival", true)
       .order("id", { ascending: false })
       .limit(6),
 
     supabase
       .from("products")
-      .select(`
-        *,
-        categories (
-          id,
-          name,
-          name_ar,
-          name_en
-        ),
-        product_variants (
-          *
-        )
-      `)
+      .select(PRODUCT_LIST_SELECT)
       .eq("featured", true)
       .order("id", { ascending: false })
       .limit(8),
@@ -161,18 +140,7 @@ export default async function Home() {
   if (topSellerIds.length > 0) {
     const { data, error } = await supabase
       .from("products")
-      .select(`
-        *,
-        categories (
-          id,
-          name,
-          name_ar,
-          name_en
-        ),
-        product_variants (
-          *
-        )
-      `)
+      .select(PRODUCT_LIST_SELECT)
       .in("id", topSellerIds);
 
     if (error) {

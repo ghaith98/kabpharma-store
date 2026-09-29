@@ -8,7 +8,6 @@ import Footer from "./FooterComponent";
 import MobileBottomNav from "./MobileBottomNav";
 import OnlinePresenceTracker from "./OnlinePresenceTracker";
 import NavigationProgress from "./NavigationProgress";
-import RoutePreloader from "./RoutePreloader";
 
 export default function LayoutShell({
   children,
@@ -41,13 +40,6 @@ export default function LayoutShell({
       <Suspense fallback={null}>
         <NavigationProgress />
       </Suspense>
-
-      {/*
-        RoutePreloader: silently prefetches the 6 highest-traffic routes
-        ~1.5s after the shell mounts. Makes subsequent nav taps instant
-        even before the user hovers over anything.
-      */}
-      <RoutePreloader />
 
       {shouldTrackPresence && (
         <OnlinePresenceTracker />
