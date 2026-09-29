@@ -15,7 +15,7 @@ type Brand = {
   side_banner_image_url?: string | null; side_banner_image_url_mobile?: string | null;
 };
 
-export default function BrandCollectionClient({ brand, products }: { brand: Brand; products: EditorialProduct[] }) {
+export default function BrandCollectionClient({ brand, brandSlug, products }: { brand: Brand; brandSlug: string; products: EditorialProduct[] }) {
   const { lang } = useLanguage();
   useEffect(() => { trackBrandView(brand.name); }, [brand.name]);
   const isArabic = lang === "ar";
@@ -44,6 +44,6 @@ export default function BrandCollectionClient({ brand, products }: { brand: Bran
 
   return <main dir={isArabic ? "rtl" : "ltr"} className="min-h-screen overflow-hidden bg-white pb-24">
     {hero && <NewArrivalsBanner banner={{ image_url: hero, image_url_mobile: mobileHero, title_ar: brand.name_ar || brand.name, title_en: brand.name_en || brand.name, text_ar: brand.description_ar || null, text_en: brand.description_en || null }} pageType="brand" />}
-    <section id="brand-products" className="pt-5"><ProductsClient products={products} showSearch={false} showCategories={false} showHeader={false} standaloneCollection standaloneNewArrivalsLayout collectionDiscoveryBanner={collectionDiscoveryBanner} /></section>
+    <section id="brand-products" className="pt-5"><ProductsClient products={products} showSearch={false} showCategories={false} showHeader={false} standaloneCollection standaloneNewArrivalsLayout collectionDiscoveryBanner={collectionDiscoveryBanner} productHrefSuffix={`?fromBrand=${encodeURIComponent(brandSlug)}`} /></section>
   </main>;
 }

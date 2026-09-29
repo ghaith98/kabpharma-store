@@ -49,6 +49,7 @@ export type EditorialProduct =
 
 type EditorialProductCardProps = {
   product: EditorialProduct;
+  productHref?: string;
   headingLevel?: 2 | 3;
   imageSizes?: string;
 };
@@ -84,6 +85,7 @@ function getVariantLabel(
 
 export default function EditorialProductCard({
   product,
+  productHref: productHrefOverride,
   headingLevel = 2,
   imageSizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
 }: EditorialProductCardProps) {
@@ -92,6 +94,10 @@ export default function EditorialProductCard({
 
   const isArabic =
     lang === "ar";
+
+  const productHref =
+    productHrefOverride ||
+    `/products/${product.id}`;
 
   const variants = useMemo<
     EditorialProductVariant[]
@@ -237,7 +243,7 @@ export default function EditorialProductCard({
     >
       <div className="relative aspect-square shrink-0 overflow-hidden bg-[#f7f8f6]">
         <Link
-          href={`/products/${product.id}`}
+          href={productHref}
           aria-label={productName}
           className="flex h-full w-full items-center justify-center p-4 sm:p-6 lg:p-7"
         >
@@ -311,7 +317,7 @@ export default function EditorialProductCard({
         )}
 
         <Link
-          href={`/products/${product.id}`}
+          href={productHref}
           className={
             categoryName
               ? "mt-1.5 sm:mt-2"

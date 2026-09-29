@@ -22,5 +22,5 @@ export default async function BrandPage({ params }: PageProps) {
   const { data: brand } = await supabase.from("brands").select("*").eq("slug", slug).maybeSingle();
   if (!brand) notFound();
   const { data: products } = await supabase.from("products").select("*, categories (id, name, name_ar, name_en), product_variants (*)").eq("brand_id", brand.id).order("id", { ascending: false });
-  return <BrandCollectionClient brand={brand} products={products || []} />;
+  return <BrandCollectionClient brand={brand} brandSlug={slug} products={products || []} />;
 }

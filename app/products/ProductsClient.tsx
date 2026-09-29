@@ -41,6 +41,7 @@ type ProductsClientProps = {
   showHeader?: boolean;
   standaloneCollection?: boolean;
   standaloneNewArrivalsLayout?: boolean;
+  productHrefSuffix?: string;
   collectionDiscoveryBanner?: DiscoveryBanner | null;
   concern?: {
     id: number;
@@ -108,6 +109,7 @@ export default function ProductsClient({
   bestSellerIds = [],
   standaloneCollection = false,
   standaloneNewArrivalsLayout = false,
+  productHrefSuffix = "",
   collectionDiscoveryBanner = null,
   concern = null,
 }: ProductsClientProps) {
@@ -935,6 +937,7 @@ export default function ProductsClient({
       <Fragment key={product.id}>
         <EditorialProductCard
           product={product}
+          productHref={`/products/${product.id}${productHrefSuffix}`}
           headingLevel={2}
           imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />

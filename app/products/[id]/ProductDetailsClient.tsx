@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useSearchParams } from "next/navigation";
 
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductPromotionNotice from "./ProductPromotionNotice";
@@ -101,8 +102,16 @@ export default function ProductDetailsClient({
   const { lang } =
     useLanguage();
 
+  const searchParams = useSearchParams();
+
   const isArabic =
     lang === "ar";
+
+  const fromBrand = searchParams.get("fromBrand");
+  const backHref =
+    fromBrand && /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(fromBrand)
+      ? `/brands/${fromBrand}`
+      : "/products";
 
   useEffect(() => {
     trackProductView(
@@ -307,6 +316,7 @@ export default function ProductDetailsClient({
               ? "العودة إلى المنتجات"
               : "Back to products"
           }
+          backHref={backHref}
         />
 
         <div

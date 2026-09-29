@@ -14,10 +14,12 @@ export default function ProductGallery({
   images,
   productName,
   backLabel,
+  backHref,
 }: {
   images: string[];
   productName: string;
   backLabel: string;
+  backHref: string;
 }) {
   const [selectedIndex, setSelectedIndex] =
     useState(0);
@@ -45,7 +47,7 @@ export default function ProductGallery({
     <div className="min-w-0">
       <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-[#f7f8f6]">
         <Link
-  href="/products"
+  href={backHref}
   aria-label={backLabel}
   className="absolute left-3 top-3 z-20 flex h-10 w-10 items-center justify-center border border-[#dfe4e0] bg-white/95 text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b] sm:left-4 sm:top-4 sm:h-11 sm:w-11"
 >
