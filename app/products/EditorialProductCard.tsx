@@ -245,7 +245,7 @@ export default function EditorialProductCard({
         <Link
           href={productHref}
           aria-label={productName}
-          className="flex h-full w-full items-center justify-center p-4 sm:p-6 lg:p-7"
+          className="flex h-full w-full items-center justify-center p-2 sm:p-3 lg:p-4"
         >
           {selectedImage ? (
             <Image

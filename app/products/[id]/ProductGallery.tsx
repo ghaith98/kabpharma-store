@@ -63,7 +63,7 @@ export default function ProductGallery({
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 56vw"
-            className="h-full w-full object-contain p-4 transition duration-500 sm:p-8 lg:p-10"
+            className="h-full w-full object-contain p-2 transition duration-500 sm:p-3 lg:p-4"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm font-medium text-[#909991]">

@@ -211,7 +211,7 @@ export default function ProductCard({
           aria-label={
             productName
           }
-          className="flex h-full w-full items-center justify-center p-3 sm:p-5"
+          className="flex h-full w-full items-center justify-center p-2 sm:p-3"
         >
           {product.image_url ? (
             <Image

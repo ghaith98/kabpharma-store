@@ -1311,6 +1311,10 @@ export default function AdminProductsPage() {
               Main Product Image — required only if there are no options.
             </p>
 
+            <p className="mb-3 text-sm text-gray-500">
+              Recommended: square 1400 × 1400 px (1200 × 1200 px also works). Keep the product or composition close to the image edges; do not add large transparent or empty borders.
+            </p>
+
             <input
               type="file"
               accept="image/*"
