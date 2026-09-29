@@ -4,7 +4,8 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type PromotionType = "buy_2_get_1" | "buy_1_second_50";
-type Product = { id: number; name: string | null; name_ar: string | null; name_en: string | null; price: number | null; sale_percent: number | null; is_out_of_stock: boolean | null };
+type Product = { id: number; name: string | null; name_ar: string | null; name_en: string | null; price: number | null; sale_percent: number | null; is_out_of_stock: boolean | null; brand_id: number | null };
+type Brand = { id: number; name: string | null; name_ar: string | null; name_en: string | null };
 type ProductVariant = { id: number; product_id: number; label_ar: string | null; label_en: string | null; price: number | null; image_url: string | null; sort_order: number | null };
 type Promotion = { id: string; type: PromotionType; product_id: number; variant_id: number | null; is_active: boolean; products: Product | null; product_variants: ProductVariant | null };
 type PromotionGroup = { key: string; product: Product | null; type: PromotionType; rows: Promotion[] };
@@ -13,7 +14,9 @@ const offerLabel = (type: PromotionType) => type === "buy_2_get_1" ? "Buy 2+1 Fr
 
 export default function PromotionsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [brandId, setBrandId] = useState("");
   const [productId, setProductId] = useState("");
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [variantIds, setVariantIds] = useState<number[]>([]);
@@ -28,31 +31,54 @@ export default function PromotionsPage() {
   }, []);
 
   const load = useCallback(async () => {
-    const [productsResult, headersValue] = await Promise.all([
-      supabase.from("products").select("id,name,name_ar,name_en,price,sale_percent,is_out_of_stock").order("name_en"),
+    const [productsResult, brandsResult, headersValue] = await Promise.all([
+      supabase.from("products").select("id,name,name_ar,name_en,price,sale_percent,is_out_of_stock,brand_id").order("name_en"),
+      supabase.from("brands").select("id,name,name_ar,name_en").order("id"),
       headers(),
     ]);
     if (!productsResult.error) setProducts(productsResult.data || []);
+    if (!brandsResult.error) {
+      const loadedBrands = brandsResult.data || [];
+      setBrands(loadedBrands);
+      setBrandId((current) => {
+        if (current || loadedBrands.length === 0) return current;
+        const kabBrand = loadedBrands.find((brand) => `${brand.name || ""} ${brand.name_en || ""}`.toLowerCase().includes("kab"));
+        return String((kabBrand || loadedBrands[0]).id);
+      });
+    }
     const response = await fetch("/api/admin/promotions", { headers: headersValue, cache: "no-store" });
     const result = await response.json().catch(() => null);
     if (response.ok) setPromotions(result?.promotions || []);
   }, [headers]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
   useEffect(() => {
     let cancelled = false;
-    setVariantIds([]);
-    if (!productId) { setVariants([]); setLoadingVariants(false); return () => { cancelled = true; }; }
-    setLoadingVariants(true);
-    void headers().then((headersValue) => fetch(`/api/admin/promotions?productId=${Number(productId)}`, { headers: headersValue, cache: "no-store" }))
-      .then(async (response) => ({ response, result: await response.json().catch(() => null) }))
-      .then(({ response, result }) => { if (!cancelled) { setVariants(response.ok ? result?.variants || [] : []); setLoadingVariants(false); } })
-      .catch(() => { if (!cancelled) { setVariants([]); setLoadingVariants(false); } });
-    return () => { cancelled = true; };
+    const timer = window.setTimeout(() => {
+      setVariantIds([]);
+      if (!productId) { setVariants([]); setLoadingVariants(false); return; }
+      setLoadingVariants(true);
+      void headers().then((headersValue) => fetch(`/api/admin/promotions?productId=${Number(productId)}`, { headers: headersValue, cache: "no-store" }))
+        .then(async (response) => ({ response, result: await response.json().catch(() => null) }))
+        .then(({ response, result }) => { if (!cancelled) { setVariants(response.ok ? result?.variants || [] : []); setLoadingVariants(false); } })
+        .catch(() => { if (!cancelled) { setVariants([]); setLoadingVariants(false); } });
+    }, 0);
+    return () => { cancelled = true; window.clearTimeout(timer); };
   }, [headers, productId]);
 
-  const eligibleProducts = products.filter((product) => !product.is_out_of_stock && Number(product.sale_percent || 0) <= 0);
+  const eligibleProducts = products.filter((product) =>
+    !product.is_out_of_stock &&
+    Number(product.sale_percent || 0) <= 0 &&
+    (brandId === "all" || !brandId || String(product.brand_id) === brandId)
+  );
   const productName = (product: Product | null) => product?.name_ar || product?.name || product?.name_en || "منتج";
+  const brandName = (id: number | null) => {
+    const brand = brands.find((item) => item.id === id);
+    return brand?.name_ar || brand?.name_en || brand?.name || "";
+  };
   const variantName = (variant: ProductVariant) => variant.label_ar || variant.label_en || `خيار ${variant.id}`;
   const hasOptions = variants.length > 0;
   const toggleVariant = (id: number) => setVariantIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -101,8 +127,12 @@ export default function PromotionsPage() {
     <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">اختاري المنتج ثم الأحجام المشمولة. العرض يطبّق على نفس الحجم فقط، ولا يطبّق على منتج عليه تخفيض أو غير متوفر.</p>
     <form onSubmit={save} className="mt-7 rounded-3xl border border-[#e4ece6] bg-white p-5 shadow-sm sm:p-6">
       <h2 className="text-lg font-extrabold text-[#142019]">إضافة عرض</h2>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" onClick={() => { setBrandId("all"); setProductId(""); }} className={`rounded-xl px-3 py-2 text-xs font-extrabold ${brandId === "all" ? "bg-[#0a583b] text-white" : "bg-[#f1f6f2] text-[#40614d]"}`}>كل الماركات</button>
+        {brands.map((brand) => <button key={brand.id} type="button" onClick={() => { setBrandId(String(brand.id)); setProductId(""); }} className={`rounded-xl px-3 py-2 text-xs font-extrabold ${brandId === String(brand.id) ? "bg-[#0a583b] text-white" : "bg-[#f1f6f2] text-[#40614d]"}`}>{brand.name_ar || brand.name_en || brand.name}</button>)}
+      </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_280px]">
-        <select required value={productId} onChange={(event) => setProductId(event.target.value)} className="rounded-xl border border-[#d7e0d9] bg-white p-3 text-sm"><option value="">اختاري المنتج</option>{eligibleProducts.map((product) => <option key={product.id} value={product.id}>{productName(product)}</option>)}</select>
+        <select required value={productId} onChange={(event) => setProductId(event.target.value)} className="rounded-xl border border-[#d7e0d9] bg-white p-3 text-sm"><option value="">اختاري المنتج</option>{eligibleProducts.map((product) => <option key={product.id} value={product.id}>{productName(product)}{brandId === "all" ? ` — ${brandName(product.brand_id)}` : ""}</option>)}</select>
         <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#f5f8f5] p-1.5">{(["buy_2_get_1", "buy_1_second_50"] as PromotionType[]).map((offerType) => <button key={offerType} type="button" onClick={() => setType(offerType)} className={`rounded-lg px-3 py-2 text-xs font-extrabold leading-5 transition ${type === offerType ? "bg-[#0a583b] text-white shadow-sm" : "text-[#536158] hover:bg-white"}`}>{offerType === "buy_2_get_1" ? "Buy 2+1 Free" : "اشتري 1، والثاني بنصف السعر"}</button>)}</div>
       </div>
       {loadingVariants && <p className="mt-4 text-sm text-gray-500">جارٍ تحميل الأحجام…</p>}

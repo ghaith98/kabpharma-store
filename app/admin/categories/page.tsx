@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -25,6 +25,7 @@ export default function AdminCategoriesPage() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [catalogBrandId, setCatalogBrandId] = useState("");
   const [brandId, setBrandId] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [nameEn, setNameEn] = useState("");
@@ -35,6 +36,17 @@ export default function AdminCategoriesPage() {
   const [editBrandId, setEditBrandId] = useState("");
 
   const [loading, setLoading] = useState(false);
+
+  const filteredCategories = useMemo(
+    () =>
+      categories.filter(
+        (category) =>
+          catalogBrandId === "all" ||
+          !catalogBrandId ||
+          String(category.brand_id) === catalogBrandId
+      ),
+    [catalogBrandId, categories]
+  );
 
   const loadCategories = useCallback(async () => {
     const { data, error } = await supabase
@@ -61,7 +73,15 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    setBrands(data || []);
+    const loadedBrands = data || [];
+    setBrands(loadedBrands);
+    setCatalogBrandId((current) => {
+      if (current || loadedBrands.length === 0) return current;
+      const kabBrand = loadedBrands.find((brand) =>
+        `${brand.name} ${brand.name_en || ""}`.toLowerCase().includes("kab")
+      );
+      return String((kabBrand || loadedBrands[0]).id);
+    });
   }, []);
 
   const checkAdmin = useCallback(async () => {
@@ -229,8 +249,32 @@ export default function AdminCategoriesPage() {
         </button>
       </form>
 
+      <section className="mx-auto mb-5 max-w-5xl rounded-2xl bg-white p-5 shadow-sm">
+        <p className="text-sm font-extrabold text-gray-900">Browse categories by brand</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setCatalogBrandId("all")}
+            className={`rounded-xl px-4 py-2 text-sm font-extrabold ${catalogBrandId === "all" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+          >
+            All brands
+          </button>
+          {brands.map((brand) => (
+            <button
+              key={brand.id}
+              type="button"
+              onClick={() => setCatalogBrandId(String(brand.id))}
+              className={`rounded-xl px-4 py-2 text-sm font-extrabold ${catalogBrandId === String(brand.id) ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+            >
+              {brand.name_en || brand.name_ar || brand.name}
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-sm font-bold text-gray-500">{filteredCategories.length} categor{filteredCategories.length === 1 ? "y" : "ies"} shown</p>
+      </section>
+
       <div className="mx-auto max-w-5xl space-y-4">
-        {categories.map((category) => (
+        {filteredCategories.map((category) => (
           <div
             key={category.id}
             className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
@@ -271,6 +315,12 @@ export default function AdminCategoriesPage() {
             </div>
           </div>
         ))}
+
+        {filteredCategories.length === 0 && (
+          <div className="rounded-2xl bg-white p-7 text-center shadow-sm">
+            <p className="font-bold text-gray-900">No categories for this brand yet.</p>
+          </div>
+        )}
       </div>
 
       {editingId && (

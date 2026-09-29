@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Internal editor thumbnails include temporary object URLs and are not storefront LCP images. */
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -112,6 +112,11 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [catalogBrandId, setCatalogBrandId] = useState("");
+  const [catalogCategoryId, setCatalogCategoryId] = useState("all");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogStatus, setCatalogStatus] = useState("all");
+  const [showAddProduct, setShowAddProduct] = useState(false);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
   const [productVariantImages, setProductVariantImages] = useState<ProductVariantImage[]>([]);
@@ -170,6 +175,57 @@ export default function AdminProductsPage() {
   const availableEditCategories = categories.filter(
     (category) => String(category.brand_id) === editBrandId
   );
+
+  const catalogCategories = categories.filter(
+    (category) => String(category.brand_id) === catalogBrandId
+  );
+
+  const filteredProducts = useMemo(() => {
+    const search = catalogSearch.trim().toLocaleLowerCase();
+
+    return products.filter((product) => {
+      const matchesBrand =
+        catalogBrandId === "all" ||
+        !catalogBrandId ||
+        String(product.brand_id) === catalogBrandId;
+      const matchesCategory =
+        catalogCategoryId === "all" ||
+        String(product.category_id) === catalogCategoryId;
+      const searchableText = [
+        product.name,
+        product.name_ar,
+        product.name_en,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase();
+      const matchesSearch = !search || searchableText.includes(search);
+      const matchesStatus =
+        catalogStatus === "all" ||
+        (catalogStatus === "available" && !product.is_out_of_stock) ||
+        (catalogStatus === "out-of-stock" && product.is_out_of_stock) ||
+        (catalogStatus === "featured" && product.featured) ||
+        (catalogStatus === "new" && product.is_new_arrival);
+
+      return matchesBrand && matchesCategory && matchesSearch && matchesStatus;
+    });
+  }, [
+    catalogBrandId,
+    catalogCategoryId,
+    catalogSearch,
+    catalogStatus,
+    products,
+  ]);
+
+  const getBrandName = (brandId?: number | null) => {
+    const brand = brands.find((item) => item.id === brandId);
+    return brand?.name_en || brand?.name_ar || brand?.name || "No brand";
+  };
+
+  const getCategoryName = (categoryId?: number | null) => {
+    const category = categories.find((item) => item.id === categoryId);
+    return category?.name || "No category";
+  };
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
 
   const [editVariants, setEditVariants] = useState<VariantInput[]>([]);
@@ -233,7 +289,15 @@ export default function AdminProductsPage() {
       return;
     }
 
-    setBrands(data || []);
+    const loadedBrands = data || [];
+    setBrands(loadedBrands);
+    setCatalogBrandId((current) => {
+      if (current || loadedBrands.length === 0) return current;
+      const kabBrand = loadedBrands.find((brand) =>
+        `${brand.name} ${brand.name_en || ""}`.toLowerCase().includes("kab")
+      );
+      return String((kabBrand || loadedBrands[0]).id);
+    });
   }
 
   async function loadProductImages() {
@@ -986,10 +1050,25 @@ export default function AdminProductsPage() {
           </p>
         </section>
 
-        <form
-          onSubmit={addProduct}
-          className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100"
-        >
+        <section className="mb-8 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-gray-100 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-extrabold text-gray-900">Product catalog</h2>
+            <p className="mt-1 text-sm text-gray-600">Find products by brand, category or status before editing them.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddProduct((show) => !show)}
+            className="mt-4 rounded-2xl bg-green-600 px-5 py-3 font-extrabold text-white transition hover:bg-green-700 sm:mt-0"
+          >
+            {showAddProduct ? "Close add product" : "+ Add product"}
+          </button>
+        </section>
+
+        {showAddProduct && (
+          <form
+            onSubmit={addProduct}
+            className="mb-8 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-gray-100"
+          >
           <h2 className="mb-5 text-2xl font-extrabold text-gray-900">
             Add Product
           </h2>
@@ -1248,10 +1327,71 @@ export default function AdminProductsPage() {
           >
             {loading ? "Uploading..." : "Add Product"}
           </button>
-        </form>
+          </form>
+        )}
+
+        <section className="mb-6 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-gray-100">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setCatalogBrandId("all");
+                setCatalogCategoryId("all");
+              }}
+              className={`rounded-xl px-4 py-2 text-sm font-extrabold transition ${catalogBrandId === "all" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+            >
+              All brands
+            </button>
+            {brands.map((brand) => (
+              <button
+                key={brand.id}
+                type="button"
+                onClick={() => {
+                  setCatalogBrandId(String(brand.id));
+                  setCatalogCategoryId("all");
+                }}
+                className={`rounded-xl px-4 py-2 text-sm font-extrabold transition ${catalogBrandId === String(brand.id) ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+              >
+                {brand.name_en || brand.name_ar || brand.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <input
+              value={catalogSearch}
+              onChange={(event) => setCatalogSearch(event.target.value)}
+              placeholder="Search by product name"
+              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-600 focus:bg-white"
+            />
+            <select
+              value={catalogCategoryId}
+              onChange={(event) => setCatalogCategoryId(event.target.value)}
+              disabled={catalogBrandId === "all"}
+              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-600 focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="all">{catalogBrandId === "all" ? "Choose a brand to filter categories" : "All categories"}</option>
+              {catalogCategories.map((category) => (
+                <option key={category.id} value={category.id}>{category.name}</option>
+              ))}
+            </select>
+            <select
+              value={catalogStatus}
+              onChange={(event) => setCatalogStatus(event.target.value)}
+              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none focus:border-green-600 focus:bg-white"
+            >
+              <option value="all">All product statuses</option>
+              <option value="available">Available</option>
+              <option value="out-of-stock">Out of stock</option>
+              <option value="featured">Featured</option>
+              <option value="new">New arrival</option>
+            </select>
+          </div>
+          <p className="mt-3 text-sm font-bold text-gray-500">{filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} shown</p>
+        </section>
 
         <div className="space-y-5">
-          {products.map((product) => {
+          {filteredProducts.map((product) => {
             const variantsForThisProduct = getVariantsForProduct(product.id);
 
             return (
@@ -1337,6 +1477,14 @@ export default function AdminProductsPage() {
                           Out of Stock
                         </span>
                       )}
+
+                      <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-extrabold text-gray-700">
+                        {getBrandName(product.brand_id)}
+                      </span>
+
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700">
+                        {getCategoryName(product.category_id)}
+                      </span>
                     </div>
 
                     <p className="leading-7 text-gray-600">
@@ -1462,6 +1610,13 @@ export default function AdminProductsPage() {
               </div>
             );
           })}
+
+          {filteredProducts.length === 0 && (
+            <div className="rounded-[2rem] bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
+              <p className="font-extrabold text-gray-900">No products match these filters.</p>
+              <button type="button" onClick={() => { setCatalogBrandId("all"); setCatalogCategoryId("all"); setCatalogSearch(""); setCatalogStatus("all"); }} className="mt-3 text-sm font-extrabold text-green-700 hover:text-green-800">Clear filters</button>
+            </div>
+          )}
         </div>
       </div>
 

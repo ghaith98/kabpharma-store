@@ -238,71 +238,55 @@ export default function AdminMobilePage() {
     },
   ];
 
-  const links = [
+  const navigationGroups = [
     {
-      href: "/admin/payment-proofs",
-      title: "Payment Proofs",
-      icon: "🧾",
-    },
-    {
-      href: "/admin/users",
-      title: "Users",
-      icon: "👥",
-    },
-    {
-      href: "/admin/delivery-orders?mobile=1",
-      title: "New Delivery",
-      icon: "＋",
-    },
-    {
-      href: "/admin/orders?mobile=1",
       title: "Orders",
-      icon: "📦",
+      links: [
+        { href: "/admin/payment-proofs", title: "Payment Proofs", icon: "🧾" },
+        { href: "/admin/orders?mobile=1", title: "Shop Orders", icon: "📦" },
+        { href: "/admin/archived-orders", title: "Archived Orders", icon: "🗂️" },
+      ],
     },
     {
-      href: "/admin/drivers?mobile=1",
-      title: "Drivers",
-      icon: "🚚",
+      title: "Catalog",
+      links: [
+        { href: "/admin/products?mobile=1", title: "Products", icon: "🧴" },
+        { href: "/admin/categories?mobile=1", title: "Categories", icon: "🏷️" },
+        { href: "/admin/brands", title: "Brands", icon: "◈" },
+        { href: "/admin/concerns?mobile=1", title: "Concerns", icon: "🎯" },
+      ],
     },
     {
-      href: "/admin/delivery?mobile=1",
-      title: "Fees & Areas",
-      icon: "⚙️",
+      title: "Content",
+      links: [
+        { href: "/admin/banners?mobile=1", title: "Banners", icon: "🖼️" },
+        { href: "/admin/reviews?mobile=1", title: "Reviews", icon: "⭐" },
+      ],
     },
     {
-      href: "/admin/products?mobile=1",
-      title: "Products",
-      icon: "🧴",
+      title: "Delivery",
+      links: [
+        { href: "/admin/delivery-orders?mobile=1", title: "New Delivery", icon: "＋" },
+        { href: "/admin/delivery-orders/manage", title: "Delivery Orders", icon: "🚚" },
+        { href: "/admin/delivery-companies", title: "Companies", icon: "🏢" },
+        { href: "/admin/drivers?mobile=1", title: "Drivers", icon: "👤" },
+        { href: "/admin/delivery?mobile=1", title: "Fees & Areas", icon: "⚙️" },
+      ],
     },
     {
-      href: "/admin/categories?mobile=1",
-      title: "Categories",
-      icon: "🏷️",
+      title: "Customers",
+      links: [{ href: "/admin/users", title: "Customers", icon: "👥" }],
     },
     {
-      href: "/admin/promotions?mobile=1",
-      title: "Offers",
-      icon: "🏷️",
+      title: "Promotions",
+      links: [
+        { href: "/admin/promotions?mobile=1", title: "Promotions", icon: "🏷️" },
+        { href: "/admin/coupons", title: "Coupons", icon: "🎟️" },
+      ],
     },
     {
-      href: "/admin/concerns?mobile=1",
-      title: "Concerns",
-      icon: "🎯",
-    },
-    {
-      href: "/admin/banners?mobile=1",
-      title: "Banners",
-      icon: "🖼️",
-    },
-    {
-      href: "/admin/reviews?mobile=1",
-      title: "Reviews",
-      icon: "⭐",
-    },
-    {
-      href: "/admin/payment-settings?mobile=1",
-      title: "Payment Settings",
-      icon: "💳",
+      title: "Settings",
+      links: [{ href: "/admin/payment-settings?mobile=1", title: "Payment Settings", icon: "💳" }],
     },
   ];
 
@@ -390,10 +374,7 @@ export default function AdminMobilePage() {
             Admin Dashboard
           </h1>
 
-          <p className="mt-2 text-sm text-green-50">
-            Payment proofs, users, delivery,
-            orders and settings.
-          </p>
+          <p className="mt-2 text-sm text-green-50">Orders, catalog, content, delivery and promotions in one place.</p>
         </section>
 
         {/* Payment proof inbox */}
@@ -464,41 +445,25 @@ export default function AdminMobilePage() {
 
         {/* Management */}
         <section className="rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-lg font-extrabold text-gray-900">
-            Management
-          </h2>
-
-          <div className="grid grid-cols-2 gap-3">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative rounded-3xl border p-4 text-center transition active:scale-95 ${
-                  link.href ===
-                  "/admin/payment-proofs"
-                    ? "border-yellow-200 bg-yellow-50"
-                    : link.href ===
-                      "/admin/users"
-                    ? "border-blue-100 bg-blue-50"
-                    : "border-gray-100 bg-gray-50"
-                }`}
-              >
-                <div className="text-3xl">
-                  {link.icon}
+          <h2 className="mb-4 text-lg font-extrabold text-gray-900">Management</h2>
+          <div className="space-y-5">
+            {navigationGroups.map((group) => (
+              <div key={group.title}>
+                <p className="mb-2 px-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-gray-500">{group.title}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {group.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={`relative rounded-3xl border p-4 text-center transition active:scale-95 ${link.href === "/admin/payment-proofs" ? "border-yellow-200 bg-yellow-50" : link.href === "/admin/users" ? "border-blue-100 bg-blue-50" : "border-gray-100 bg-gray-50"}`}
+                    >
+                      <div className="text-3xl">{link.icon}</div>
+                      <p className="mt-3 text-sm font-extrabold text-gray-800">{link.title}</p>
+                      {link.href === "/admin/payment-proofs" && paymentProofs > 0 && <span className="absolute -right-1 -top-1 flex h-7 min-w-7 items-center justify-center rounded-full bg-red-600 px-2 text-xs font-extrabold text-white">{paymentProofs}</span>}
+                    </Link>
+                  ))}
                 </div>
-
-                <p className="mt-3 text-sm font-extrabold text-gray-800">
-                  {link.title}
-                </p>
-
-                {link.href ===
-                  "/admin/payment-proofs" &&
-                  paymentProofs > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-7 min-w-7 items-center justify-center rounded-full bg-red-600 px-2 text-xs font-extrabold text-white">
-                      {paymentProofs}
-                    </span>
-                  )}
-              </Link>
+              </div>
             ))}
           </div>
 
