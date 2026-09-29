@@ -39,6 +39,12 @@ export type ProductCardProduct = {
   description_en?: string | null;
 
   price?: number | string | null;
+
+  // Size of a single-size product, e.g. "200 مل" / "200 ml".
+  // Products with options show their option labels instead.
+  size_ar?: string | null;
+  size_en?: string | null;
+
   sale_percent?:
     | number
     | string

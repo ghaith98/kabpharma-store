@@ -161,6 +161,12 @@ export default function EditorialProductCard({
         product.description_ar) ||
     "";
 
+  const productSize =
+    (isArabic
+      ? product.size_ar || product.size_en
+      : product.size_en || product.size_ar) ||
+    "";
+
   const categoryName =
     (isArabic
       ? product.categories?.name_ar ||
@@ -368,7 +374,7 @@ export default function EditorialProductCard({
               </p>
             </div>
 
-            {variants.length > 0 && (
+            {variants.length > 0 ? (
               <>
                 {/* Mobile: one compact selector with an arrow. */}
                 <div className="relative min-w-0 max-w-[92px] md:hidden">
@@ -474,7 +480,15 @@ export default function EditorialProductCard({
                   )}
                 </div>
               </>
-            )}
+            ) : productSize ? (
+              /* Single-size product: show its size where options would be. */
+              <p
+                dir={isArabic ? "rtl" : "ltr"}
+                className="min-w-0 truncate border-b border-[#142019] pb-1 text-xs font-semibold text-[#142019] sm:text-sm"
+              >
+                {productSize}
+              </p>
+            ) : null}
           </div>
         </div>
 

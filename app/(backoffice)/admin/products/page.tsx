@@ -31,6 +31,8 @@ type AdminProduct = {
   warnings_en?: string | null;
   price?: number | string | null;
   sale_percent?: number | string | null;
+  size_ar?: string | null;
+  size_en?: string | null;
   image_url?: string | null;
   category_id?: number | null;
   brand_id?: number | null;
@@ -103,6 +105,8 @@ type ProductUpdateData = {
   brand_id: number;
   price: number;
   sale_percent: number;
+  size_ar: string | null;
+  size_en: string | null;
   image_url?: string;
 };
 
@@ -137,6 +141,8 @@ export default function AdminProductsPage() {
 
   const [price, setPrice] = useState("");
   const [salePercent, setSalePercent] = useState("0");
+  const [sizeAr, setSizeAr] = useState("");
+  const [sizeEn, setSizeEn] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [variants, setVariants] = useState<VariantInput[]>([]);
@@ -164,6 +170,8 @@ export default function AdminProductsPage() {
   const [editWarningsAr, setEditWarningsAr] = useState("");
   const [editWarningsEn, setEditWarningsEn] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editSizeAr, setEditSizeAr] = useState("");
+  const [editSizeEn, setEditSizeEn] = useState("");
   const [editSalePercent, setEditSalePercent] = useState("0");
   const [editCategoryId, setEditCategoryId] = useState("");
   const [editBrandId, setEditBrandId] = useState("");
@@ -530,6 +538,14 @@ export default function AdminProductsPage() {
       return;
     }
 
+    if (
+      cleanedVariants.length === 0 &&
+      (!sizeAr.trim() || !sizeEn.trim())
+    ) {
+      alert("Please enter the product size in Arabic and English (e.g. 200 مل / 200 ml)");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -589,6 +605,8 @@ export default function AdminProductsPage() {
 
           price: basePrice,
           sale_percent: Number(salePercent),
+          size_ar: sizeAr.trim() || null,
+          size_en: sizeEn.trim() || null,
           image_url: productImageUrl,
           category_id: Number(categoryId),
           brand_id: Number(brandId),
@@ -651,6 +669,8 @@ export default function AdminProductsPage() {
       setWarningsEn("");
       setPrice("");
       setSalePercent("0");
+      setSizeAr("");
+      setSizeEn("");
       setCategoryId("");
       setBrandId("");
       setImageFile(null);
@@ -689,6 +709,8 @@ export default function AdminProductsPage() {
     setEditCategoryId(String(product.category_id || ""));
     setEditBrandId(String(product.brand_id || ""));
     setEditPrice(String(product.price || ""));
+    setEditSizeAr(product.size_ar || "");
+    setEditSizeEn(product.size_en || "");
     setEditSalePercent(String(product.sale_percent || 0));
     setEditImageFile(null);
 
@@ -815,6 +837,8 @@ export default function AdminProductsPage() {
         brand_id: Number(editBrandId),
         price: finalBasePrice,
         sale_percent: Number(editSalePercent),
+        size_ar: editSizeAr.trim() || null,
+        size_en: editSizeEn.trim() || null,
       };
 
       if (finalProductImageUrl) {
@@ -1099,6 +1123,24 @@ export default function AdminProductsPage() {
               placeholder="Base Price - only if no options"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+            />
+
+            <input
+              type="text"
+              placeholder="Size Arabic - e.g. 200 مل (only if no options)"
+              value={sizeAr}
+              onChange={(e) => setSizeAr(e.target.value)}
+              dir="rtl"
+              className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+            />
+
+            <input
+              type="text"
+              placeholder="Size English - e.g. 200 ml (only if no options)"
+              value={sizeEn}
+              onChange={(e) => setSizeEn(e.target.value)}
+              dir="ltr"
               className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             />
 
@@ -1725,6 +1767,24 @@ export default function AdminProductsPage() {
               value={editPrice}
               onChange={(e) => setEditPrice(e.target.value)}
               placeholder="Base Price - only if no options"
+              className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+            />
+
+            <input
+              type="text"
+              value={editSizeAr}
+              onChange={(e) => setEditSizeAr(e.target.value)}
+              placeholder="Size Arabic - e.g. 200 مل (only if no options)"
+              dir="rtl"
+              className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
+            />
+
+            <input
+              type="text"
+              value={editSizeEn}
+              onChange={(e) => setEditSizeEn(e.target.value)}
+              placeholder="Size English - e.g. 200 ml (only if no options)"
+              dir="ltr"
               className="mb-3 w-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600 focus:bg-white"
             />
 

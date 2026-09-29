@@ -36,6 +36,10 @@ export type ProductDetail = {
   price?: number | string | null;
   image_url?: string | null;
 
+  // Size of a single-size product, e.g. "200 مل" / "200 ml".
+  size_ar?: string | null;
+  size_en?: string | null;
+
   is_out_of_stock?: boolean | null;
 
   categories?:
@@ -523,6 +527,27 @@ export default function ProductDetailsClient({
                 }
               )}
             </div>
+          </section>
+        )}
+
+        {/* Single-size product: show its size in the same place and style. */}
+        {sortedVariants.length === 0 &&
+          (product.size_ar || product.size_en) && (
+          <section className="mt-6 border-t border-[#dedfdd] pt-5">
+            <h2 className="mb-3 text-sm font-semibold text-[#142019]">
+              {isArabic
+                ? "الحجم"
+                : "Size"}
+            </h2>
+
+            <p
+              dir={isArabic ? "rtl" : "ltr"}
+              className="inline-block border-b border-[#142019] pb-1.5 text-sm font-semibold text-[#142019]"
+            >
+              {isArabic
+                ? product.size_ar || product.size_en
+                : product.size_en || product.size_ar}
+            </p>
           </section>
         )}
 

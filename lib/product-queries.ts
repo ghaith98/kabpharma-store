@@ -25,6 +25,8 @@ export const PRODUCT_LIST_SELECT = `
   description_en,
   price,
   sale_percent,
+  size_ar,
+  size_en,
   image_url,
   is_out_of_stock,
   category_id,
