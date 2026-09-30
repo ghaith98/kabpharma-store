@@ -551,11 +551,6 @@ export default function AdminProductsPage() {
       return;
     }
 
-    if (usesMainSize && (!sizeAr.trim() || !sizeEn.trim())) {
-      alert("Please enter the product size in Arabic and English (e.g. 200 مل / 200 ml)");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -790,11 +785,6 @@ export default function AdminProductsPage() {
           ? "Please enter base price or add product options"
           : "Please enter the main size price"
       );
-      return;
-    }
-
-    if (editHasMainSize && (!editSizeAr.trim() || !editSizeEn.trim())) {
-      alert("Please enter the product size in Arabic and English (e.g. 200 مل / 200 ml)");
       return;
     }
 
