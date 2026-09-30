@@ -37,7 +37,8 @@ export const PRODUCT_LIST_SELECT = `
     id,
     name,
     name_ar,
-    name_en
+    name_en,
+    brand_id
   ),
   product_variants (
     *

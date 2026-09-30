@@ -37,11 +37,20 @@ import {
 import type {
   EditorialProduct,
 } from "./EditorialProductCard";
+import { getPromotions } from "./[id]/ProductPromotionNotice";
 
 const PRODUCTS_PAGE_SIZE = 24;
 
+type FilterBrand = {
+  id: number;
+  name?: string | null;
+  name_ar?: string | null;
+  name_en?: string | null;
+};
+
 type ProductsClientProps = {
   products: EditorialProduct[];
+  brands?: FilterBrand[];
   showSearch?: boolean;
   showCategories?: boolean;
   bestSellerIds?: number[];
@@ -119,6 +128,7 @@ export default function ProductsClient({
   productHrefSuffix = "",
   collectionDiscoveryBanner = null,
   concern = null,
+  brands = [],
 }: ProductsClientProps) {
   const searchParams = useSearchParams();
   const { lang } = useLanguage();
@@ -201,6 +211,34 @@ export default function ProductsClient({
   const [onSaleOnly, setOnSaleOnly] =
     useState(false);
 
+  const [selectedBrandIds, setSelectedBrandIds] =
+    useState<number[]>([]);
+
+  const [draftBrandIds, setDraftBrandIds] =
+    useState<number[]>([]);
+
+  // Products that currently have an offer (e.g. 2nd at half price), so
+  // "Offers & sale" includes them, not only products with a sale %.
+  const [promotedProductIds, setPromotedProductIds] =
+    useState<Set<number>>(() => new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getPromotions().then((items) => {
+      if (cancelled) return;
+      setPromotedProductIds(
+        new Set(
+          items.map((item) => Number(item.product_id))
+        )
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [draftCategoryIds, setDraftCategoryIds] =
     useState<number[]>(selectedCategoryIds);
   const [draftPriceRange, setDraftPriceRange] =
@@ -212,6 +250,7 @@ export default function ProductsClient({
 
   const cancelDraftFilters = useCallback(() => {
     setDraftCategoryIds(selectedCategoryIds);
+    setDraftBrandIds(selectedBrandIds);
     setDraftPriceRange([...priceRange]);
     setDraftInStockOnly(inStockOnly);
     setDraftOnSaleOnly(onSaleOnly);
@@ -220,6 +259,7 @@ export default function ProductsClient({
     inStockOnly,
     onSaleOnly,
     priceRange,
+    selectedBrandIds,
     selectedCategoryIds,
   ]);
 
@@ -363,6 +403,7 @@ export default function ProductsClient({
       ]);
       setInStockOnly(false);
       setOnSaleOnly(false);
+      setSelectedBrandIds([]);
       setFiltersOpen(false);
     }
 
@@ -387,6 +428,7 @@ export default function ProductsClient({
         name?: string | null;
         name_ar?: string | null;
         name_en?: string | null;
+        brand_id?: number | null;
       }
     >();
 
@@ -410,6 +452,11 @@ export default function ProductsClient({
 
           name_en:
             product.categories.name_en,
+
+          brand_id:
+            product.categories.brand_id ??
+            product.brand_id ??
+            null,
         }
       );
     });
@@ -418,6 +465,55 @@ export default function ProductsClient({
       categoryMap.values()
     );
   }, [products]);
+
+  // Brands that actually have products in this list, in admin order.
+  const brandOptions = useMemo(() => {
+    const presentBrandIds = new Set(
+      products
+        .map((product) =>
+          Number(
+            product.brand_id ??
+              product.categories?.brand_id
+          )
+        )
+        .filter((id) => Number.isFinite(id))
+    );
+
+    return brands.filter((brand) =>
+      presentBrandIds.has(Number(brand.id))
+    );
+  }, [brands, products]);
+
+  function brandLabel(brand: FilterBrand) {
+    return (
+      (isArabic
+        ? brand.name_ar || brand.name || brand.name_en
+        : brand.name_en || brand.name || brand.name_ar) || ""
+    );
+  }
+
+  function toggleDraftBrand(brandId: number) {
+    const nextBrandIds = draftBrandIds.includes(brandId)
+      ? draftBrandIds.filter((id) => id !== brandId)
+      : [...draftBrandIds, brandId];
+
+    setDraftBrandIds(nextBrandIds);
+
+    // Drop chosen categories that belong to brands no longer selected.
+    if (nextBrandIds.length > 0) {
+      setDraftCategoryIds((current) =>
+        current.filter((categoryId) => {
+          const category = categories.find(
+            (candidate) => candidate.id === categoryId
+          );
+          return (
+            !category?.brand_id ||
+            nextBrandIds.includes(Number(category.brand_id))
+          );
+        })
+      );
+    }
+  }
 
  function getFinalPrice(
   product: EditorialProduct
@@ -456,10 +552,12 @@ export default function ProductsClient({
 
     setInStockOnly(false);
     setOnSaleOnly(false);
+    setSelectedBrandIds([]);
   }
 
   function openFilters() {
     setDraftCategoryIds(selectedCategoryIds);
+    setDraftBrandIds(selectedBrandIds);
     setDraftPriceRange([...priceRange]);
     setDraftInStockOnly(inStockOnly);
     setDraftOnSaleOnly(onSaleOnly);
@@ -471,6 +569,7 @@ export default function ProductsClient({
     replaceProductParams({
       categoryIds: draftCategoryIds,
     });
+    setSelectedBrandIds(draftBrandIds);
     setPriceRange([...draftPriceRange]);
     setInStockOnly(draftInStockOnly);
     setOnSaleOnly(draftOnSaleOnly);
@@ -479,6 +578,7 @@ export default function ProductsClient({
 
   const draftFiltersCount =
     draftCategoryIds.length +
+    draftBrandIds.length +
     (draftInStockOnly ? 1 : 0) +
     (draftOnSaleOnly ? 1 : 0) +
     (draftPriceRange[0] > 0 ||
@@ -488,6 +588,7 @@ export default function ProductsClient({
 
   const activeFiltersCount =
     selectedCategoryIds.length +
+    selectedBrandIds.length +
     (inStockOnly ? 1 : 0) +
     (onSaleOnly ? 1 : 0) +
     (priceRange[0] > 0 ||
@@ -561,6 +662,15 @@ export default function ProductsClient({
                 product.category_id
               ));
 
+            const matchesBrand =
+              selectedBrandIds.length === 0 ||
+              selectedBrandIds.includes(
+                Number(
+                  product.brand_id ??
+                    product.categories?.brand_id
+                )
+              );
+
             const matchesIds =
               selectedIds === null ||
               selectedIds.has(
@@ -582,10 +692,14 @@ export default function ProductsClient({
               !onSaleOnly ||
               Number(
                 product.sale_percent || 0
-              ) > 0;
+              ) > 0 ||
+              promotedProductIds.has(
+                Number(product.id)
+              );
 
             return (
               matchesSearch &&
+              matchesBrand &&
               matchesCategory &&
               matchesIds &&
               matchesPrice &&
@@ -672,10 +786,12 @@ export default function ProductsClient({
           products,
           search,
           selectedCategoryIds,
+          selectedBrandIds,
           selectedIds,
           priceRange,
           inStockOnly,
           onSaleOnly,
+          promotedProductIds,
           sortBy,
           bestSellerIds,
         ]);
@@ -1114,23 +1230,22 @@ export default function ProductsClient({
               </div>
 
               <div className="flex-1 px-2 pb-4">
-                {showCategories && (
+                {showCategories && brandOptions.length > 1 && (
                   <section className="py-4">
                     <h3 className="mb-2 text-sm font-medium text-black">
                       {isArabic
-                        ? "التصنيفات"
-                        : "Category"}
+                        ? "الماركة"
+                        : "Brand"}
                     </h3>
 
                     <div className="flex flex-wrap gap-0.5">
                       <button
                         type="button"
                         onClick={() =>
-                          setDraftCategoryIds([])
+                          setDraftBrandIds([])
                         }
                         className={`border px-3 py-3 text-sm italic transition ${
-                          draftCategoryIds.length ===
-                          0
+                          draftBrandIds.length === 0
                             ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
                             : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
                         }`}
@@ -1140,55 +1255,145 @@ export default function ProductsClient({
                           : "All"}
                       </button>
 
-                      {categories.map(
-                        (
-                          category
-                        ) => {
-                          const categoryLabel =
-                            isArabic
-                              ? category.name_ar ||
-                                category.name ||
-                                category.name_en
-                              : category.name_en ||
-                                category.name ||
-                                category.name_ar;
-
-                          const isSelected =
-                            draftCategoryIds.includes(
-                              category.id
-                            );
-
-                          return (
-                            <button
-                              key={
-                                category.id
-                              }
-                              type="button"
-                              onClick={() =>
-                                setDraftCategoryIds((current) =>
-                                  current.includes(category.id)
-                                    ? current.filter(
-                                        (id) => id !== category.id
-                                      )
-                                    : [...current, category.id]
-                                )
-                              }
-                              className={`border px-3 py-3 text-sm italic transition ${
-                                isSelected
-                                  ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
-                                  : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
-                              }`}
-                            >
-                              {
-                                categoryLabel
-                              }
-                            </button>
-                          );
-                        }
-                      )}
+                      {brandOptions.map((brand) => (
+                        <button
+                          key={brand.id}
+                          type="button"
+                          aria-pressed={draftBrandIds.includes(Number(brand.id))}
+                          onClick={() =>
+                            toggleDraftBrand(Number(brand.id))
+                          }
+                          className={`border px-3 py-3 text-sm italic transition ${
+                            draftBrandIds.includes(Number(brand.id))
+                              ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                              : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
+                          }`}
+                        >
+                          {brandLabel(brand)}
+                        </button>
+                      ))}
                     </div>
                   </section>
                 )}
+
+                {showCategories && (() => {
+                  // Only the chosen brands' categories; grouped under each
+                  // brand's name when more than one brand is shown.
+                  const visibleCategories =
+                    draftBrandIds.length > 0
+                      ? categories.filter((category) =>
+                          draftBrandIds.includes(
+                            Number(category.brand_id)
+                          )
+                        )
+                      : categories;
+
+                  const groups = [
+                    ...brandOptions.map((brand) => ({
+                      key: `brand-${brand.id}`,
+                      title: brandLabel(brand),
+                      items: visibleCategories.filter(
+                        (category) =>
+                          Number(category.brand_id) ===
+                          Number(brand.id)
+                      ),
+                    })),
+                    {
+                      key: "other",
+                      title: "",
+                      items: visibleCategories.filter(
+                        (category) =>
+                          !brandOptions.some(
+                            (brand) =>
+                              Number(brand.id) ===
+                              Number(category.brand_id)
+                          )
+                      ),
+                    },
+                  ].filter((group) => group.items.length > 0);
+
+                  const showGroupTitles = groups.length > 1;
+
+                  return (
+                    <section className="py-4">
+                      <h3 className="mb-2 text-sm font-medium text-black">
+                        {isArabic
+                          ? "التصنيفات"
+                          : "Category"}
+                      </h3>
+
+                      <div className="flex flex-wrap gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDraftCategoryIds([])
+                          }
+                          className={`border px-3 py-3 text-sm italic transition ${
+                            draftCategoryIds.length === 0
+                              ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                              : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
+                          }`}
+                        >
+                          {isArabic
+                            ? "الكل"
+                            : "All"}
+                        </button>
+                      </div>
+
+                      {groups.map((group) => (
+                        <div key={group.key} className="mt-3">
+                          {showGroupTitles && group.title && (
+                            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a857e]">
+                              {group.title}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap gap-0.5">
+                            {group.items.map((category) => {
+                              const categoryLabel =
+                                isArabic
+                                  ? category.name_ar ||
+                                    category.name ||
+                                    category.name_en
+                                  : category.name_en ||
+                                    category.name ||
+                                    category.name_ar;
+
+                              const isSelected =
+                                draftCategoryIds.includes(
+                                  category.id
+                                );
+
+                              return (
+                                <button
+                                  key={category.id}
+                                  type="button"
+                                  aria-pressed={isSelected}
+                                  onClick={() =>
+                                    setDraftCategoryIds((current) =>
+                                      current.includes(category.id)
+                                        ? current.filter(
+                                            (id) => id !== category.id
+                                          )
+                                        : [...current, category.id]
+                                    )
+                                  }
+                                  className={`border px-3 py-3 text-sm italic transition ${
+                                    isSelected
+                                      ? "border-[#0a583b] bg-[#edf5f0] text-[#0a583b]"
+                                      : "border-transparent bg-[#f5f7f5] text-[#142019] hover:border-[#0a583b]/40"
+                                  }`}
+                                >
+                                  {categoryLabel}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </section>
+                  );
+                })()}
 
                 <section className="py-4">
                   <h3 className="mb-2 text-sm font-medium text-black">
@@ -1247,8 +1452,8 @@ export default function ProductsClient({
 
                       <span>
                         {isArabic
-                          ? "تخفيضات"
-                          : "On sale"}
+                          ? "عروض وتخفيضات"
+                          : "Offers & sale"}
                       </span>
                     </label>
                   </div>

@@ -32,6 +32,10 @@ import {
 } from "@/lib/cart";
 
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  getLinePromotionDiscount,
+  linePromotionLabel,
+} from "@/lib/promotion-lines";
 
 type CartItemWithVariant =
   CartItem & {
@@ -701,6 +705,13 @@ export default function CartPage() {
                           item.quantity
                         );
 
+                      // "2nd at half price" offer on this line.
+                      const linePromotionDiscount =
+                        getLinePromotionDiscount(
+                          promotions,
+                          item
+                        );
+
                       return (
                         <article
                           key={
@@ -894,11 +905,39 @@ export default function CartPage() {
                                     : "Subtotal"}
                                 </p>
 
-                                <p className="mt-1 text-base font-extrabold text-[#142019]">
-                                  {formatPrice(
-                                    itemSubtotal
-                                  )}
-                                </p>
+                                {linePromotionDiscount > 0 ? (
+                                  <>
+                                    <div className="mt-1 flex flex-wrap items-baseline gap-2 sm:justify-end">
+                                      <p className="text-xs font-bold text-[#99a29c] line-through">
+                                        {formatPrice(
+                                          itemSubtotal
+                                        )}
+                                      </p>
+
+                                      <p className="text-base font-extrabold text-[#0a583b]">
+                                        {formatPrice(
+                                          Math.max(
+                                            0,
+                                            itemSubtotal -
+                                              linePromotionDiscount
+                                          )
+                                        )}
+                                      </p>
+                                    </div>
+
+                                    <p className="mt-1 text-[11px] font-bold text-[#0a583b]">
+                                      {linePromotionLabel(
+                                        isArabic
+                                      )}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <p className="mt-1 text-base font-extrabold text-[#142019]">
+                                    {formatPrice(
+                                      itemSubtotal
+                                    )}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </div>

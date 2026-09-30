@@ -11,7 +11,7 @@ const PROMOTIONS_TTL_MS = 60_000;
 let activePromotions: Promise<Promotion[]> | null = null;
 let fetchedAt = 0;
 
-function getPromotions() {
+export function getPromotions() {
   if (!activePromotions || Date.now() - fetchedAt > PROMOTIONS_TTL_MS) {
     fetchedAt = Date.now();
     activePromotions = fetch("/api/customer/promotions/active")

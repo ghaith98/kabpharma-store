@@ -26,6 +26,7 @@ import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "@/context/LanguageContext";
 import { trackCheckoutStart, trackPurchase } from "@/lib/analytics";
+import { getLinePromotionDiscount, linePromotionLabel } from "@/lib/promotion-lines";
 
 const COD_FEE = 50;
 const COD_IDEMPOTENCY_KEY = "kab_cod_idempotency_key";
@@ -571,7 +572,19 @@ export default function PaymentPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-extrabold text-[#142019]">{displayName}</p>
                       {variantLabel && <p className="mt-0.5 truncate text-xs text-[#7a857e]">{variantLabel}</p>}
-                      <p className="mt-1 text-xs font-bold text-[#526057]">{formatPrice(Number(item.price || 0) * item.quantity)}</p>
+                      {(() => {
+                        const lineTotal = Number(item.price || 0) * item.quantity;
+                        const lineDiscount = getLinePromotionDiscount(appliedPromotions, item);
+                        return lineDiscount > 0 ? (
+                          <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs font-bold">
+                            <span className="text-[#99a29c] line-through">{formatPrice(lineTotal)}</span>
+                            <span className="text-[#0a583b]">{formatPrice(Math.max(0, lineTotal - lineDiscount))}</span>
+                            <span className="text-[#0a583b]">· {linePromotionLabel(isArabic)}</span>
+                          </p>
+                        ) : (
+                          <p className="mt-1 text-xs font-bold text-[#526057]">{formatPrice(lineTotal)}</p>
+                        );
+                      })()}
                     </div>
                   </li>
                 );

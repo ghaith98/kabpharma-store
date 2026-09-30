@@ -91,7 +91,7 @@ export const metadata: Metadata = {
 
 export default async function ProductsPage() {
 
-  const [productsResult, orderItemsResult] = await Promise.all([
+  const [productsResult, orderItemsResult, brandsResult] = await Promise.all([
     supabase
       .from("products")
       .select(PRODUCT_LIST_SELECT)
@@ -105,6 +105,10 @@ export default async function ProductsPage() {
         "product_id, quantity:units_sold"
       ),
 
+    supabase
+      .from("brands")
+      .select("id, name, name_ar, name_en")
+      .order("id", { ascending: true }),
   ]);
 
   if (productsResult.error) {
@@ -203,6 +207,7 @@ export default async function ProductsPage() {
           <ProductsClient
             products={products}
             bestSellerIds={bestSellerIds}
+            brands={brandsResult.data || []}
           />
         </Suspense>
       )}

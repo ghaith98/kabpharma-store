@@ -31,6 +31,10 @@ import {
 } from "@/lib/cart";
 
 import { useLanguage } from "@/context/LanguageContext";
+import {
+  getLinePromotionDiscount,
+  linePromotionLabel,
+} from "@/lib/promotion-lines";
 
 type CartItemWithVariant =
   CartItem & {
@@ -1435,17 +1439,40 @@ export default function CheckoutPage() {
                               }
                             </p>
 
-                            <p className="shrink-0 text-sm font-extrabold text-[#142019]">
-                              {formatPrice(
-                                Number(
-                                  item.price
-                                ) *
-                                  Number(
-                                    item.quantity
-                                  )
-                              )}
-                            </p>
+                            {(() => {
+                              const lineTotal =
+                                Number(item.price) *
+                                Number(item.quantity);
+                              const lineDiscount =
+                                getLinePromotionDiscount(
+                                  promotions,
+                                  item
+                                );
+
+                              return lineDiscount > 0 ? (
+                                <div className="shrink-0 text-end">
+                                  <p className="text-xs font-bold text-[#99a29c] line-through">
+                                    {formatPrice(lineTotal)}
+                                  </p>
+                                  <p className="text-sm font-extrabold text-[#0a583b]">
+                                    {formatPrice(
+                                      Math.max(0, lineTotal - lineDiscount)
+                                    )}
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className="shrink-0 text-sm font-extrabold text-[#142019]">
+                                  {formatPrice(lineTotal)}
+                                </p>
+                              );
+                            })()}
                           </div>
+
+                          {getLinePromotionDiscount(promotions, item) > 0 && (
+                            <p className="mt-1 text-xs font-bold text-[#0a583b]">
+                              {linePromotionLabel(isArabic)}
+                            </p>
+                          )}
 
                           {variantLabel && (
                             <p className="mt-1 text-xs font-bold text-[#0a583b]">

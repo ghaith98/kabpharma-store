@@ -18,6 +18,7 @@ type ProductCategory = {
   name?: string | null;
   name_ar?: string | null;
   name_en?: string | null;
+  brand_id?: number | null;
 };
 
 type ProductVariants =
@@ -57,6 +58,10 @@ export type ProductCardProduct = {
     | null;
 
   category_id?:
+    | number
+    | null;
+
+  brand_id?:
     | number
     | null;
 
