@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
+import Link from "next/link";
 import {
   Bot,
   ExternalLink,
@@ -19,13 +21,50 @@ import {
 import { FaWhatsapp } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
 
+// A product the assistant recommended, shown as a card under its answer.
+type AssistantProduct = {
+  id: number;
+  name: string;
+  price: number;
+  hasSeveralSizes: boolean;
+  inStock: boolean;
+  imageUrl: string | null;
+};
+
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
   needsHuman?: boolean;
   needsSignup?: boolean;
+  products?: AssistantProduct[];
 };
+
+function readAssistantProducts(value: unknown): AssistantProduct[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((entry) => {
+    const product = entry as Partial<AssistantProduct> | null;
+    const id = Number(product?.id);
+    const name = String(product?.name || "").trim();
+
+    if (!Number.isInteger(id) || id <= 0 || !name) return [];
+
+    return [
+      {
+        id,
+        name,
+        price: Number(product?.price || 0),
+        hasSeveralSizes: product?.hasSeveralSizes === true,
+        inStock: product?.inStock !== false,
+        imageUrl:
+          typeof product?.imageUrl === "string"
+            ? product.imageUrl
+            : null,
+      },
+    ];
+  });
+}
 
 type AuthState = "checking" | "guest" | "authenticated";
 
@@ -37,7 +76,7 @@ const copy = {
     online: "مساعد KAB الذكي",
     title: "كيف يمكنني مساعدتكِ؟",
     intro:
-      "أهلاً بكِ في KAB Pharma. اسأليني عن منتجات الموقع، المكونات، طريقة الاستخدام، السعر أو التوفر.",
+      "أهلاً بكِ في KAB Pharma. اسأليني عن المنتج المناسب لبشرتكِ أو شعركِ، طريقة الاستخدام، الأسعار والعروض، التوصيل، الدفع أو الاسترجاع.",
     placeholder: "اكتبي سؤالكِ هنا...",
     send: "إرسال",
     thinking: "أتحقق من معلومات KAB...",
@@ -53,7 +92,7 @@ const copy = {
     online: "KAB AI Assistant",
     title: "How can I help?",
     intro:
-      "Welcome to KAB Pharma. Ask about website products, ingredients, use, price, or availability.",
+      "Welcome to KAB Pharma. Ask me what suits your skin or hair, how to use a product, prices and offers, delivery, payment, or returns.",
     placeholder: "Type your question...",
     send: "Send",
     thinking: "Checking KAB information...",
@@ -254,7 +293,7 @@ export default function KABAssistantWidget({
           message: content,
           language: lang,
           history: previousMessages
-            .slice(-8)
+            .slice(-10)
             .map(({ role, content: historyContent }) => ({
               role,
               content: historyContent,
@@ -275,6 +314,7 @@ export default function KABAssistantWidget({
           role: "assistant",
           content: String(data.answer || t.error),
           needsHuman: data.needsHuman === true,
+          products: readAssistantProducts(data.products),
         },
       ]);
     } catch {
@@ -378,6 +418,57 @@ export default function KABAssistantWidget({
                 </div>
 
                 <p className="whitespace-pre-line">{message.content}</p>
+
+                {message.products && message.products.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {message.products.map((product) => (
+                      <Link
+                        key={product.id}
+                        href={`/products/${product.id}`}
+                        prefetch={false}
+                        className="flex items-center gap-3 rounded-xl border border-[#d8e6dc] bg-white p-2 transition hover:border-[#0a583b]"
+                      >
+                        <span className="relative block h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white">
+                          {product.imageUrl && (
+                            <Image
+                              src={product.imageUrl}
+                              alt=""
+                              fill
+                              sizes="48px"
+                              className="object-contain"
+                            />
+                          )}
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs font-bold text-[#142019]">
+                            {product.name}
+                          </span>
+
+                          <span className="mt-0.5 block text-[11px] font-bold text-[#0a583b]">
+                            {product.hasSeveralSizes
+                              ? isArabic
+                                ? "يبدأ من "
+                                : "From "
+                              : ""}
+                            {product.price.toLocaleString()} SYP
+                            {!product.inStock && (
+                              <span className="text-[#8a948d]">
+                                {isArabic
+                                  ? " · غير متوفر"
+                                  : " · Out of stock"}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+
+                        <span className="shrink-0 rounded-full bg-[#edf5f0] px-2.5 py-1 text-[11px] font-bold text-[#0a583b]">
+                          {isArabic ? "عرض" : "View"}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
 
                 {message.needsSignup && (
                   <a
