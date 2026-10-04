@@ -56,6 +56,9 @@ type ProductsClientProps = {
   bestSellerIds?: number[];
   showHeader?: boolean;
   standaloneCollection?: boolean;
+  // Show Filter & Sort. Defaults to on for the products page and off for
+  // collection pages; brand pages turn it on for their own products.
+  enableFilters?: boolean;
   standaloneNewArrivalsLayout?: boolean;
   productHrefSuffix?: string;
   collectionDiscoveryBanner?: DiscoveryBanner | null;
@@ -124,6 +127,7 @@ export default function ProductsClient({
   showHeader = true,
   bestSellerIds = [],
   standaloneCollection = false,
+  enableFilters,
   standaloneNewArrivalsLayout = false,
   productHrefSuffix = "",
   collectionDiscoveryBanner = null,
@@ -144,6 +148,9 @@ export default function ProductsClient({
     );
   }, [products]);
 
+  const filtersEnabled =
+    enableFilters ?? !standaloneCollection;
+
   const search = standaloneCollection
     ? ""
     : searchParams.get("search") || "";
@@ -153,12 +160,12 @@ export default function ProductsClient({
   }, [search]);
   const selectedCategoryIds = useMemo(
     () =>
-      standaloneCollection
-        ? []
-        : parseCategoryIds(
+      filtersEnabled
+        ? parseCategoryIds(
             searchParams.get("category")
-          ),
-    [searchParams, standaloneCollection]
+          )
+        : [],
+    [searchParams, filtersEnabled]
   );
   const selectedIds = standaloneCollection
     ? null
@@ -1001,7 +1008,7 @@ export default function ProductsClient({
 
           </div>
 
-          {!standaloneCollection && (
+          {filtersEnabled && (
             <div
               ref={sortMenuRef}
               dir="ltr"
@@ -1109,7 +1116,8 @@ export default function ProductsClient({
             </h2>
 
             <p className="mt-2 max-w-md text-sm leading-7 text-[#647168]">
-              {standaloneCollection
+              {standaloneCollection &&
+              (!filtersEnabled || activeFiltersCount === 0)
                 ? isArabic
                   ? "سيتم إضافة منتجات مختارة لهذه الحاجة قريباً."
                   : "Curated products for this need will be added soon."
@@ -1118,7 +1126,8 @@ export default function ProductsClient({
                   : "Try changing your search or removing some filters."}
             </p>
 
-            {!standaloneCollection && (
+            {filtersEnabled &&
+              (!standaloneCollection || activeFiltersCount > 0) && (
             <button
               type="button"
               onClick={clearFilters}
@@ -1176,7 +1185,7 @@ export default function ProductsClient({
         </div>
       )}
 
-      {!standaloneCollection && filtersOpen && (
+      {filtersEnabled && filtersOpen && (
         <div
           className="fixed inset-0 z-[999] bg-black/55"
           onMouseDown={(event) => {

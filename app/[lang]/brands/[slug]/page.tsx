@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
+import { rankBestSellerProductIds } from "@/lib/best-sellers";
 import BrandCollectionClient from "@/app/brands/[slug]/BrandCollectionClient";
 
 export const revalidate = 60;
@@ -33,6 +34,14 @@ export default async function BrandPage({ params }: PageProps) {
   if (slug === "kab-pharma") redirect("/");
   const { data: brand } = await supabase.from("brands").select("*").eq("slug", slug).maybeSingle();
   if (!brand) notFound();
-  const { data: products } = await supabase.from("products").select(PRODUCT_LIST_SELECT).eq("brand_id", brand.id).order("id", { ascending: false });
-  return <BrandCollectionClient brand={brand} brandSlug={slug} products={products || []} />;
+  const [{ data: products }, { data: salesTotals }] = await Promise.all([
+    supabase.from("products").select(PRODUCT_LIST_SELECT).eq("brand_id", brand.id).order("id", { ascending: false }),
+    supabase.from("product_sales_totals").select("product_id, quantity:units_sold"),
+  ]);
+
+  // Sales ranking limited to this brand's products, for "Bestsellers first".
+  const brandProductIds = new Set((products || []).map((product) => Number(product.id)));
+  const bestSellerIds = rankBestSellerProductIds(salesTotals || [], brandProductIds);
+
+  return <BrandCollectionClient brand={brand} brandSlug={slug} products={products || []} bestSellerIds={bestSellerIds} />;
 }
