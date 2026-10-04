@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 
 import { COD_FEE_SYP } from "@/lib/commerce-config";
-import { hasTrustedOrigin, jsonError } from "@/lib/http";
+import { hasTrustedOrigin } from "@/lib/http";
 import { hasMainSize } from "@/lib/product-options";
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
+
+// The model reads the whole catalogue, so an answer can take longer than
+// the default time limit. Without this the request is cut off half-way.
+export const maxDuration = 60;
 
 /*
   KAB Assistant.
@@ -42,6 +46,153 @@ const ASSISTANT_MODEL =
 
 const WHATSAPP_NUMBER = "+963 958 088 969";
 const SUPPORT_EMAIL = "kabpharma.sy@hotmail.com";
+
+/*
+  Every failure carries a short code. The chat shows it next to the error
+  message, so a problem can be traced without opening the server logs:
+
+    A1  request did not come from this website
+    A2  OPENAI_API_KEY is missing in this environment
+    A3  rate limiter could not be reached (take_rate_limit)
+    A4  too many messages from this visitor
+    A5  products could not be loaded
+    A6  OpenAI refused the API key
+    A7  OpenAI account has no credit / quota left
+    A8  OpenAI rejected the request (model or parameters)
+    A9  OpenAI answered with no text
+    A10 OpenAI took too long or could not be reached
+*/
+function fail(
+  code: string,
+  error: string,
+  status: number,
+  headers: Record<string, string> = {}
+) {
+  return NextResponse.json(
+    { success: false, error, code },
+    {
+      status,
+      headers: { "Cache-Control": "no-store", ...headers },
+    }
+  );
+}
+
+type ProviderData = {
+  error?: {
+    message?: string;
+    code?: string;
+    type?: string;
+  };
+  status?: string;
+  incomplete_details?: { reason?: string };
+  output_text?: unknown;
+  output?: Array<{
+    content?: Array<{
+      type?: string;
+      text?: string;
+    }>;
+  }>;
+};
+
+type ModelAttempt =
+  | { ok: true; text: string }
+  | { ok: false; code: string; retry: boolean };
+
+/** One call to the model. Never throws. */
+async function askModel({
+  apiKey,
+  instructions,
+  input,
+  effort,
+  maxOutputTokens,
+  timeoutMs,
+}: {
+  apiKey: string;
+  instructions: string;
+  input: Array<{ role: "user" | "assistant"; content: string }>;
+  effort: "low" | "minimal" | null;
+  maxOutputTokens: number;
+  timeoutMs: number;
+}): Promise<ModelAttempt> {
+  let response: Response;
+  let providerData: ProviderData;
+
+  try {
+    response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: ASSISTANT_MODEL,
+        ...(effort ? { reasoning: { effort } } : {}),
+        max_output_tokens: maxOutputTokens,
+        instructions,
+        input,
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+
+    providerData = (await response
+      .json()
+      .catch(() => ({}))) as ProviderData;
+  } catch (exception) {
+    console.error("KAB AI request failed:", exception);
+
+    // Too slow: worth one more try with the fastest request.
+    const timedOut =
+      exception instanceof Error &&
+      (exception.name === "TimeoutError" ||
+        exception.name === "AbortError");
+
+    return { ok: false, code: "A10", retry: timedOut };
+  }
+
+  if (!response.ok) {
+    const providerError = providerData.error;
+
+    console.error(
+      "KAB AI provider error:",
+      response.status,
+      providerError?.code || providerError?.type || "",
+      providerError?.message || ""
+    );
+
+    if (response.status === 401) {
+      return { ok: false, code: "A6", retry: false };
+    }
+
+    if (
+      providerError?.code === "insufficient_quota" ||
+      providerError?.type === "insufficient_quota"
+    ) {
+      return { ok: false, code: "A7", retry: false };
+    }
+
+    // A rejected parameter is worth one more try with a plainer request.
+    return {
+      ok: false,
+      code: response.status === 429 || response.status >= 500 ? "A10" : "A8",
+      retry: response.status === 400,
+    };
+  }
+
+  const text = outputText(providerData);
+
+  if (!text) {
+    console.error(
+      "KAB AI returned no text:",
+      providerData.status || "",
+      providerData.incomplete_details?.reason || "",
+      JSON.stringify(providerData).slice(0, 1500)
+    );
+
+    return { ok: false, code: "A9", retry: true };
+  }
+
+  return { ok: true, text };
+}
 
 function clean(value: unknown, limit: number) {
   return String(value || "")
@@ -426,26 +577,28 @@ function readMarkers(
 
 export async function POST(request: Request) {
   if (!hasTrustedOrigin(request)) {
-    return jsonError("Invalid request origin", 403);
+    return fail("A1", "Invalid request origin", 403);
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    return jsonError(
-      "KAB Assistant is not configured.",
-      503
+    console.error(
+      "KAB AI is not configured: OPENAI_API_KEY is missing in this environment."
     );
+
+    return fail("A2", "KAB Assistant is not configured.", 503);
   }
 
   const rate = await takeRateLimitDb({
     key: `kab-ai:${getRequestIp(request)}`,
-    limit: 20,
+    limit: 40,
     windowSeconds: 60 * 60,
   });
 
   if (rate.unavailable) {
-    return jsonError(
+    return fail(
+      "A3",
       "KAB Assistant is temporarily unavailable. Please retry shortly.",
       503
     );
@@ -455,12 +608,15 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
+        code: "A4",
         error:
           "Please wait a moment before sending more messages.",
+        retryAfterSeconds: rate.retryAfterSeconds,
       },
       {
         status: 429,
         headers: {
+          "Cache-Control": "no-store",
           "Retry-After": String(
             rate.retryAfterSeconds
           ),
@@ -478,13 +634,13 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return jsonError("Invalid message", 400);
+    return fail("A0", "Invalid message", 400);
   }
 
   const message = clean(body.message, 900);
 
   if (!message) {
-    return jsonError("Please enter a message.", 400);
+    return fail("A0", "Please enter a message.", 400);
   }
 
   const language: Language =
@@ -577,7 +733,8 @@ export async function POST(request: Request) {
       productsResult.error
     );
 
-    return jsonError(
+    return fail(
+      "A5",
       "Unable to search KAB products right now.",
       503
     );
@@ -778,62 +935,37 @@ ${JSON.stringify(catalogForModel)}`;
   ];
 
   try {
-    const response = await fetch(
-      "https://api.openai.com/v1/responses",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: ASSISTANT_MODEL,
-          reasoning: { effort: "low" },
-          max_output_tokens: 2000,
-          instructions,
-          input,
-        }),
-      }
-    );
+    // First try: a little thinking for a better answer. If that is rejected
+    // or comes back empty, try once more with the plainest, fastest request.
+    let attempt = await askModel({
+      apiKey,
+      instructions,
+      input,
+      effort: "low",
+      maxOutputTokens: 2500,
+      timeoutMs: 28000,
+    });
 
-    const providerData = (await response.json()) as {
-      error?: {
-        message?: string;
-      };
-      output_text?: unknown;
-      output?: Array<{
-        content?: Array<{
-          type?: string;
-          text?: string;
-        }>;
-      }>;
-    };
+    if (!attempt.ok && attempt.retry) {
+      attempt = await askModel({
+        apiKey,
+        instructions,
+        input,
+        effort: attempt.code === "A8" ? null : "minimal",
+        maxOutputTokens: 4000,
+        timeoutMs: 25000,
+      });
+    }
 
-    if (!response.ok) {
-      console.error(
-        "KAB AI provider error:",
-        providerData.error?.message || response.status
-      );
-
-      return jsonError(
+    if (!attempt.ok) {
+      return fail(
+        attempt.code,
         "KAB Assistant is temporarily unavailable.",
         503
       );
     }
 
-    const rawAnswer = outputText(providerData);
-
-    if (!rawAnswer) {
-      console.error(
-        "KAB AI returned no text:",
-        JSON.stringify(providerData).slice(0, 2000)
-      );
-
-      return jsonError(
-        "KAB Assistant could not prepare an answer.",
-        503
-      );
-    }
+    const rawAnswer = attempt.text;
 
     const { answer, productIds, needsHuman } = readMarkers(
       rawAnswer,
@@ -843,7 +975,8 @@ ${JSON.stringify(catalogForModel)}`;
     if (!answer) {
       console.error("KAB AI returned only markers:", rawAnswer);
 
-      return jsonError(
+      return fail(
+        "A9",
         "KAB Assistant could not prepare an answer.",
         503
       );
@@ -885,7 +1018,8 @@ ${JSON.stringify(catalogForModel)}`;
       exception
     );
 
-    return jsonError(
+    return fail(
+      "A10",
       "KAB Assistant is temporarily unavailable.",
       503
     );

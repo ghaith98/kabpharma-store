@@ -86,6 +86,8 @@ const copy = {
       "أنشئي حساباً أو سجّلي الدخول أولاً لتتمكني من الدردشة معي ومساعدتكِ بمنتجات KAB.",
     whatsappNote: "هل تحتاجين مساعدة مباشرة؟ فريقنا متاح عبر واتساب.",
     error: "تعذر إرسال الرسالة الآن. يرجى المحاولة مجدداً.",
+    tooMany:
+      "أرسلتِ رسائل كثيرة خلال وقت قصير. يرجى المحاولة مجدداً بعد {minutes} دقيقة.",
     assistant: "مساعد KAB",
   },
   en: {
@@ -102,6 +104,8 @@ const copy = {
       "Please create an account or sign in first so you can chat with me and I can help with KAB products.",
     whatsappNote: "Need direct help? Our team is available on WhatsApp.",
     error: "Your message could not be sent. Please try again.",
+    tooMany:
+      "You have sent a lot of messages in a short time. Please try again in {minutes} minutes.",
     assistant: "KAB Assistant",
   },
 } as const;
@@ -283,6 +287,9 @@ export default function KABAssistantWidget({
     setDraft("");
     setIsSending(true);
 
+    let failureText = "";
+    let failureCode = "N0";
+
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
@@ -301,9 +308,33 @@ export default function KABAssistantWidget({
         }),
       });
 
-      const data = await response.json();
+      // The reply is read as text first: when the server is cut off it
+      // sends a plain error page, not JSON.
+      const data = await response
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
 
       if (!response.ok || !data?.success) {
+        if (response.status === 429) {
+          const minutes = Math.max(
+            1,
+            Math.ceil(Number(data?.retryAfterSeconds || 60) / 60)
+          );
+
+          failureText = t.tooMany.replace(
+            "{minutes}",
+            String(minutes)
+          );
+        } else {
+          // Small reference code so the cause can be traced (see the list
+          // at the top of app/api/assistant/route.ts).
+          failureCode =
+            typeof data?.code === "string"
+              ? data.code
+              : `H${response.status}`;
+        }
+
         throw new Error(data?.error || t.error);
       }
 
@@ -323,8 +354,8 @@ export default function KABAssistantWidget({
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: t.error,
-          needsHuman: true,
+          content: failureText || `${t.error} (${failureCode})`,
+          needsHuman: !failureText,
         },
       ]);
     } finally {
