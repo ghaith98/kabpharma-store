@@ -17,7 +17,7 @@ import {
 
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
-import { X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 
 import EditorialProductCard from "../products/EditorialProductCard";
 
@@ -711,6 +711,64 @@ export default function NewArrivalsCollection({
           </header>
         )}
 
+        {!isConcern && !isBestSellers ? (
+          /* New Arrivals with nothing marked as new yet: "Coming soon".
+             Goes back to the normal product list as soon as one product
+             is marked as a new arrival. */
+          <div className="mx-auto flex min-h-[460px] max-w-2xl flex-col items-center justify-center px-2 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[#cfe0d6] bg-[#edf5f0] text-[#0a583b]">
+              <Sparkles
+                aria-hidden="true"
+                className="h-6 w-6"
+                strokeWidth={1.6}
+              />
+            </span>
+
+            <p
+              className={`mt-7 text-[11px] font-extrabold text-[#0a583b] ${
+                isArabic
+                  ? "tracking-normal"
+                  : "uppercase tracking-[0.22em]"
+              }`}
+            >
+              {isArabic
+                ? "وصل حديثاً"
+                : "New Arrivals"}
+            </p>
+
+            <h2
+              className={`mt-4 text-4xl font-extrabold text-[#142019] sm:text-5xl lg:text-6xl ${
+                isArabic
+                  ? "leading-[1.3] tracking-normal [font-family:var(--font-arabic)]"
+                  : "leading-[1.05] tracking-[-0.03em]"
+              }`}
+            >
+              {isArabic
+                ? "قريباً"
+                : "Coming Soon"}
+            </h2>
+
+            <span
+              aria-hidden="true"
+              className="mt-7 block h-px w-16 bg-[#0a583b]"
+            />
+
+            <p className="mt-7 max-w-md text-sm leading-7 text-[#647168] sm:text-base sm:leading-8">
+              {isArabic
+                ? "نحضّر لكم منتجات جديدة ستصل قريباً. حتى ذلك الحين، اكتشفوا مجموعتنا الحالية."
+                : "New products are on their way. In the meantime, explore our current collection."}
+            </p>
+
+            <Link
+              href="/products"
+              className="mt-9 inline-flex min-h-12 items-center justify-center border border-[#0a583b] px-8 text-sm font-extrabold text-[#0a583b] transition hover:bg-[#0a583b] hover:text-white"
+            >
+              {isArabic
+                ? "تصفح جميع المنتجات"
+                : "Browse all products"}
+            </Link>
+          </div>
+        ) : (
         <div className="mx-auto flex min-h-[420px] max-w-xl items-center text-center">
           <div className="w-full border border-[#dfe4e0] bg-[#f7f8f6] px-6 py-14">
           <h2 className="text-2xl font-bold text-[#142019]">
@@ -742,6 +800,7 @@ export default function NewArrivalsCollection({
           </p>
           </div>
         </div>
+        )}
       </section>
     );
   }
