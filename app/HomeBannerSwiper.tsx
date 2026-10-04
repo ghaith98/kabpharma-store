@@ -455,16 +455,31 @@ export default function HomeBannerSwiper({
                   </picture>
 
                   <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-white/25 via-transparent to-transparent md:block" />
+
+                  {/* The whole picture goes to the banner's link. Hidden from
+                      keyboard/screen readers: the button below is the real link. */}
+                  <Link
+                    href={
+                      slide.link_url ||
+                      "/products"
+                    }
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    draggable={false}
+                    className="absolute inset-0 z-[1]"
+                  />
                 </div>
 
-                <div className="relative z-10 mx-auto flex w-full max-w-[1440px] px-5 pb-7 pt-5 sm:px-8 sm:pb-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
+                {/* pointer-events-none lets clicks on the empty area reach the
+                    picture link; the text block turns them back on. */}
+                <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1440px] px-5 pb-7 pt-5 sm:px-8 sm:pb-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
                   <div
                     dir={
                       isArabic
                         ? "rtl"
                         : "ltr"
                     }
-                    className={`flex min-h-[220px] w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
+                    className={`pointer-events-auto flex min-h-[220px] w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
                       isArabic
                         ? "text-right"
                         : "text-left"

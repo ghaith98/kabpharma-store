@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
+import BannerLinkPicker from "../BannerLinkPicker";
 
 type BannerPlacement =
   | "best_sellers"
@@ -2345,27 +2346,20 @@ export default function AdminNewArrivalsBannersPage() {
                       />
                     </div>
 
-                    <input
-                      type="text"
-                      value={
-                        draft.linkUrl
-                      }
-                      onChange={(event) =>
-                        updateDraft(
-                          placement,
-                          {
-                            linkUrl:
-                              event
-                                .target
-                                .value,
-                          }
-                        )
-                      }
-                      placeholder={
-                        config.defaults.linkUrl
-                      }
-                      className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-black outline-none focus:border-[#0a583b] focus:bg-white"
-                    />
+                    {/* Only the side banners have a button. The top hero
+                        banners don't, so they have no link to choose. */}
+                    {placement.includes("discover") && (
+                      <BannerLinkPicker
+                        className="mt-4"
+                        value={draft.linkUrl}
+                        onChange={(nextLink) =>
+                          updateDraft(placement, {
+                            linkUrl: nextLink,
+                          })
+                        }
+                        fallbackLabel="its default page"
+                      />
+                    )}
 
                     <div className="mt-6 grid gap-5 md:grid-cols-2">
                       <label className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5">

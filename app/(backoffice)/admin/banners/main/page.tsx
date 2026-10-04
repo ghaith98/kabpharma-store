@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
+import BannerLinkPicker from "../BannerLinkPicker";
 
 type CropMode =
   | "desktop"
@@ -1665,16 +1666,11 @@ export default function AdminMainBannersPage() {
             />
           </div>
 
-          <input
-            type="text"
-            placeholder="/products/24"
+          <BannerLinkPicker
+            className="mt-4"
             value={linkUrl}
-            onChange={(event) =>
-              setLinkUrl(
-                event.target.value
-              )
-            }
-            className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+            onChange={setLinkUrl}
+            fallbackLabel="All products"
           />
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -2175,18 +2171,17 @@ export default function AdminMainBannersPage() {
                               />
                             </div>
 
-                            <input
-                              type="text"
-                              placeholder="/products/24"
+                            <BannerLinkPicker
+                              className="mt-4"
                               value={editDraft.linkUrl}
-                              onChange={(event) =>
+                              onChange={(nextLink) =>
                                 updateBannerEditDraft(
                                   banner,
                                   "linkUrl",
-                                  event.target.value
+                                  nextLink
                                 )
                               }
-                              className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
+                              fallbackLabel="All products"
                             />
 
                             <div className="mt-5 grid gap-4 md:grid-cols-2">

@@ -13,6 +13,7 @@ type Brand = {
   description_ar?: string | null; description_en?: string | null;
   banner_image_url?: string | null; banner_image_url_mobile?: string | null;
   side_banner_image_url?: string | null; side_banner_image_url_mobile?: string | null;
+  side_banner_link_url?: string | null;
 };
 
 export default function BrandCollectionClient({ brand, brandSlug, products }: { brand: Brand; brandSlug: string; products: EditorialProduct[] }) {
@@ -38,7 +39,8 @@ export default function BrandCollectionClient({ brand, brandSlug, products }: { 
         button_text: null,
         button_text_ar: null,
         button_text_en: null,
-        link_url: "#brand-products",
+        // Chosen in Admin > Brands. Empty = scroll to this brand's products.
+        link_url: brand.side_banner_link_url?.trim() || "#brand-products",
       }
     : null;
 

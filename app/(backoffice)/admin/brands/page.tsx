@@ -2,6 +2,7 @@
 
 import { ChangeEvent, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BannerLinkPicker from "../banners/BannerLinkPicker";
 
 type Brand = {
   id: number;
@@ -16,6 +17,8 @@ type Brand = {
   banner_image_url_mobile: string | null;
   side_banner_image_url: string | null;
   side_banner_image_url_mobile: string | null;
+  // Where the side banner goes when clicked. Empty = this brand's products.
+  side_banner_link_url?: string | null;
 };
 
 const imageFields = [
@@ -62,6 +65,7 @@ export default function AdminBrandsPage() {
       card_image_url: editing.card_image_url,
       banner_image_url: editing.banner_image_url, banner_image_url_mobile: editing.banner_image_url_mobile,
       side_banner_image_url: editing.side_banner_image_url, side_banner_image_url_mobile: editing.side_banner_image_url_mobile,
+      side_banner_link_url: editing.side_banner_link_url?.trim() || null,
     }).eq("id", editing.id);
     setSaving(false);
     if (error) return alert(error.message);
@@ -81,6 +85,13 @@ export default function AdminBrandsPage() {
         <textarea value={editing.description_en || ""} onChange={(e) => setEditing({ ...editing, description_en: e.target.value })} placeholder="English description" className="min-h-24 rounded-xl border border-[#d9e2dc] p-3 outline-none focus:border-[#0a583b]" />
       </div>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">{imageFields.map(([field, label, dimensions]) => <div key={field} className="overflow-hidden rounded-2xl border border-[#dfe7e1] bg-[#f8faf8]"><div className="aspect-[16/8] bg-[#eaf1ed]">{editing[field] ? <img src={editing[field] || ""} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-xs font-bold text-[#748278]">No image</div>}</div><div className="p-3"><p className="text-sm font-extrabold text-[#142019]">{label}</p><p className="mt-1 text-xs font-bold text-[#53705f]">Recommended size: {dimensions}</p><input type="file" accept="image/*" onChange={(event) => void uploadImage(event, field)} className="mt-2 w-full text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-[#0a583b] file:px-3 file:py-2 file:font-bold file:text-white" /></div></div>)}</div>
+      <BannerLinkPicker
+        className="mt-6 rounded-2xl border border-[#dfe7e1] bg-[#f8faf8] p-4"
+        label="Side banner: when clicked, go to"
+        value={editing.side_banner_link_url || ""}
+        onChange={(nextLink) => setEditing({ ...editing, side_banner_link_url: nextLink })}
+        fallbackLabel="this brand's products on the same page"
+      />
       <div className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setEditing(null)} className="rounded-xl px-5 py-3 text-sm font-extrabold text-[#526057] hover:bg-[#f1f4f1]">Cancel</button><button type="button" disabled={saving} onClick={() => void save()} className="rounded-xl bg-[#0a583b] px-5 py-3 text-sm font-extrabold text-white disabled:opacity-60">{saving ? "Saving..." : "Save brand"}</button></div>
     </div></div>}
   </div></main>;
