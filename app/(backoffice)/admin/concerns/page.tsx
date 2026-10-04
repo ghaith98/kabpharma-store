@@ -28,7 +28,22 @@ type ProductOption = {
   name: string | null;
   name_ar: string | null;
   name_en: string | null;
+  // Shown next to the name so same-named products can be told apart.
+  categories?: {
+    name: string | null;
+    name_ar: string | null;
+    name_en: string | null;
+  } | null;
 };
+
+function productCategoryLabel(product: ProductOption) {
+  return (
+    product.categories?.name_en ||
+    product.categories?.name ||
+    product.categories?.name_ar ||
+    ""
+  );
+}
 
 type ConcernImageFieldProps = {
   title: string;
@@ -212,7 +227,7 @@ export default function AdminConcernsPage() {
 
       supabase
         .from("products")
-        .select("id, name, name_ar, name_en")
+        .select("id, name, name_ar, name_en, categories (name, name_ar, name_en)")
         .order("id", { ascending: false }),
 
       supabase.from("product_concerns").select("concern_id, product_id"),
@@ -234,7 +249,9 @@ export default function AdminConcernsPage() {
     }
 
     setConcerns(concernsRes.data || []);
-    setProducts(productsRes.data || []);
+    setProducts(
+      (productsRes.data || []) as unknown as ProductOption[]
+    );
 
     const map = new Map<number, Set<number>>();
 
@@ -545,7 +562,9 @@ export default function AdminConcernsPage() {
     return products.filter((product) => {
       const label = `${product.name_ar || ""} ${product.name_en || ""} ${
         product.name || ""
-      }`.toLocaleLowerCase();
+      } ${product.categories?.name_en || ""} ${
+        product.categories?.name || ""
+      } ${product.categories?.name_ar || ""}`.toLocaleLowerCase();
 
       return label.includes(cleanSearch);
     });
@@ -893,6 +912,7 @@ export default function AdminConcernsPage() {
               {filteredProducts.map((product) => {
                 const label =
                   product.name_en || product.name_ar || product.name || `#${product.id}`;
+                const categoryLabel = productCategoryLabel(product);
 
                 return (
                   <label
@@ -906,7 +926,13 @@ export default function AdminConcernsPage() {
                       className="h-4 w-4"
                     />
 
-                    {label}
+                    <span className="min-w-0 flex-1">{label}</span>
+
+                    {categoryLabel && (
+                      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500">
+                        {categoryLabel}
+                      </span>
+                    )}
                   </label>
                 );
               })}
