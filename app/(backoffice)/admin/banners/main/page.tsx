@@ -650,6 +650,20 @@ export default function AdminMainBannersPage() {
     null
   );
 
+  // Which banner's "edit" section is open (opened by its Edit button).
+  const [openEditId, setOpenEditId] =
+    useState<number | null>(null);
+
+  function openBannerEditor(bannerId: number) {
+    setOpenEditId(bannerId);
+
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(`banner-edit-${bannerId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   const [
     loading,
     setLoading,
@@ -2074,7 +2088,23 @@ export default function AdminMainBannersPage() {
                           </div>
                         </details>
 
-                        <details className="mt-4 rounded-2xl border border-[#e7ebe8] bg-white">
+                        <details
+                          id={`banner-edit-${bannerId}`}
+                          open={openEditId === bannerId}
+                          onToggle={(event) => {
+                            const isOpen =
+                              event.currentTarget.open;
+
+                            setOpenEditId((current) =>
+                              isOpen
+                                ? bannerId
+                                : current === bannerId
+                                  ? null
+                                  : current
+                            );
+                          }}
+                          className="mt-4 scroll-mt-28 rounded-2xl border border-[#e7ebe8] bg-white"
+                        >
                           <summary className="cursor-pointer px-5 py-4 font-extrabold text-[#0a583b]">
                             Edit banner content and images
                           </summary>
@@ -2260,6 +2290,16 @@ export default function AdminMainBannersPage() {
                         </p>
 
                         <div className="mt-6 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openBannerEditor(bannerId)
+                            }
+                            className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-blue-700"
+                          >
+                            Edit
+                          </button>
+
                           <button
                             type="button"
                             onClick={() =>
