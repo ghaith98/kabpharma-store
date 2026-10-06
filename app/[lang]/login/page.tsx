@@ -21,6 +21,26 @@ import { migrateGuestCartToUser } from "@/lib/cart";
 
 type Tab = "phone" | "email";
 
+
+/*
+  The server adds a short code to every failure (S1-S7 when sending the
+  code, V3-V9 when checking it; the list is at the top of
+  app/api/send-otp/route.ts). Showing it lets a problem be traced.
+*/
+function withErrorCode(
+  message: string,
+  result: { code?: unknown; providerStatus?: unknown } | null
+) {
+  if (!result || typeof result.code !== "string") return message;
+
+  const provider =
+    typeof result.providerStatus === "number"
+      ? `-${result.providerStatus}`
+      : "";
+
+  return `${message} (${result.code}${provider})`;
+}
+
 export default function LoginPage() {
   const { lang } = useLanguage();
   const router = useRouter();
@@ -110,9 +130,14 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: fullPhone }),
       });
-      const result = await res.json();
+      // Read as text first: a server that is cut off answers with a plain
+      // error page, not JSON.
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
 
-      if (!res.ok || !result.success) {
+      if (!res.ok || !result?.success) {
         if (res.status === 429) {
           const wait = Number(result?.retryAfter) || cooldownFor(resendAttempts || 1);
           setResendIn(wait);
@@ -121,9 +146,12 @@ export default function LoginPage() {
             `يرجى الانتظار ${wait} ثانية قبل طلب رمز جديد.`
           ));
         } else {
-          setErrorMessage(t(
-            "Could not send the verification code. Please try again.",
-            "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
+          setErrorMessage(withErrorCode(
+            t(
+              "Could not send the verification code. Please try again.",
+              "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
+            ),
+            result || { code: `H${res.status}` }
           ));
         }
         return;
@@ -160,13 +188,30 @@ export default function LoginPage() {
         credentials: "include",
         body: JSON.stringify({ phone: fullPhone, code: otpCode, mode: "login" }),
       });
-      const result = await res.json();
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
 
-      if (!res.ok || !result.success) {
+      if (!res.ok || !result?.success) {
         if (res.status === 404) {
           setErrorMessage(t(
             "No account was found for this phone number. Please create an account first.",
             "لا يوجد حساب مرتبط بهذا الرقم. يرجى إنشاء حساب أولاً."
+          ));
+        } else if (res.status === 429) {
+          setErrorMessage(t(
+            "Too many attempts. Please try again later.",
+            "محاولات كثيرة. يرجى المحاولة لاحقاً."
+          ));
+        } else if (res.status >= 500 || !result) {
+          // The code may be right: the problem is on the server side.
+          setErrorMessage(withErrorCode(
+            t(
+              "Could not sign you in right now. Please try again.",
+              "تعذر تسجيل الدخول حالياً. يرجى المحاولة مرة أخرى."
+            ),
+            result || { code: `H${res.status}` }
           ));
         } else {
           setErrorMessage(t(

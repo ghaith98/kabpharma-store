@@ -33,9 +33,10 @@ const csp = [
   "form-action 'self'",
   scriptSrc,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabaseOrigin}`.trim(),
+  // Clarity sends its measurements as tiny images (c.clarity.ms, c.bing.com).
+  `img-src 'self' data: blob: ${supabaseOrigin} https://*.clarity.ms https://c.bing.com`.trim(),
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://www.google-analytics.com https://region1.google-analytics.com https://www.clarity.ms https://*.clarity.ms`.trim(),
+  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://www.google-analytics.com https://region1.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com`.trim(),
   "upgrade-insecure-requests",
 ].join("; ");
 

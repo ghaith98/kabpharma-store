@@ -109,9 +109,14 @@ export async function POST(request: Request) {
     });
 
     if (verificationLimit.unavailable) {
-      return jsonError(
-        "Verification service is temporarily unavailable. Please retry shortly.",
-        503
+      return NextResponse.json(
+        {
+          success: false,
+          code: "V3",
+          error:
+            "Verification service is temporarily unavailable. Please retry shortly.",
+        },
+        { status: 503, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -119,6 +124,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
+          code: "V4",
           error:
             "Too many verification attempts. Please try again later.",
         },
@@ -151,6 +157,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
+          code: "V5",
           error: "OTP service is unavailable",
         },
         {
@@ -189,27 +196,40 @@ export async function POST(request: Request) {
       }
     );
 
-    await otpResponse.text();
+    const providerAnswer = await otpResponse.text();
 
     if (!otpResponse.ok) {
       console.error(
         "NABDA OTP verification failed:",
-        otpResponse.status
+        otpResponse.status,
+        providerAnswer.slice(0, 500)
       );
 
+      // The provider itself is failing (not "wrong code").
+      if (otpResponse.status >= 500) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "V7",
+            providerStatus: otpResponse.status,
+            error: "Verification service is temporarily unavailable",
+          },
+          { status: 502 }
+        );
+      }
+
+      // Wrong or expired code. Always 400: the provider's own status (it
+      // may answer 404 or 409) must not be mistaken by the page for "no
+      // account" or "account already exists".
       return NextResponse.json(
         {
           success: false,
+          code: "V6",
+          providerStatus: otpResponse.status,
           error:
             "Invalid or expired verification code",
         },
-        {
-          status:
-            otpResponse.status >= 400 &&
-            otpResponse.status < 500
-              ? otpResponse.status
-              : 502,
-        }
+        { status: 400 }
       );
     }
 
@@ -241,6 +261,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
+          code: "V8",
           error:
             "Could not access customer account",
         },
@@ -261,6 +282,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
+            code: "NO_ACCOUNT",
             error: "Account does not exist",
           },
           {
@@ -279,6 +301,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
+            code: "ACCOUNT_EXISTS",
             error:
               "Phone number is already registered",
           },
@@ -309,6 +332,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
+            code: "V8",
             error:
               "Could not create customer account",
           },
@@ -325,6 +349,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
+          code: "V8",
           error:
             "Customer account is unavailable",
         },
@@ -370,6 +395,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
+        code: "V9",
         error: "Could not verify the code",
       },
       {

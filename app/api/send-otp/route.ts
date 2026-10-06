@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 
-import {
-  hasTrustedOrigin,
-  jsonError,
-} from "@/lib/http";
+import { hasTrustedOrigin } from "@/lib/http";
 import {
   getRequestIp,
 } from "@/lib/rate-limit";
@@ -13,6 +10,34 @@ import {
 } from "@/lib/rate-limit-db";
 
 export const dynamic = "force-dynamic";
+
+/*
+  Every failure carries a short code. The sign-up and login pages show it
+  next to the error message, so a problem can be traced without guessing:
+
+    S1  request did not come from this website
+    S2  phone number is not a valid Syrian mobile number
+    S3  rate limiter could not be reached (database)
+    S4  too many codes requested for this phone or from this device
+    S5  NABDA_API_URL / NABDA_API_KEY missing in this environment
+    S6  the OTP provider (NABDA) refused to send. The number after the dash
+        is the provider's answer, e.g. S6-401 = key refused, S6-402/403 =
+        account or balance problem. The provider's full answer is in the
+        server log line "NABDA OTP send failed".
+    S7  the OTP provider could not be reached, or an unexpected error
+*/
+function fail(
+  code: string,
+  error: string,
+  status: number,
+  extra: Record<string, unknown> = {},
+  headers: Record<string, string> = {}
+) {
+  return NextResponse.json(
+    { success: false, error, code, ...extra },
+    { status, headers: { "Cache-Control": "no-store", ...headers } }
+  );
+}
 
 export async function GET() {
   return NextResponse.json({
@@ -24,19 +49,13 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     if (!hasTrustedOrigin(req)) {
-      return jsonError("Invalid request origin", 403);
+      return fail("S1", "Invalid request origin", 403);
     }
 
     const { phone } = await req.json();
 
     if (!/^9639\d{8}$/.test(String(phone || ""))) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid phone number",
-        },
-        { status: 400 }
-      );
+      return fail("S2", "Invalid phone number", 400);
     }
 
     const ip = getRequestIp(req);
@@ -55,7 +74,8 @@ export async function POST(req: Request) {
     ]);
 
     if (phoneLimit.unavailable || ipLimit.unavailable) {
-      return jsonError(
+      return fail(
+        "S3",
         "Verification service is temporarily unavailable. Please retry shortly.",
         503
       );
@@ -67,20 +87,12 @@ export async function POST(req: Request) {
         ipLimit.retryAfterSeconds
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Too many verification requests. Please try again later.",
-          retryAfter,
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(retryAfter),
-            "Cache-Control": "no-store",
-          },
-        }
+      return fail(
+        "S4",
+        "Too many verification requests. Please try again later.",
+        429,
+        { retryAfter },
+        { "Retry-After": String(retryAfter) }
       );
     }
 
@@ -90,13 +102,7 @@ export async function POST(req: Request) {
     if (!apiUrl || !apiKey) {
       console.error("Missing NABDA environment variables");
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: "OTP service is unavailable",
-        },
-        { status: 500 }
-      );
+      return fail("S5", "OTP service is unavailable", 500);
     }
 
     const response = await fetch(
@@ -112,26 +118,23 @@ export async function POST(req: Request) {
       }
     );
 
-    await response.text();
+    const providerAnswer = await response.text();
 
     if (!response.ok) {
+      // The provider's own words say why (key refused, balance, WhatsApp
+      // line disconnected, number not reachable...). No customer data
+      // beyond the phone number is in it.
       console.error(
         "NABDA OTP send failed:",
-        response.status
+        response.status,
+        providerAnswer.slice(0, 500)
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Could not send verification code",
-        },
-        {
-          status:
-            response.status >= 400 && response.status < 500
-              ? response.status
-              : 502,
-        }
-      );
+      // Always 502: the provider's own status (it may answer 429 or 404)
+      // must not be mistaken by the page for this site's own answers.
+      return fail("S6", "Could not send verification code", 502, {
+        providerStatus: response.status,
+      });
     }
 
     return NextResponse.json({
@@ -140,12 +143,6 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Send OTP error:", error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Could not send verification code",
-      },
-      { status: 500 }
-    );
+    return fail("S7", "Could not send verification code", 500);
   }
 }
