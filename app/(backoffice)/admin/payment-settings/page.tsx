@@ -10,21 +10,102 @@ export default function PaymentSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [numberLoading, setNumberLoading] = useState(false);
 
-  useEffect(() => {
-    async function loadPaymentNumber() {
-      const { data } = await supabase
-        .from("settings")
-        .select("value")
-        .eq("key", "payment_number")
-        .single();
+  /*
+    The QR picture can be hidden from the payment page without deleting it.
 
-      if (data?.value) {
-        setPaymentNumber(data.value);
+    The payment page shows whatever is saved under "payment_qr_url". Hiding
+    moves the picture's address to "payment_qr_url_hidden" and leaves
+    "payment_qr_url" empty; showing moves it back. Nothing is deleted.
+  */
+  const [qrUrl, setQrUrl] = useState("");
+  const [hiddenQrUrl, setHiddenQrUrl] = useState("");
+  const [savedPaymentNumber, setSavedPaymentNumber] = useState("");
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [togglingQr, setTogglingQr] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSettings() {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("key, value")
+        .in("key", [
+          "payment_number",
+          "payment_qr_url",
+          "payment_qr_url_hidden",
+        ]);
+
+      if (cancelled) return;
+
+      if (error) {
+        alert(error.message);
+        return;
       }
+
+      const values = new Map(
+        (data || []).map((row) => [
+          String(row.key),
+          String(row.value || ""),
+        ])
+      );
+
+      setPaymentNumber(values.get("payment_number") || "");
+      setSavedPaymentNumber(values.get("payment_number") || "");
+      setQrUrl(values.get("payment_qr_url") || "");
+      setHiddenQrUrl(values.get("payment_qr_url_hidden") || "");
+      setSettingsLoaded(true);
     }
 
-    loadPaymentNumber();
+    void loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const qrIsHidden = !qrUrl && Boolean(hiddenQrUrl);
+  const currentQrUrl = qrUrl || hiddenQrUrl;
+
+  async function setQrVisible(visible: boolean) {
+    if (!currentQrUrl || togglingQr) return;
+
+    // Without the QR, the number is the only way to pay by Sham Cash.
+    if (!visible && !savedPaymentNumber.trim()) {
+      alert(
+        "Save a payment number first. With the QR hidden, customers pay by transferring to that number."
+      );
+      return;
+    }
+
+    setTogglingQr(true);
+
+    const now = new Date().toISOString();
+
+    // One request, so the two values always change together.
+    const { error } = await supabase.from("settings").upsert([
+      {
+        key: "payment_qr_url",
+        value: visible ? currentQrUrl : "",
+        updated_at: now,
+      },
+      {
+        key: "payment_qr_url_hidden",
+        value: visible ? "" : currentQrUrl,
+        updated_at: now,
+      },
+    ]);
+
+    setTogglingQr(false);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setQrUrl(visible ? currentQrUrl : "");
+    setHiddenQrUrl(visible ? "" : currentQrUrl);
+  }
 
   async function uploadQr(e: React.FormEvent) {
     e.preventDefault();
@@ -52,11 +133,23 @@ export default function PaymentSettingsPage() {
       .from("payment-qr")
       .getPublicUrl(filePath);
 
-    const { error } = await supabase.from("settings").upsert({
-      key: "payment_qr_url",
-      value: data.publicUrl,
-      updated_at: new Date().toISOString(),
-    });
+    // A new picture replaces the old one and keeps the current choice:
+    // still hidden if the QR was hidden, shown otherwise.
+    const keepHidden = qrIsHidden;
+    const now = new Date().toISOString();
+
+    const { error } = await supabase.from("settings").upsert([
+      {
+        key: "payment_qr_url",
+        value: keepHidden ? "" : data.publicUrl,
+        updated_at: now,
+      },
+      {
+        key: "payment_qr_url_hidden",
+        value: keepHidden ? data.publicUrl : "",
+        updated_at: now,
+      },
+    ]);
 
     if (error) {
       alert(error.message);
@@ -64,9 +157,15 @@ export default function PaymentSettingsPage() {
       return;
     }
 
+    setQrUrl(keepHidden ? "" : data.publicUrl);
+    setHiddenQrUrl(keepHidden ? data.publicUrl : "");
     setLoading(false);
     setFile(null);
-    alert("Payment QR updated successfully");
+    alert(
+      keepHidden
+        ? "Payment QR updated. It is still hidden from the payment page."
+        : "Payment QR updated successfully"
+    );
   }
 
   async function savePaymentNumber(e: React.FormEvent) {
@@ -91,6 +190,7 @@ export default function PaymentSettingsPage() {
       return;
     }
 
+    setSavedPaymentNumber(paymentNumber.trim());
     setNumberLoading(false);
     alert("Payment number updated successfully");
   }
@@ -149,6 +249,57 @@ export default function PaymentSettingsPage() {
                 page.
               </p>
             </div>
+
+            {/* Current picture + show / hide. Nothing is deleted by hiding. */}
+            {settingsLoaded && currentQrUrl && (
+              <div className="mb-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-center gap-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentQrUrl}
+                    alt="Current payment QR"
+                    className={`h-24 w-24 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 ${
+                      qrIsHidden ? "opacity-40" : ""
+                    }`}
+                  />
+
+                  <div className="min-w-0">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-extrabold ${
+                        qrIsHidden
+                          ? "bg-red-50 text-red-700"
+                          : "bg-green-50 text-green-700"
+                      }`}
+                    >
+                      {qrIsHidden ? "Hidden" : "Shown"}
+                    </span>
+
+                    <p className="mt-2 text-sm leading-6 text-gray-600">
+                      {qrIsHidden
+                        ? "Customers see only the payment number. The picture is kept, so you can show it again at any time."
+                        : "Customers see this QR on the payment page."}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void setQrVisible(qrIsHidden)}
+                  disabled={togglingQr || loading}
+                  className={`mt-4 w-full rounded-2xl py-3 text-sm font-extrabold transition disabled:opacity-60 ${
+                    qrIsHidden
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  {togglingQr
+                    ? "Saving..."
+                    : qrIsHidden
+                      ? "Show QR on the payment page"
+                      : "Hide QR from the payment page"}
+                </button>
+              </div>
+            )}
 
             <form onSubmit={uploadQr} className="space-y-4">
               <input

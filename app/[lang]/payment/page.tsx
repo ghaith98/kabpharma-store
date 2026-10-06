@@ -69,6 +69,8 @@ export default function PaymentPage() {
   const [pageReady, setPageReady] = useState(false);
   const [qrUrl, setQrUrl] = useState("");
   const [paymentNumber, setPaymentNumber] = useState("");
+  // false until the QR / number have been read, so the layout is chosen once.
+  const [paymentSettingsLoaded, setPaymentSettingsLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [checkout, setCheckout] = useState<CheckoutData>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("sham_cash");
@@ -107,8 +109,10 @@ export default function PaymentPage() {
         supabase.from("settings").select("value").eq("key", "payment_qr_url").maybeSingle(),
         supabase.from("settings").select("value").eq("key", "payment_number").maybeSingle(),
       ]);
+      if (cancelled) return;
       if (qrResult.data?.value) setQrUrl(qrResult.data.value);
       if (numberResult.data?.value) setPaymentNumber(numberResult.data.value);
+      setPaymentSettingsLoaded(true);
     }
     async function initializePayment() {
       try {
@@ -198,6 +202,23 @@ export default function PaymentPage() {
   const totalReady = pricing.fresh && quote != null;
   const total = quote ? quote.totals.total : 0;
   const totalText = totalReady ? formatPrice(total) : "…";
+
+  // No QR to show: hidden in Admin > Payment Settings, or never uploaded.
+  // Decided only after the settings are read, so the layout does not jump.
+  const withoutQr = paymentSettingsLoaded && !qrUrl;
+
+  const paymentNumberBox = paymentNumber ? (
+    <div className={`rounded-[1.25rem] border border-[#dfe4e0] bg-[#f7f8f6] p-4 ${withoutQr ? "mt-4 max-w-md" : "mt-6"}`}>
+      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#7a857e]">{t("Payment number", "رقم الدفع")}</p>
+      <div dir="ltr" className="mt-2 flex min-w-0 items-center gap-3">
+        <span className="min-w-0 flex-1 break-all font-mono text-sm font-extrabold text-[#142019]">{paymentNumber}</span>
+        <button type="button" onClick={copyPaymentNumber} className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-xs font-extrabold transition ${copied ? "bg-[#0a583b] text-white" : "border border-[#cbd3cd] bg-white text-[#142019] hover:border-[#0a583b] hover:text-[#0a583b]"}`}>
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          <span>{copied ? t("Copied", "تم النسخ") : t("Copy", "نسخ")}</span>
+        </button>
+      </div>
+    </div>
+  ) : null;
 
   const itemsCount = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const freeItemsCount = quote ? quote.totals.freeItemsCount : 0;
@@ -484,7 +505,9 @@ export default function PaymentPage() {
                       <span className={`h-4 w-4 shrink-0 rounded-full border ${paymentMethod === "sham_cash" ? "border-[5px] border-[#0a583b]" : "border-[#9aa39d]"}`} />
                     </span>
                     <span className="mt-1.5 block text-xs leading-5 text-[#647168]">
-                      {t("Scan the QR or transfer to the number, then enter your transaction ID.", "امسح الرمز أو حوّل إلى الرقم، ثم أدخل رقم العملية.")}
+                      {withoutQr
+                        ? t("Transfer to our Sham Cash number, then enter your transaction ID.", "حوّل إلى رقم شام كاش الخاص بنا، ثم أدخل رقم العملية.")
+                        : t("Scan the QR or transfer to the number, then enter your transaction ID.", "امسح الرمز أو حوّل إلى الرقم، ثم أدخل رقم العملية.")}
                     </span>
                   </span>
                 </label>
@@ -503,24 +526,40 @@ export default function PaymentPage() {
 
             {paymentMethod === "sham_cash" ? (
               <>
-                {/* QR + steps */}
-                <div className="grid gap-7 p-5 sm:p-7 md:grid-cols-[270px_minmax(0,1fr)] md:items-center">
-                  <div className="flex aspect-square w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[1.5rem] border border-[#dfe4e0] bg-[#f7f8f6] p-4">
-                    {qrUrl ? (
-                      <Image src={qrUrl} alt={t("Payment QR code", "رمز QR للدفع")} width={600} height={600} sizes="(max-width: 768px) 90vw, 300px" className="h-full w-full object-contain" />
-                    ) : (
-                      <div className="px-5 text-center">
-                        <QrCode size={32} strokeWidth={1.5} className="mx-auto text-[#8a948d]" />
-                        <p className="mt-4 text-sm font-bold text-[#647168]">{t("Payment QR code is currently unavailable.", "رمز الدفع غير متوفر حالياً.")}</p>
-                      </div>
-                    )}
-                  </div>
+                {/* QR + steps. With the QR hidden (Admin > Payment Settings)
+                    or not uploaded, the steps use the full width and step 1
+                    becomes "transfer to this number". */}
+                <div className={`grid gap-7 p-5 sm:p-7 ${withoutQr ? "" : "md:grid-cols-[270px_minmax(0,1fr)] md:items-center"}`}>
+                  {!withoutQr && (
+                    <div className="flex aspect-square w-full max-w-[300px] items-center justify-center overflow-hidden rounded-[1.5rem] border border-[#dfe4e0] bg-[#f7f8f6] p-4">
+                      {qrUrl ? (
+                        <Image src={qrUrl} alt={t("Payment QR code", "رمز QR للدفع")} width={600} height={600} sizes="(max-width: 768px) 90vw, 300px" className="h-full w-full object-contain" />
+                      ) : (
+                        <QrCode size={32} strokeWidth={1.5} aria-hidden="true" className="text-[#c3cbc5]" />
+                      )}
+                    </div>
+                  )}
                   <div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-xs font-extrabold text-[#0a583b]">1</div>
-                      <div>
-                        <h3 className="text-sm font-extrabold text-[#142019]">{t("Scan the QR code", "امسح رمز QR")}</h3>
-                        <p className="mt-1 text-sm leading-6 text-[#647168]">{t("Open your Sham Cash app and scan the code to complete the transfer.", "افتح تطبيق شام كاش وامسح الرمز لإتمام عملية التحويل.")}</p>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-extrabold text-[#142019]">
+                          {withoutQr
+                            ? t("Transfer to our Sham Cash number", "حوّل إلى رقم شام كاش الخاص بنا")
+                            : t("Scan the QR code", "امسح رمز QR")}
+                        </h3>
+                        <p className="mt-1 text-sm leading-6 text-[#647168]">
+                          {withoutQr
+                            ? t("Open your Sham Cash app and send the transfer to this number.", "افتح تطبيق شام كاش وأرسل التحويل إلى هذا الرقم.")
+                            : t("Open your Sham Cash app and scan the code to complete the transfer.", "افتح تطبيق شام كاش وامسح الرمز لإتمام عملية التحويل.")}
+                        </p>
+                        {withoutQr && (
+                          paymentNumberBox || (
+                            <p className="mt-4 rounded-[1.25rem] border border-[#dfe4e0] bg-[#f7f8f6] p-4 text-sm font-bold leading-6 text-[#647168]">
+                              {t("The payment number is currently unavailable. Please choose cash on delivery or contact us.", "رقم الدفع غير متوفر حالياً. يرجى اختيار الدفع عند الاستلام أو التواصل معنا.")}
+                            </p>
+                          )
+                        )}
                       </div>
                     </div>
                     <div className="mt-6 flex items-start gap-3">
@@ -530,18 +569,7 @@ export default function PaymentPage() {
                         <p className="mt-1 text-2xl font-extrabold text-[#0a583b]">{totalText}</p>
                       </div>
                     </div>
-                    {paymentNumber && (
-                      <div className="mt-6 rounded-[1.25rem] border border-[#dfe4e0] bg-[#f7f8f6] p-4">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#7a857e]">{t("Payment number", "رقم الدفع")}</p>
-                        <div dir="ltr" className="mt-2 flex min-w-0 items-center gap-3">
-                          <span className="min-w-0 flex-1 break-all font-mono text-sm font-extrabold text-[#142019]">{paymentNumber}</span>
-                          <button type="button" onClick={copyPaymentNumber} className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-xs font-extrabold transition ${copied ? "bg-[#0a583b] text-white" : "border border-[#cbd3cd] bg-white text-[#142019] hover:border-[#0a583b] hover:text-[#0a583b]"}`}>
-                            {copied ? <Check size={14} /> : <Copy size={14} />}
-                            <span>{copied ? t("Copied", "تم النسخ") : t("Copy", "نسخ")}</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {!withoutQr && paymentNumberBox}
                   </div>
                 </div>
 
