@@ -32,7 +32,16 @@ export async function loadFlashSales() {
   const promotions = await loadStorefrontPromotions();
   const pricedAtMs = Date.now();
 
-  return function withFlashSales<T>(products: T[] | null | undefined): T[] {
-    return applyFlashSales(products || [], promotions, pricedAtMs);
+  // Typed on the whole list, not on one item: a query result is sometimes
+  // "rows, or an empty list" (two list types), and the item type has to be
+  // read from whichever list it is.
+  return function withFlashSales<List extends readonly unknown[]>(
+    products: List | null | undefined
+  ): List[number][] {
+    return applyFlashSales<List[number]>(
+      [...(products || [])],
+      promotions,
+      pricedAtMs
+    );
   };
 }
