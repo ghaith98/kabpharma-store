@@ -7,6 +7,7 @@ import {
 } from "react";
 import Link from "next/link";
 import BackLink from "@/app/BackLink";
+import DeliveryAreaSelect from "@/app/DeliveryAreaSelect";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -176,6 +177,8 @@ export default function CheckoutPage() {
     deliveryArea,
     setDeliveryArea,
   ] = useState("");
+
+  const [unlistedArea, setUnlistedArea] = useState(false);
 
   const [address, setAddress] =
     useState("");
@@ -768,6 +771,7 @@ export default function CheckoutPage() {
     }
 
     if (
+      unlistedArea ||
       !deliveryArea ||
       !selectedArea ||
       selectedArea.governorate !==
@@ -775,8 +779,12 @@ export default function CheckoutPage() {
     ) {
       alert(
         isArabic
-          ? "يرجى اختيار منطقة التوصيل"
-          : "Please select a delivery area"
+          ? unlistedArea
+            ? "يرجى التواصل معنا لتأكيد إمكانية التوصيل والتكلفة لمنطقتك قبل تقديم الطلب."
+            : "يرجى اختيار منطقة التوصيل من نتائج البحث"
+          : unlistedArea
+            ? "Please contact us to confirm delivery availability and the fee for your area before placing an order."
+            : "Please select a delivery area from the search results"
       );
 
       return;
@@ -893,7 +901,8 @@ export default function CheckoutPage() {
     Boolean(
       accountCheckError
     ) ||
-    cart.length === 0;
+    cart.length === 0 ||
+    unlistedArea;
 
   function getSubmitText() {
     if (submitting) {
@@ -1217,6 +1226,7 @@ export default function CheckoutPage() {
                       setDeliveryArea(
                         ""
                       );
+                      setUnlistedArea(false);
                     }}
                     required
                     className="w-full rounded-xl border border-[#dfe4e0] bg-white px-4 py-3.5 text-base text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
@@ -1248,67 +1258,20 @@ export default function CheckoutPage() {
                   </select>
                 </label>
 
-                {/* Delivery area */}
-                <label className="block">
-                  <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
-                    <Truck
-                      size={15}
-                      className="text-[#0a583b]"
-                    />
-
-                    {isArabic
-                      ? "منطقة التوصيل"
-                      : "Delivery area"}
-                  </span>
-
-                  <select
-                    value={
-                      deliveryArea
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setDeliveryArea(
-                        event.target
-                          .value
-                      )
-                    }
-                    required
-                    disabled={
-                      !governorate
-                    }
-                    className="w-full rounded-xl border border-[#dfe4e0] bg-white px-4 py-3.5 text-base text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0] disabled:cursor-not-allowed disabled:bg-[#f7f8f6] disabled:text-[#9aa39d]"
-                  >
-                    <option value="">
-                      {governorate
-                        ? isArabic
-                          ? "اختر المنطقة"
-                          : "Select area"
-                        : isArabic
-                        ? "اختر المحافظة أولاً"
-                        : "Select governorate first"}
-                    </option>
-
-                    {areasForGovernorate.map(
-                      (area) => (
-                        <option
-                          key={
-                            area.id
-                          }
-                          value={
-                            area.id
-                          }
-                        >
-                          {isArabic
-                            ? area.area_name_ar ||
-                              area.area_name
-                            : area.area_name_en ||
-                              area.area_name}
-                        </option>
-                      )
-                    )}
-                  </select>
-                </label>
+                {/* Search in either language; retain the existing area ID and fee. */}
+                <DeliveryAreaSelect
+                  key={`${governorate}-${lang}`}
+                  areas={areasForGovernorate}
+                  value={deliveryArea}
+                  governorateLabel={(() => {
+                    const item = governorates.find((item) => item.governorate === governorate);
+                    return (isArabic ? item?.governorate_ar : item?.governorate_en) || governorate;
+                  })()}
+                  isArabic={isArabic}
+                  disabled={!governorate}
+                  onChange={setDeliveryArea}
+                  onUnlistedChange={setUnlistedArea}
+                />
               </div>
 
               {selectedArea && (
