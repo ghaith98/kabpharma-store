@@ -94,6 +94,11 @@ const navigationGroups: NavigationGroup[] = [
         label: "Reviews",
         icon: FiStar,
       },
+      {
+        href: "/admin/menu",
+        label: "Menu Links",
+        icon: FiMenu,
+      },
     ],
   },
   {

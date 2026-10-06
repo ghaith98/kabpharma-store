@@ -230,6 +230,7 @@ export default function AdminMobilePage() {
       links: [
         { href: "/admin/banners?mobile=1", title: "Banners", icon: "🖼️" },
         { href: "/admin/reviews?mobile=1", title: "Reviews", icon: "⭐" },
+        { href: "/admin/menu", title: "Menu Links", icon: "☰" },
       ],
     },
     {

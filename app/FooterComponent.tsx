@@ -11,6 +11,7 @@ import {
   FaInstagram,
 } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
+import { useHiddenMenuLinks } from "../context/MenuVisibilityContext";
 
 type SectionKey =
   | "shop"
@@ -134,7 +135,10 @@ export default function Footer() {
     text[
       lang as "en" | "ar"
     ];
-  const sections: FooterSection[] = [
+  // Links switched off in Admin > Menu Links are hidden here too.
+  const hiddenMenuLinks = useHiddenMenuLinks();
+
+  const allSections: FooterSection[] = [
     {
       key: "shop",
       title: t.shop,
@@ -223,6 +227,15 @@ export default function Footer() {
       ],
     },
   ];
+
+  const sections = allSections
+    .map((section) => ({
+      ...section,
+      links: section.links.filter(
+        (item) => !hiddenMenuLinks.has(item.href)
+      ),
+    }))
+    .filter((section) => section.links.length > 0);
 
   const socialLinks = [
     {

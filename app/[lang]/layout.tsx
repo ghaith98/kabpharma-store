@@ -9,6 +9,12 @@ import { sans, arabic } from "../fonts";
 import LayoutShell from "../LayoutShell";
 import Analytics from "../Analytics";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { MenuVisibilityProvider } from "@/context/MenuVisibilityContext";
+import {
+  MENU_VISIBILITY_SETTING_KEY,
+  parseHiddenMenuLinks,
+} from "@/lib/menu-visibility";
+import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 import {
   isSupportedLanguage,
@@ -29,6 +35,31 @@ import {
 */
 export function generateStaticParams() {
   return LANGUAGES.map((lang) => ({ lang }));
+}
+
+// The menu reads which links are hidden (Admin > Menu Links). Refreshing
+// the cached pages every minute lets a change show up without a redeploy.
+export const revalidate = 60;
+
+/** Menu links hidden by the admin. Any problem = nothing hidden. */
+async function loadHiddenMenuLinks() {
+  try {
+    const { data, error } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", MENU_VISIBILITY_SETTING_KEY)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to load menu visibility:", error);
+      return [];
+    }
+
+    return parseHiddenMenuLinks(data?.value);
+  } catch (exception) {
+    console.error("Failed to load menu visibility:", exception);
+    return [];
+  }
 }
 
 const siteTitle =
@@ -163,6 +194,8 @@ export default async function StorefrontLayout({
     notFound();
   }
 
+  const hiddenMenuLinks = await loadHiddenMenuLinks();
+
   return (
     <html
       lang={lang}
@@ -189,9 +222,11 @@ export default async function StorefrontLayout({
         />
 
         <LanguageProvider serverLang={lang}>
-          <LayoutShell>
-            {children}
-          </LayoutShell>
+          <MenuVisibilityProvider initialHidden={hiddenMenuLinks}>
+            <LayoutShell>
+              {children}
+            </LayoutShell>
+          </MenuVisibilityProvider>
         </LanguageProvider>
         <Analytics />
       </body>

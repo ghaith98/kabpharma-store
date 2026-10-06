@@ -25,6 +25,7 @@ import { supabase } from "@/lib/supabase";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 import { useLanguage } from "../context/LanguageContext";
+import { useHiddenMenuLinks } from "../context/MenuVisibilityContext";
 import {
   useCartCount,
   useWishlistCount,
@@ -45,6 +46,9 @@ export default function Navbar() {
 
   const pathname = useAppPathname();
   const router = useRouter();
+
+  // Links switched off in Admin > Menu Links.
+  const hiddenMenuLinks = useHiddenMenuLinks();
 
   const isArabic = lang === "ar";
 
@@ -204,7 +208,9 @@ const [
     label: t.contact,
     href: "/contact",
   },
-];
+].filter(
+  (item) => !hiddenMenuLinks.has(item.href)
+);
 
   const mobileDiscoveryLinks =
     navigationLinks.filter(
@@ -1205,6 +1211,7 @@ const [
   )}
 
   {/* Products + Categories */}
+  {!hiddenMenuLinks.has("/products") && (
   <div className="border-b border-[#e8ece9]">
     <button
       type="button"
@@ -1217,7 +1224,7 @@ const [
         productsOpen
       }
       aria-controls="mobile-product-categories"
-      className={`flex min-h-[62px] w-full items-center justify-between text-start text-lg font-extrabold transition ${
+      className={`flex min-h-[62px] w-full items-center justify-between text-start transition ${
         pathname.startsWith(
           "/products"
         )
@@ -1225,7 +1232,11 @@ const [
           : "text-[#142019]"
       }`}
     >
-      <span>{t.products}</span>
+      {/* A button takes its font from its parent (globals.css), so the
+          size and weight sit on the label to match the links around it. */}
+      <span className="text-lg font-extrabold">
+        {t.products}
+      </span>
 
       <ChevronDown
         size={19}
@@ -1306,6 +1317,7 @@ const [
       </div>
     </div>
   </div>
+  )}
 
   {/* Remaining primary links */}
   {navigationLinks
