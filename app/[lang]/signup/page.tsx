@@ -18,6 +18,10 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { migrateGuestCartToUser } from "@/lib/cart";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from "@/lib/customer-password";
 
 type Tab = "phone" | "email";
 
@@ -76,6 +80,9 @@ export default function SignupPage() {
   const [phone, setPhone] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [otpSent, setOtpSent] = useState(false);
+  // Chosen at sign-up, so signing in later needs no WhatsApp code.
+  const [phonePassword, setPhonePassword] = useState("");
+  const [showPhonePassword, setShowPhonePassword] = useState(false);
 
   // ── Email state ───────────────────────────────────────────────────────────────
   const [emailName, setEmailName] = useState("");
@@ -193,6 +200,16 @@ export default function SignupPage() {
       ));
       return;
     }
+    if (
+      phonePassword.length < PASSWORD_MIN_LENGTH ||
+      phonePassword.length > PASSWORD_MAX_LENGTH
+    ) {
+      setErrorMessage(t(
+        `Please choose a password of at least ${PASSWORD_MIN_LENGTH} characters.`,
+        `يرجى اختيار كلمة مرور من ${PASSWORD_MIN_LENGTH} أحرف على الأقل.`
+      ));
+      return;
+    }
 
     setLoading(true);
     setErrorMessage("");
@@ -260,7 +277,7 @@ export default function SignupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ phone: fullPhone, code: otpCode, mode: "signup", fullName: fullName.trim() }),
+        body: JSON.stringify({ phone: fullPhone, code: otpCode, mode: "signup", fullName: fullName.trim(), password: phonePassword }),
       });
       const result = await res
         .text()
@@ -272,6 +289,11 @@ export default function SignupPage() {
           setErrorMessage(t(
             "An account with this phone number already exists.",
             "يوجد حساب مرتبط بهذا الرقم مسبقاً."
+          ));
+        } else if (result?.code === "BAD_PASSWORD") {
+          setErrorMessage(t(
+            `Please go back and choose a password of at least ${PASSWORD_MIN_LENGTH} characters.`,
+            `يرجى الرجوع واختيار كلمة مرور من ${PASSWORD_MIN_LENGTH} أحرف على الأقل.`
           ));
         } else if (res.status === 429) {
           setErrorMessage(t(
@@ -602,8 +624,8 @@ export default function SignupPage() {
                   <div className="space-y-5">
                     <p className="text-sm leading-7 text-[#647168]">
                       {t(
-                        "Create your account using your name and Syrian mobile number.",
-                        "أنشئ حسابك باستخدام اسمك ورقم الموبايل السوري."
+                        "Create your account with your name, Syrian mobile number and a password. We confirm the number once with a WhatsApp code.",
+                        "أنشئ حسابك باسمك ورقم الموبايل السوري وكلمة مرور. نتحقق من الرقم مرة واحدة برمز عبر واتساب."
                       )}
                     </p>
                     <label className="block">
@@ -635,6 +657,35 @@ export default function SignupPage() {
                           className="min-w-0 flex-1 bg-transparent px-4 text-base font-bold text-[#142019] outline-none placeholder:text-[#a2aaa4]"
                         />
                       </div>
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Password", "كلمة المرور")}</span>
+                      <div className="relative">
+                        <input
+                          type={showPhonePassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          value={phonePassword}
+                          maxLength={PASSWORD_MAX_LENGTH}
+                          onChange={(e) => { setPhonePassword(e.target.value); setErrorMessage(""); }}
+                          placeholder="••••••••"
+                          className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPhonePassword((v) => !v)}
+                          className="absolute end-4 top-1/2 -translate-y-1/2 text-[#7a857e] transition hover:text-[#142019]"
+                          aria-label={showPhonePassword ? t("Hide password", "إخفاء كلمة المرور") : t("Show password", "إظهار كلمة المرور")}
+                        >
+                          {showPhonePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      <span className="mt-2 block text-xs leading-5 text-[#7a857e]">
+                        {t(
+                          `At least ${PASSWORD_MIN_LENGTH} characters. You will sign in with your number and this password.`,
+                          `${PASSWORD_MIN_LENGTH} أحرف على الأقل. ستسجّل الدخول لاحقاً برقمك وكلمة المرور هذه.`
+                        )}
+                      </span>
                     </label>
                   </div>
                 ) : (

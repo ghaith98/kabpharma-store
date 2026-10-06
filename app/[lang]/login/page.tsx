@@ -18,8 +18,21 @@ import {
 
 import { useLanguage } from "@/context/LanguageContext";
 import { migrateGuestCartToUser } from "@/lib/cart";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from "@/lib/customer-password";
 
 type Tab = "phone" | "email";
+
+/*
+  The three ways to use the Phone tab:
+    password  number + password (the normal way, no WhatsApp code)
+    code      number + a WhatsApp code (works without a password)
+    reset     number + a WhatsApp code + a new password: "forgot password",
+              and how an older account without a password gets one
+*/
+type PhoneMode = "password" | "code" | "reset";
 
 
 /*
@@ -51,6 +64,11 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [otpSent, setOtpSent] = useState(false);
+  const [phoneMode, setPhoneMode] = useState<PhoneMode>("password");
+  const [phonePassword, setPhonePassword] = useState("");
+  const [showPhonePassword, setShowPhonePassword] = useState(false);
+  // Friendly guidance (not an error), e.g. "create a password first".
+  const [infoMessage, setInfoMessage] = useState("");
 
   // ── Email state ───────────────────────────────────────────────────────────────
   const [email, setEmail] = useState("");
@@ -161,6 +179,7 @@ export default function LoginPage() {
       setResendAttempts(nextAttempt);
       setResendIn(cooldownFor(nextAttempt));
       setOtpSent(true);
+      setInfoMessage("");
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     } catch {
       setErrorMessage(t(
@@ -172,9 +191,121 @@ export default function LoginPage() {
     }
   }
 
-  // ── Phone: verify OTP & login ─────────────────────────────────────────────────
+  function saveSignedInUser(user: {
+    id: unknown;
+    full_name: unknown;
+    phone: string;
+  }) {
+    localStorage.setItem("kab_user", JSON.stringify({
+      id: user.id,
+      full_name: user.full_name,
+      phone: user.phone,
+    }));
+    migrateGuestCartToUser(user.phone);
+    redirectAfterAuth();
+  }
+
+  function switchPhoneMode(mode: PhoneMode) {
+    setPhoneMode(mode);
+    setErrorMessage("");
+    setInfoMessage("");
+    setOtpSent(false);
+    setOtpDigits(["", "", "", "", "", ""]);
+    setPhonePassword("");
+    setShowPhonePassword(false);
+  }
+
+  // ── Phone: sign in with password ──────────────────────────────────────────────
+  async function passwordLogin() {
+    setErrorMessage("");
+    setInfoMessage("");
+
+    if (!/^9\d{8}$/.test(phone.trim())) {
+      setErrorMessage(t(
+        "Please enter a valid Syrian mobile number starting with 9.",
+        "يرجى إدخال رقم موبايل سوري صحيح يبدأ بالرقم 9."
+      ));
+      return;
+    }
+    if (!phonePassword) {
+      setErrorMessage(t("Please enter your password.", "يرجى إدخال كلمة المرور."));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/customer/auth/phone/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ phone: fullPhone, password: phonePassword }),
+      });
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
+
+      if (!res.ok || !result?.success) {
+        if (result?.code === "NO_PASSWORD") {
+          // An account from before passwords existed: take the customer
+          // straight to creating one (needs one WhatsApp code).
+          switchPhoneMode("reset");
+          setInfoMessage(t(
+            "Your account does not have a password yet. Press Send Code to create one. You will only need to do this once.",
+            "حسابك لا يملك كلمة مرور بعد. اضغط إرسال الرمز لإنشاء كلمة مرور. ستحتاج لهذا مرة واحدة فقط."
+          ));
+        } else if (res.status === 429) {
+          setErrorMessage(t(
+            "Too many attempts. Please try again later.",
+            "محاولات كثيرة. يرجى المحاولة لاحقاً."
+          ));
+        } else if (res.status >= 500 || !result) {
+          setErrorMessage(withErrorCode(
+            t(
+              "Could not sign you in right now. Please try again.",
+              "تعذر تسجيل الدخول حالياً. يرجى المحاولة مرة أخرى."
+            ),
+            result || { code: `H${res.status}` }
+          ));
+        } else {
+          setErrorMessage(t(
+            "Incorrect phone number or password.",
+            "رقم الموبايل أو كلمة المرور غير صحيحة."
+          ));
+        }
+        return;
+      }
+
+      saveSignedInUser(result.user);
+    } catch {
+      setErrorMessage(t(
+        "Could not complete sign in. Please try again.",
+        "تعذر إكمال تسجيل الدخول. يرجى المحاولة مرة أخرى."
+      ));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Phone: verify OTP & login (or save a new password & login) ───────────────
   async function verifyAndLogin() {
     setErrorMessage("");
+    setInfoMessage("");
+
+    const resetting = phoneMode === "reset";
+
+    if (
+      resetting &&
+      (phonePassword.length < PASSWORD_MIN_LENGTH ||
+        phonePassword.length > PASSWORD_MAX_LENGTH)
+    ) {
+      setErrorMessage(t(
+        `Your new password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+        `كلمة المرور الجديدة يجب أن تتكون من ${PASSWORD_MIN_LENGTH} أحرف على الأقل.`
+      ));
+      return;
+    }
+
     if (otpCode.length !== 6) {
       setErrorMessage(t("Please enter your verification code.", "يرجى إدخال رمز التحقق."));
       return;
@@ -186,7 +317,11 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ phone: fullPhone, code: otpCode, mode: "login" }),
+        body: JSON.stringify(
+          resetting
+            ? { phone: fullPhone, code: otpCode, mode: "reset_password", password: phonePassword }
+            : { phone: fullPhone, code: otpCode, mode: "login" }
+        ),
       });
       const result = await res
         .text()
@@ -198,6 +333,16 @@ export default function LoginPage() {
           setErrorMessage(t(
             "No account was found for this phone number. Please create an account first.",
             "لا يوجد حساب مرتبط بهذا الرقم. يرجى إنشاء حساب أولاً."
+          ));
+        } else if (result?.code === "EMAIL_ACCOUNT") {
+          setErrorMessage(t(
+            "This number belongs to an account that signs in with its email. Please use the Email tab.",
+            "هذا الرقم مرتبط بحساب يسجّل الدخول عبر البريد الإلكتروني. يرجى استخدام تبويب البريد الإلكتروني."
+          ));
+        } else if (result?.code === "BAD_PASSWORD") {
+          setErrorMessage(t(
+            `Your new password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+            `كلمة المرور الجديدة يجب أن تتكون من ${PASSWORD_MIN_LENGTH} أحرف على الأقل.`
           ));
         } else if (res.status === 429) {
           setErrorMessage(t(
@@ -313,7 +458,8 @@ export default function LoginPage() {
 
   async function handlePhoneSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!otpSent) await sendLoginOtp();
+    if (phoneMode === "password") await passwordLogin();
+    else if (!otpSent) await sendLoginOtp();
     else await verifyAndLogin();
   }
 
@@ -325,9 +471,13 @@ export default function LoginPage() {
   function switchTab(newTab: Tab) {
     setTab(newTab);
     setErrorMessage("");
+    setInfoMessage("");
     setNeedsVerification(false);
     setOtpSent(false);
     setOtpDigits(["", "", "", "", "", ""]);
+    setPhoneMode("password");
+    setPhonePassword("");
+    setShowPhonePassword(false);
   }
 
   return (
@@ -419,9 +569,15 @@ export default function LoginPage() {
             {tab === "phone" && (
               <form onSubmit={handlePhoneSubmit} className="mt-6">
                 <p className="mb-4 text-sm leading-7 text-[#647168]">
-                  {otpSent
-                    ? t("Enter the 6-digit code sent to your WhatsApp number.", "أدخل رمز التحقق المرسل إلى رقم واتساب الخاص بك.")
-                    : t("Use the Syrian mobile number linked to your account.", "استخدم رقم الموبايل السوري المرتبط بحسابك.")}
+                  {phoneMode === "password"
+                    ? t("Sign in with your mobile number and password.", "سجّل دخولك برقم الموبايل وكلمة المرور.")
+                    : otpSent
+                      ? phoneMode === "reset"
+                        ? t("Enter the 6-digit code sent to your WhatsApp number, then choose your new password.", "أدخل رمز التحقق المرسل إلى واتساب، ثم اختر كلمة المرور الجديدة.")
+                        : t("Enter the 6-digit code sent to your WhatsApp number.", "أدخل رمز التحقق المرسل إلى رقم واتساب الخاص بك.")
+                      : phoneMode === "reset"
+                        ? t("Enter your mobile number. We will send a code to your WhatsApp so you can choose a new password.", "أدخل رقم موبايلك. سنرسل رمزاً إلى واتساب لتتمكن من اختيار كلمة مرور جديدة.")
+                        : t("Use the Syrian mobile number linked to your account.", "استخدم رقم الموبايل السوري المرتبط بحسابك.")}
                 </p>
 
                 <div dir="ltr" className="flex min-h-[56px] overflow-hidden rounded-2xl border border-[#cfd6d1] bg-white transition focus-within:border-[#0a583b] focus-within:ring-4 focus-within:ring-[#e7f0ea]">
@@ -440,6 +596,44 @@ export default function LoginPage() {
                     className="min-w-0 flex-1 bg-transparent px-4 text-base font-bold text-[#142019] outline-none placeholder:text-[#a2aaa4] disabled:bg-[#f6f7f5]"
                   />
                 </div>
+
+
+                {phoneMode === "password" && (
+                  <div className="mt-4">
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Password", "كلمة المرور")}</span>
+                      <div className="relative">
+                        <input
+                          type={showPhonePassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          value={phonePassword}
+                          onChange={(e) => { setPhonePassword(e.target.value); setErrorMessage(""); }}
+                          placeholder="••••••••"
+                          className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPhonePassword((v) => !v)}
+                          className="absolute end-4 top-1/2 -translate-y-1/2 text-[#7a857e] transition hover:text-[#142019]"
+                          aria-label={showPhonePassword ? t("Hide password", "إخفاء كلمة المرور") : t("Show password", "إظهار كلمة المرور")}
+                        >
+                          {showPhonePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </label>
+
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => switchPhoneMode("reset")}
+                        className="text-xs font-extrabold text-[#0a583b] hover:underline disabled:opacity-50"
+                      >
+                        {t("Forgot password?", "نسيت كلمة المرور؟")}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {otpSent && (
                   <div className="mt-5 border-t border-[#dfe4e0] pt-5">
@@ -487,7 +681,41 @@ export default function LoginPage() {
                           : t("Resend code", "إعادة إرسال الرمز")}
                       </button>
                     </div>
+
+                    {phoneMode === "reset" && (
+                      <label className="mt-5 block border-t border-[#dfe4e0] pt-5">
+                        <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("New password", "كلمة المرور الجديدة")}</span>
+                        <div className="relative">
+                          <input
+                            type={showPhonePassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            value={phonePassword}
+                            maxLength={PASSWORD_MAX_LENGTH}
+                            onChange={(e) => { setPhonePassword(e.target.value); setErrorMessage(""); }}
+                            placeholder="••••••••"
+                            className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPhonePassword((v) => !v)}
+                            className="absolute end-4 top-1/2 -translate-y-1/2 text-[#7a857e] transition hover:text-[#142019]"
+                            aria-label={showPhonePassword ? t("Hide password", "إخفاء كلمة المرور") : t("Show password", "إظهار كلمة المرور")}
+                          >
+                            {showPhonePassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        <span className="mt-2 block text-xs leading-5 text-[#7a857e]">
+                          {t(`At least ${PASSWORD_MIN_LENGTH} characters.`, `${PASSWORD_MIN_LENGTH} أحرف على الأقل.`)}
+                        </span>
+                      </label>
+                    )}
                   </div>
+                )}
+
+                {infoMessage && !errorMessage && (
+                  <p role="status" className="mt-5 border-s-2 border-[#0a583b] bg-[#edf5f0] px-4 py-3 text-sm font-bold leading-6 text-[#0a583b]">
+                    {infoMessage}
+                  </p>
                 )}
 
                 {errorMessage && (
@@ -504,9 +732,29 @@ export default function LoginPage() {
                   {loading ? (
                     <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /><span>{t("Please wait...", "يرجى الانتظار...")}</span></>
                   ) : (
-                    <><span>{otpSent ? t("Verify & Sign In", "تأكيد وتسجيل الدخول") : t("Send Code", "إرسال الرمز")}</span><ArrowIcon size={16} /></>
+                    <><span>{phoneMode === "password"
+                      ? t("Sign In", "تسجيل الدخول")
+                      : !otpSent
+                        ? t("Send Code", "إرسال الرمز")
+                        : phoneMode === "reset"
+                          ? t("Save Password & Sign In", "حفظ كلمة المرور وتسجيل الدخول")
+                          : t("Verify & Sign In", "تأكيد وتسجيل الدخول")}</span><ArrowIcon size={16} /></>
                   )}
                 </button>
+
+                {/* The other ways to sign in with a phone number. */}
+                <div className="mt-5 text-center">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => switchPhoneMode(phoneMode === "password" ? "code" : "password")}
+                    className="text-xs font-extrabold text-[#0a583b] hover:underline disabled:opacity-50"
+                  >
+                    {phoneMode === "password"
+                      ? t("Sign in with a WhatsApp code instead", "تسجيل الدخول برمز واتساب بدلاً من ذلك")
+                      : t("Sign in with your password", "تسجيل الدخول بكلمة المرور")}
+                  </button>
+                </div>
               </form>
             )}
 

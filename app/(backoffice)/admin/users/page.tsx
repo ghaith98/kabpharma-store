@@ -66,6 +66,224 @@ export default function AdminUsersPage() {
 
   const [banReason, setBanReason] = useState("");
 
+  /*
+    Delete account. Needs the confirmation code (starts as 0000, changed
+    with "Deletion code" at the top of this page). The server checks the
+    code; this page never knows what it is.
+  */
+  const [deleteTarget, setDeleteTarget] =
+    useState<AdminUser | null>(null);
+  const [deleteCode, setDeleteCode] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [currentCode, setCurrentCode] = useState("");
+  const [newCode, setNewCode] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [savingCode, setSavingCode] = useState(false);
+  // null = not known yet.
+  const [codeIsDefault, setCodeIsDefault] =
+    useState<boolean | null>(null);
+
+  const adminHeaders = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${data.session?.access_token || ""}`,
+    };
+  }, []);
+
+  const loadDeleteCodeStatus = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/customers", {
+        headers: await adminHeaders(),
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => null);
+
+      if (response.ok && result?.ready) {
+        setCodeIsDefault(result.codeIsDefault === true);
+      }
+    } catch {
+      // Only a hint; deleting still works without it.
+    }
+  }, [adminHeaders]);
+
+  function openDeleteModal(user: AdminUser) {
+    setDeleteTarget(user);
+    setDeleteCode("");
+    setDeleteError("");
+  }
+
+  function closeDeleteModal() {
+    if (deleting) return;
+
+    setDeleteTarget(null);
+    setDeleteCode("");
+    setDeleteError("");
+  }
+
+  async function deleteAccount() {
+    const user = deleteTarget;
+
+    if (!user || deleting) return;
+
+    if (!deleteCode.trim()) {
+      setDeleteError("Enter the confirmation code.");
+      return;
+    }
+
+    setDeleting(true);
+    setDeleteError("");
+
+    try {
+      const response = await fetch("/api/admin/customers", {
+        method: "DELETE",
+        headers: await adminHeaders(),
+        body: JSON.stringify({
+          profileId: Number(user.profile_id),
+          code: deleteCode.trim(),
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        if (result?.code === "WRONG_CODE") {
+          setDeleteError("The confirmation code is not correct.");
+        } else if (result?.code === "ACTIVE_ORDERS") {
+          const count = Number(result.count || 0);
+          setDeleteError(
+            `This customer still has ${count} order${count === 1 ? "" : "s"} in progress. Deliver, reject or cancel ${count === 1 ? "it" : "them"} first, then delete the account.`
+          );
+        } else if (result?.code === "TOO_MANY") {
+          const minutes = Math.max(
+            1,
+            Math.ceil(Number(result.retryAfter || 60) / 60)
+          );
+          setDeleteError(
+            `Too many tries. Please wait ${minutes} minute${minutes === 1 ? "" : "s"} and try again.`
+          );
+        } else if (result?.code === "NOT_FOUND") {
+          setDeleteError("This account no longer exists. Refresh the list.");
+        } else {
+          setDeleteError(
+            result?.error ||
+              "The account could not be deleted. Nothing was changed."
+          );
+        }
+
+        return;
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.filter(
+          (currentUser) =>
+            String(currentUser.profile_id) !== String(user.profile_id)
+        )
+      );
+
+      const removedOrders =
+        Number(result.ordersDeleted || 0) +
+        Number(result.archivedOrdersDeleted || 0);
+
+      setDeleteTarget(null);
+      setDeleteCode("");
+
+      setMessage(
+        `${user.full_name || user.phone}'s account was deleted${
+          removedOrders > 0
+            ? `, with ${removedOrders} order${removedOrders === 1 ? "" : "s"}`
+            : ""
+        }. They can sign up again as a new customer.`
+      );
+
+      window.setTimeout(() => {
+        setMessage("");
+      }, 6000);
+    } catch {
+      setDeleteError(
+        "Could not reach the server. Nothing was deleted. Please try again."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function openCodeModal() {
+    setCodeModalOpen(true);
+    setCurrentCode("");
+    setNewCode("");
+    setCodeError("");
+  }
+
+  function closeCodeModal() {
+    if (savingCode) return;
+
+    setCodeModalOpen(false);
+    setCurrentCode("");
+    setNewCode("");
+    setCodeError("");
+  }
+
+  async function saveNewCode() {
+    if (savingCode) return;
+
+    if (!currentCode.trim()) {
+      setCodeError("Enter the current code.");
+      return;
+    }
+
+    if (!/^[A-Za-z0-9]{4,20}$/.test(newCode.trim())) {
+      setCodeError(
+        "The new code must be 4 to 20 letters or digits, with no spaces."
+      );
+      return;
+    }
+
+    setSavingCode(true);
+    setCodeError("");
+
+    try {
+      const response = await fetch("/api/admin/customers", {
+        method: "PUT",
+        headers: await adminHeaders(),
+        body: JSON.stringify({
+          currentCode: currentCode.trim(),
+          newCode: newCode.trim(),
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        setCodeError(
+          result?.code === "WRONG_CODE"
+            ? "The current code is not correct."
+            : result?.error || "Could not save the new code."
+        );
+        return;
+      }
+
+      setCodeIsDefault(result.codeIsDefault === true);
+      setCodeModalOpen(false);
+      setCurrentCode("");
+      setNewCode("");
+
+      setMessage("The deletion code was changed.");
+
+      window.setTimeout(() => {
+        setMessage("");
+      }, 4000);
+    } catch {
+      setCodeError("Could not reach the server. Please try again.");
+    } finally {
+      setSavingCode(false);
+    }
+  }
+
   function getBanResult(data: unknown): BanResult | null {
     if (!data) {
       return null;
@@ -126,6 +344,7 @@ export default function AdminUsersPage() {
       }
 
       await loadUsers();
+      void loadDeleteCodeStatus();
 
       if (mounted) {
         setChecking(false);
@@ -137,7 +356,7 @@ export default function AdminUsersPage() {
     return () => {
       mounted = false;
     };
-  }, [loadUsers, router]);
+  }, [loadDeleteCodeStatus, loadUsers, router]);
 
   function formatDate(value: string | null) {
     if (!value) {
@@ -426,6 +645,14 @@ export default function AdminUsersPage() {
                   : "Refresh"}
               </button>
 
+              <button
+                type="button"
+                onClick={openCodeModal}
+                className="rounded-2xl border border-gray-300 bg-white px-5 py-3 font-bold text-gray-700 transition hover:border-green-600 hover:text-green-700"
+              >
+                Deletion code
+              </button>
+
               <Link
                 href="/admin"
                 className="rounded-2xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
@@ -681,6 +908,7 @@ export default function AdminUsersPage() {
                         </td>
 
                         <td className="px-6 py-5">
+                          <div className="flex flex-col items-start gap-2">
                           {user.is_banned ? (
                             <button
                               type="button"
@@ -708,6 +936,18 @@ export default function AdminUsersPage() {
                                 : "Ban Purchases"}
                             </button>
                           )}
+
+                            <button
+                              type="button"
+                              disabled={updating}
+                              onClick={() =>
+                                openDeleteModal(user)
+                              }
+                              className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Delete account
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -858,6 +1098,17 @@ export default function AdminUsersPage() {
                       : "Restrict Purchases"}
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  disabled={updating}
+                  onClick={() =>
+                    openDeleteModal(user)
+                  }
+                  className="mt-3 w-full rounded-2xl border border-red-200 bg-white px-5 py-3 font-extrabold text-red-600 transition active:scale-[0.98] disabled:opacity-50"
+                >
+                  Delete account
+                </button>
               </article>
             );
           })}
@@ -952,6 +1203,256 @@ export default function AdminUsersPage() {
                 {updatingPhone
                   ? "Saving..."
                   : "Confirm Restriction"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete account modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-account-title"
+            className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-extrabold uppercase text-red-600">
+                  Delete account
+                </p>
+
+                <h2
+                  id="delete-account-title"
+                  className="mt-2 text-2xl font-extrabold text-gray-900"
+                >
+                  {deleteTarget.full_name ||
+                    deleteTarget.phone}
+                </h2>
+
+                <p
+                  dir="ltr"
+                  className="mt-1 text-left text-sm text-gray-600"
+                >
+                  +{deleteTarget.phone}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                aria-label="Close"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-xl font-bold text-gray-700 transition hover:bg-gray-200 disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm leading-6 text-red-800">
+              <p className="font-extrabold">
+                This cannot be undone.
+              </p>
+
+              <p className="mt-1">
+                It permanently deletes this account
+                {Number(deleteTarget.orders_count || 0) > 0
+                  ? `, all ${Number(deleteTarget.orders_count)} of its orders`
+                  : ""}
+                , its reviews, saved addresses and
+                coupon use.
+              </p>
+            </div>
+
+            <p className="mt-4 text-sm leading-6 text-gray-600">
+              The person can sign up again with the same
+              number or email, as a new customer with no
+              order history.
+            </p>
+
+            {deleteTarget.is_banned && (
+              <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold leading-6 text-amber-800">
+                This number is restricted from ordering.
+                The restriction stays after the account is
+                deleted. Unban it first if they should be
+                able to order again.
+              </p>
+            )}
+
+            <label className="mt-5 block">
+              <span className="text-sm font-extrabold text-gray-800">
+                Confirmation code
+              </span>
+
+              <input
+                type="password"
+                inputMode="text"
+                autoComplete="off"
+                value={deleteCode}
+                maxLength={20}
+                onChange={(event) => {
+                  setDeleteCode(event.target.value);
+                  setDeleteError("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void deleteAccount();
+                  }
+                }}
+                placeholder="Enter the code"
+                className="mt-2 w-full rounded-2xl border border-gray-300 p-4 text-lg font-bold tracking-widest text-gray-900 outline-none transition focus:border-red-500"
+              />
+            </label>
+
+            {deleteError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold leading-6 text-red-700"
+              >
+                {deleteError}
+              </p>
+            )}
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void deleteAccount()}
+                disabled={deleting}
+                className="rounded-2xl bg-red-600 px-5 py-3 font-extrabold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deleting
+                  ? "Deleting..."
+                  : "Delete Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change deletion code modal */}
+      {codeModalOpen && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="deletion-code-title"
+            className="w-full max-w-md rounded-[2rem] bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-extrabold uppercase text-green-700">
+                  Security
+                </p>
+
+                <h2
+                  id="deletion-code-title"
+                  className="mt-2 text-2xl font-extrabold text-gray-900"
+                >
+                  Deletion code
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeCodeModal}
+                disabled={savingCode}
+                aria-label="Close"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-xl font-bold text-gray-700 transition hover:bg-gray-200 disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="mt-4 text-sm leading-6 text-gray-600">
+              This code is asked for every time a customer
+              account is deleted. Changing it needs the
+              current code.
+            </p>
+
+            {codeIsDefault && (
+              <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold leading-6 text-amber-800">
+                The code is still the starting one (0000).
+                Choose your own so only you can delete
+                accounts.
+              </p>
+            )}
+
+            <label className="mt-5 block">
+              <span className="text-sm font-extrabold text-gray-800">
+                Current code
+              </span>
+
+              <input
+                type="password"
+                autoComplete="off"
+                value={currentCode}
+                maxLength={20}
+                onChange={(event) => {
+                  setCurrentCode(event.target.value);
+                  setCodeError("");
+                }}
+                className="mt-2 w-full rounded-2xl border border-gray-300 p-4 text-lg font-bold tracking-widest text-gray-900 outline-none transition focus:border-green-600"
+              />
+            </label>
+
+            <label className="mt-4 block">
+              <span className="text-sm font-extrabold text-gray-800">
+                New code
+              </span>
+
+              <input
+                type="text"
+                autoComplete="off"
+                value={newCode}
+                maxLength={20}
+                onChange={(event) => {
+                  setNewCode(event.target.value);
+                  setCodeError("");
+                }}
+                placeholder="4 to 20 letters or digits"
+                className="mt-2 w-full rounded-2xl border border-gray-300 p-4 text-lg font-bold tracking-widest text-gray-900 outline-none transition placeholder:text-sm placeholder:font-semibold placeholder:tracking-normal placeholder:text-gray-400 focus:border-green-600"
+              />
+            </label>
+
+            {codeError && (
+              <p
+                role="alert"
+                className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold leading-6 text-red-700"
+              >
+                {codeError}
+              </p>
+            )}
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={closeCodeModal}
+                disabled={savingCode}
+                className="rounded-2xl border border-gray-300 px-5 py-3 font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void saveNewCode()}
+                disabled={savingCode}
+                className="rounded-2xl bg-green-600 px-5 py-3 font-extrabold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {savingCode
+                  ? "Saving..."
+                  : "Save New Code"}
               </button>
             </div>
           </div>

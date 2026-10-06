@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
@@ -13,6 +14,7 @@ import {
   takeRateLimitDb,
 } from "@/lib/rate-limit-db";
 
+import { isValidPassword } from "@/lib/customer-password";
 import {
   CUSTOMER_SESSION_COOKIE,
   createCustomerSessionToken,
@@ -21,7 +23,13 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type VerificationMode = "login" | "signup";
+/*
+  login           sign in with a WhatsApp code (no password needed)
+  signup          create the account; a password sent along is saved
+  reset_password  set a new password for a phone account, then sign in.
+                  Also how an older account without a password gets one.
+*/
+type VerificationMode = "login" | "signup" | "reset_password";
 
 export async function POST(request: Request) {
   try {
@@ -42,6 +50,10 @@ export async function POST(request: Request) {
     const fullName = String(body?.fullName || "")
       .replace(/\s+/g, " ")
       .trim();
+
+    // Never trimmed or changed: it is the customer's exact password.
+    const password =
+      typeof body?.password === "string" ? body.password : "";
 
     /*
       Validate Syrian phone number:
@@ -75,7 +87,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (mode !== "login" && mode !== "signup") {
+    if (
+      mode !== "login" &&
+      mode !== "signup" &&
+      mode !== "reset_password"
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -95,6 +111,25 @@ export async function POST(request: Request) {
         {
           success: false,
           error: "Invalid full name",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // Checked before the code is spent, so a bad password never wastes it.
+    // Sign-up accepts "no password" (a page opened before this update);
+    // such an account sets one later through "forgot password".
+    if (
+      (mode === "reset_password" || (mode === "signup" && password)) &&
+      !isValidPassword(password)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "BAD_PASSWORD",
+          error: "Password must be 8 to 72 characters.",
         },
         {
           status: 400,
@@ -248,7 +283,7 @@ export async function POST(request: Request) {
       error: profileLookupError,
     } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, phone")
+      .select("id, full_name, phone, email")
       .eq("phone", phone)
       .maybeSingle();
 
@@ -271,7 +306,70 @@ export async function POST(request: Request) {
       );
     }
 
-    let profile = existingProfile;
+    let profile: {
+      id: unknown;
+      full_name: unknown;
+      phone: unknown;
+    } | null = existingProfile;
+
+    /*
+      Reset mode:
+      the phone was just proven with the code, so its account may get a
+      new password. Only for accounts created with a phone number.
+    */
+    if (mode === "reset_password") {
+      if (!existingProfile) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "NO_ACCOUNT",
+            error: "Account does not exist",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      if (existingProfile.email) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "EMAIL_ACCOUNT",
+            error: "This account signs in with its email",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const { error: passwordError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          password_hash: await bcrypt.hash(password, 12),
+        })
+        .eq("id", existingProfile.id)
+        .eq("phone", phone);
+
+      if (passwordError) {
+        console.error(
+          "Password update failed:",
+          passwordError
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            code: "V8",
+            error: "Could not save the new password",
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+    }
 
     /*
       Login mode:
@@ -319,6 +417,9 @@ export async function POST(request: Request) {
         .insert({
           full_name: fullName,
           phone,
+          ...(password
+            ? { password_hash: await bcrypt.hash(password, 12) }
+            : {}),
         })
         .select("id, full_name, phone")
         .single();
