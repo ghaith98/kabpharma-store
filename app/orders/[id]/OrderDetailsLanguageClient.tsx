@@ -25,6 +25,7 @@ import CancelOrderClient from "../CancelOrderClient";
 import { useLanguage } from "../../../context/LanguageContext";
 import {
   buildOrderItemPresentation,
+  splitOrderDiscounts,
   type StoredPromotionDetail,
 } from "@/lib/order-promotion-display";
 
@@ -42,6 +43,7 @@ type OrderDetails = {
   cod_fee?: number | string | null;
   products_subtotal?: number | string | null;
   discount_amount?: number | string | null;
+  promotion_discount_amount?: number | string | null;
   promotion_name?: string | null;
   coupon_code?: string | null;
   promotion_details?: StoredPromotionDetail[] | null;
@@ -274,7 +276,8 @@ export default function OrderDetailsLanguageClient({
 
   const itemPresentation = buildOrderItemPresentation(
     order.order_items,
-    order.promotion_details
+    order.promotion_details,
+    isArabic ? "ar" : "en"
   );
   const orderedItems = itemPresentation.items;
   const rawItemsSubtotal = (order.order_items || []).reduce(
@@ -289,14 +292,11 @@ export default function OrderDetailsLanguageClient({
     Number(order.products_subtotal ?? rawItemsSubtotal) -
       itemPresentation.giftValue
   );
-  const displayDiscountAmount = Math.max(
-    0,
-    Number(order.discount_amount || 0) -
-      itemPresentation.giftValue
+  // Promotions and the coupon are listed on separate lines.
+  const discounts = splitOrderDiscounts(
+    order,
+    itemPresentation.giftValue
   );
-  const discountLabel = order.promotion_name
-    ? order.promotion_name
-    : order.coupon_code || null;
 
   return (
     <main
@@ -654,17 +654,32 @@ export default function OrderDetailsLanguageClient({
                   {productsSubtotal.toLocaleString()} SYP
                 </span>
               </div>
-              {displayDiscountAmount > 0 && (
+              {discounts.promotionDiscount > 0 && (
                 <div className="flex items-center justify-between gap-4 text-[#0a583b]">
                   <span>
-                    {discountLabel
-                      ? `${isArabic ? "خصم" : "Discount"} (${discountLabel})`
-                      : isArabic
-                        ? "خصم العرض"
-                        : "Promotion discount"}
+                    {isArabic ? "خصم العرض" : "Promotion discount"}
                   </span>
                   <span dir="ltr" className="font-extrabold">
-                    −{displayDiscountAmount.toLocaleString()} SYP
+                    −{discounts.promotionDiscount.toLocaleString()} SYP
+                  </span>
+                </div>
+              )}
+              {discounts.couponDiscount > 0 && (
+                <div className="flex items-center justify-between gap-4 text-[#0a583b]">
+                  <span>
+                    {isArabic ? "كود الخصم" : "Coupon"}
+                    {order.coupon_code ? ` (${order.coupon_code})` : ""}
+                  </span>
+                  <span dir="ltr" className="font-extrabold">
+                    −{discounts.couponDiscount.toLocaleString()} SYP
+                  </span>
+                </div>
+              )}
+              {discounts.otherDiscount > 0 && (
+                <div className="flex items-center justify-between gap-4 text-[#0a583b]">
+                  <span>{isArabic ? "خصم" : "Discount"}</span>
+                  <span dir="ltr" className="font-extrabold">
+                    −{discounts.otherDiscount.toLocaleString()} SYP
                   </span>
                 </div>
               )}

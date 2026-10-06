@@ -9,12 +9,15 @@ import { useSearchParams } from "next/navigation";
 
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductPromotionNotice from "./ProductPromotionNotice";
+import FlashSaleCountdown from "./FlashSaleCountdown";
 import ProductGallery from "./ProductGallery";
 import ShareProductButton from "./ShareProductButton";
 import WishlistButton from "../WishlistButton";
 
 import { useLanguage } from "../../../context/LanguageContext";
 import { trackProductView } from "@/lib/analytics";
+import type { FlashSaleFields } from "@/lib/pricing/flash";
+import { useLiveFlashSale } from "@/lib/use-live-flash-sales";
 import { buildMainOption, hasMainSize, optionIdToNumber } from "@/lib/product-options";
 
 type ProductCategory = {
@@ -43,10 +46,13 @@ export type ProductDetail = {
 
   is_out_of_stock?: boolean | null;
 
+  category_id?: number | null;
+  brand_id?: number | null;
+
   categories?:
     | ProductCategory
     | null;
-};
+} & FlashSaleFields;
 
 export type ProductDetailVariant = {
   id: number | string;
@@ -94,10 +100,10 @@ function getVariantLabel(
 }
 
 export default function ProductDetailsClient({
-  product,
+  product: serverProduct,
   normalGalleryImages,
   productVariants,
-  salePercent,
+  salePercent: serverSalePercent,
 }: {
   product: ProductDetail;
   normalGalleryImages: string[];
@@ -106,6 +112,16 @@ export default function ProductDetailsClient({
 }) {
   const { lang } =
     useLanguage();
+
+  // During a flash sale the server sends the flash price as the sale
+  // price. When the sale's end time passes, the product goes back to its
+  // normal price right away, even if this page stays open.
+  const product = useLiveFlashSale(serverProduct);
+  const flashSaleEndsAt = product.flash_sale_ends_at || null;
+  const salePercent =
+    product === serverProduct
+      ? serverSalePercent
+      : Number(product.sale_percent || 0);
 
   const searchParams = useSearchParams();
 
@@ -619,7 +635,10 @@ export default function ProductDetailsClient({
             isOutOfStock
           }
         />
-        <ProductPromotionNotice productId={product.id} variantId={optionIdToNumber(selectedVariant?.id)} hidden={selectedVariantSalePercent > 0 || isOutOfStock} />
+        {!isOutOfStock && (
+          <FlashSaleCountdown endsAt={flashSaleEndsAt} className="mt-4" />
+        )}
+        <ProductPromotionNotice productId={product.id} categoryId={product.category_id} brandId={product.brand_id} variantId={optionIdToNumber(selectedVariant?.id)} hidden={selectedVariantSalePercent > 0 || isOutOfStock} />
       </aside>
     </div>
   );

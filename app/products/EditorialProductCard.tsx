@@ -312,7 +312,7 @@ export default function EditorialProductCard({
             <span className="inline-flex bg-white px-2 py-1 text-[9px] font-medium text-red-600 shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]">
               -{salePercent}%
             </span>
-          ) : <ProductPromotionNotice productId={product.id} summary />}
+          ) : <ProductPromotionNotice productId={product.id} categoryId={product.category_id} brandId={product.brand_id} summary />}
         </div>
       </div>
 

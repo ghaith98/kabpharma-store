@@ -19,6 +19,7 @@ import type {
 } from "@/lib/concerns";
 
 import { useLanguage } from "../context/LanguageContext";
+import { useLiveFlashSales } from "@/lib/use-live-flash-sales";
 
 type ProductSectionProps = {
   title: string;
@@ -126,15 +127,20 @@ type HomeClientProps = {
 };
 
 export default function HomeClient({
-  newProducts,
-  featuredProducts,
-  topSellerProducts,
+  newProducts: serverNewProducts,
+  featuredProducts: serverFeaturedProducts,
+  topSellerProducts: serverTopSellerProducts,
   topSellerIds,
   banners,
   concerns,
 }: HomeClientProps) {
   const { lang } =
     useLanguage();
+
+  // A flash-sale price goes back to normal the moment the sale ends.
+  const newProducts = useLiveFlashSales(serverNewProducts);
+  const featuredProducts = useLiveFlashSales(serverFeaturedProducts);
+  const topSellerProducts = useLiveFlashSales(serverTopSellerProducts);
 
   const currentLang =
     lang as "en" | "ar";

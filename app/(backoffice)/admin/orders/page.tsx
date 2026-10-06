@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { buildOrderItemPresentation, type StoredPromotionDetail } from "@/lib/order-promotion-display";
+import { buildOrderItemPresentation,
+  splitOrderDiscounts, type StoredPromotionDetail } from "@/lib/order-promotion-display";
 import PrintOrderButton from "./PrintOrderButton";
 
 
@@ -436,15 +437,16 @@ export default function AdminOrdersPage() {
 
           const itemPresentation = buildOrderItemPresentation(
             order.order_items,
-            order.promotion_details
+            order.promotion_details,
+            "en"
+          );
+          const discounts = splitOrderDiscounts(
+            order,
+            itemPresentation.giftValue
           );
           const displayedProductsSubtotal = Math.max(
             0,
             Number(order.products_subtotal || 0) - itemPresentation.giftValue
-          );
-          const displayedDiscountAmount = Math.max(
-            0,
-            Number(order.discount_amount || 0) - itemPresentation.giftValue
           );
 
           return (
@@ -530,23 +532,50 @@ export default function AdminOrdersPage() {
                 {(order.coupon_code || order.promotion_name) && (
                   <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950">
                     <p>
-                      <strong>{order.promotion_name ? "Promotion:" : "Coupon code:"}</strong>{" "}
-                      <span className="font-mono font-extrabold">
-                        {order.promotion_name || order.coupon_code}
-                      </span>
-                    </p>
-                    <p className="mt-1">
                       <strong>Products subtotal:</strong>{" "}
                       {Number(
                         displayedProductsSubtotal
                       ).toLocaleString()} SYP
                     </p>
-                    <p className="mt-1">
-                      <strong>{order.promotion_name ? "Promotion discount:" : "Coupon discount:"}</strong>{" "}
-                      −{Number(
-                        displayedDiscountAmount
-                      ).toLocaleString()} SYP
-                    </p>
+
+                    {order.promotion_name && (
+                      <p className="mt-1">
+                        <strong>Promotion:</strong>{" "}
+                        <span className="font-extrabold">
+                          {order.promotion_name}
+                        </span>
+                        {discounts.promotionDiscount > 0 && (
+                          <>
+                            {" "}
+                            −{discounts.promotionDiscount.toLocaleString()} SYP
+                          </>
+                        )}
+                        {itemPresentation.giftValue > 0 && (
+                          <>
+                            {" "}
+                            (free items worth{" "}
+                            {itemPresentation.giftValue.toLocaleString()} SYP)
+                          </>
+                        )}
+                      </p>
+                    )}
+
+                    {order.coupon_code && (
+                      <p className="mt-1">
+                        <strong>Coupon code:</strong>{" "}
+                        <span className="font-mono font-extrabold">
+                          {order.coupon_code}
+                        </span>
+                        {discounts.couponDiscount > 0 ? (
+                          <>
+                            {" "}
+                            −{discounts.couponDiscount.toLocaleString()} SYP
+                          </>
+                        ) : (
+                          <> (free delivery)</>
+                        )}
+                      </p>
+                    )}
                   </div>
                 )}
 

@@ -7,6 +7,7 @@ import { rankBestSellerProductIds } from "@/lib/best-sellers";
 
 import ProductsClient from "@/app/products/ProductsClient";
 import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
+import { loadFlashSales } from "@/lib/pricing/storefront";
 
 export const revalidate = 60;
 
@@ -143,8 +144,9 @@ export default async function ProductsPage() {
     );
   }
 
-  const allProducts =
-    productsResult.data || [];
+  // Live flash sales are written into the products' sale price here.
+  const withFlashSales = await loadFlashSales();
+  const allProducts = withFlashSales(productsResult.data);
 
   const products =
     allProducts;

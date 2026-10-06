@@ -1,20 +1,15 @@
 import { NextResponse } from "next/server";
-import { hasMainSize } from "@/lib/product-options";
-
 import { getCustomerSession } from "@/lib/customer-session";
-import { getCouponDiscount } from "@/lib/coupons";
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getPromotionEvaluation, type PromotionCartLine } from "@/lib/promotions";
+import { orderPromotionFields, quoteOrder } from "@/lib/pricing/order-quote";
 
 export const dynamic = "force-dynamic";
 
 const MAX_CART_ITEMS = 50;
 const MAX_ITEM_QUANTITY = 99;
-// This amount is server-controlled. The client cannot set or alter it.
-const COD_FEE = 50;
 
 type SubmittedCartItem = {
   id?: unknown;
@@ -29,62 +24,11 @@ type CheckoutPayload = {
   address?: unknown;
 };
 
-type DatabaseRecord = Record<string, unknown>;
-
-// --- Pricing/validation helpers: identical rules to the transfer route. ---
 function cleanText(value: unknown, maxLength: number) {
   return String(value || "")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, maxLength);
-}
-
-function safeDiscount(value: unknown) {
-  return Math.min(100, Math.max(0, Number(value || 0)));
-}
-
-function finalPrice(price: unknown, discount: unknown) {
-  const amount = Number(price || 0);
-  if (!Number.isFinite(amount) || amount < 0) return 0;
-  return Math.round(amount * (1 - safeDiscount(discount) / 100));
-}
-
-function isUnavailable(record: DatabaseRecord) {
-  if (record.is_out_of_stock === true) return true;
-  const stock = record.stock_quantity ?? record.stock;
-  return stock != null && Number(stock) <= 0;
-}
-
-function variantLabel(
-  variant: DatabaseRecord,
-  language: "ar" | "en"
-) {
-  const primary =
-    language === "ar"
-      ? [
-          variant.label_ar,
-          variant.name_ar,
-          variant.label,
-          variant.name,
-          variant.label_en,
-          variant.name_en,
-        ]
-      : [
-          variant.label_en,
-          variant.name_en,
-          variant.label,
-          variant.name,
-          variant.label_ar,
-          variant.name_ar,
-        ];
-
-  return (
-    primary.find(
-      (value) =>
-        typeof value === "string" &&
-        value.trim().length > 0
-    ) || null
-  ) as string | null;
 }
 
 async function getVerifiedProfile() {
@@ -161,6 +105,8 @@ export async function POST(request: Request) {
     cart?: SubmittedCartItem[];
     idempotencyKey?: unknown;
     couponCode?: unknown;
+    priceToken?: unknown;
+    expectedTotal?: unknown;
   };
 
   try {
@@ -259,217 +205,36 @@ export async function POST(request: Request) {
     );
   }
 
-  const productIds = Array.from(
-    new Set(normalizedItems.map((item) => item.productId))
-  );
+  // One calculation for the whole order: the same one the cart, checkout
+  // and payment pages showed (current prices, sale and flash-sale prices,
+  // promotions, free items, coupon, delivery, cash-on-delivery fee).
+  const priced = await quoteOrder({
+    items: normalizedItems,
+    couponCode: body.couponCode,
+    profileId: profile.id,
+    governorate,
+    deliveryAreaName,
+    paymentMethod: "cod",
+    priceToken: body.priceToken,
+    expectedTotal: body.expectedTotal,
+  });
 
-  const [
-    productsResult,
-    variantsResult,
-    areaResult,
-    thresholdResult,
-  ] = await Promise.all([
-    supabaseAdmin
-      .from("products")
-      .select(
-        "id, name, name_ar, name_en, price, sale_percent, size_ar, size_en, image_url, is_out_of_stock, category_id"
-      )
-      .in("id", productIds),
-    supabaseAdmin
-      .from("product_variants")
-      .select("*")
-      .in("product_id", productIds),
-    supabaseAdmin
-      .from("delivery_areas")
-      .select(
-        "id, governorate, area_name, area_name_ar, area_name_en, delivery_fee, is_active"
-      )
-      .eq("governorate", governorate)
-      .eq("is_active", true),
-    supabaseAdmin
-      .from("settings")
-      .select("value")
-      .eq("key", "free_shipping_threshold")
-      .maybeSingle(),
-  ]);
-
-  if (
-    productsResult.error ||
-    variantsResult.error ||
-    areaResult.error
-  ) {
-    console.error("COD order validation query failed:", {
-      products: productsResult.error,
-      variants: variantsResult.error,
-      deliveryArea: areaResult.error,
-    });
-    return jsonError("Could not validate order", 500);
-  }
-
-  const products = new Map(
-    (productsResult.data || []).map((product) => [
-      Number(product.id),
-      product,
-    ])
-  );
-  const variantsByProduct = new Map<
-    number,
-    DatabaseRecord[]
-  >();
-
-  for (const variant of variantsResult.data || []) {
-    const productId = Number(variant.product_id);
-    const productVariants =
-      variantsByProduct.get(productId) || [];
-    productVariants.push(variant);
-    variantsByProduct.set(productId, productVariants);
-  }
-
-  const validatedItems: DatabaseRecord[] = [];
-  const promotionLines: PromotionCartLine[] = [];
-  let productsTotal = 0;
-
-  for (const item of normalizedItems) {
-    const product = products.get(item.productId);
-
-    if (!product || isUnavailable(product)) {
-      return jsonError("A product is unavailable", 409);
-    }
-
-    const productVariants =
-      variantsByProduct.get(item.productId) || [];
-    let variant: DatabaseRecord | null = null;
-
-    if (item.variantId !== null) {
-      variant =
-        productVariants.find(
-          (candidate) =>
-            Number(candidate.id) === item.variantId
-        ) || null;
-
-      if (!variant) {
-        return jsonError(
-          "A product option is invalid",
-          409
-        );
-      }
-    } else if (productVariants.length > 0 && !hasMainSize(product)) {
-      // No option chosen and no main size: use the cheapest option (older
-      // products). With a main size, "no option" means the main size.
-      variant =
-        [...productVariants]
-          .filter((candidate) => !isUnavailable(candidate))
-          .sort(
-            (first, second) =>
-              Number(first.price || 0) -
-              Number(second.price || 0)
-          )[0] || null;
-
-      if (!variant) {
-        return jsonError(
-          "A product option is unavailable",
-          409
-        );
-      }
-    }
-
-    if (variant && isUnavailable(variant)) {
-      return jsonError(
-        "A product option is unavailable",
-        409
-      );
-    }
-
-    const unitPrice = finalPrice(
-      variant?.price ?? product.price,
-      product.sale_percent
-    );
-
-    if (unitPrice <= 0) {
-      return jsonError("A product price is invalid", 409);
-    }
-
-    const productName =
-      cleanText(
-        product.name ||
-          product.name_en ||
-          product.name_ar,
-        200
-      ) || "KAB Pharma product";
-
-    productsTotal += unitPrice * item.quantity;
-    validatedItems.push({
-      product_id: product.id,
-      product_name: productName,
-      variant_id: variant?.id ?? null,
-      variant_label_ar: variant
-        ? variantLabel(variant, "ar")
-        : cleanText(product.size_ar || product.size_en, 80) || null,
-      variant_label_en: variant
-        ? variantLabel(variant, "en")
-        : cleanText(product.size_en || product.size_ar, 80) || null,
-      image_url:
-        variant?.image_url || product.image_url || null,
-      quantity: item.quantity,
-      unit_price: unitPrice,
-    });
-    promotionLines.push({
-      productId: Number(product.id),
-      variantId: variant?.id != null ? Number(variant.id) : null,
-      quantity: item.quantity,
-      unitPrice,
-      hasSalePrice: Number(product.sale_percent ?? 0) > 0,
-    });
-  }
-
-  const deliveryArea = (areaResult.data || []).find(
-    (area) => area.area_name === deliveryAreaName
-  );
-
-  if (!deliveryArea) {
-    return jsonError("Delivery area is unavailable", 409);
-  }
-
-  const promotionEvaluation = await getPromotionEvaluation(promotionLines);
-  const promotions = promotionEvaluation.promotions;
-  const promotionDiscount = promotionEvaluation.discountAmount;
-  let coupon;
-  try {
-    coupon = await getCouponDiscount(
-      body.couponCode,
-      productsTotal,
-      profile.id
-    );
-  } catch (error) {
-    return jsonError(
-      error instanceof Error ? error.message : "Coupon validation failed",
-      400
+  if (!priced.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: priced.error,
+        ...(priced.code ? { code: priced.code, total: priced.total } : {}),
+      },
+      { status: priced.status, headers: { "Cache-Control": "no-store" } }
     );
   }
-  const couponDiscount = coupon?.discountAmount || 0;
-  const usePromotion = promotionDiscount > couponDiscount;
-  const payablePromotionDiscount = usePromotion
-    ? promotions.filter((promotion) => promotion.type === "buy_1_second_50").reduce((sum, promotion) => sum + promotion.discountAmount, 0)
-    : couponDiscount;
-  const qualifyingSubtotal = Math.max(0, productsTotal - payablePromotionDiscount);
-  const freeShippingThreshold = Number(thresholdResult.data?.value || 0);
-  const configuredDeliveryFee = Number(deliveryArea.delivery_fee || 0);
-  const deliveryFee = freeShippingThreshold > 0 && qualifyingSubtotal >= freeShippingThreshold
-    ? 0
-    : configuredDeliveryFee;
-  if (usePromotion) for (const addition of promotionEvaluation.autoAdditions) {
-    const line = promotionLines.find((candidate) => candidate.productId === addition.productId && candidate.variantId === addition.variantId);
-    const item = validatedItems.find((candidate) => Number(candidate.product_id) === addition.productId && Number(candidate.variant_id) === Number(addition.variantId));
-    if (!line || !item) continue;
-    line.quantity += addition.quantity;
-    item.quantity = Number(item.quantity) + addition.quantity;
-    productsTotal += line.unitPrice * addition.quantity;
-  }
-  const discountAmount = usePromotion ? promotionDiscount : couponDiscount;
-  const orderTotal = Math.max(
-    0,
-    productsTotal - discountAmount + deliveryFee + COD_FEE
-  );
+
+  const quote = priced.quote;
+  const pricing = quote.pricing;
+  const appliedCoupon = pricing.coupon?.applied ? pricing.coupon : null;
+  const deliveryFee = pricing.totals.deliveryFee;
+  const orderTotal = pricing.totals.total;
 
   // Atomic + idempotent creation. If items fail, the order rolls back.
   // If this idempotency key was already used, the existing order is returned.
@@ -479,19 +244,21 @@ export async function POST(request: Request) {
         customer_name: customerName,
         phone: profile.phone,
         governorate,
-        delivery_area: deliveryArea.area_name,
+        delivery_area: quote.deliveryAreaName,
         address,
         delivery_fee: deliveryFee,
-        cod_fee: COD_FEE,
+        cod_fee: pricing.totals.codFee,
         total_price: orderTotal,
         status: "pending",
         payment_method: "cod",
       },
-      p_items: validatedItems,
+      p_items: quote.orderItems,
       p_idempotency_key: idempotencyKey,
-      p_coupon_code: usePromotion ? null : coupon?.code || null,
-      p_discount_amount: discountAmount,
-      p_products_subtotal: productsTotal,
+      p_coupon_code: appliedCoupon?.code || null,
+      // Stored the way orders always have been: free items count as
+      // ordinary items and their value as part of the discount.
+      p_discount_amount: pricing.order.discountAmount,
+      p_products_subtotal: pricing.order.productsSubtotal,
       p_customer_profile_id: profile.id,
     });
 
@@ -507,13 +274,18 @@ export async function POST(request: Request) {
   if (!created?.id) {
     return jsonError("Could not create order", 500);
   }
-  if (usePromotion) {
-    await supabaseAdmin.from("orders").update({
-      promotion_id: promotions.length === 1 ? promotions[0].promotionId : null,
-      promotion_name: promotions.map((promotion) => promotion.promotionName).join(" + "),
-      promotion_discount_amount: promotionDiscount,
-      promotion_details: promotions,
-    }).eq("id", created.id);
+  const promotionFields = orderPromotionFields(quote);
+  if (promotionFields) {
+    const { error: promotionError } = await supabaseAdmin
+      .from("orders")
+      .update(promotionFields)
+      .eq("id", created.id);
+
+    // The order itself is saved and correct; only the "which offer" note
+    // on the invoice is missing.
+    if (promotionError) {
+      console.error("Order promotion details were not saved:", promotionError);
+    }
   }
 
   return NextResponse.json(

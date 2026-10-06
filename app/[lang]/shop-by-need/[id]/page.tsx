@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 import ProductsClient from "@/app/products/ProductsClient";
 import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
+import { loadFlashSales } from "@/lib/pricing/storefront";
 
 export const revalidate = 60;
 
@@ -137,10 +138,14 @@ export default async function ShopByNeedPage({
     );
   }
 
+  // Live flash sales are written into the products' sale price here.
+  const withFlashSales = await loadFlashSales();
+  const products = withFlashSales(productsResult.data);
+
   return (
     <main className="min-h-screen bg-white pb-24 md:pb-16">
       <ProductsClient
-        products={productsResult.data || []}
+        products={products}
         concern={concern}
         showHeader={false}
         showSearch={false}

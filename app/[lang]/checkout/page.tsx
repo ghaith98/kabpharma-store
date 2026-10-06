@@ -32,9 +32,9 @@ import {
 
 import { useLanguage } from "@/context/LanguageContext";
 import {
-  getLinePromotionDiscount,
-  linePromotionLabel,
-} from "@/lib/promotion-lines";
+  quoteIssueText,
+  useCartQuote,
+} from "@/lib/use-cart-quote";
 
 type CartItemWithVariant =
   CartItem & {
@@ -87,16 +87,6 @@ type StoredCheckout = {
   address?: string;
 };
 
-type CheckoutPromotion = {
-  promotionId: string;
-  promotionName: string;
-  discountAmount: number;
-  affectedQuantity: number;
-  productId: number;
-  variantId: number | null;
-  type: "buy_2_get_1" | "buy_1_second_50";
-};
-
 export default function CheckoutPage() {
   const { lang } =
     useLanguage();
@@ -130,7 +120,6 @@ export default function CheckoutPage() {
     setFreeShippingThreshold,
   ] = useState(0);
 
-  const [promotions, setPromotions] = useState<CheckoutPromotion[]>([]);
 
   const [name, setName] =
     useState("");
@@ -321,21 +310,20 @@ export default function CheckoutPage() {
     }
   }, [deliveryAreas]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function previewPromotions() {
-      if (!cart.length) { setPromotions([]); return; }
-      const response = await fetch("/api/customer/promotions/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variant_id, quantity: item.quantity })) }),
-      });
-      const result = await response.json().catch(() => null);
-      if (!cancelled) setPromotions(Array.isArray(result?.promotions) ? result.promotions : []);
-    }
-    void previewPromotions();
-    return () => { cancelled = true; };
-  }, [cart]);
+  /*
+    Every price on this page comes from the server (see useCartQuote),
+    including the delivery fee for the chosen area and whether delivery
+    is free.
+  */
+  const selectedAreaForQuote = deliveryAreas.find(
+    (area) => String(area.id) === deliveryArea
+  );
+
+  const pricing = useCartQuote(cart, {
+    governorate: selectedAreaForQuote ? governorate : null,
+    deliveryArea: selectedAreaForQuote?.area_name || null,
+  });
+  const quote = pricing.quote;
 
   async function checkCurrentUserBan(
     accountPhone: string
@@ -549,21 +537,58 @@ export default function CheckoutPage() {
     ).toLocaleString()} SYP`;
   }
 
-  const productsTotal =
-    cart.reduce(
-      (sum, item) =>
-        sum +
-        Number(item.price) *
-          Number(
-            item.quantity
-          ),
-      0
-    );
+  // The cart with the server's prices written in (saved prices until the
+  // first answer arrives).
+  const pricedCart = cart.map((item) => {
+    const line = pricing.lineFor(item);
 
-  const paidPromotions = promotions.filter((promotion) => promotion.type === "buy_1_second_50");
-  const freePromotions = promotions.filter((promotion) => promotion.type === "buy_2_get_1");
-  const promotionDiscount = paidPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
+    return line
+      ? {
+          ...item,
+          price: line.unitPrice,
+          original_price: line.baseUnitPrice,
+          sale_percent: line.salePercent,
+        }
+      : item;
+  });
+
+  const productsTotal = quote
+    ? quote.totals.subtotal
+    : pricedCart.reduce(
+        (sum, item) =>
+          sum + Number(item.price) * Number(item.quantity),
+        0
+      );
+
+  const promotions = quote ? quote.promotions : [];
+  const paidPromotions = promotions.filter(
+    (promotion) => promotion.kind === "line_discount"
+  );
+  const freePromotions = promotions.filter(
+    (promotion) => promotion.kind === "free_items"
+  );
+  const promotionDiscount = quote ? quote.totals.promotionDiscount : 0;
   const payableProductsTotal = Math.max(0, productsTotal - promotionDiscount);
+
+  type AppliedCheckoutPromotion = (typeof promotions)[number];
+
+  function promotionKey(promotion: AppliedCheckoutPromotion) {
+    return `${promotion.promotionId}-${promotion.productId}-${
+      promotion.variantId ?? "base"
+    }-${promotion.kind}`;
+  }
+
+  function promotionLabelText(promotion: AppliedCheckoutPromotion) {
+    return isArabic ? promotion.labelAr : promotion.labelEn;
+  }
+
+  function promotionItem(promotion: AppliedCheckoutPromotion) {
+    return cart.find(
+      (candidate) =>
+        pricing.lineFor(candidate)?.key ===
+        `${promotion.productId}-${promotion.variantId ?? "base"}`
+    );
+  }
 
   const itemsCount =
     cart.reduce(
@@ -581,13 +606,7 @@ export default function CheckoutPage() {
   const displayedItemsCount = itemsCount + freeItemsCount;
 
   const freeItemRows = freePromotions.map((promotion) => {
-    const item = cart.find(
-      (candidate) =>
-        Number(candidate.id) === promotion.productId &&
-        (promotion.variantId == null
-          ? candidate.variant_id == null
-          : Number(candidate.variant_id) === promotion.variantId)
-    );
+    const item = promotionItem(promotion);
 
     return {
       promotion,
@@ -599,6 +618,11 @@ export default function CheckoutPage() {
       variantLabel: item ? getVariantLabel(item) : null,
     };
   });
+
+  // Items the store can no longer sell (removed, out of stock...).
+  const unavailableItem = cart.find(
+    (item) => pricing.issueFor(item) != null
+  );
 
   const areasForGovernorate =
     deliveryAreas.filter(
@@ -620,16 +644,21 @@ export default function CheckoutPage() {
         0
     );
 
-  const hasFreeShipping =
-    freeShippingThreshold >
-      0 &&
-    payableProductsTotal >=
-      freeShippingThreshold;
+  // From the server when it has answered: the store's free-delivery
+  // amount, a free-delivery promotion, or neither.
+  const hasFreeShipping = quote
+    ? quote.delivery.free
+    : freeShippingThreshold >
+        0 &&
+      payableProductsTotal >=
+        freeShippingThreshold;
 
   const deliveryFee =
     hasFreeShipping
       ? 0
-      : rawDeliveryFee;
+      : quote && quote.delivery.fee != null
+        ? quote.delivery.fee
+        : rawDeliveryFee;
 
   const total =
     payableProductsTotal +
@@ -654,6 +683,18 @@ export default function CheckoutPage() {
           ? "السلة فارغة"
           : "Your cart is empty"
       );
+
+      return;
+    }
+
+    if (unavailableItem) {
+      alert(
+        isArabic
+          ? "بعض المنتجات في السلة لم تعد متوفرة. يرجى إزالتها من السلة للمتابعة."
+          : "Some items in your cart are no longer available. Please remove them from your cart to continue."
+      );
+
+      router.push("/cart");
 
       return;
     }
@@ -1385,12 +1426,15 @@ export default function CheckoutPage() {
                     : "Your cart is empty"}
                 </p>
               ) : (
-                cart.map(
+                pricedCart.map(
                   (item) => {
                     const itemKey =
                       getCartItemKey(
                         item
                       );
+
+                    const line = pricing.lineFor(item);
+                    const issue = pricing.issueFor(item);
 
                     const variantLabel =
                       getVariantLabel(
@@ -1444,10 +1488,7 @@ export default function CheckoutPage() {
                                 Number(item.price) *
                                 Number(item.quantity);
                               const lineDiscount =
-                                getLinePromotionDiscount(
-                                  promotions,
-                                  item
-                                );
+                                line?.promotionDiscount || 0;
 
                               return lineDiscount > 0 ? (
                                 <div className="shrink-0 text-end">
@@ -1468,9 +1509,18 @@ export default function CheckoutPage() {
                             })()}
                           </div>
 
-                          {getLinePromotionDiscount(promotions, item) > 0 && (
-                            <p className="mt-1 text-xs font-bold text-[#0a583b]">
-                              {linePromotionLabel(isArabic)}
+                          {line?.promotion &&
+                            line.promotionDiscount > 0 && (
+                              <p className="mt-1 text-xs font-bold text-[#0a583b]">
+                                {isArabic
+                                  ? line.promotion.label.ar
+                                  : line.promotion.label.en}
+                              </p>
+                            )}
+
+                          {issue && (
+                            <p className="mt-1 text-xs font-bold leading-5 text-red-700">
+                              {quoteIssueText(issue, isArabic)}
                             </p>
                           )}
 
@@ -1507,7 +1557,7 @@ export default function CheckoutPage() {
                   <div className="mt-3 space-y-3">
                     {freeItemRows.map(({ promotion, item, name, variantLabel }) => (
                       <div
-                        key={promotion.promotionId}
+                        key={promotionKey(promotion)}
                         className="flex min-w-0 gap-3 rounded-2xl border border-[#d8eadc] bg-[#f7fbf8] p-3"
                       >
                         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5">
@@ -1545,7 +1595,7 @@ export default function CheckoutPage() {
                           )}
 
                           <p className="mt-1 text-xs font-bold text-[#0a583b]">
-                            {promotion.promotionName}
+                            {promotionLabelText(promotion)}
                           </p>
                         </div>
                       </div>
@@ -1572,15 +1622,15 @@ export default function CheckoutPage() {
               </div>
 
               {freePromotions.map((promotion) => (
-                <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
-                  <span>{promotion.promotionName}</span>
+                <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                  <span>{promotionLabelText(promotion)}</span>
                   <span className="font-bold">+{promotion.affectedQuantity} {isArabic ? "مجاناً" : "free"}</span>
                 </div>
               ))}
 
               {paidPromotions.map((promotion) => (
-                <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
-                  <span>{promotion.promotionName}</span>
+                <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                  <span>{promotionLabelText(promotion)}</span>
                   <span className="font-bold">−{formatPrice(promotion.discountAmount)}</span>
                 </div>
               ))}

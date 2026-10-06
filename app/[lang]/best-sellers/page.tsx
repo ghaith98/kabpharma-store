@@ -8,6 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import NewArrivalsBanner from "@/app/NewArrivalsBanner";
 import NewArrivalsCollection from "@/app/new-arrivals/NewArrivalsCollection";
 import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
+import { loadFlashSales } from "@/lib/pricing/storefront";
 
 export const revalidate = 60;
 
@@ -117,8 +118,9 @@ export default async function BestSellersPage() {
     );
   }
 
-  const availableProducts =
-    productsResult.data || [];
+  // Live flash sales are written into the products' sale price here.
+  const withFlashSales = await loadFlashSales();
+  const availableProducts = withFlashSales(productsResult.data);
 
   const availableProductIds =
     new Set(

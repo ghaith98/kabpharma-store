@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/site";
 import { rankBestSellerProductIds } from "@/lib/best-sellers";
 import { attachConcernProducts } from "@/lib/concerns";
 import { PRODUCT_LIST_SELECT } from "@/lib/product-queries";
+import { loadFlashSales } from "@/lib/pricing/storefront";
 
 export const revalidate = 60;
 
@@ -115,8 +116,12 @@ export default async function Home() {
     );
   }
 
-  const newProducts = newProductsResult.data || [];
-  const featuredProducts = featuredProductsResult.data || [];
+  // Live flash sales are written into the products' sale price here, so
+  // every card shows the flash price without knowing about flash sales.
+  const withFlashSales = await loadFlashSales();
+
+  const newProducts = withFlashSales(newProductsResult.data);
+  const featuredProducts = withFlashSales(featuredProductsResult.data);
   const orderItems = orderItemsResult.data || [];
   const availableProductsForRanking = availableProductsResult.data || [];
   const banners = bannersResult.data || [];
@@ -150,11 +155,13 @@ export default async function Home() {
       );
     }
 
-    topSellerProducts = topSellerIds
-      .map((id) =>
-        data?.find((product) => Number(product.id) === id)
-      )
-      .filter(Boolean);
+    topSellerProducts = withFlashSales(
+      topSellerIds
+        .map((id) =>
+          data?.find((product) => Number(product.id) === id)
+        )
+        .filter(Boolean)
+    );
   }
 
   return (

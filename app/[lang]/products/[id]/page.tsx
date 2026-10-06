@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
+import { loadFlashSales } from "@/lib/pricing/storefront";
 import ProductExtraClient from "@/app/products/[id]/ProductExtraClient";
 import ProductDetailsClient from "@/app/products/[id]/ProductDetailsClient";
 
@@ -238,7 +239,7 @@ export default async function ProductPage({
   const { id } = await params;
 
   const {
-    data: product,
+    data: loadedProduct,
     error: productError,
   } = await getProduct(id);
 
@@ -249,9 +250,15 @@ export default async function ProductPage({
     );
   }
 
-  if (!product) {
+  if (!loadedProduct) {
     notFound();
   }
+
+  // A live flash sale is written into the product's sale price here, so
+  // the price, the structured data and the related products all agree.
+  const withFlashSales = await loadFlashSales();
+
+  const [product] = withFlashSales([loadedProduct]);
 
   const [
     reviewsResult,
@@ -440,7 +447,7 @@ export default async function ProductPage({
       };
     });
 
-  const relatedProducts =
+  const relatedProducts = withFlashSales(
     sameCategoryProducts
       .sort(
         (
@@ -452,7 +459,8 @@ export default async function ProductPage({
           Number(secondProduct.id) -
             Number(firstProduct.id)
       )
-      .slice(0, 6);
+      .slice(0, 6)
+  );
 
   const normalGalleryImages = [
     product.image_url,

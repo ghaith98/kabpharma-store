@@ -26,9 +26,12 @@ import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "@/context/LanguageContext";
 import { trackCheckoutStart, trackPurchase } from "@/lib/analytics";
-import { getLinePromotionDiscount, linePromotionLabel } from "@/lib/promotion-lines";
+import { COD_FEE_SYP } from "@/lib/commerce-config";
+import { quoteIssueText, useCartQuote } from "@/lib/use-cart-quote";
 
-const COD_FEE = 50;
+// Shown before the customer picks cash on delivery; the charged fee always
+// comes from the server.
+const COD_FEE = COD_FEE_SYP;
 const COD_IDEMPOTENCY_KEY = "kab_cod_idempotency_key";
 const TRANSFER_IDEMPOTENCY_KEY = "kab_transfer_idempotency_key";
 
@@ -40,16 +43,6 @@ type CartItemWithVariant = CartItem & {
   variant_id?: number | null;
   variant_label_ar?: string | null;
   variant_label_en?: string | null;
-};
-
-type CheckoutPromotion = {
-  promotionId: string;
-  promotionName: string;
-  discountAmount: number;
-  affectedQuantity: number;
-  productId: number;
-  variantId: number | null;
-  type: "buy_2_get_1" | "buy_1_second_50";
 };
 
 type CheckoutData = {
@@ -82,11 +75,26 @@ export default function PaymentPage() {
   const [transactionId, setTransactionId] = useState("");
   const [transactionError, setTransactionError] = useState("");
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
-  const [appliedPromotions, setAppliedPromotions] = useState<CheckoutPromotion[]>([]);
-  const [couponError, setCouponError] = useState("");
-  const [checkingCoupon, setCheckingCoupon] = useState(false);
+  // The code the customer asked for. Whether it really applies is decided
+  // by the server together with the rest of the order (see `appliedCoupon`).
+  const [requestedCoupon, setRequestedCoupon] = useState<string | null>(null);
+  const [couponInputError, setCouponInputError] = useState("");
   const [couponOpen, setCouponOpen] = useState(false);
+
+  /*
+    Every amount on this page comes from the server: prices, promotions,
+    free items, coupon, delivery, cash-on-delivery fee and the total.
+    The order is then placed with the same calculation, so the total shown
+    here is the total charged.
+  */
+  const pricing = useCartQuote(cart, {
+    couponCode: requestedCoupon,
+    governorate: checkout.governorate || null,
+    deliveryArea: checkout.delivery_area || null,
+    paymentMethod: paymentMethod === "cod" ? "cod" : "transfer",
+    enabled: pageReady,
+  });
+  const quote = pricing.quote;
 
   const BackArrow = isArabic ? ArrowRight : ArrowLeft;
 
@@ -134,22 +142,6 @@ export default function PaymentPage() {
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [router]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function previewPromotion() {
-      if (!cart.length) { setAppliedPromotions([]); return; }
-      const response = await fetch("/api/customer/promotions/preview", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variant_id, quantity: item.quantity })) }),
-      });
-      const result = await response.json().catch(() => null);
-      if (cancelled) return;
-      setAppliedPromotions(Array.isArray(result?.promotions) ? result.promotions : []);
-    }
-    void previewPromotion();
-    return () => { cancelled = true; };
-  }, [cart]);
-
   function formatPrice(value: number) {
     return `${Math.round(Number(value || 0)).toLocaleString()} SYP`;
   }
@@ -179,56 +171,89 @@ export default function PaymentPage() {
     }
   }
 
-  const deliveryFee = Number(checkout.delivery_fee || 0);
-  const productsTotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
-  const paidPromotions = appliedPromotions.filter((promotion) => promotion.type === "buy_1_second_50");
-  const freePromotions = appliedPromotions.filter((promotion) => promotion.type === "buy_2_get_1");
-  const promotionValue = appliedPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
-  const promotionDiscount = paidPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
-  const promotionWins = promotionValue > (appliedCoupon?.discountAmount || 0);
-  const selectedDiscount = promotionWins ? promotionDiscount : (appliedCoupon?.discountAmount || 0);
-  const total = Math.max(0, productsTotal - selectedDiscount) + deliveryFee + (paymentMethod === "cod" ? COD_FEE : 0);
+  // The cart with the server's prices written in.
+  const pricedCart = cart.map((item) => {
+    const line = pricing.lineFor(item);
+    return line ? { ...item, price: line.unitPrice } : item;
+  });
+
+  const estimatedProductsTotal = pricedCart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+  const productsTotal = quote ? quote.totals.subtotal : estimatedProductsTotal;
+
+  const promotions = quote ? quote.promotions : [];
+  const paidPromotions = promotions.filter((promotion) => promotion.kind === "line_discount");
+  const freePromotions = promotions.filter((promotion) => promotion.kind === "free_items");
+  type AppliedPromotion = (typeof promotions)[number];
+
+  // Applied = the server accepted this exact code for this exact order.
+  const couponOutcome = requestedCoupon && quote?.coupon?.code === requestedCoupon ? quote.coupon : null;
+  const appliedCoupon = couponOutcome?.applied ? couponOutcome : null;
+  const checkingCoupon = Boolean(requestedCoupon) && pricing.updating;
+  const couponDiscount = quote ? quote.totals.couponDiscount : 0;
+
+  const deliveryFee = quote && quote.delivery.fee != null ? quote.delivery.fee : Number(checkout.delivery_fee || 0);
+  const codFee = paymentMethod === "cod" ? (quote ? quote.totals.codFee || COD_FEE : COD_FEE) : 0;
+
+  // Only a fresh answer is shown as the amount to pay.
+  const totalReady = pricing.fresh && quote != null;
+  const total = quote ? quote.totals.total : 0;
+  const totalText = totalReady ? formatPrice(total) : "…";
+
   const itemsCount = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-  const freeItemsCount = promotionWins
-    ? freePromotions.reduce((sum, promotion) => sum + Number(promotion.affectedQuantity || 0), 0)
-    : 0;
+  const freeItemsCount = quote ? quote.totals.freeItemsCount : 0;
   const displayedItemsCount = itemsCount + freeItemsCount;
   const deliveryLocation = [checkout.delivery_area, checkout.governorate].filter(Boolean).join("، ");
 
-  function promotionDescription(promotion: CheckoutPromotion) {
-    const item = cart.find((candidate) => Number(candidate.id) === promotion.productId && (promotion.variantId == null ? candidate.variant_id == null : Number(candidate.variant_id) === promotion.variantId));
-    const productName = item?.product_name || item?.name || (isArabic ? "هذا المنتج" : "This product");
-    if (promotion.type === "buy_2_get_1") return isArabic ? `${productName}: قطعة مجانية` : `${productName}: one item free`;
-    return isArabic ? `${productName}: حسم 50% على القطعة الثانية` : `${productName}: 50% off the second item`;
+  const unavailableItem = cart.find((item) => pricing.issueFor(item) != null);
+
+  function promotionKey(promotion: AppliedPromotion) {
+    return `${promotion.promotionId}-${promotion.productId}-${promotion.variantId ?? "base"}-${promotion.kind}`;
   }
 
-  async function applyCoupon() {
-    const code = couponInput.trim().toUpperCase();
-    if (!code) { setCouponError(t("Enter a coupon code.", "أدخلي كود الخصم.")); return; }
-    setCheckingCoupon(true);
-    setCouponError("");
-    try {
-      const response = await fetch("/api/customer/coupons/validate", {
-        method: "POST", credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, subtotal: productsTotal }),
-      });
-      const result = await response.json().catch(() => null);
-      if (!response.ok || !result?.success) throw new Error(result?.error || "Coupon validation failed");
-      setAppliedCoupon(result.coupon);
-      setCouponInput(result.coupon.code);
-      sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
-      sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
-    } catch (error) {
-      setAppliedCoupon(null);
-      setCouponError(error instanceof Error ? error.message : t("Could not validate the coupon.", "تعذر التحقق من الكوبون."));
-    } finally { setCheckingCoupon(false); }
+  function promotionDescription(promotion: AppliedPromotion) {
+    const item = cart.find((candidate) => pricing.lineFor(candidate)?.key === `${promotion.productId}-${promotion.variantId ?? "base"}`);
+    const productName = item?.product_name || item?.name || (isArabic ? "هذا المنتج" : "This product");
+    return `${productName}: ${isArabic ? promotion.labelAr : promotion.labelEn}`;
+  }
+
+  // Why the requested coupon is not applied, in the customer's language.
+  function couponProblemText() {
+    if (!requestedCoupon || !pricing.fresh || !quote || appliedCoupon) return "";
+
+    if (quote.couponError === "invalid") return t("This coupon code is not valid.", "كود الخصم غير صحيح أو غير مفعّل.");
+    if (quote.couponError === "not_valid_now") return t("This coupon is not valid at the moment.", "هذا الكود غير صالح حالياً.");
+    if (quote.couponError === "already_used") return t("This coupon has already been used on your account.", "تم استخدام هذا الكود سابقاً على حسابكِ.");
+
+    const reason = couponOutcome?.reason;
+    if (reason === "minimum_not_met") {
+      const minimum = formatPrice(couponOutcome?.minimumOrderAmount || 0);
+      return t(`This coupon needs an order of at least ${minimum}.`, `هذا الكود يتطلب طلباً بقيمة ${minimum} على الأقل.`);
+    }
+    if (reason === "no_eligible_items") return t("This coupon does not apply to the items in your cart.", "هذا الكود لا ينطبق على المنتجات الموجودة في سلتكِ.");
+    if (reason === "delivery_already_free") return t("Delivery is already free for this order, so this coupon was not used.", "التوصيل مجاني لهذا الطلب أصلاً، لذلك لم يُستخدم الكود.");
+
+    return t("This coupon could not be applied.", "تعذر تطبيق هذا الكود.");
+  }
+
+  const couponError = couponInputError || couponProblemText();
+
+  function resetIdempotencyKeys() {
+    sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
+    sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
+  }
+
+  function applyCoupon() {
+    const code = couponInput.trim().toUpperCase().replace(/\s+/g, "");
+    if (!code) { setCouponInputError(t("Enter a coupon code.", "أدخلي كود الخصم.")); return; }
+    setCouponInputError("");
+    setCouponInput(code);
+    setRequestedCoupon(code);
+    resetIdempotencyKeys();
   }
 
   function clearCoupon() {
-    setCouponInput(""); setAppliedCoupon(null); setCouponError(""); setCouponOpen(false);
-    sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
-    sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
+    setCouponInput(""); setRequestedCoupon(null); setCouponInputError(""); setCouponOpen(false);
+    resetIdempotencyKeys();
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -276,6 +301,52 @@ export default function PaymentPage() {
       router.replace("/products"); return;
     }
 
+    if (unavailableItem) {
+      alert(t("Some items in your cart are no longer available. Please remove them from your cart to continue.", "بعض المنتجات في السلة لم تعد متوفرة. يرجى إزالتها من السلة للمتابعة."));
+      router.replace("/cart"); return;
+    }
+
+    if (quote && pricing.fresh && quote.deliveryAreaFound === false) {
+      alert(t("This delivery area is no longer available. Please choose it again.", "منطقة التوصيل لم تعد متاحة. يرجى اختيارها من جديد."));
+      router.replace("/checkout"); return;
+    }
+
+    // Never place an order with a total the customer has not seen.
+    if (!quote || !pricing.fresh) {
+      if (pricing.failed) pricing.retry();
+      alert(t("The order total is still being calculated. Please try again in a moment.", "ما زال إجمالي الطلب قيد الحساب. يرجى المحاولة بعد لحظات."));
+      return;
+    }
+
+    // The same prices the customer is looking at, held for 30 minutes.
+    const pricedOrder = {
+      priceToken: quote.priceToken,
+      expectedTotal: quote.totals.total,
+      ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
+    };
+
+    // The server answered that prices changed since this page was priced.
+    const handleTotalChanged = (result: { code?: string; total?: number } | null) => {
+      if (result?.code !== "TOTAL_CHANGED") return false;
+      resetIdempotencyKeys();
+      pricing.retry();
+      const newTotal = formatPrice(Number(result.total || 0));
+      alert(
+        t(
+          `Prices have changed since you opened this page. The new order total is ${newTotal}. Please review it before confirming.`,
+          `تغيّرت الأسعار منذ فتح هذه الصفحة. إجمالي الطلب الجديد هو ${newTotal}. يرجى مراجعته قبل التأكيد.`
+        ) +
+          (paymentMethod === "sham_cash"
+            ? t(
+                " If you have already transferred the previous amount, please contact us and we will sort it out.",
+                " إذا كنتِ قد حوّلتِ المبلغ السابق، يرجى التواصل معنا لنساعدكِ."
+              )
+            : "")
+      );
+      setLoading(false);
+      return true;
+    };
+
     setLoading(true);
 
     try {
@@ -290,13 +361,14 @@ export default function PaymentPage() {
           body: JSON.stringify({
             checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
             cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
-            ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
+            ...pricedOrder,
             idempotencyKey,
           }),
         });
 
         const result = await response.json().catch(() => null);
         if (!response.ok || !result?.success) {
+          if (handleTotalChanged(result)) return;
           if (response.status === 401) { localStorage.setItem("redirect_after_login", "/payment"); router.replace("/login"); return; }
           throw new Error(result?.error || result?.message || t("Could not place your cash-on-delivery order.", "تعذر تأكيد طلب الدفع عند الاستلام."));
         }
@@ -322,13 +394,14 @@ export default function PaymentPage() {
           checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
           cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
           shamcashTransactionId: transactionId.trim(),
-          ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
+          ...pricedOrder,
           idempotencyKey: transferIdempotencyKey,
         }),
       });
 
-      const result = await response.json();
-      if (!response.ok || !result.success) {
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result?.success) {
+        if (handleTotalChanged(result)) return;
         if (response.status === 401) { localStorage.setItem("redirect_after_login", "/payment"); router.replace("/login"); return; }
         throw new Error(result?.error || result?.message || t("The order could not be created.", "تعذر إنشاء الطلب."));
       }
@@ -454,7 +527,7 @@ export default function PaymentPage() {
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-xs font-extrabold text-[#0a583b]">2</div>
                       <div>
                         <h3 className="text-sm font-extrabold text-[#142019]">{t("Transfer the order total", "حوّل المبلغ الإجمالي")}</h3>
-                        <p className="mt-1 text-2xl font-extrabold text-[#0a583b]">{formatPrice(total)}</p>
+                        <p className="mt-1 text-2xl font-extrabold text-[#0a583b]">{totalText}</p>
                       </div>
                     </div>
                     {paymentNumber && (
@@ -509,7 +582,7 @@ export default function PaymentPage() {
                     </div>
 
                     {/* Desktop submit */}
-                    <button type="submit" disabled={loading || !transactionId.trim()} className="mt-5 hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex">
+                    <button type="submit" disabled={loading || !totalReady || !transactionId.trim()} className="mt-5 hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex">
                       {loading ? (
                         <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /><span>{t("Verifying & placing order...", "جاري التحقق وإرسال الطلب...")}</span></>
                       ) : (
@@ -536,7 +609,7 @@ export default function PaymentPage() {
                   </div>
                 </div>
                 <form id="payment-proof-form" onSubmit={handleSubmit} className="mt-5">
-                  <button type="submit" disabled={loading} className="hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex">
+                  <button type="submit" disabled={loading || !totalReady} className="hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex">
                     {loading ? (
                       <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /><span>{t("Placing order...", "جاري تأكيد الطلب...")}</span></>
                     ) : (
@@ -554,9 +627,11 @@ export default function PaymentPage() {
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-[#142019]">{t(`${displayedItemsCount} item${displayedItemsCount !== 1 ? "s" : ""}`, `${displayedItemsCount} منتج`)}</h2>
 
             <ul className="mt-5 space-y-4 border-b border-[#e7ebe8] pb-5">
-              {cart.map((item) => {
+              {pricedCart.map((item) => {
                 const variantLabel = getVariantLabel(item);
                 const displayName = getDisplayName(item);
+                const line = pricing.lineFor(item);
+                const issue = pricing.issueFor(item);
                 return (
                   <li key={getCartItemKey(item)} className="flex items-start gap-3">
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[#e7ebe8] bg-[#f7f8f6]">
@@ -574,17 +649,18 @@ export default function PaymentPage() {
                       {variantLabel && <p className="mt-0.5 truncate text-xs text-[#7a857e]">{variantLabel}</p>}
                       {(() => {
                         const lineTotal = Number(item.price || 0) * item.quantity;
-                        const lineDiscount = getLinePromotionDiscount(appliedPromotions, item);
+                        const lineDiscount = line?.promotionDiscount || 0;
                         return lineDiscount > 0 ? (
                           <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs font-bold">
                             <span className="text-[#99a29c] line-through">{formatPrice(lineTotal)}</span>
                             <span className="text-[#0a583b]">{formatPrice(Math.max(0, lineTotal - lineDiscount))}</span>
-                            <span className="text-[#0a583b]">· {linePromotionLabel(isArabic)}</span>
+                            {line?.promotion && <span className="text-[#0a583b]">· {isArabic ? line.promotion.label.ar : line.promotion.label.en}</span>}
                           </p>
                         ) : (
                           <p className="mt-1 text-xs font-bold text-[#526057]">{formatPrice(lineTotal)}</p>
                         );
                       })()}
+                      {issue && <p className="mt-1 text-xs font-bold leading-5 text-red-700">{quoteIssueText(issue, isArabic)}</p>}
                     </div>
                   </li>
                 );
@@ -605,11 +681,11 @@ export default function PaymentPage() {
                     {appliedCoupon && <button type="button" onClick={clearCoupon} className="text-xs font-extrabold text-[#647168] transition hover:text-red-600">{t("Remove", "إزالة")}</button>}
                   </div>
                   {appliedCoupon ? (
-                    <p className="mt-3 rounded-xl bg-[#edf5f0] px-3 py-2.5 text-xs font-extrabold text-[#0a583b]">{t(`${appliedCoupon.code} applied`, `تم تطبيق كود ${appliedCoupon.code}`)}</p>
+                    <p className="mt-3 rounded-xl bg-[#edf5f0] px-3 py-2.5 text-xs font-extrabold text-[#0a583b]">{appliedCoupon.type === "free_delivery" ? t(`${appliedCoupon.code} applied: free delivery`, `تم تطبيق كود ${appliedCoupon.code}: توصيل مجاني`) : t(`${appliedCoupon.code} applied`, `تم تطبيق كود ${appliedCoupon.code}`)}</p>
                   ) : (
                     <>
                       <div className="mt-3 flex gap-2" dir="ltr">
-                        <input value={couponInput} onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }} maxLength={40} className="min-w-0 flex-1 rounded-xl border border-[#cbd3cd] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]" />
+                        <input value={couponInput} onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponInputError(""); if (requestedCoupon) setRequestedCoupon(null); }} maxLength={40} className="min-w-0 flex-1 rounded-xl border border-[#cbd3cd] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]" />
                         <button type="button" disabled={checkingCoupon} onClick={applyCoupon} className="rounded-xl bg-[#0a583b] px-4 text-xs font-extrabold text-white transition hover:bg-[#073f2c] disabled:bg-[#b4bdb7]">{checkingCoupon ? "..." : t("Apply", "تطبيق")}</button>
                       </div>
                       {couponError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{couponError}</p>}
@@ -619,19 +695,28 @@ export default function PaymentPage() {
               )}
             </div>
 
+            {/* The server could not be reached for the prices. */}
+            {pricing.failed && (
+              <div role="alert" className="mt-5 flex items-center justify-between gap-3 rounded-xl bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700">
+                <span>{t("The order total could not be calculated.", "تعذر حساب إجمالي الطلب.")}</span>
+                <button type="button" onClick={pricing.retry} className="shrink-0 rounded-lg bg-white px-3 py-1.5 font-extrabold text-red-700 ring-1 ring-red-200">{t("Try again", "إعادة المحاولة")}</button>
+              </div>
+            )}
+
             {/* Totals */}
             <div className="mt-5 space-y-3.5 text-sm">
               <div className="flex items-center justify-between gap-4 text-[#526057]"><span>{t("Products", "المنتجات")}</span><span className="font-bold text-[#142019]">{formatPrice(productsTotal)}</span></div>
-              {promotionWins && freePromotions.map((promotion) => <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">+{promotion.affectedQuantity} {t("free", "مجاناً")}</span></div>)}
-              {promotionWins ? paidPromotions.map((promotion) => <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">−{formatPrice(promotion.discountAmount)}</span></div>) : selectedDiscount > 0 && <div className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{t(`Discount (${appliedCoupon?.code})`, `خصم (${appliedCoupon?.code})`)}</span><span className="font-bold">−{formatPrice(selectedDiscount)}</span></div>}
+              {freePromotions.map((promotion) => <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">+{promotion.affectedQuantity} {t("free", "مجاناً")}</span></div>)}
+              {paidPromotions.map((promotion) => <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">−{formatPrice(promotion.discountAmount)}</span></div>)}
+              {appliedCoupon && couponDiscount > 0 && <div className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{t(`Coupon (${appliedCoupon.code})`, `كود الخصم (${appliedCoupon.code})`)}</span><span className="font-bold">−{formatPrice(couponDiscount)}</span></div>}
               <div className="flex items-center justify-between gap-4 text-[#526057]"><span>{t("Delivery", "التوصيل")}</span><span className="font-bold text-[#142019]">{deliveryFee > 0 ? formatPrice(deliveryFee) : t("Free", "مجاني")}</span></div>
-              {paymentMethod === "cod" && <div className="flex items-center justify-between gap-4 text-[#526057]"><span className="text-[#0a583b]">{t("Cash on delivery fee", "رسوم الدفع عند الاستلام")}</span><span className="font-bold text-[#0a583b]">{formatPrice(COD_FEE)}</span></div>}
+              {paymentMethod === "cod" && <div className="flex items-center justify-between gap-4 text-[#526057]"><span className="text-[#0a583b]">{t("Cash on delivery fee", "رسوم الدفع عند الاستلام")}</span><span className="font-bold text-[#0a583b]">{formatPrice(codFee)}</span></div>}
             </div>
 
             <div className="my-5 h-px bg-[#dfe4e0]" />
             <div className="flex items-end justify-between gap-4">
               <span className="font-extrabold text-[#142019]">{t("Total", "الإجمالي")}</span>
-              <span className="text-xl font-extrabold text-[#0a583b]">{formatPrice(total)}</span>
+              <span className="text-xl font-extrabold text-[#0a583b]">{totalText}</span>
             </div>
 
             {deliveryLocation && (
@@ -658,12 +743,12 @@ export default function PaymentPage() {
         <div className="mx-auto flex max-w-3xl items-center gap-4">
           <div className="min-w-0 shrink-0">
             <p className="text-[10px] font-bold text-[#7a857e]">{t("Total", "الإجمالي")}</p>
-            <p className="mt-0.5 whitespace-nowrap text-sm font-extrabold text-[#142019]">{formatPrice(total)}</p>
+            <p className="mt-0.5 whitespace-nowrap text-sm font-extrabold text-[#142019]">{totalText}</p>
           </div>
           <button
             type="submit"
             form="payment-proof-form"
-            disabled={loading || (paymentMethod === "sham_cash" && !transactionId.trim())}
+            disabled={loading || !totalReady || (paymentMethod === "sham_cash" && !transactionId.trim())}
             className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-4 text-sm font-extrabold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#b4bdb7]"
           >
             {loading ? (

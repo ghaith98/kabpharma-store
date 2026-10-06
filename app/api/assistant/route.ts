@@ -3,6 +3,15 @@ import { NextResponse } from "next/server";
 import { COD_FEE_SYP } from "@/lib/commerce-config";
 import { hasTrustedOrigin } from "@/lib/http";
 import { hasMainSize } from "@/lib/product-options";
+import { applyFlashSales } from "@/lib/pricing/flash";
+import {
+  isPromotionLive,
+  promotionCovers,
+  promotionCoversProduct,
+  promotionLabel,
+  type PromotionRule,
+} from "@/lib/pricing/rules";
+import { loadStorefrontPromotions } from "@/lib/pricing/storefront";
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -297,24 +306,12 @@ type CatalogProduct = {
   searchText: string;
 };
 
-function offerLabel(type: unknown) {
-  if (type === "buy_2_get_1") {
-    return "Buy 2, get 1 free";
-  }
-
-  if (type === "buy_1_second_50") {
-    return "Buy 1, get the 2nd at 50% off";
-  }
-
-  return "";
-}
-
 function buildCatalogProduct(
   product: Row,
   language: Language,
   brandName: string,
   needs: string[],
-  offers: Row[]
+  offers: PromotionRule[]
 ): CatalogProduct {
   const salePercent = Number(product.sale_percent || 0);
 
@@ -352,24 +349,54 @@ function buildCatalogProduct(
         : { size: choice.size, price: now };
     });
 
-  const offer = offers
-    .map((promotion) => {
-      const label = offerLabel(promotion.type);
-      if (!label) return "";
+  // Offers are described with the store's own wording (the same labels
+  // the customer sees on the site), never invented by the model.
+  const target = {
+    productId: Number(product.id),
+    categoryId:
+      product.category_id == null ? null : Number(product.category_id),
+    brandId: product.brand_id == null ? null : Number(product.brand_id),
+  };
 
-      if (promotion.variant_id == null) return label;
+  const offerTexts = offers
+    .filter(
+      (rule) =>
+        (rule.kind === "buy_x_get_y" ||
+          rule.kind === "quantity_discount") &&
+        promotionCoversProduct(rule, target)
+    )
+    .map((rule) => {
+      const label = promotionLabel(rule, "en");
 
-      const variant = variants.find(
-        (candidate) =>
-          candidate.id === Number(promotion.variant_id)
-      );
+      // Only some sizes: say which.
+      if (rule.scope === "product" && !rule.allSizes) {
+        const covered = choices
+          .filter((choice) =>
+            promotionCovers(rule, { ...target, variantId: choice.id })
+          )
+          .map((choice) => choice.size)
+          .filter(Boolean);
 
-      return variant?.size
-        ? `${label} (on ${variant.size})`
-        : label;
-    })
-    .filter(Boolean)
-    .join("; ");
+        return covered.length
+          ? `${label} (on ${covered.join(", ")})`
+          : label;
+      }
+
+      return label;
+    });
+
+  // Items on sale do not get these offers (same rule as the checkout).
+  const offerParts = salePercent > 0 ? [] : offerTexts;
+
+  if (typeof product.flash_sale_ends_at === "string") {
+    offerParts.push(
+      `Flash sale price until ${product.flash_sale_ends_at.slice(0, 16).replace("T", " ")} UTC`
+    );
+  } else if (product.flash_sale_id) {
+    offerParts.push("Flash sale price");
+  }
+
+  const offer = offerParts.join("; ");
 
   const category = product.categories as Row | null;
   const nameAr = clean(
@@ -675,14 +702,12 @@ export async function POST(request: Request) {
         })
     : [];
 
-  const now = new Date().toISOString();
-
   const [
     productsResult,
     brandsResult,
     concernsResult,
     concernLinksResult,
-    promotionsResult,
+    storefrontPromotions,
     areasResult,
     thresholdResult,
   ] = await Promise.all([
@@ -704,13 +729,8 @@ export async function POST(request: Request) {
       .from("product_concerns")
       .select("product_id, concern_id"),
 
-    supabaseAdmin
-      .from("promotions")
-      .select("product_id, variant_id, type")
-      .eq("is_active", true)
-      .not("product_id", "is", null)
-      .lte("starts_at", now)
-      .or(`ends_at.is.null,ends_at.gte.${now}`),
+    // Never throws: no promotions is a valid answer for the assistant.
+    loadStorefrontPromotions(),
 
     supabaseAdmin
       .from("delivery_areas")
@@ -745,7 +765,10 @@ export async function POST(request: Request) {
   const brandRows = (brandsResult.data || []) as Row[];
   const concernRows = (concernsResult.data || []) as Row[];
   const concernLinks = (concernLinksResult.data || []) as Row[];
-  const promotionRows = (promotionsResult.data || []) as Row[];
+  const nowMs = Date.now();
+  const livePromotions = storefrontPromotions.filter((rule) =>
+    isPromotionLive(rule, nowMs)
+  );
   const areaRows = (areasResult.data || []) as Row[];
 
   const brandNameById = new Map(
@@ -774,24 +797,18 @@ export async function POST(request: Request) {
     needsByProductId.set(productId, existing);
   }
 
-  const offersByProductId = new Map<number, Row[]>();
-
-  for (const promotion of promotionRows) {
-    const productId = Number(promotion.product_id);
-    const existing = offersByProductId.get(productId) || [];
-    existing.push(promotion);
-    offersByProductId.set(productId, existing);
-  }
-
-  const catalog = (
-    (productsResult.data || []) as unknown as Row[]
+  // Live flash sales are written into the sale price, as on the site.
+  const catalog = applyFlashSales(
+    (productsResult.data || []) as unknown as Row[],
+    livePromotions,
+    nowMs
   ).map((product) =>
     buildCatalogProduct(
       product,
       responseLanguage,
       brandNameById.get(Number(product.brand_id)) || "",
       needsByProductId.get(Number(product.id)) || [],
-      offersByProductId.get(Number(product.id)) || []
+      livePromotions
     )
   );
 
@@ -827,9 +844,36 @@ export async function POST(request: Request) {
     )
   );
 
-  const freeShippingThreshold = Number(
+  // A free-delivery promotion that is running now can lower (or remove)
+  // the amount needed for free delivery.
+  const freeDeliveryOffers = livePromotions.filter(
+    (rule) => rule.kind === "free_delivery"
+  );
+  const freeDeliveryOfferFrom = freeDeliveryOffers.length
+    ? Math.min(
+        ...freeDeliveryOffers.map((rule) => rule.minimumOrderAmount)
+      )
+    : null;
+
+  const storeFreeShippingThreshold = Number(
     thresholdResult.data?.value || 0
   );
+
+  const freeDeliveryFrom =
+    freeDeliveryOfferFrom == null
+      ? storeFreeShippingThreshold > 0
+        ? storeFreeShippingThreshold
+        : null
+      : storeFreeShippingThreshold > 0
+        ? Math.min(freeDeliveryOfferFrom, storeFreeShippingThreshold)
+        : freeDeliveryOfferFrom;
+
+  const freeDeliveryText =
+    freeDeliveryFrom == null
+      ? ""
+      : freeDeliveryFrom <= 0
+        ? "Right now delivery is free on every order (limited-time offer)"
+        : `Delivery is free for orders of ${freeDeliveryFrom} SYP or more`;
 
   const deliveryLines = areaRows
     .map((area) => {
@@ -861,9 +905,7 @@ export async function POST(request: Request) {
 - Payment methods: (1) Sham Cash transfer: the customer transfers the order total, enters the Sham Cash transaction number on the payment page, and the order is confirmed automatically. (2) Cash on delivery: pay when the order arrives, with an extra fee of ${COD_FEE_SYP} SYP.
 - Coupon codes are entered on the payment page.
 - Delivery fee depends on the delivery area${
-    freeShippingThreshold > 0
-      ? `. Delivery is free for orders of ${freeShippingThreshold} SYP or more`
-      : ""
+    freeDeliveryText ? `. ${freeDeliveryText}` : ""
   }. Fees by area:
 ${
   deliveryLines.length

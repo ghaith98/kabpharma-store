@@ -14,6 +14,7 @@ import {
 import RelatedProductsSwiper from "./RelatedProductsSwiper";
 import ReviewsSection from "./ReviewsSection";
 import { useLanguage } from "../../../context/LanguageContext";
+import { useLiveFlashSales } from "@/lib/use-live-flash-sales";
 import type {
   EditorialProduct,
 } from "../EditorialProductCard";
@@ -35,7 +36,7 @@ type ProductReviews = ComponentProps<
 
 export default function ProductExtraClient({
   product,
-  relatedProducts,
+  relatedProducts: serverRelatedProducts,
   reviews = [],
 }: {
   product: ProductExtra;
@@ -44,6 +45,9 @@ export default function ProductExtraClient({
 }) {
   const { lang } = useLanguage();
   const isArabic = lang === "ar";
+
+  // A flash-sale price goes back to normal the moment the sale ends.
+  const relatedProducts = useLiveFlashSales(serverRelatedProducts);
 
   const ingredients = isArabic
     ? product.ingredients_ar ||

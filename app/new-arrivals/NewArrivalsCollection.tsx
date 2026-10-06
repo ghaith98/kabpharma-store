@@ -26,6 +26,7 @@ import type {
 } from "../products/EditorialProductCard";
 
 import { useLanguage } from "../../context/LanguageContext";
+import { useLiveFlashSales } from "@/lib/use-live-flash-sales";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 export type DiscoveryBanner = {
@@ -287,13 +288,16 @@ type NewArrivalsCollectionProps = {
 };
 
 export default function NewArrivalsCollection({
-  products,
+  products: serverProducts,
   discoveryBanners,
   collectionType = "new-arrivals",
   hasHero = true,
 }: NewArrivalsCollectionProps) {
   const { lang } =
     useLanguage();
+
+  // A flash-sale price goes back to normal the moment the sale ends.
+  const products = useLiveFlashSales(serverProducts);
 
   const isArabic =
     lang === "ar";

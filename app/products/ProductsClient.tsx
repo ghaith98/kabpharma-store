@@ -37,7 +37,8 @@ import {
 import type {
   EditorialProduct,
 } from "./EditorialProductCard";
-import { getPromotions } from "./[id]/ProductPromotionNotice";
+import { getPromotions, productHasOffer } from "./[id]/ProductPromotionNotice";
+import { useLiveFlashSales } from "@/lib/use-live-flash-sales";
 
 const PRODUCTS_PAGE_SIZE = 24;
 
@@ -121,7 +122,7 @@ function normalizeSearchText(value: unknown) {
 }
 
 export default function ProductsClient({
-  products,
+  products: serverProducts,
   showSearch = false,
   showCategories = true,
   showHeader = true,
@@ -136,6 +137,9 @@ export default function ProductsClient({
 }: ProductsClientProps) {
   const searchParams = useSearchParams();
   const { lang } = useLanguage();
+
+  // A flash-sale price goes back to normal the moment the sale ends.
+  const products = useLiveFlashSales(serverProducts);
 
   const isArabic = lang === "ar";
 
@@ -234,9 +238,18 @@ export default function ProductsClient({
 
     void getPromotions().then((items) => {
       if (cancelled) return;
+      // Offers can be for one product, a category, a brand or everything.
       setPromotedProductIds(
         new Set(
-          items.map((item) => Number(item.product_id))
+          products
+            .filter((product) =>
+              productHasOffer(items, {
+                productId: Number(product.id),
+                categoryId: product.category_id,
+                brandId: product.brand_id,
+              })
+            )
+            .map((product) => Number(product.id))
         )
       );
     });
@@ -244,7 +257,7 @@ export default function ProductsClient({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [products]);
 
   const [draftCategoryIds, setDraftCategoryIds] =
     useState<number[]>(selectedCategoryIds);

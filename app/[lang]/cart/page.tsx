@@ -33,9 +33,9 @@ import {
 
 import { useLanguage } from "@/context/LanguageContext";
 import {
-  getLinePromotionDiscount,
-  linePromotionLabel,
-} from "@/lib/promotion-lines";
+  quoteIssueText,
+  useCartQuote,
+} from "@/lib/use-cart-quote";
 
 type CartItemWithVariant =
   CartItem & {
@@ -54,16 +54,6 @@ type CartItemWithVariant =
       | string
       | null;
   };
-
-type CartPromotion = {
-  promotionId: string;
-  promotionName: string;
-  discountAmount: number;
-  affectedQuantity: number;
-  productId: number;
-  variantId: number | null;
-  type: "buy_2_get_1" | "buy_1_second_50";
-};
 
 export default function CartPage() {
   const { lang } =
@@ -84,7 +74,10 @@ export default function CartPage() {
     freeShippingThreshold,
     setFreeShippingThreshold,
   ] = useState(0);
-  const [promotions, setPromotions] = useState<CartPromotion[]>([]);
+
+  // Every price on this page comes from the server (see useCartQuote).
+  const pricing = useCartQuote(cart);
+  const quote = pricing.quote;
 
   const [
     showAccountModal,
@@ -153,22 +146,6 @@ export default function CartPage() {
       cancelled = true;
     };
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function previewPromotion() {
-      if (!cart.length) { setPromotions([]); return; }
-      const response = await fetch("/api/customer/promotions/preview", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart.map((item) => ({ productId: item.id, variantId: item.variant_id, quantity: item.quantity })) }),
-      });
-      const result = await response.json().catch(() => null);
-      if (cancelled) return;
-      setPromotions(Array.isArray(result?.promotions) ? result.promotions : []);
-    }
-    void previewPromotion();
-    return () => { cancelled = true; };
-  }, [cart]);
 
   useEffect(() => {
     if (!showAccountModal) {
@@ -294,57 +271,86 @@ export default function CartPage() {
     syncCart([]);
   }
 
-  const totalSaved =
-    cart.reduce(
-      (sum, item) => {
-        const originalPrice =
-          Number(
-            item.original_price ||
-              item.price
-          );
+  /*
+    The cart with the server's prices written in. Until the first answer
+    arrives (or if it cannot be reached) the prices saved when the items
+    were added are shown instead.
+  */
+  const pricedCart = cart.map((item) => {
+    const line = pricing.lineFor(item);
 
-        const currentPrice =
-          Number(
-            item.price || 0
-          );
+    return line
+      ? {
+          ...item,
+          price: line.unitPrice,
+          original_price: line.baseUnitPrice,
+          sale_percent: line.salePercent,
+        }
+      : item;
+  });
 
-        return (
-          sum +
-          Math.max(
-            originalPrice -
-              currentPrice,
-            0
-          ) *
-            Number(
-              item.quantity || 0
-            )
-        );
-      },
-      0
-    );
+  const estimatedTotal = pricedCart.reduce(
+    (sum, item) =>
+      sum + Number(item.price || 0) * Number(item.quantity || 0),
+    0
+  );
 
-  const total =
-    cart.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.price || 0
-        ) *
-          Number(
-            item.quantity || 0
-          ),
-      0
-    );
-  const paidPromotions = promotions.filter((promotion) => promotion.type === "buy_1_second_50");
-  const freePromotions = promotions.filter((promotion) => promotion.type === "buy_2_get_1");
-  const promotionDiscount = paidPromotions.reduce((sum, promotion) => sum + Number(promotion.discountAmount || 0), 0);
+  const estimatedSaved = pricedCart.reduce(
+    (sum, item) =>
+      sum +
+      Math.max(
+        Number(item.original_price || item.price) -
+          Number(item.price || 0),
+        0
+      ) *
+        Number(item.quantity || 0),
+    0
+  );
+
+  const totalSaved = quote
+    ? quote.totals.saleSavings
+    : estimatedSaved;
+
+  const total = quote ? quote.totals.subtotal : estimatedTotal;
+
+  const promotions = quote ? quote.promotions : [];
+  const paidPromotions = promotions.filter(
+    (promotion) => promotion.kind === "line_discount"
+  );
+  const freePromotions = promotions.filter(
+    (promotion) => promotion.kind === "free_items"
+  );
+  const promotionDiscount = quote ? quote.totals.promotionDiscount : 0;
   const payableTotal = Math.max(0, total - promotionDiscount);
 
-  function promotionDescription(promotion: CartPromotion) {
-    const item = cart.find((candidate) => Number(candidate.id) === promotion.productId && (promotion.variantId == null ? candidate.variant_id == null : Number(candidate.variant_id) === promotion.variantId));
-    const productName = item?.product_name || item?.name || (isArabic ? "هذا المنتج" : "This product");
-    if (promotion.type === "buy_2_get_1") return isArabic ? `${productName}: +${promotion.affectedQuantity} مجاناً` : `${productName}: +${promotion.affectedQuantity} free`;
-    return isArabic ? `${productName}: حسم 50% على القطعة الثانية` : `${productName}: 50% off the second item`;
+  type AppliedCartPromotion = (typeof promotions)[number];
+
+  function promotionKey(promotion: AppliedCartPromotion) {
+    return `${promotion.promotionId}-${promotion.productId}-${
+      promotion.variantId ?? "base"
+    }-${promotion.kind}`;
+  }
+
+  function promotionItem(promotion: AppliedCartPromotion) {
+    return cart.find(
+      (candidate) =>
+        pricing.lineFor(candidate)?.key ===
+        `${promotion.productId}-${promotion.variantId ?? "base"}`
+    );
+  }
+
+  function promotionLabelText(promotion: AppliedCartPromotion) {
+    return isArabic ? promotion.labelAr : promotion.labelEn;
+  }
+
+  function promotionDescription(promotion: AppliedCartPromotion) {
+    const item = promotionItem(promotion);
+    const productName =
+      item?.product_name ||
+      item?.name ||
+      (isArabic ? "هذا المنتج" : "This product");
+
+    return `${productName}: ${promotionLabelText(promotion)}`;
   }
 
   const itemsCount =
@@ -362,31 +368,51 @@ export default function CartPage() {
   );
   const displayedItemsCount = itemsCount + freeItemsCount;
 
+  // Spend this much for free delivery: the store's amount, or a lower one
+  // from a free-delivery promotion that is running now. null = no such rule.
+  const freeDeliveryTarget = quote
+    ? quote.delivery.freeFrom
+    : freeShippingThreshold > 0
+      ? freeShippingThreshold
+      : null;
+
+  const hasFreeDelivery = quote
+    ? quote.delivery.free
+    : freeDeliveryTarget != null &&
+      payableTotal >= freeDeliveryTarget;
+
   const remainingForFreeDelivery =
-    Math.max(
-      freeShippingThreshold -
-        payableTotal,
-      0
-    );
+    freeDeliveryTarget == null || hasFreeDelivery
+      ? 0
+      : Math.max(freeDeliveryTarget - payableTotal, 0);
 
   const freeDeliveryProgress =
-    freeShippingThreshold > 0
-      ? Math.min(
-          (payableTotal /
-            freeShippingThreshold) *
-            100,
-          100
-        )
-      : 0;
+    freeDeliveryTarget == null
+      ? 0
+      : hasFreeDelivery || freeDeliveryTarget <= 0
+        ? 100
+        : Math.min((payableTotal / freeDeliveryTarget) * 100, 100);
 
-  const hasFreeDelivery =
-    freeShippingThreshold > 0 &&
-    payableTotal >=
-      freeShippingThreshold;
+  // Items the store can no longer sell (removed, out of stock...).
+  const hasUnavailableItems = cart.some(
+    (item) => pricing.issueFor(item) != null
+  );
 
   function goToCheckout(
     event: React.MouseEvent<HTMLAnchorElement>
   ) {
+    if (hasUnavailableItems) {
+      event.preventDefault();
+
+      alert(
+        isArabic
+          ? "بعض المنتجات في السلة لم تعد متوفرة. يرجى إزالتها للمتابعة."
+          : "Some items in your cart are no longer available. Please remove them to continue."
+      );
+
+      return;
+    }
+
     const savedUser =
       localStorage.getItem(
         "kab_user"
@@ -530,8 +556,7 @@ export default function CartPage() {
             <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
               <div className="min-w-0">
                 {/* Free delivery */}
-                {freeShippingThreshold >
-                  0 && (
+                {freeDeliveryTarget != null && (
                   <section className="mb-5 rounded-[1.5rem] border border-[#dfe4e0] bg-white p-5 sm:p-6">
                     <div className="flex items-start gap-4">
                       <div
@@ -609,13 +634,13 @@ export default function CartPage() {
                         >
                           <span>
                             {formatPrice(
-                              total
+                              payableTotal
                             )}
                           </span>
 
                           <span>
                             {formatPrice(
-                              freeShippingThreshold
+                              freeDeliveryTarget
                             )}
                           </span>
                         </div>
@@ -659,7 +684,7 @@ export default function CartPage() {
 
                 {/* Products */}
                 <section className="overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white">
-                  {cart.map(
+                  {pricedCart.map(
                     (item) => {
                       const itemKey =
                         getCartItemKey(
@@ -705,12 +730,35 @@ export default function CartPage() {
                           item.quantity
                         );
 
-                      // "2nd at half price" offer on this line.
+                      const line = pricing.lineFor(item);
+                      const issue = pricing.issueFor(item);
+
+                      // The answer on screen can be one step behind right
+                      // after a quantity change; only trust the line's
+                      // discount when it was calculated for this quantity.
+                      const lineIsCurrent =
+                        line != null &&
+                        line.quantity ===
+                          Number(item.quantity);
+
                       const linePromotionDiscount =
-                        getLinePromotionDiscount(
-                          promotions,
-                          item
-                        );
+                        lineIsCurrent
+                          ? line.promotionDiscount
+                          : 0;
+
+                      const linePromotionText =
+                        line?.promotion
+                          ? isArabic
+                            ? line.promotion.label.ar
+                            : line.promotion.label.en
+                          : "";
+
+                      const lineHint =
+                        lineIsCurrent && line.hint
+                          ? isArabic
+                            ? line.hint.ar
+                            : line.hint.en
+                          : "";
 
                       return (
                         <article
@@ -926,9 +974,7 @@ export default function CartPage() {
                                     </div>
 
                                     <p className="mt-1 text-[11px] font-bold text-[#0a583b]">
-                                      {linePromotionLabel(
-                                        isArabic
-                                      )}
+                                      {linePromotionText}
                                     </p>
                                   </>
                                 ) : (
@@ -940,6 +986,22 @@ export default function CartPage() {
                                 )}
                               </div>
                             </div>
+
+                            {/* "Add 1 more to get..." for this product's offer */}
+                            {lineHint && !issue && (
+                              <p className="mt-3 inline-flex rounded-full bg-[#edf5f0] px-3 py-1.5 text-[11px] font-extrabold leading-5 text-[#0a583b]">
+                                {lineHint}
+                              </p>
+                            )}
+
+                            {issue && (
+                              <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-bold leading-5 text-red-700">
+                                {quoteIssueText(
+                                  issue,
+                                  isArabic
+                                )}
+                              </p>
+                            )}
                           </div>
                         </article>
                       );
@@ -948,11 +1010,11 @@ export default function CartPage() {
                   {freePromotions.length > 0 && <div className="border-t border-[#dfe9e1] bg-[#f6faf7] p-4 sm:p-6">
                     <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#0a583b]">{isArabic ? "هداياك المجانية" : "Your free items"}</p>
                     <div className="mt-3 space-y-2.5">{freePromotions.map((promotion) => {
-                      const item = cart.find((candidate) => Number(candidate.id) === promotion.productId && (promotion.variantId == null ? candidate.variant_id == null : Number(candidate.variant_id) === promotion.variantId));
+                      const item = promotionItem(promotion);
                       const name = item?.product_name || item?.name || (isArabic ? "منتج مجاني" : "Free item");
-                      return <div key={promotion.promotionId} className="flex items-center gap-3 rounded-2xl border border-[#d8eadc] bg-white px-3 py-3 sm:px-4">
+                      return <div key={promotionKey(promotion)} className="flex items-center gap-3 rounded-2xl border border-[#d8eadc] bg-white px-3 py-3 sm:px-4">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f7f8f6] p-1.5">{item?.image_url ? <Image src={item.image_url} alt={name} width={80} height={80} className="h-full w-full object-contain" /> : <Package size={18} className="text-[#a2aaa4]" />}</div>
-                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-[#142019]">{name}</p><p className="mt-0.5 text-xs font-bold text-[#0a583b]">Buy 2+1 Free</p></div>
+                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-[#142019]">{name}</p><p className="mt-0.5 text-xs font-bold text-[#0a583b]">{promotionLabelText(promotion)}</p></div>
                         <span className="shrink-0 rounded-full bg-[#e8f4eb] px-2.5 py-1 text-xs font-extrabold text-[#0a583b]">{isArabic ? `+${promotion.affectedQuantity} مجاناً` : `+${promotion.affectedQuantity} free`}</span>
                       </div>;
                     })}</div>
@@ -980,7 +1042,13 @@ export default function CartPage() {
                     : "Your order"}
                 </h2>
 
-                <div className="mt-7 space-y-4 text-sm">
+                {/* Dimmed for a moment while the server recalculates. */}
+                <div
+                  aria-busy={pricing.updating}
+                  className={`mt-7 space-y-4 text-sm transition-opacity duration-200 ${
+                    pricing.updating ? "opacity-60" : ""
+                  }`}
+                >
                   <div className="flex items-center justify-between gap-4 text-[#526057]">
                     <span>
                       {isArabic
@@ -1028,16 +1096,16 @@ export default function CartPage() {
                   )}
 
                   {paidPromotions.map((promotion) => (
-                    <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                    <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]">
                       <span>{promotionDescription(promotion)}</span>
                       <span className="font-extrabold">−{formatPrice(promotion.discountAmount)}</span>
                     </div>
                   ))}
 
                   {freePromotions.map((promotion) => (
-                    <div key={promotion.promotionId} className="flex items-center justify-between gap-4 text-[#0a583b]">
+                    <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]">
                       <span>{promotionDescription(promotion)}</span>
-                      <span className="font-extrabold">{isArabic ? "مجاناً" : "Free"}</span>
+                      <span className="font-extrabold">{isArabic ? `+${promotion.affectedQuantity} مجاناً` : `+${promotion.affectedQuantity} free`}</span>
                     </div>
                   ))}
 
@@ -1069,7 +1137,11 @@ export default function CartPage() {
                       : "Cart total"}
                   </span>
 
-                  <span className="text-xl font-extrabold text-[#0a583b]">
+                  <span
+                    className={`text-xl font-extrabold text-[#0a583b] transition-opacity duration-200 ${
+                      pricing.updating ? "opacity-60" : ""
+                    }`}
+                  >
                     {formatPrice(
                         payableTotal
                     )}
@@ -1147,7 +1219,11 @@ export default function CartPage() {
                   : "Cart total"}
               </p>
 
-              <p className="mt-0.5 whitespace-nowrap text-base font-extrabold text-[#142019]">
+              <p
+                className={`mt-0.5 whitespace-nowrap text-base font-extrabold text-[#142019] transition-opacity duration-200 ${
+                  pricing.updating ? "opacity-60" : ""
+                }`}
+              >
                 {formatPrice(
                   payableTotal
                 )}
