@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BannerLinkPicker from "../banners/BannerLinkPicker";
+import ShowButtonToggle from "../banners/ShowButtonToggle";
 
 type Brand = {
   id: number;
@@ -19,6 +20,8 @@ type Brand = {
   side_banner_image_url_mobile: string | null;
   // Where the side banner goes when clicked. Empty = this brand's products.
   side_banner_link_url?: string | null;
+  // false hides the "Discover now" button on the side banner.
+  side_banner_show_button?: boolean | null;
 };
 
 const imageFields = [
@@ -66,6 +69,7 @@ export default function AdminBrandsPage() {
       banner_image_url: editing.banner_image_url, banner_image_url_mobile: editing.banner_image_url_mobile,
       side_banner_image_url: editing.side_banner_image_url, side_banner_image_url_mobile: editing.side_banner_image_url_mobile,
       side_banner_link_url: editing.side_banner_link_url?.trim() || null,
+      side_banner_show_button: editing.side_banner_show_button !== false,
     }).eq("id", editing.id);
     setSaving(false);
     if (error) return alert(error.message);
@@ -91,6 +95,11 @@ export default function AdminBrandsPage() {
         value={editing.side_banner_link_url || ""}
         onChange={(nextLink) => setEditing({ ...editing, side_banner_link_url: nextLink })}
         fallbackLabel="this brand's products on the same page"
+      />
+      <ShowButtonToggle
+        className="mt-4"
+        checked={editing.side_banner_show_button !== false}
+        onChange={(nextValue) => setEditing({ ...editing, side_banner_show_button: nextValue })}
       />
       <div className="mt-7 flex justify-end gap-3"><button type="button" onClick={() => setEditing(null)} className="rounded-xl px-5 py-3 text-sm font-extrabold text-[#526057] hover:bg-[#f1f4f1]">Cancel</button><button type="button" disabled={saving} onClick={() => void save()} className="rounded-xl bg-[#0a583b] px-5 py-3 text-sm font-extrabold text-white disabled:opacity-60">{saving ? "Saving..." : "Save brand"}</button></div>
     </div></div>}

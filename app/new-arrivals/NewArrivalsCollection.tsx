@@ -42,6 +42,8 @@ export type DiscoveryBanner = {
   button_text: string | null;
   button_text_ar: string | null;
   button_text_en?: string | null;
+  /** false = hide the button (Admin > Banners). The tile stays clickable. */
+  show_button?: boolean | null;
   link_url: string | null;
 };
 
@@ -263,9 +265,11 @@ export function DiscoveryTile({
             </p>
           )}
 
-          <span className="mt-5 inline-flex min-h-11 w-fit items-center justify-center border border-[#0a583b] px-5 text-xs font-extrabold text-[#0a583b] transition group-hover:bg-[#0a583b] group-hover:text-white sm:text-sm">
-            {buttonText}
-          </span>
+          {banner.show_button !== false && (
+            <span className="mt-5 inline-flex min-h-11 w-fit items-center justify-center border border-[#0a583b] px-5 text-xs font-extrabold text-[#0a583b] transition group-hover:bg-[#0a583b] group-hover:text-white sm:text-sm">
+              {buttonText}
+            </span>
+          )}
         </div>
       </Link>
     </article>

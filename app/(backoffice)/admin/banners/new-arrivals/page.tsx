@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 import BannerLinkPicker from "../BannerLinkPicker";
+import ShowButtonToggle from "../ShowButtonToggle";
 
 type BannerPlacement =
   | "best_sellers"
@@ -46,6 +47,7 @@ type BannerRecord = {
 
   button_text?: string | null;
   button_text_ar?: string | null;
+  show_button?: boolean | null;
 
   link_url?: string | null;
 
@@ -61,6 +63,9 @@ type BannerDraft = {
 
   buttonTextAr: string;
   buttonTextEn: string;
+
+  // Side banners only: false hides the button, the banner stays clickable.
+  showButton: boolean;
 
   linkUrl: string;
   isActive: boolean;
@@ -151,6 +156,7 @@ const BANNER_CONFIGS: BannerConfig[] = [
         "/best-sellers#best-sellers-products",
 
       isActive: true,
+      showButton: true,
     },
   },
 
@@ -196,6 +202,7 @@ const BANNER_CONFIGS: BannerConfig[] = [
         "/new-arrivals#new-arrivals-products",
 
       isActive: true,
+      showButton: true,
     },
   },
 
@@ -241,6 +248,7 @@ const BANNER_CONFIGS: BannerConfig[] = [
         "/products",
 
       isActive: true,
+      showButton: true,
     },
   },
 
@@ -286,6 +294,7 @@ const BANNER_CONFIGS: BannerConfig[] = [
         "/new-arrivals#new-arrivals-products",
 
       isActive: true,
+      showButton: true,
     },
   },
 
@@ -331,6 +340,7 @@ const BANNER_CONFIGS: BannerConfig[] = [
         "/best-sellers#best-sellers-products",
 
       isActive: true,
+      showButton: true,
     },
   },
 ];
@@ -535,6 +545,9 @@ function getDraftFromBanner(
       banner.button_text ||
       config.defaults
         .buttonTextEn,
+
+    showButton:
+      banner.show_button !== false,
 
     linkUrl,
 
@@ -840,9 +853,11 @@ function DiscoverPreview({
                   {description}
                 </p>
 
-                <span className="mt-4 inline-flex rounded-full border border-[#0a583b] px-4 py-2 text-xs font-extrabold text-[#0a583b]">
-                  {buttonText}
-                </span>
+                {draft.showButton && (
+                  <span className="mt-4 inline-flex rounded-full border border-[#0a583b] px-4 py-2 text-xs font-extrabold text-[#0a583b]">
+                    {buttonText}
+                  </span>
+                )}
               </div>
             </article>
           </div>
@@ -900,9 +915,11 @@ function DiscoverPreview({
                   {description}
                 </p>
 
-                <span className="mt-4 inline-flex rounded-full border border-[#0a583b] px-4 py-2 text-xs font-extrabold text-[#0a583b]">
-                  {buttonText}
-                </span>
+                {draft.showButton && (
+                  <span className="mt-4 inline-flex rounded-full border border-[#0a583b] px-4 py-2 text-xs font-extrabold text-[#0a583b]">
+                    {buttonText}
+                  </span>
+                )}
               </div>
             </article>
           </div>
@@ -948,9 +965,11 @@ function DiscoverPreview({
               {description}
             </p>
 
-            <span className="mt-4 inline-flex rounded-full border border-[#0a583b] px-5 py-2.5 text-xs font-extrabold text-[#0a583b]">
-              {buttonText}
-            </span>
+            {draft.showButton && (
+              <span className="mt-4 inline-flex rounded-full border border-[#0a583b] px-5 py-2.5 text-xs font-extrabold text-[#0a583b]">
+                {buttonText}
+              </span>
+            )}
           </div>
         </article>
       </div>
@@ -1669,6 +1688,9 @@ export default function AdminNewArrivalsBannersPage() {
         button_text_ar:
           draft.buttonTextAr.trim(),
 
+        show_button:
+          draft.showButton,
+
         link_url:
           draft.linkUrl.trim() ||
           config.defaults.linkUrl,
@@ -2348,6 +2370,18 @@ export default function AdminNewArrivalsBannersPage() {
 
                     {/* Only the side banners have a button. The top hero
                         banners don't, so they have no link to choose. */}
+                    {placement.includes("discover") && (
+                      <ShowButtonToggle
+                        className="mt-4"
+                        checked={draft.showButton}
+                        onChange={(nextValue) =>
+                          updateDraft(placement, {
+                            showButton: nextValue,
+                          })
+                        }
+                      />
+                    )}
+
                     {placement.includes("discover") && (
                       <BannerLinkPicker
                         className="mt-4"

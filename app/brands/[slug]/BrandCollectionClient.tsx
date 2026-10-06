@@ -14,6 +14,7 @@ type Brand = {
   banner_image_url?: string | null; banner_image_url_mobile?: string | null;
   side_banner_image_url?: string | null; side_banner_image_url_mobile?: string | null;
   side_banner_link_url?: string | null;
+  side_banner_show_button?: boolean | null;
 };
 
 export default function BrandCollectionClient({ brand, brandSlug, products, bestSellerIds = [] }: { brand: Brand; brandSlug: string; products: EditorialProduct[]; bestSellerIds?: number[] }) {
@@ -39,6 +40,8 @@ export default function BrandCollectionClient({ brand, brandSlug, products, best
         button_text: null,
         button_text_ar: null,
         button_text_en: null,
+        // Admin > Brands can hide the button; the banner stays clickable.
+        show_button: brand.side_banner_show_button !== false,
         // Chosen in Admin > Brands. Empty = scroll to this brand's products.
         link_url: brand.side_banner_link_url?.trim() || "#brand-products",
       }

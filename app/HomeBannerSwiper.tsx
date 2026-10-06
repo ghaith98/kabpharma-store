@@ -82,6 +82,11 @@ export type HomeBanner = {
     | string
     | null;
 
+  /** false = hide the button (Admin > Banners). The picture stays clickable. */
+  show_button?:
+    | boolean
+    | null;
+
   link_url?:
     | string
     | null;
@@ -368,6 +373,10 @@ export default function HomeBannerSwiper({
                 slide.button_text ||
                 "Discover product";
 
+          // Hidden from Admin > Banners. The picture still opens the link.
+          const showButton =
+            slide.show_button !== false;
+
           const mobileImage =
             slide.image_url_mobile ||
             slide.image_url;
@@ -456,15 +465,22 @@ export default function HomeBannerSwiper({
 
                   <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-white/25 via-transparent to-transparent md:block" />
 
-                  {/* The whole picture goes to the banner's link. Hidden from
-                      keyboard/screen readers: the button below is the real link. */}
+                  {/* The whole picture goes to the banner's link. While the
+                      button is shown it is the real link, so this one is
+                      hidden from keyboard/screen readers. With the button
+                      hidden, this becomes the real link. */}
                   <Link
                     href={
                       slide.link_url ||
                       "/products"
                     }
-                    aria-hidden="true"
-                    tabIndex={-1}
+                    aria-hidden={showButton ? "true" : undefined}
+                    aria-label={
+                      showButton
+                        ? undefined
+                        : title || buttonText
+                    }
+                    tabIndex={showButton ? -1 : undefined}
                     draggable={false}
                     className="absolute inset-0 z-[1]"
                   />
@@ -479,7 +495,11 @@ export default function HomeBannerSwiper({
                         ? "rtl"
                         : "ltr"
                     }
-                    className={`pointer-events-auto flex min-h-[220px] w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
+                    className={`pointer-events-auto flex w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
+                      showButton
+                        ? "min-h-[220px]"
+                        : "min-h-[140px]"
+                    } ${
                       isArabic
                         ? "text-right"
                         : "text-left"
@@ -501,29 +521,31 @@ export default function HomeBannerSwiper({
                       </p>
                     )}
 
-                    <Link
-                      href={
-                        slide.link_url ||
-                        "/products"
-                      }
-                      className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-full border border-[#292929] bg-white px-6 py-2.5 text-sm font-extrabold text-[#242124] shadow-none transition duration-300 hover:bg-[#f6f6f3] sm:w-auto md:mt-6 md:min-h-12 md:border-0 md:bg-[#0a583b] md:py-3 md:text-white md:shadow-sm md:hover:-translate-y-0.5 md:hover:bg-[#073f2c] md:hover:shadow-lg"
-                    >
-                      <span>
-                        {buttonText}
-                      </span>
+                    {showButton && (
+                      <Link
+                        href={
+                          slide.link_url ||
+                          "/products"
+                        }
+                        className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-full border border-[#292929] bg-white px-6 py-2.5 text-sm font-extrabold text-[#242124] shadow-none transition duration-300 hover:bg-[#f6f6f3] sm:w-auto md:mt-6 md:min-h-12 md:border-0 md:bg-[#0a583b] md:py-3 md:text-white md:shadow-sm md:hover:-translate-y-0.5 md:hover:bg-[#073f2c] md:hover:shadow-lg"
+                      >
+                        <span>
+                          {buttonText}
+                        </span>
 
-                      {isArabic ? (
-                        <ArrowLeft
-                          size={17}
-                          className="hidden md:block"
-                        />
-                      ) : (
-                        <ArrowRight
-                          size={17}
-                          className="hidden md:block"
-                        />
-                      )}
-                    </Link>
+                        {isArabic ? (
+                          <ArrowLeft
+                            size={17}
+                            className="hidden md:block"
+                          />
+                        ) : (
+                          <ArrowRight
+                            size={17}
+                            className="hidden md:block"
+                          />
+                        )}
+                      </Link>
+                    )}
                   </div>
                 </div>
               </article>

@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 
 import { supabase } from "@/lib/supabase";
 import BannerLinkPicker from "../BannerLinkPicker";
+import ShowButtonToggle from "../ShowButtonToggle";
 
 type CropMode =
   | "desktop"
@@ -39,6 +40,7 @@ type BannerEditDraft = {
   textEn: string;
   buttonTextAr: string;
   buttonTextEn: string;
+  showButton: boolean;
   linkUrl: string;
 };
 
@@ -67,6 +69,7 @@ type BannerRecord = {
 
   button_text?: string | null;
   button_text_ar?: string | null;
+  show_button?: boolean | null;
 
   link_url?: string | null;
 
@@ -249,6 +252,7 @@ function getBannerEditDraft(
     textEn: banner.text_en || banner.text || "",
     buttonTextAr: banner.button_text_ar || "تسوق الآن",
     buttonTextEn: banner.button_text || "Shop now",
+    showButton: banner.show_button !== false,
     linkUrl: banner.link_url || "/products",
   };
 }
@@ -565,6 +569,9 @@ export default function AdminMainBannersPage() {
   ] = useState(
     "Shop now"
   );
+
+  const [showButton, setShowButton] =
+    useState(true);
 
   const [
     linkUrl,
@@ -924,6 +931,8 @@ export default function AdminMainBannersPage() {
       "Shop now"
     );
 
+    setShowButton(true);
+
     setLinkUrl(
       "/products"
     );
@@ -1098,6 +1107,8 @@ export default function AdminMainBannersPage() {
           button_text_ar:
             buttonTextAr.trim() ||
             "تسوق الآن",
+
+          show_button: showButton,
 
           link_url:
             linkUrl.trim() ||
@@ -1317,7 +1328,10 @@ export default function AdminMainBannersPage() {
 
   function updateBannerEditDraft(
     banner: BannerRecord,
-    property: keyof BannerEditDraft,
+    property: Exclude<
+      keyof BannerEditDraft,
+      "showButton"
+    >,
     value: string
   ) {
     const bannerId = Number(banner.id);
@@ -1328,6 +1342,22 @@ export default function AdminMainBannersPage() {
         ...(current[bannerId] ||
           getBannerEditDraft(banner)),
         [property]: value,
+      },
+    }));
+  }
+
+  function setBannerShowButton(
+    banner: BannerRecord,
+    showButton: boolean
+  ) {
+    const bannerId = Number(banner.id);
+
+    setEditDrafts((current) => ({
+      ...current,
+      [bannerId]: {
+        ...(current[bannerId] ||
+          getBannerEditDraft(banner)),
+        showButton,
       },
     }));
   }
@@ -1411,6 +1441,7 @@ export default function AdminMainBannersPage() {
           button_text: draft.buttonTextEn.trim() || "Shop now",
           button_text_ar:
             draft.buttonTextAr.trim() || "تسوق الآن",
+          show_button: draft.showButton,
           link_url: draft.linkUrl.trim() || "/products",
         })
         .eq("id", bannerId)
@@ -1679,6 +1710,12 @@ export default function AdminMainBannersPage() {
               className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
             />
           </div>
+
+          <ShowButtonToggle
+            className="mt-4"
+            checked={showButton}
+            onChange={setShowButton}
+          />
 
           <BannerLinkPicker
             className="mt-4"
@@ -2200,6 +2237,17 @@ export default function AdminMainBannersPage() {
                                 className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
                               />
                             </div>
+
+                            <ShowButtonToggle
+                              className="mt-4"
+                              checked={editDraft.showButton}
+                              onChange={(nextValue) =>
+                                setBannerShowButton(
+                                  banner,
+                                  nextValue
+                                )
+                              }
+                            />
 
                             <BannerLinkPicker
                               className="mt-4"
