@@ -9,7 +9,10 @@ import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { checkShamcashPayment } from "@/lib/shamcash";
 import { orderPromotionFields, quoteOrder } from "@/lib/pricing/order-quote";
-import { getArchivedOrderSummariesForCustomer } from "@/lib/order-archive";
+import {
+  getAccountCreatedAt,
+  getArchivedOrderSummariesForCustomer,
+} from "@/lib/order-archive";
 
 export const dynamic = "force-dynamic";
 
@@ -96,7 +99,10 @@ export async function GET(request: Request) {
     ReturnType<typeof getArchivedOrderSummariesForCustomer>
   > = [];
   try {
-    archivedOrders = await getArchivedOrderSummariesForCustomer(profile.phone);
+    archivedOrders = await getArchivedOrderSummariesForCustomer(
+      profile.phone,
+      await getAccountCreatedAt(Number(profile.id))
+    );
   } catch (archiveError) {
     // The live order list remains available if the optional archive is offline.
     console.error("Archived customer orders lookup failed:", archiveError);

@@ -148,21 +148,52 @@ export async function getArchivedOrders(options?: {
   return data || [];
 }
 
+/**
+ * When this customer's account was created, or null if unknown.
+ *
+ * Archived orders are matched to a customer by phone number. If an account
+ * is deleted and the person signs up again with the same number, the new
+ * account must start empty, even if an old archived order could not be
+ * removed at that moment. So an account only ever sees archived orders
+ * that were placed after it was created.
+ */
+export async function getAccountCreatedAt(profileId: number) {
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("*")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const createdAt = (data as Record<string, unknown>).created_at;
+
+  return typeof createdAt === "string" &&
+    Number.isFinite(new Date(createdAt).getTime())
+    ? createdAt
+    : null;
+}
+
 export async function getArchivedOrderForCustomer(
   sourceOrderId: string,
-  phone: string
+  phone: string,
+  /** Only an order placed at or after this moment (account creation). */
+  since?: string | null
 ) {
   if (!isArchiveConfigured()) return null;
 
   const numericId = Number(sourceOrderId);
   if (!Number.isSafeInteger(numericId) || numericId < 1) return null;
 
-  const { data, error } = await getArchiveAdmin()
+  let query = getArchiveAdmin()
     .from("archived_orders")
     .select("order_data, items_data")
     .eq("source_order_id", numericId)
-    .eq("phone", phone)
-    .maybeSingle();
+    .eq("phone", phone);
+
+  if (since) query = query.gte("created_at", since);
+
+  const { data, error } = await query.maybeSingle();
 
   if (error || !data?.order_data || typeof data.order_data !== "object") {
     return null;
@@ -174,14 +205,21 @@ export async function getArchivedOrderForCustomer(
   };
 }
 
-export async function getArchivedOrderSummariesForCustomer(phone: string) {
+export async function getArchivedOrderSummariesForCustomer(
+  phone: string,
+  /** Only orders placed at or after this moment (account creation). */
+  since?: string | null
+) {
   if (!isArchiveConfigured()) return [];
 
-  const { data, error } = await getArchiveAdmin()
+  let query = getArchiveAdmin()
     .from("archived_orders")
     .select("source_order_id, customer_name, phone, status, created_at, order_data")
-    .eq("phone", phone)
-    .order("created_at", { ascending: false });
+    .eq("phone", phone);
+
+  if (since) query = query.gte("created_at", since);
+
+  const { data, error } = await query.order("created_at", { ascending: false });
 
   if (error) throw error;
 

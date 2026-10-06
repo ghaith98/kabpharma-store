@@ -1,6 +1,9 @@
 import { getCustomerSession } from "@/lib/customer-session";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getArchivedOrderForCustomer } from "@/lib/order-archive";
+import {
+  getAccountCreatedAt,
+  getArchivedOrderForCustomer,
+} from "@/lib/order-archive";
 import OrderDetailsLanguageClient from "@/app/orders/[id]/OrderDetailsLanguageClient";
 
 const statusMap = {
@@ -132,7 +135,11 @@ export default async function OrderPage({
     );
   }
 
-  const archivedOrder = await getArchivedOrderForCustomer(id, session.phone);
+  const archivedOrder = await getArchivedOrderForCustomer(
+    id,
+    session.phone,
+    await getAccountCreatedAt(session.profileId)
+  );
   if (!archivedOrder) {
     return <OrderDetailsLanguageClient order={null} />;
   }

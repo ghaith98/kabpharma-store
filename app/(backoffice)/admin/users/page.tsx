@@ -197,12 +197,16 @@ export default function AdminUsersPage() {
           removedOrders > 0
             ? `, with ${removedOrders} order${removedOrders === 1 ? "" : "s"}`
             : ""
-        }. They can sign up again as a new customer.`
+        }. They can sign up again as a new customer.${
+          result.archiveCleared === false
+            ? " Note: the order archive could not be reached, so old archived orders were left there. The customer will not see them."
+            : ""
+        }`
       );
 
       window.setTimeout(() => {
         setMessage("");
-      }, 6000);
+      }, result.archiveCleared === false ? 12000 : 6000);
     } catch {
       setDeleteError(
         "Could not reach the server. Nothing was deleted. Please try again."

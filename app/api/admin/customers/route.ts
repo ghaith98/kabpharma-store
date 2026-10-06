@@ -205,30 +205,6 @@ export async function DELETE(request: NextRequest) {
     }
   }
 
-  // Old rejected / cancelled orders that were moved to the archive project.
-  // Removed first: if this fails, the account is left exactly as it was.
-  let archivedOrdersDeleted = 0;
-
-  if (phone && isArchiveConfigured()) {
-    const { data: removed, error: archiveError } = await getArchiveAdmin()
-      .from("archived_orders")
-      .delete()
-      .eq("phone", phone)
-      .select("source_order_id");
-
-    if (archiveError) {
-      console.error("Archived orders could not be deleted:", archiveError);
-
-      return fail(
-        "FAILED",
-        "Could not clear this customer's archived orders. Nothing was deleted.",
-        502
-      );
-    }
-
-    archivedOrdersDeleted = (removed || []).length;
-  }
-
   const { data: result, error: deleteError } = await supabaseAdmin.rpc(
     "admin_delete_customer_account",
     { p_profile_id: profileId }
@@ -276,6 +252,39 @@ export async function DELETE(request: NextRequest) {
 
   const summary = (result || {}) as Record<string, unknown>;
 
+  /*
+    Old rejected / cancelled orders that were moved to the archive project.
+
+    Done after the account is gone, and never allowed to stop the delete:
+    the archive is a separate database that can be asleep or unreachable.
+    Leftover rows are harmless: an account only sees archived orders placed
+    after it was created (see getAccountCreatedAt), so a new account with
+    the same number still starts empty.
+  */
+  let archivedOrdersDeleted = 0;
+  let archiveCleared = true;
+
+  if (phone && isArchiveConfigured()) {
+    try {
+      const { data: removed, error: archiveError } = await getArchiveAdmin()
+        .from("archived_orders")
+        .delete()
+        .eq("phone", phone)
+        .select("source_order_id");
+
+      if (archiveError) throw archiveError;
+
+      archivedOrdersDeleted = (removed || []).length;
+    } catch (archiveError) {
+      archiveCleared = false;
+
+      console.error(
+        "Archived orders could not be deleted (account was deleted):",
+        archiveError
+      );
+    }
+  }
+
   console.info(
     "Customer account deleted by admin:",
     JSON.stringify({
@@ -292,6 +301,7 @@ export async function DELETE(request: NextRequest) {
       profileId,
       ordersDeleted: Number(summary.orders_deleted || 0),
       archivedOrdersDeleted,
+      archiveCleared,
     },
     { headers: NO_STORE }
   );
