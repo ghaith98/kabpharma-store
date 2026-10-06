@@ -1046,6 +1046,14 @@ export default function AdminNewArrivalsBannersPage() {
     );
 
   const [
+    togglingPlacement,
+    setTogglingPlacement,
+  ] =
+    useState<BannerPlacement | null>(
+      null
+    );
+
+  const [
     notices,
     setNotices,
   ] = useState<
@@ -1896,6 +1904,90 @@ export default function AdminNewArrivalsBannersPage() {
     }
   }
 
+  /*
+    One-click hide / show. Only the "displayed" flag changes: the images,
+    texts, button and link stay saved exactly as they are, so showing the
+    banner again brings it back unchanged.
+  */
+  async function toggleBannerVisibility(
+    config: BannerConfig
+  ) {
+    const placement =
+      config.placement;
+
+    const banner =
+      banners[placement];
+
+    if (!banner) {
+      return;
+    }
+
+    const nextActive =
+      banner.is_active === false;
+
+    setTogglingPlacement(
+      placement
+    );
+
+    setNotice(placement, null);
+
+    try {
+      const { error } =
+        await supabase
+          .from("home_banners")
+          .update({
+            is_active: nextActive,
+          })
+          .eq("id", banner.id)
+          .eq(
+            "placement",
+            placement
+          );
+
+      if (error) {
+        throw error;
+      }
+
+      setBanners((current) => ({
+        ...current,
+
+        [placement]: {
+          ...banner,
+          is_active: nextActive,
+        },
+      }));
+
+      // Keeps any text the admin is still editing in the form.
+      updateDraft(placement, {
+        isActive: nextActive,
+      });
+
+      setNotice(placement, {
+        type: "success",
+
+        message: nextActive
+          ? "Banner is shown again. The page can take up to a minute to update."
+          : "Banner hidden. Everything is kept, so you can show it again at any time. The page can take up to a minute to update.",
+      });
+    } catch (error: unknown) {
+      console.error(
+        "Could not change banner visibility:",
+        error
+      );
+
+      setNotice(placement, {
+        type: "error",
+
+        message:
+          error instanceof Error
+            ? error.message
+            : "Could not change the banner. Please try again.",
+      });
+    } finally {
+      setTogglingPlacement(null);
+    }
+  }
+
   async function deleteBanner(
     config: BannerConfig
   ) {
@@ -2213,17 +2305,51 @@ export default function AdminNewArrivalsBannersPage() {
                         </p>
                       </div>
 
-                      <span
-                        className={`rounded-full px-3 py-1.5 text-xs font-extrabold ${
-                          draft.isActive
-                            ? "bg-green-50 text-green-700"
-                            : "bg-red-50 text-red-700"
-                        }`}
-                      >
-                        {draft.isActive
-                          ? "Active"
-                          : "Inactive"}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span
+                          className={`rounded-full px-3 py-1.5 text-xs font-extrabold ${
+                            draft.isActive
+                              ? "bg-green-50 text-green-700"
+                              : "bg-red-50 text-red-700"
+                          }`}
+                        >
+                          {draft.isActive
+                            ? "Shown"
+                            : "Hidden"}
+                        </span>
+
+                        {/* One click, saved at once. Nothing is deleted. */}
+                        {banner && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void toggleBannerVisibility(
+                                config
+                              )
+                            }
+                            disabled={
+                              saving ||
+                              deleting ||
+                              togglingPlacement !==
+                                null
+                            }
+                            className={`rounded-xl px-4 py-2.5 text-sm font-extrabold transition disabled:opacity-60 ${
+                              banner.is_active ===
+                              false
+                                ? "bg-[#0a583b] text-white hover:bg-[#073f2c]"
+                                : "border border-[#d5dcd7] bg-white text-[#142019] hover:bg-[#f1f4f1]"
+                            }`}
+                          >
+                            {togglingPlacement ===
+                            placement
+                              ? "Saving..."
+                              : banner.is_active ===
+                                  false
+                                ? "Show banner"
+                                : "Hide banner"}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
