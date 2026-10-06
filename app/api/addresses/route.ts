@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerSession } from "@/lib/customer-session";
+import { hasTrustedOrigin } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,10 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!hasTrustedOrigin(req)) {
+    return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
+  }
+
   const session = await getCustomerSession();
 
   if (!session) {

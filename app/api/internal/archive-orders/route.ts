@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { archiveEligibleOrders } from "@/lib/order-archive";
@@ -9,10 +11,14 @@ function isAuthorized(request: Request) {
   const configuredSecret = process.env.ARCHIVE_CRON_SECRET;
   const suppliedSecret = request.headers.get("x-archive-cron-secret");
 
-  return Boolean(
-    configuredSecret &&
-      suppliedSecret &&
-      suppliedSecret === configuredSecret
+  if (!configuredSecret || !suppliedSecret) return false;
+
+  const expected = Buffer.from(configuredSecret);
+  const received = Buffer.from(suppliedSecret);
+
+  return (
+    expected.length === received.length &&
+    timingSafeEqual(expected, received)
   );
 }
 

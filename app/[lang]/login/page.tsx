@@ -75,6 +75,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
+  // "Forgot password" on the Email tab: a code is emailed, then the
+  // customer chooses a new password and is signed in.
+  const [emailMode, setEmailMode] = useState<"password" | "reset">("password");
+  const [emailResetSent, setEmailResetSent] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [emailNewPassword, setEmailNewPassword] = useState("");
 
   // ── Shared state ──────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
@@ -405,10 +411,13 @@ export default function LoginPage() {
         credentials: "include",
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
-      const result = await res.json();
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
 
-      if (!res.ok || !result.success) {
-        if (res.status === 403 && result.needsVerification) {
+      if (!res.ok || !result?.success) {
+        if (res.status === 403 && result?.needsVerification) {
           setNeedsVerification(true);
           setErrorMessage(t(
             "Your email is not verified yet. Check your inbox or resend the code.",
@@ -445,6 +454,141 @@ export default function LoginPage() {
     }
   }
 
+  function switchEmailMode(mode: "password" | "reset") {
+    setEmailMode(mode);
+    setEmailResetSent(false);
+    setEmailCode("");
+    setEmailNewPassword("");
+    setPassword("");
+    setShowPassword(false);
+    setErrorMessage("");
+    setInfoMessage("");
+    setNeedsVerification(false);
+  }
+
+  // ── Email: forgot password, step 1 (email a code) ────────────────────────────
+  async function sendEmailResetCode() {
+    setErrorMessage("");
+    setInfoMessage("");
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setErrorMessage(t("Please enter a valid email address.", "يرجى إدخال بريد إلكتروني صحيح."));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/customer/auth/email/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, purpose: "reset" }),
+      });
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
+
+      if (!res.ok || !result?.success) {
+        if (res.status === 429) {
+          const wait = Number(result?.retryAfter) || 60;
+          setErrorMessage(t(
+            `Please wait ${wait}s before requesting another code.`,
+            `يرجى الانتظار ${wait} ثانية قبل طلب رمز جديد.`
+          ));
+        } else {
+          setErrorMessage(t(
+            "Could not send the code. Please try again.",
+            "تعذر إرسال الرمز. يرجى المحاولة مرة أخرى."
+          ));
+        }
+        return;
+      }
+
+      setEmailResetSent(true);
+      // The same words whether or not the email has an account.
+      setInfoMessage(t(
+        "If this email has an account, a 6-digit code is on its way. It can take a minute; check your spam folder too.",
+        "إذا كان هذا البريد مرتبطاً بحساب، فسيصلك رمز من 6 أرقام. قد يستغرق دقيقة؛ تحقق من مجلد الرسائل غير المرغوب فيها أيضاً."
+      ));
+    } catch {
+      setErrorMessage(t("Could not connect. Please try again.", "تعذر الاتصال. يرجى المحاولة مرة أخرى."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Email: forgot password, step 2 (code + new password) ─────────────────────
+  async function resetEmailPassword() {
+    setErrorMessage("");
+
+    if (!/^\d{6}$/.test(emailCode.trim())) {
+      setErrorMessage(t("Please enter the 6-digit code from the email.", "يرجى إدخال الرمز المكوّن من 6 أرقام من البريد."));
+      return;
+    }
+
+    if (
+      emailNewPassword.length < PASSWORD_MIN_LENGTH ||
+      emailNewPassword.length > PASSWORD_MAX_LENGTH
+    ) {
+      setErrorMessage(t(
+        `Your new password must be at least ${PASSWORD_MIN_LENGTH} characters.`,
+        `كلمة المرور الجديدة يجب أن تتكون من ${PASSWORD_MIN_LENGTH} أحرف على الأقل.`
+      ));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/customer/auth/email/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          code: emailCode.trim(),
+          mode: "reset",
+          newPassword: emailNewPassword,
+        }),
+      });
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
+
+      if (!res.ok || !result?.success) {
+        if (res.status === 429) {
+          setErrorMessage(t(
+            "Too many attempts. Please wait and request a new code.",
+            "محاولات كثيرة. يرجى الانتظار ثم طلب رمز جديد."
+          ));
+        } else if (res.status >= 500 || !result) {
+          setErrorMessage(t(
+            "Could not save the new password right now. Please try again.",
+            "تعذر حفظ كلمة المرور الجديدة حالياً. يرجى المحاولة مرة أخرى."
+          ));
+        } else {
+          setErrorMessage(t(
+            "Invalid or expired code. Please check it or request a new one.",
+            "الرمز غير صحيح أو منتهي الصلاحية. يرجى التحقق منه أو طلب رمز جديد."
+          ));
+        }
+        return;
+      }
+
+      setInfoMessage("");
+      saveSignedInUser(result.user);
+    } catch {
+      setErrorMessage(t(
+        "Could not complete sign in. Please try again.",
+        "تعذر إكمال تسجيل الدخول. يرجى المحاولة مرة أخرى."
+      ));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function redirectAfterAuth() {
     const redirectAfterLogin = localStorage.getItem("redirect_after_login");
     if (redirectAfterLogin?.startsWith("/") && !redirectAfterLogin.startsWith("//")) {
@@ -465,7 +609,9 @@ export default function LoginPage() {
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await emailLogin();
+    if (emailMode === "password") await emailLogin();
+    else if (!emailResetSent) await sendEmailResetCode();
+    else await resetEmailPassword();
   }
 
   function switchTab(newTab: Tab) {
@@ -478,6 +624,10 @@ export default function LoginPage() {
     setPhoneMode("password");
     setPhonePassword("");
     setShowPhonePassword(false);
+    setEmailMode("password");
+    setEmailResetSent(false);
+    setEmailCode("");
+    setEmailNewPassword("");
   }
 
   return (
@@ -762,7 +912,11 @@ export default function LoginPage() {
             {tab === "email" && (
               <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
                 <p className="text-sm leading-7 text-[#647168]">
-                  {t("Sign in with your email and password.", "سجّل دخولك باستخدام بريدك الإلكتروني وكلمة المرور.")}
+                  {emailMode === "password"
+                    ? t("Sign in with your email and password.", "سجّل دخولك باستخدام بريدك الإلكتروني وكلمة المرور.")
+                    : emailResetSent
+                      ? t("Enter the code from the email, then choose your new password.", "أدخل الرمز الذي وصلك عبر البريد، ثم اختر كلمة المرور الجديدة.")
+                      : t("Enter your email. We will send you a code so you can choose a new password.", "أدخل بريدك الإلكتروني. سنرسل لك رمزاً لتتمكن من اختيار كلمة مرور جديدة.")}
                 </p>
 
                 <label className="block">
@@ -771,33 +925,100 @@ export default function LoginPage() {
                     type="email"
                     autoComplete="email"
                     value={email}
+                    disabled={emailMode === "reset" && emailResetSent}
                     onChange={(e) => { setEmail(e.target.value); setErrorMessage(""); setNeedsVerification(false); }}
                     placeholder={t("you@example.com", "you@example.com")}
                     className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                   />
                 </label>
 
-                <label className="block">
-                  <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Password", "كلمة المرور")}</span>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setErrorMessage(""); }}
-                      placeholder="••••••••"
-                      className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute end-4 top-1/2 -translate-y-1/2 text-[#7a857e] transition hover:text-[#142019]"
-                      aria-label={showPassword ? t("Hide password", "إخفاء كلمة المرور") : t("Show password", "إظهار كلمة المرور")}
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </label>
+                {emailMode === "password" && (
+                  <>
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Password", "كلمة المرور")}</span>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => { setPassword(e.target.value); setErrorMessage(""); }}
+                        placeholder="••••••••"
+                        className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute end-4 top-1/2 -translate-y-1/2 text-[#7a857e] transition hover:text-[#142019]"
+                        aria-label={showPassword ? t("Hide password", "إخفاء كلمة المرور") : t("Show password", "إظهار كلمة المرور")}
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </label>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => switchEmailMode("reset")}
+                        className="text-xs font-extrabold text-[#0a583b] hover:underline disabled:opacity-50"
+                      >
+                        {t("Forgot password?", "نسيت كلمة المرور؟")}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {emailMode === "reset" && emailResetSent && (
+                  <>
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Code from the email", "الرمز من البريد الإلكتروني")}</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        dir="ltr"
+                        maxLength={6}
+                        value={emailCode}
+                        onChange={(e) => { setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setErrorMessage(""); }}
+                        placeholder="••••••"
+                        className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-center text-xl font-extrabold tracking-[0.4em] text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("New password", "كلمة المرور الجديدة")}</span>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="new-password"
+                          value={emailNewPassword}
+                          maxLength={PASSWORD_MAX_LENGTH}
+                          onChange={(e) => { setEmailNewPassword(e.target.value); setErrorMessage(""); }}
+                          placeholder="••••••••"
+                          className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          className="absolute end-4 top-1/2 -translate-y-1/2 text-[#7a857e] transition hover:text-[#142019]"
+                          aria-label={showPassword ? t("Hide password", "إخفاء كلمة المرور") : t("Show password", "إظهار كلمة المرور")}
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      <span className="mt-2 block text-xs leading-5 text-[#7a857e]">
+                        {t(`At least ${PASSWORD_MIN_LENGTH} characters.`, `${PASSWORD_MIN_LENGTH} أحرف على الأقل.`)}
+                      </span>
+                    </label>
+                  </>
+                )}
+
+                {infoMessage && !errorMessage && (
+                  <p role="status" className="border-s-2 border-[#0a583b] bg-[#edf5f0] px-4 py-3 text-sm font-bold leading-6 text-[#0a583b]">
+                    {infoMessage}
+                  </p>
+                )}
 
                 {needsVerification && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -827,9 +1048,26 @@ export default function LoginPage() {
                   {loading ? (
                     <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /><span>{t("Please wait...", "يرجى الانتظار...")}</span></>
                   ) : (
-                    <><span>{t("Sign In", "تسجيل الدخول")}</span><ArrowIcon size={16} /></>
+                    <><span>{emailMode === "password"
+                      ? t("Sign In", "تسجيل الدخول")
+                      : emailResetSent
+                        ? t("Save Password & Sign In", "حفظ كلمة المرور وتسجيل الدخول")
+                        : t("Send Code", "إرسال الرمز")}</span><ArrowIcon size={16} /></>
                   )}
                 </button>
+
+                {emailMode === "reset" && (
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => switchEmailMode("password")}
+                      className="text-xs font-extrabold text-[#0a583b] hover:underline disabled:opacity-50"
+                    >
+                      {t("Back to sign in", "العودة لتسجيل الدخول")}
+                    </button>
+                  </div>
+                )}
               </form>
             )}
 

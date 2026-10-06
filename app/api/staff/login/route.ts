@@ -42,7 +42,22 @@ export async function POST(request: Request) {
       windowSeconds: 15 * 60,
     });
 
-    if (rateLimit.unavailable) {
+    // The same account from many devices: 30 tries in 15 minutes in total.
+    const accountLimit = await takeRateLimitDb({
+      key: `staff-login-account:${role}:${identifier.toLowerCase()}`,
+      limit: 30,
+      windowSeconds: 15 * 60,
+    });
+
+    if (!accountLimit.unavailable && !accountLimit.allowed) {
+      rateLimit.allowed = false;
+      rateLimit.retryAfterSeconds = Math.max(
+        rateLimit.retryAfterSeconds,
+        accountLimit.retryAfterSeconds
+      );
+    }
+
+    if (rateLimit.unavailable || accountLimit.unavailable) {
       return jsonError(
         "Sign-in is temporarily unavailable. Please retry shortly.",
         503

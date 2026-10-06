@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { COD_FEE_SYP } from "@/lib/commerce-config";
+import { getCustomerSession } from "@/lib/customer-session";
 import { hasTrustedOrigin } from "@/lib/http";
 import { hasMainSize } from "@/lib/product-options";
 import { applyFlashSales } from "@/lib/pricing/flash";
@@ -70,6 +71,7 @@ const SUPPORT_EMAIL = "kabpharma.sy@hotmail.com";
     A8  OpenAI rejected the request (model or parameters)
     A9  OpenAI answered with no text
     A10 OpenAI took too long or could not be reached
+    A11 not signed in
 */
 function fail(
   code: string,
@@ -617,13 +619,38 @@ export async function POST(request: Request) {
     return fail("A2", "KAB Assistant is not configured.", 503);
   }
 
-  const rate = await takeRateLimitDb({
-    key: `kab-ai:${getRequestIp(request)}`,
-    limit: 40,
-    windowSeconds: 60 * 60,
-  });
+  // Signed-in customers only (the chat is only shown to them). Without
+  // this, anyone could send questions straight to this address and run up
+  // the AI bill.
+  const session = await getCustomerSession().catch(() => null);
 
-  if (rate.unavailable) {
+  if (!session) {
+    return fail("A11", "Please sign in to use KAB Assistant.", 401);
+  }
+
+  // 40 messages an hour per customer, and per device.
+  const [rate, deviceRate] = await Promise.all([
+    takeRateLimitDb({
+      key: `kab-ai:profile:${session.profileId}`,
+      limit: 40,
+      windowSeconds: 60 * 60,
+    }),
+    takeRateLimitDb({
+      key: `kab-ai:${getRequestIp(request)}`,
+      limit: 40,
+      windowSeconds: 60 * 60,
+    }),
+  ]);
+
+  if (!deviceRate.unavailable && !deviceRate.allowed) {
+    rate.allowed = false;
+    rate.retryAfterSeconds = Math.max(
+      rate.retryAfterSeconds,
+      deviceRate.retryAfterSeconds
+    );
+  }
+
+  if (rate.unavailable || deviceRate.unavailable) {
     return fail(
       "A3",
       "KAB Assistant is temporarily unavailable. Please retry shortly.",

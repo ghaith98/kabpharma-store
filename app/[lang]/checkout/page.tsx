@@ -64,6 +64,46 @@ type BanCheckResult = {
   reason?: string | null;
 };
 
+/** The signed-in customer's own restriction status, from the server. */
+async function fetchBanStatus(): Promise<{
+  data: BanCheckResult | null;
+  error: {
+    message: string;
+    details?: string;
+    hint?: string;
+    code?: string;
+  } | null;
+}> {
+  try {
+    const response = await fetch("/api/customer/ban-status", {
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    const result = await response
+      .text()
+      .then((body) => JSON.parse(body))
+      .catch(() => null);
+
+    if (!response.ok || !result?.success) {
+      return {
+        data: null,
+        error: {
+          message: result?.error || "Restriction check failed",
+          code: String(response.status),
+        },
+      };
+    }
+
+    return { data: (result.result || null) as BanCheckResult | null, error: null };
+  } catch {
+    return {
+      data: null,
+      error: { message: "Restriction check failed" },
+    };
+  }
+}
+
 type Governorate = {
   id: number | string;
   governorate: string;
@@ -348,16 +388,11 @@ export default function CheckoutPage() {
       };
     }
 
+    // Asked from the server, for the signed-in customer's own number only.
     const {
       data,
       error,
-    } = await supabase.rpc(
-      "check_user_ban",
-      {
-        p_phone:
-          normalizedPhone,
-      }
-    );
+    } = await fetchBanStatus();
 
     if (error) {
       console.error(

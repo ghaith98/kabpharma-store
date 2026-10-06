@@ -388,6 +388,22 @@ export async function POST(request: Request) {
           }
         );
       }
+
+      // A WhatsApp code signs in to accounts created with a phone number.
+      // An email account's number was only typed in, never proven, so a
+      // code must not open it: its owner signs in with email and password.
+      if (existingProfile?.email) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: "EMAIL_ACCOUNT",
+            error: "This account signs in with its email",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
     }
 
     /*
@@ -399,7 +415,9 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
-            code: "ACCOUNT_EXISTS",
+            code: existingProfile?.email
+              ? "PHONE_ON_EMAIL_ACCOUNT"
+              : "ACCOUNT_EXISTS",
             error:
               "Phone number is already registered",
           },

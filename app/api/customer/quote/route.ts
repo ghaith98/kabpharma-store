@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { MAX_ITEM_QUANTITY } from "@/lib/commerce-config";
 import { getCustomerSession } from "@/lib/customer-session";
+import { getRequestIp, takeRateLimit } from "@/lib/rate-limit";
+import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { createPriceToken } from "@/lib/pricing/price-token";
 import { buildQuote, type QuoteItemInput } from "@/lib/pricing/quote";
 import type { QuoteResponse } from "@/lib/pricing/quote-response";
@@ -77,17 +79,61 @@ export async function POST(request: Request) {
     items.push({ productId, variantId, quantity });
   }
 
+  // Prices are public, but each answer costs several database reads:
+  // 90 a minute per device is far more than any real cart needs.
+  const burst = takeRateLimit({
+    key: `quote:${getRequestIp(request)}`,
+    limit: 90,
+    windowMs: 60_000,
+  });
+
+  if (!burst.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Too many requests. Please wait a moment." },
+      {
+        status: 429,
+        headers: {
+          ...NO_STORE,
+          "Retry-After": String(burst.retryAfterSeconds),
+        },
+      }
+    );
+  }
+
   try {
-    // Signed-in customers get the "one use per customer" coupon check.
-    const session = body.couponCode
-      ? await getCustomerSession().catch(() => null)
-      : null;
+    /*
+      Coupons are checked for signed-in customers only, and only so many
+      times: otherwise this address could be used to guess coupon codes
+      without an account. (Coupons are entered on the payment page, which
+      needs an account anyway.)
+    */
+    let couponCode: unknown = null;
+    let session: Awaited<ReturnType<typeof getCustomerSession>> = null;
+
+    if (typeof body.couponCode === "string" && body.couponCode.trim()) {
+      session = await getCustomerSession().catch(() => null);
+
+      if (session) {
+        const tries = await takeRateLimitDb({
+          key: `coupon-check:${session.profileId}`,
+          limit: 60,
+          windowSeconds: 900,
+        });
+
+        if (tries.allowed) couponCode = body.couponCode;
+      }
+    }
+
+    const couponSkipped =
+      couponCode == null &&
+      typeof body.couponCode === "string" &&
+      Boolean(body.couponCode.trim());
 
     const nowMs = Date.now();
 
     const quote = await buildQuote({
       items,
-      couponCode: body.couponCode,
+      couponCode,
       profileId: session?.profileId ?? null,
       governorate:
         typeof body.governorate === "string" ? body.governorate : null,
@@ -128,7 +174,9 @@ export async function POST(request: Request) {
       issues: quote.issues,
       promotions: quote.pricing.promotions,
       coupon: quote.pricing.coupon,
-      couponError: quote.couponError,
+      // A code that was not checked (not signed in, or too many tries) is
+      // reported like one that does not exist.
+      couponError: couponSkipped ? "invalid" : quote.couponError,
       delivery: quote.pricing.delivery,
       deliveryAreaFound: quote.deliveryAreaFound,
       totals: quote.pricing.totals,

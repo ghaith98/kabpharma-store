@@ -11,6 +11,9 @@ import { hasTrustedOrigin, jsonError } from "@/lib/http";
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
 
+const DUMMY_HASH =
+  "$2b$12$CwTycUXWue0Thq9StjUM0uJ8rA0VqgkP0aP5gOdFDoWQqgU3jYkOu";
+
 export async function POST(req: NextRequest) {
   if (!hasTrustedOrigin(req)) return jsonError("Invalid request origin", 403);
 
@@ -25,7 +28,7 @@ export async function POST(req: NextRequest) {
   const email = typeof b.email === "string" ? b.email.trim().toLowerCase() : "";
   const password = typeof b.password === "string" ? b.password : "";
 
-  if (!email || !password) {
+  if (!email || !password || email.length > 254 || password.length > 200) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 422 });
   }
 
@@ -63,18 +66,25 @@ export async function POST(req: NextRequest) {
     { status: 401 }
   );
 
-  if (!profile || !profile.password_hash) return invalidCredentials;
+  // ── Check password ────────────────────────────────────────────────────────────
+  // Compared even when there is no such account (against a dummy), so the
+  // answer takes the same time and does not reveal which emails exist.
+  const passwordMatch = await bcrypt.compare(
+    password,
+    profile?.password_hash || DUMMY_HASH
+  );
 
+  if (!profile || !profile.password_hash || !passwordMatch) {
+    return invalidCredentials;
+  }
+
+  // Only someone who knows the password is told the email is unverified.
   if (!profile.email_verified) {
     return NextResponse.json(
       { error: "Please verify your email before signing in.", needsVerification: true, email },
       { status: 403 }
     );
   }
-
-  // ── Check password ────────────────────────────────────────────────────────────
-  const passwordMatch = await bcrypt.compare(password, profile.password_hash);
-  if (!passwordMatch) return invalidCredentials;
 
   // ── Issue session cookie ──────────────────────────────────────────────────────
   const token = await createCustomerSessionToken({

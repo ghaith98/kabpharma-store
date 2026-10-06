@@ -285,7 +285,12 @@ export default function SignupPage() {
         .catch(() => null);
 
       if (!res.ok || !result?.success) {
-        if (res.status === 409) {
+        if (result?.code === "PHONE_ON_EMAIL_ACCOUNT") {
+          setErrorMessage(t(
+            "This number is already used by an account that signs in with email. Sign in on the Email tab, or contact us.",
+            "هذا الرقم مستخدم في حساب يسجّل الدخول عبر البريد الإلكتروني. سجّل الدخول من تبويب البريد الإلكتروني أو تواصل معنا."
+          ));
+        } else if (res.status === 409) {
           setErrorMessage(t(
             "An account with this phone number already exists.",
             "يوجد حساب مرتبط بهذا الرقم مسبقاً."
@@ -374,9 +379,12 @@ export default function SignupPage() {
           password,
         }),
       });
-      const result = await res.json();
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
 
-      if (!res.ok || !result.success) {
+      if (!res.ok || !result?.success) {
         if (res.status === 429) {
           const wait = Number(result?.retryAfter) || 60;
           setResendIn(wait);
@@ -385,12 +393,12 @@ export default function SignupPage() {
             `يرجى الانتظار ${wait} ثانية قبل طلب رمز جديد.`
           ));
         } else if (res.status === 409) {
-          setErrorMessage(result.error || t(
+          setErrorMessage(result?.error || t(
             "An account with this email already exists.",
             "يوجد حساب مرتبط بهذا البريد الإلكتروني مسبقاً."
           ));
         } else {
-          setErrorMessage(result.error || t(
+          setErrorMessage(result?.error || t(
             "Could not send verification code. Please try again.",
             "تعذر إرسال رمز التحقق. يرجى المحاولة مرة أخرى."
           ));
@@ -424,9 +432,12 @@ export default function SignupPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
-      const result = await res.json();
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
 
-      if (!res.ok || !result.success) {
+      if (!res.ok || !result?.success) {
         if (res.status === 429) {
           const wait = Number(result?.retryAfter) || 60;
           setResendIn(wait);
@@ -465,15 +476,32 @@ export default function SignupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email: email.trim().toLowerCase(), code: emailOtpCode }),
+        // The password is sent again: the server confirms it is the one
+        // this sign-up was started with.
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code: emailOtpCode, password }),
       });
-      const result = await res.json();
+      const result = await res
+        .text()
+        .then((body) => JSON.parse(body))
+        .catch(() => null);
 
-      if (!res.ok || !result.success) {
-        setErrorMessage(t(
-          "Invalid or expired verification code.",
-          "رمز التحقق غير صحيح أو منتهي الصلاحية."
-        ));
+      if (!res.ok || !result?.success) {
+        if (result?.code === "PASSWORD") {
+          setErrorMessage(t(
+            "This sign-up could not be confirmed. Please go back, enter your details again and request a new code.",
+            "تعذر تأكيد إنشاء الحساب. يرجى الرجوع وإدخال بياناتك من جديد وطلب رمز جديد."
+          ));
+        } else if (res.status === 429) {
+          setErrorMessage(t(
+            "Too many attempts. Please wait and request a new code.",
+            "محاولات كثيرة. يرجى الانتظار ثم طلب رمز جديد."
+          ));
+        } else {
+          setErrorMessage(t(
+            "Invalid or expired verification code.",
+            "رمز التحقق غير صحيح أو منتهي الصلاحية."
+          ));
+        }
         return;
       }
 

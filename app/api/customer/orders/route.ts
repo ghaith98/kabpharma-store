@@ -7,6 +7,7 @@ import {
 import { getRequestIp } from "@/lib/rate-limit";
 import { takeRateLimitDb } from "@/lib/rate-limit-db";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { checkShamcashPayment } from "@/lib/shamcash";
 import { orderPromotionFields, quoteOrder } from "@/lib/pricing/order-quote";
 import { getArchivedOrderSummariesForCustomer } from "@/lib/order-archive";
 
@@ -275,59 +276,15 @@ export async function POST(request: Request) {
   const deliveryFee = pricing.totals.deliveryFee;
   const orderTotal = pricing.totals.total;
 
-  // Verify Shamcash transaction amount matches order total
-  try {
-    const SHAMCASH_API_BASE = "https://api.shamcash-api.com/v1";
-    const url = new URL(`${SHAMCASH_API_BASE}/transactions`);
-    url.searchParams.set("account_id", process.env.SHAMCASH_ACCOUNT_ID!);
-    url.searchParams.set("transaction_ids", shamcashTransactionId);
+  // The transfer must exist, cover the order total and be recent
+  // (see lib/shamcash.ts).
+  const payment = await checkShamcashPayment(shamcashTransactionId, orderTotal);
 
-    const shamcashRes = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${process.env.SHAMCASH_API_TOKEN}`,
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    });
-
-    const shamcashPayload = await shamcashRes.json();
-
-    if (!shamcashRes.ok || shamcashPayload.status !== "success") {
-      console.error("Shamcash API error:", shamcashPayload);
-      return jsonError("Could not verify payment. Please try again.", 500);
-    }
-
-    const transactions: Array<{ transaction_id: number; amount: number; occurred_at: string }> =
-      shamcashPayload.data?.transactions || [];
-
-    const match = transactions.find((tx) => String(tx.transaction_id) === shamcashTransactionId);
-
-    if (!match) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Transaction not found. Please check the number and try again.",
-          code: "NOT_FOUND",
-        },
-        { status: 404 }
-      );
-    }
-
-    const txAmount = Number(match.amount);
-    const diff = Math.abs(txAmount - orderTotal);
-    if (diff > 100) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Payment amount does not match the order total of ${orderTotal} SYP.`,
-          code: "AMOUNT_MISMATCH",
-        },
-        { status: 409 }
-      );
-    }
-  } catch (error) {
-    console.error("Shamcash verification failed:", error);
-    return jsonError("Could not verify payment. Please try again.", 500);
+  if (!payment.ok) {
+    return NextResponse.json(
+      { success: false, error: payment.error, code: payment.code },
+      { status: payment.status, headers: { "Cache-Control": "no-store" } }
+    );
   }
 
   // Create order — payment verified
