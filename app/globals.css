@@ -274,3 +274,40 @@ img {
     transform-origin: var(--banner-desktop-x, 50%) var(--banner-desktop-y, 50%);
   }
 }
+
+/* Two equal groups make a seamless, constant-speed benefits strip. */
+.kab-membership-viewport {
+  overflow: hidden;
+  padding-block: 8px;
+}
+.kab-membership-track {
+  display: flex;
+  width: max-content;
+  animation: kab-membership-scroll 34s linear infinite;
+  will-change: transform;
+}
+.kab-membership-group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: stretch;
+  gap: 16px;
+  padding-right: 16px;
+}
+.kab-membership-track[data-direction="rtl"] {
+  animation-direction: reverse;
+}
+@keyframes kab-membership-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+/* Coarse-pointer/touch devices never acquire a sticky hover pause. */
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  .kab-membership-viewport:hover .kab-membership-track {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kab-membership-viewport { overflow-x: auto; }
+  .kab-membership-track { animation: none; transform: none; will-change: auto; }
+  .kab-membership-group[aria-hidden="true"] { display: none; }
+}
