@@ -118,7 +118,7 @@ export default function MembershipBenefits() {
         <Link href="/signup" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#142019] bg-white px-6 py-2.5 text-sm font-medium text-[#142019] transition hover:bg-[#142019] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] focus-visible:ring-offset-4 sm:max-w-[340px]">
           {isArabic ? "إنشاء حسابي" : "Create My Account"}
         </Link>
-        <Link href="/login" className="text-center text-xs leading-6 text-[#647168] underline underline-offset-2 transition hover:text-[#0a583b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] sm:text-[13px]"style={{
+        <Link href="/login" className="text-center text-xs leading-6 text-[#647168] underline underline-offset-4 transition hover:text-[#0a583b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] sm:text-[13px]"style={{
   textDecoration: "underline",
   textUnderlineOffset: "2px",
   textDecorationThickness: "1px",
