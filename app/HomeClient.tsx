@@ -5,6 +5,7 @@ import Link from "next/link";
 import ProductSwiper from "./ProductSwiper";
 import HomeBannerSwiper from "./HomeBannerSwiper";
 import CategoryShowcase from "./CategoryShowcase";
+import MembershipBenefits from "./MembershipBenefits";
 
 import type {
   HomeBanner,
@@ -123,6 +124,8 @@ type HomeClientProps = {
 
   banners: HomeBanner[];
 
+  brandsBanners?: HomeBanner[];
+
   concerns: ConcernWithProducts[];
 };
 
@@ -132,6 +135,7 @@ export default function HomeClient({
   topSellerProducts: serverTopSellerProducts,
   topSellerIds,
   banners,
+  brandsBanners = [],
   concerns,
 }: HomeClientProps) {
   const { lang } =
@@ -250,7 +254,13 @@ export default function HomeClient({
         }
       />
 
-      <div className="h-10 sm:h-16" />
+      <MembershipBenefits />
+
+      {brandsBanners.length > 0 && (
+        <section aria-label={currentLang === "ar" ? "اكتشف علاماتنا التجارية" : "Discover our other brands"}>
+          <HomeBannerSwiper banners={brandsBanners} headingLevel={2} prioritizeFirst={false} />
+        </section>
+      )}
     </main>
   );
 }
