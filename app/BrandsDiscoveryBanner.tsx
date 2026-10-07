@@ -23,7 +23,7 @@ export default function BrandsDiscoveryBanner({ banners }: { banners: HomeBanner
       aria-label={lang === "ar" ? "اكتشف علاماتنا التجارية" : "Discover our other brands"}
       className="kab-brands-discovery-banner w-full bg-white"
     >
-      <HomeBannerSwiper banners={campaigns} headingLevel={2} prioritizeFirst={false} />
+      <HomeBannerSwiper banners={campaigns} headingLevel={2} prioritizeFirst={false} whiteBackground />
     </section>
   );
 }

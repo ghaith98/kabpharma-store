@@ -206,12 +206,14 @@ type HomeBannerSwiperProps = {
   banners: HomeBanner[];
   headingLevel?: 1 | 2;
   prioritizeFirst?: boolean;
+  whiteBackground?: boolean;
 };
 
 export default function HomeBannerSwiper({
   banners,
   headingLevel = 1,
   prioritizeFirst = true,
+  whiteBackground = false,
 }: HomeBannerSwiperProps) {
   const navigationId = `kab-banner-next-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const Heading = headingLevel === 1 ? "h1" : "h2";
@@ -443,9 +445,9 @@ export default function HomeBannerSwiper({
                     ? "rtl"
                     : "ltr"
                 }
-                className="relative w-full overflow-hidden bg-white md:min-h-[560px] md:bg-[#f6f6f3] lg:min-h-[620px]"
+                className={`relative w-full overflow-hidden bg-white md:min-h-[560px] lg:min-h-[620px] ${whiteBackground ? "" : "md:bg-[#f6f6f3]"}`}
               >
-                <div className="relative aspect-square w-full overflow-hidden bg-[#f6f6f3] md:absolute md:inset-0 md:aspect-auto md:h-full md:min-h-[560px] md:max-h-none">
+                <div className={`relative aspect-square w-full overflow-hidden md:absolute md:inset-0 md:aspect-auto md:h-full md:min-h-[560px] md:max-h-none ${whiteBackground ? "bg-white" : "bg-[#f6f6f3]"}`}>
                   <picture className="absolute inset-0 block h-full w-full overflow-hidden">
                   <source
                     media="(min-width: 768px)"
@@ -472,7 +474,7 @@ export default function HomeBannerSwiper({
                   />
                   </picture>
 
-                  <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-white/25 via-transparent to-transparent md:block" />
+                  {!whiteBackground && <div className="pointer-events-none absolute inset-0 hidden bg-gradient-to-r from-white/25 via-transparent to-transparent md:block" />}
 
                   {/* The whole picture goes to the banner's link. While the
                       button is shown it is the real link, so this one is
