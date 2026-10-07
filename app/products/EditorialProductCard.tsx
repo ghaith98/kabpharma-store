@@ -303,13 +303,13 @@ export default function EditorialProductCard({
 
         <div className="absolute left-2.5 top-2.5 z-10 sm:left-3 sm:top-3">
           {isOutOfStock ? (
-            <span className="inline-flex bg-[#4b5563] px-2 py-1 text-[9px] font-semibold text-white shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]">
+            <span className="inline-flex bg-white px-2 py-1 text-[9px] font-medium text-[#526057] shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]">
               {isArabic
                 ? "غير متوفر"
                 : "Out of stock"}
             </span>
           ) : salePercent > 0 ? (
-            <span className="inline-flex bg-white px-2 py-1 text-[11px] font-medium text-red-600 shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[12px]">
+            <span className="inline-flex bg-white px-2 py-1 text-[9px] font-medium text-red-600 shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]">
               -{salePercent}%
             </span>
           ) : <ProductPromotionNotice productId={product.id} categoryId={product.category_id} brandId={product.brand_id} summary />}
@@ -505,7 +505,7 @@ export default function EditorialProductCard({
           </div>
         </div>
 
-        <div className="mt-3 md:mt-3 [&_button]:!min-h-11 [&_button]:!w-full [&_button]:!rounded-none [&_button]:!border-0 [&_button:not(:disabled)]:!bg-[#0a583b] [&_button]:!px-3 [&_button]:!py-2.5 [&_button]:!text-xs [&_button]:!font-extrabold [&_button:not(:disabled)]:!text-white [&_button]:!ring-0 [&_button:not(:disabled)]:hover:!bg-[#073f2c] sm:[&_button]:!text-sm [&_button:disabled]:!cursor-not-allowed [&_button:disabled]:!bg-[#e5e7eb] [&_button:disabled]:!text-[#4b5563]">
+        <div className="mt-3 md:mt-3 [&_button]:!min-h-11 [&_button]:!w-full [&_button]:!rounded-none [&_button]:!border-0 [&_button]:!bg-[#0a583b] [&_button]:!px-3 [&_button]:!py-2.5 [&_button]:!text-xs [&_button]:!font-extrabold [&_button]:!text-white [&_button]:!ring-0 [&_button]:hover:!bg-[#073f2c] sm:[&_button]:!text-sm disabled:[&_button]:!cursor-not-allowed disabled:[&_button]:!bg-[#e4e8e5] disabled:[&_button]:!text-[#8d9891]">
           <AddToCartButton
             product={cartProduct}
             productVariants={variants}

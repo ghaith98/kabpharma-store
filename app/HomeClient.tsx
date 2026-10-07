@@ -5,8 +5,6 @@ import Link from "next/link";
 import ProductSwiper from "./ProductSwiper";
 import HomeBannerSwiper from "./HomeBannerSwiper";
 import CategoryShowcase from "./CategoryShowcase";
-import MembershipBenefits from "./MembershipBenefits";
-import BrandsDiscoveryBanner from "./BrandsDiscoveryBanner";
 
 import type {
   HomeBanner,
@@ -125,8 +123,6 @@ type HomeClientProps = {
 
   banners: HomeBanner[];
 
-  brandsBanners?: HomeBanner[];
-
   concerns: ConcernWithProducts[];
 };
 
@@ -136,7 +132,6 @@ export default function HomeClient({
   topSellerProducts: serverTopSellerProducts,
   topSellerIds,
   banners,
-  brandsBanners = [],
   concerns,
 }: HomeClientProps) {
   const { lang } =
@@ -195,23 +190,18 @@ export default function HomeClient({
         }
       />
 
-      {bestSellerProducts.length > 0 && (
-        <ProductSection
-          title={
-            t.topSellers
-          }
-          products={
-            bestSellerProducts
-          }
-          bestSellerIds={
-            topSellerIds
-          }
-          lang={
-            currentLang
-          }
-          viewAllHref="/best-sellers"
-        />
-      )}
+      <ProductSection
+        title={
+          t.newArrivals
+        }
+        products={
+          newProducts
+        }
+        lang={
+          currentLang
+        }
+        viewAllHref="/new-arrivals"
+      />
 
       <CategoryShowcase
         concerns={
@@ -230,18 +220,23 @@ export default function HomeClient({
           </div>
         )}
 
-      <ProductSection
-        title={
-          t.newArrivals
-        }
-        products={
-          newProducts
-        }
-        lang={
-          currentLang
-        }
-        viewAllHref="/new-arrivals"
-      />
+      {bestSellerProducts.length > 0 && (
+        <ProductSection
+          title={
+            t.topSellers
+          }
+          products={
+            bestSellerProducts
+          }
+          bestSellerIds={
+            topSellerIds
+          }
+          lang={
+            currentLang
+          }
+          viewAllHref="/best-sellers"
+        />
+      )}
 
       <ProductSection
         title={
@@ -255,9 +250,7 @@ export default function HomeClient({
         }
       />
 
-      <MembershipBenefits />
-
-      <BrandsDiscoveryBanner banners={brandsBanners} />
+      <div className="h-10 sm:h-16" />
     </main>
   );
 }

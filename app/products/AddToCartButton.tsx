@@ -325,7 +325,7 @@ export default function AddToCartButton({
       <button
         type="button"
         disabled
-        className="flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-none border border-[#d1d5db] bg-[#e5e7eb] px-3 py-2.5 text-xs font-extrabold text-[#4b5563] sm:text-sm"
+        className="flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-none border border-[#dfe3df] bg-[#f1f3f1] px-3 py-2.5 text-xs font-extrabold text-[#98a099] sm:text-sm"
       >
         {lang === "ar"
           ? "غير متوفر"

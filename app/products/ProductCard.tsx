@@ -269,13 +269,13 @@ export default function ProductCard({
 
         <div className="absolute left-3 top-3 z-10">
           {isOutOfStock ? (
-            <span className="inline-flex rounded-full border border-[#4b5563] bg-[#4b5563] px-2.5 py-1.5 text-[9px] font-extrabold text-white shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
+            <span className="inline-flex rounded-full border border-[#dfe4e0] bg-white/95 px-2.5 py-1.5 text-[9px] font-extrabold text-[#526057] shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
               {isArabic
                 ? "غير متوفر"
                 : "Out of stock"}
             </span>
           ) : salePercent > 0 ? (
-            <span className="inline-flex rounded-full border border-red-100 bg-white/95 px-2.5 py-1.5 text-[11px] font-extrabold text-red-600 shadow-sm backdrop-blur sm:px-3 sm:text-[12px]">
+            <span className="inline-flex rounded-full border border-red-100 bg-white/95 px-2.5 py-1.5 text-[9px] font-extrabold text-red-600 shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
               -{salePercent}%
             </span>
           ) : <ProductPromotionNotice productId={product.id} categoryId={product.category_id} brandId={product.brand_id} summary />}
@@ -362,7 +362,7 @@ export default function ProductCard({
             <button
               type="button"
               disabled
-              className="min-h-11 w-full cursor-not-allowed rounded-full border border-[#d1d5db] bg-[#e5e7eb] px-3 text-xs font-extrabold text-[#4b5563] sm:text-sm"
+              className="min-h-11 w-full cursor-not-allowed rounded-full border border-[#dfe4e0] bg-[#f3f5f3] px-3 text-xs font-extrabold text-[#99a29c] sm:text-sm"
             >
               {isArabic
                 ? "غير متوفر"

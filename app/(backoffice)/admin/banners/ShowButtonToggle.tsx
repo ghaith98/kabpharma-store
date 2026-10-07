@@ -11,12 +11,10 @@ export default function ShowButtonToggle({
   checked,
   onChange,
   className = "",
-  label = "Show the button on this banner",
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
   className?: string;
-  label?: string;
 }) {
   return (
     <label
@@ -31,13 +29,13 @@ export default function ShowButtonToggle({
 
       <span>
         <span className="block text-sm font-extrabold text-[#142019]">
-          {label}
+          Show the button on this banner
         </span>
 
         <span className="mt-0.5 block text-xs leading-5 text-[#647168]">
           {checked
-            ? "Visible on the storefront."
-            : "Hidden. The banner itself still opens the link when clicked."}
+            ? "The button is visible."
+            : "The button is hidden. The banner itself still opens the link when clicked."}
         </span>
       </span>
     </label>
