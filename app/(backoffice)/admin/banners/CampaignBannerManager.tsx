@@ -1627,7 +1627,7 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
-            {isBrandsBanner ? "Full-width banners below the account benefits and immediately before the footer. Choose Brands as the destination. Text and button can be hidden independently; the image stays clickable." : "These banners are displayed only at the top of the homepage. Best Sellers and New Arrivals promotional banners are managed separately."}
+            {isBrandsBanner ? "Below the account benefits and before the footer. Title, description and button appear centered above the complete image. Choose Brands as the destination. Text and button can be hidden independently; the image stays clickable. This placement uses the complete image rather than the crop/zoom settings." : "These banners are displayed only at the top of the homepage. Best Sellers and New Arrivals promotional banners are managed separately."}
           </p>
         </section>
 

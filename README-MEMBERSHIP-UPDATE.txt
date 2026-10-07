@@ -24,3 +24,13 @@ Changed files for this revision
 - app/globals.css
 
 Account-link refinement: gap below signup button reduced to 8px on mobile/desktop; entire login sentence is underlined and clickable in both languages. No additional SQL.
+
+Brands-banner layout correction
+- Dedicated white section below the guest account benefits and before the footer.
+- Title, description and button are centered above the image on desktop and mobile. They no longer overlay products.
+- The selected image uses its intrinsic height. No cover crop, forced height or zoom transform is applied. Cropping already present in the image file cannot be restored by code.
+- Soft masking at the image edges blends its studio backdrop into the white page. The original bitmap is unchanged.
+- Separate desktop/mobile image uploads, content switches, clickable image and /brands default are preserved.
+- Main homepage hero banners retain their existing layout. Previous UI and account-link fixes remain included.
+- No additional SQL or dependency changes.
+Validation: TypeScript and focused lint passed. Component checks passed in English/Arabic for content above image, intrinsic sizing, responsive image sources, hidden controls and accessible image links. Live visual verification remains pending.

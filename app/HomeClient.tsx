@@ -6,6 +6,7 @@ import ProductSwiper from "./ProductSwiper";
 import HomeBannerSwiper from "./HomeBannerSwiper";
 import CategoryShowcase from "./CategoryShowcase";
 import MembershipBenefits from "./MembershipBenefits";
+import BrandsDiscoveryBanner from "./BrandsDiscoveryBanner";
 
 import type {
   HomeBanner,
@@ -256,11 +257,7 @@ export default function HomeClient({
 
       <MembershipBenefits />
 
-      {brandsBanners.length > 0 && (
-        <section aria-label={currentLang === "ar" ? "اكتشف علاماتنا التجارية" : "Discover our other brands"}>
-          <HomeBannerSwiper banners={brandsBanners} headingLevel={2} prioritizeFirst={false} />
-        </section>
-      )}
+      <BrandsDiscoveryBanner banners={brandsBanners} />
     </main>
   );
 }
