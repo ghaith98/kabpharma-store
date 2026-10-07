@@ -1,39 +1,24 @@
-KAB Pharma: Account benefits + optional brands discovery banner
+KAB Pharma: Refined account benefits
 
-This archive includes all five previous UI fixes.
+Includes all previous UI fixes and the optional brands-banner editor.
 
-1. Account benefits
-The homepage ends with a heading and introduction, four original illustrated cards, an automatic carousel, Create My Account (/signup), and Already have an account? Log in (/login). English and Arabic copy and direction are included. Pause/resume controls and reduced-motion preferences are supported. Benefits reflect existing favorites, order-status/history, saved checkout details on the same device, and account features. No new account benefits such as discounts or consultations are promised.
-
-2. Optional brands banner
-Position: Account benefits > brands discovery banner > existing footer.
-Use Admin > Banners > Brands discovery banner (/admin/banners/brands-discovery).
-Upload desktop and mobile artwork using the same image/crop controls as the top homepage banners. Default destination: /brands. New brands banners default to hidden text and hidden button; the entire image remains an accessible clickable link. Enable the two independent switches to display title/description and/or button. You can activate/deactivate the banner. No placeholder artwork has been published; the banner appears only once your artwork is uploaded and activated.
-
-SQL for the optional banner
-Run supabase/migrations/202610070001_brands_discovery_banner.sql once in your Supabase SQL Editor before saving the new banner. It adds show_text and permits the brands_discovery placement while preserving existing placement choices and banner rows. Permissions are unchanged. The script has not been executed against your database. The membership section does not require SQL.
+This revision
+- White section, tighter spacing and shorter copy to match the supplied desktop/mobile references more closely.
+- Smaller cards: 280px wide with 58px illustrations on mobile; 380px with 72px illustrations on larger screens.
+- Seamless linear movement. No pause/play control and no dwell between cards. Desktop hover pauses immediately (minimum 768px width, hover-capable fine pointer). Touch devices do not pause the strip.
+- Two equal card groups loop continuously; duplicate content is hidden from screen readers. The operating system reduced-motion preference remains supported.
+- The signup promotion appears only after /api/customer/me confirms a guest. It stays hidden while checking and for authenticated customers. Focus, page-return and account storage changes trigger a fresh check. A signed-out customer can still see the login/signup promotion; a previously registered but signed-out visitor cannot be identified as authenticated.
+- Layout order remains: existing homepage products/content > guest account benefits > optional brands discovery banner > existing footer. The brands banner stays visible independently of the membership section.
 
 Installation
-Extract this archive. Copy the project contents over your existing project, choosing Replace. Keep your existing .env.local and deployment secrets. No dependency/package changes are required.
+Extract and copy the project contents over your existing project, choosing Replace. Keep your .env.local and deployment secrets. No new SQL or dependency changes are required for this revision.
+
+Optional brands banner
+The existing setup is preserved: Admin > Banners > Brands discovery banner. Upload and activate your desktop/mobile artwork; destination defaults to /brands. Text/button switches are independent and default to hidden. Run supabase/migrations/202610070001_brands_discovery_banner.sql once if you have not already run it for the previous update. Do not repeat it solely for this refinement.
 
 Validation
-- TypeScript passed and lint passed for the changed/new component files.
-- Component tests passed for English/Arabic content, signup/login links, carousel autoplay settings, pause/resume, reduced-motion updates, hidden banner text/button with accessible brands link, lazy banner images, and section order.
-- Previous checks passed: All Products 16/32/40 manual loading; search reset; Arabic brand grid order; Bestsellers before New Arrivals.
-- Production compilation and TypeScript passed using Next's webpack compiler. Page-data generation then stopped because the supplied project does not include the Supabase environment settings.
-- A browser could not access the local preview in this environment. Live visual, database, image-upload, and end-to-end authentication tests remain unverified.
+TypeScript and focused lint passed. Component tests passed for guest/member visibility, hidden initial session state, delayed session verification, English/Arabic content, account refresh on focus/storage/page return, cleanup, and failure handling. Continuous movement and desktop-only hover rules were checked in CSS. Animation and visual appearance have not been verified in a live browser. Live Supabase validation remains untested without your environment settings.
 
-New/updated files for this feature
-- app/HomeClient.tsx
-- app/HomeBannerSwiper.tsx
-- app/[lang]/page.tsx
-- app/(backoffice)/admin/banners/main/page.tsx
-- app/(backoffice)/admin/banners/ShowButtonToggle.tsx
+Changed files for this revision
 - app/MembershipBenefits.tsx
-- app/(backoffice)/admin/banners/CampaignBannerManager.tsx
-- app/(backoffice)/admin/banners/brands-discovery/page.tsx
-- supabase/migrations/202610070001_brands_discovery_banner.sql
-- public/images/membership/favorites.svg
-- public/images/membership/orders.svg
-- public/images/membership/checkout.svg
-- public/images/membership/account.svg
+- app/globals.css
