@@ -29,22 +29,21 @@ export default function BrandsDiscoveryBanner({ banners }: { banners: HomeBanner
 
           return (
             <SwiperSlide key={banner.id}>
-              <article className="w-full bg-white">
+              <article dir="ltr" className={`grid w-full items-center bg-white ${showText || showButton ? "grid-cols-[42%_58%] md:grid-cols-[38%_62%]" : "grid-cols-1"}`}>
                 {(showText || showButton) && (
-                  <div className="mx-auto flex max-w-[760px] flex-col items-center px-5 pb-6 pt-6 text-center sm:px-8 sm:pb-8 sm:pt-8">
+                  <div dir={isArabic ? "rtl" : "ltr"} className="relative z-10 flex min-w-0 flex-col items-start px-4 py-5 text-left sm:px-8 sm:py-8 lg:pl-[max(2rem,calc((100vw-1440px)/2+2rem))] lg:pr-6">
                     {showText && <>
-                      <h2 className={`max-w-[640px] text-[28px] font-extrabold leading-tight text-[#142019] sm:text-4xl ${isArabic ? "[font-family:var(--font-arabic)]" : "tracking-[-0.025em]"}`}>{title}</h2>
-                      {description && <p className="mt-4 max-w-[620px] text-sm leading-7 text-[#647168] sm:text-base">{description}</p>}
+                      <h2 className={`max-w-[640px] text-xl font-extrabold leading-tight text-[#142019] sm:text-3xl lg:text-4xl ${isArabic ? "[font-family:var(--font-arabic)]" : "tracking-[-0.025em]"}`}>{title}</h2>
+                      {description && <p className="mt-3 max-w-[480px] text-xs leading-5 text-[#647168] sm:text-sm sm:leading-6 lg:text-base">{description}</p>}
                     </>}
-                    {showButton && <Link href={href} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-[#142019] bg-white px-7 py-2.5 text-sm font-medium text-[#142019] transition hover:bg-[#142019] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] focus-visible:ring-offset-4">{buttonText}</Link>}
+                    {showButton && <Link href={href} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full border border-[#142019] bg-white px-4 py-2 text-xs sm:px-7 sm:text-sm font-medium text-[#142019] transition hover:bg-[#142019] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] focus-visible:ring-offset-4">{buttonText}</Link>}
                   </div>
                 )}
-                <div className="relative w-full bg-white">
+                <div className="relative min-w-0 w-full bg-white">
                   <picture className="block w-full">
                     <source media="(min-width: 768px)" srcSet={desktop.srcSet} width={1600} height={620} />
                     <source media="(max-width: 767px)" srcSet={mobile.srcSet} width={800} height={800} />
-                    {/* Intrinsic height keeps the complete selected artwork visible.
-                        Edge fading blends the studio backdrop into the white page. */}
+                    {/* Intrinsic sizing keeps the selected artwork complete, without an edge glow. */}
                     <img {...mobile} alt={title} loading="lazy" fetchPriority="auto" decoding="async" className="kab-brands-discovery-image block h-auto w-full select-none" />
                   </picture>
                   <Link href={href} aria-hidden={showButton ? true : undefined} tabIndex={showButton ? -1 : undefined} aria-label={showButton ? undefined : title} className="absolute inset-0" />
