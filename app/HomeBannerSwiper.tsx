@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useId,
   useRef,
   useState,
   type CSSProperties,
@@ -83,6 +84,8 @@ export type HomeBanner = {
     | null;
 
   /** false = hide the button (Admin > Banners). The picture stays clickable. */
+  show_text?: boolean | null;
+
   show_button?:
     | boolean
     | null;
@@ -201,11 +204,17 @@ function getCropStyle(
 
 type HomeBannerSwiperProps = {
   banners: HomeBanner[];
+  headingLevel?: 1 | 2;
+  prioritizeFirst?: boolean;
 };
 
 export default function HomeBannerSwiper({
   banners,
+  headingLevel = 1,
+  prioritizeFirst = true,
 }: HomeBannerSwiperProps) {
+  const navigationId = `kab-banner-next-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const Heading = headingLevel === 1 ? "h1" : "h2";
   const swiperRef =
     useRef<SwiperInstance | null>(
       null
@@ -326,7 +335,7 @@ export default function HomeBannerSwiper({
         hasMultipleBanners
           ? {
               nextEl:
-                ".kab-banner-next",
+                `#${navigationId}`,
             }
           : false
       }
@@ -421,7 +430,7 @@ export default function HomeBannerSwiper({
           });
 
           const shouldPrioritize =
-            index === 0;
+            prioritizeFirst && index === 0;
 
           return (
             <SwiperSlide
@@ -488,7 +497,7 @@ export default function HomeBannerSwiper({
 
                 {/* pointer-events-none lets clicks on the empty area reach the
                     picture link; the text block turns them back on. */}
-                <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1440px] px-5 pb-7 pt-5 sm:px-8 sm:pb-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16">
+                <div className={`pointer-events-none relative z-10 mx-auto w-full max-w-[1440px] px-5 pb-7 pt-5 sm:px-8 sm:pb-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16 ${slide.show_text === false && !showButton ? "hidden md:flex" : "flex"}`}>
                   <div
                     dir={
                       isArabic
@@ -498,14 +507,15 @@ export default function HomeBannerSwiper({
                     className={`pointer-events-auto flex w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
                       showButton
                         ? "min-h-[220px]"
-                        : "min-h-[140px]"
+                        : slide.show_text !== false ? "min-h-[140px]" : "hidden md:block"
                     } ${
                       isArabic
                         ? "text-right"
                         : "text-left"
                     }`}
                   >
-                    <h1
+                    {slide.show_text !== false && <>
+                    <Heading
                       className={`max-w-[440px] text-[30px] font-extrabold leading-[1.18] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px] ${
                         isArabic
                           ? "tracking-normal [font-family:var(--font-arabic)]"
@@ -513,13 +523,15 @@ export default function HomeBannerSwiper({
                       }`}
                     >
                       {title}
-                    </h1>
+                    </Heading>
 
                     {description && (
                       <p className="mt-4 max-w-[430px] text-sm leading-7 text-[#526058] sm:text-base sm:leading-8">
                         {description}
                       </p>
                     )}
+
+                    </>}
 
                     {showButton && (
                       <Link
@@ -562,6 +574,7 @@ export default function HomeBannerSwiper({
               ? "عرض البانر التالي"
               : "Show next banner"
           }
+          id={navigationId}
           className="kab-banner-next absolute right-3 top-1/2 z-30 hidden h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-[#dfe5e1] bg-white text-[#142019] shadow-[0_8px_24px_rgba(20,32,25,0.12)] transition hover:border-[#cdd6d0] hover:bg-white md:flex lg:right-8"
         >
           <ChevronRight

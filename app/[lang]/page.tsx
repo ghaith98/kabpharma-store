@@ -53,7 +53,6 @@ export default async function Home() {
     supabase
       .from("home_banners")
       .select("*")
-      .eq("placement", "main")
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
 
@@ -170,7 +169,8 @@ export default async function Home() {
       featuredProducts={featuredProducts}
       topSellerProducts={topSellerProducts}
       topSellerIds={topSellerIds}
-      banners={banners}
+      banners={banners.filter((banner) => banner.placement === "main")}
+      brandsBanners={banners.filter((banner) => banner.placement === "brands_discovery")}
       concerns={concerns}
     />
   );
