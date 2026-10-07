@@ -190,18 +190,23 @@ export default function HomeClient({
         }
       />
 
-      <ProductSection
-        title={
-          t.newArrivals
-        }
-        products={
-          newProducts
-        }
-        lang={
-          currentLang
-        }
-        viewAllHref="/new-arrivals"
-      />
+      {bestSellerProducts.length > 0 && (
+        <ProductSection
+          title={
+            t.topSellers
+          }
+          products={
+            bestSellerProducts
+          }
+          bestSellerIds={
+            topSellerIds
+          }
+          lang={
+            currentLang
+          }
+          viewAllHref="/best-sellers"
+        />
+      )}
 
       <CategoryShowcase
         concerns={
@@ -220,23 +225,18 @@ export default function HomeClient({
           </div>
         )}
 
-      {bestSellerProducts.length > 0 && (
-        <ProductSection
-          title={
-            t.topSellers
-          }
-          products={
-            bestSellerProducts
-          }
-          bestSellerIds={
-            topSellerIds
-          }
-          lang={
-            currentLang
-          }
-          viewAllHref="/best-sellers"
-        />
-      )}
+      <ProductSection
+        title={
+          t.newArrivals
+        }
+        products={
+          newProducts
+        }
+        lang={
+          currentLang
+        }
+        viewAllHref="/new-arrivals"
+      />
 
       <ProductSection
         title={

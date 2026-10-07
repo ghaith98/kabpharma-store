@@ -40,7 +40,8 @@ import type {
 import { getPromotions, productHasOffer } from "./[id]/ProductPromotionNotice";
 import { useLiveFlashSales } from "@/lib/use-live-flash-sales";
 
-const PRODUCTS_PAGE_SIZE = 24;
+const PRODUCTS_PAGE_SIZE = 16;
+const COLLECTION_PAGE_SIZE = 24;
 
 type FilterBrand = {
   id: number;
@@ -140,6 +141,7 @@ export default function ProductsClient({
 
   // A flash-sale price goes back to normal the moment the sale ends.
   const products = useLiveFlashSales(serverProducts);
+  const pageSize = standaloneCollection ? COLLECTION_PAGE_SIZE : PRODUCTS_PAGE_SIZE;
 
   const isArabic = lang === "ar";
 
@@ -819,8 +821,9 @@ export default function ProductsClient({
       /*
         Incremental rendering ("load more").
         Filtering and sorting still run over the whole catalog instantly, but
-        only the first PAGE_SIZE matching cards are mounted; more are added as
-        the visitor reaches the end of the grid (or taps "Show more").
+        only the first batch of matching cards is mounted. All Products adds
+        another 16 only when "Load More" is clicked; standalone collections
+        keep their existing automatic loading.
         The page resets to the first batch whenever the filtered result
         changes. Stored with the result key so no effect/setState is needed.
       */
@@ -831,13 +834,13 @@ export default function ProductsClient({
 
       const [pageState, setPageState] = useState({
         key: resultKey,
-        count: PRODUCTS_PAGE_SIZE,
+        count: pageSize,
       });
 
       const visibleCount =
         pageState.key === resultKey
           ? pageState.count
-          : PRODUCTS_PAGE_SIZE;
+          : pageSize;
 
       const visibleProducts = filteredProducts.slice(0, visibleCount);
       const remainingCount = filteredProducts.length - visibleProducts.length;
@@ -848,9 +851,9 @@ export default function ProductsClient({
           count:
             (current.key === resultKey
               ? current.count
-              : PRODUCTS_PAGE_SIZE) + PRODUCTS_PAGE_SIZE,
+              : pageSize) + pageSize,
         }));
-      }, [resultKey]);
+      }, [resultKey, pageSize]);
 
       // Back from a product: show as many products as were open before,
       // so the page is tall enough to return to the same spot.
@@ -858,7 +861,7 @@ export default function ProductsClient({
         if (!isRestoringNavigation()) return;
 
         const savedCount = readPageNumber("kab_products_shown:");
-        if (savedCount <= PRODUCTS_PAGE_SIZE) return;
+        if (savedCount <= pageSize) return;
 
         const timer = window.setTimeout(() => {
           setPageState({ key: resultKey, count: savedCount });
@@ -876,6 +879,7 @@ export default function ProductsClient({
       const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
       useEffect(() => {
+        if (!standaloneCollection) return;
         const sentinel = loadMoreRef.current;
         if (!sentinel || remainingCount <= 0) return;
         if (typeof IntersectionObserver === "undefined") return;
@@ -891,7 +895,7 @@ export default function ProductsClient({
 
         observer.observe(sentinel);
         return () => observer.disconnect();
-      }, [remainingCount, showMore]);
+      }, [remainingCount, showMore, standaloneCollection]);
 
       return (
         <>
@@ -1153,7 +1157,7 @@ export default function ProductsClient({
             )}
           </section>
         ) : (
-        <div className={`grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 ${standaloneNewArrivalsLayout ? "lg:grid-cols-4 lg:gap-x-8" : "lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4"}`}>
+        <div dir={standaloneCollection && collectionDiscoveryBanner ? "ltr" : undefined} className={`grid grid-cols-2 items-stretch gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 ${standaloneNewArrivalsLayout ? "lg:grid-cols-4 lg:gap-x-8" : "lg:grid-cols-3 lg:gap-x-8 xl:grid-cols-4"}`}>
   {visibleProducts.map(
     (product, index) => (
       <Fragment key={product.id}>
@@ -1184,16 +1188,16 @@ export default function ProductsClient({
       {remainingCount > 0 && (
         <div
           ref={loadMoreRef}
-          className="mt-10 flex justify-center"
+          className="mt-12 mb-8 flex justify-center sm:mt-16"
         >
           <button
             type="button"
             onClick={showMore}
-            className="min-h-11 border border-[#0a583b] px-8 py-2.5 text-sm font-extrabold text-[#0a583b] transition hover:bg-[#0a583b] hover:text-white"
+            className="min-h-11 rounded-full border border-[#142019] bg-white px-7 py-2.5 text-sm font-medium text-[#142019] transition hover:bg-[#142019] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#142019] focus-visible:ring-offset-4"
           >
             {isArabic
-              ? `عرض المزيد (${remainingCount})`
-              : `Show more (${remainingCount})`}
+              ? "عرض المزيد"
+              : "Load More"}
           </button>
         </div>
       )}

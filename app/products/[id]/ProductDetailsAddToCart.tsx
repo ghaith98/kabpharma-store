@@ -247,7 +247,7 @@ export default function ProductDetailsAddToCart({
     type="button"
     onClick={handleAdd}
     disabled={disabled}
-    className="flex h-[48px] min-w-0 flex-1 items-center justify-center gap-2 rounded-none border border-[#0a583b] bg-[#0a583b] px-3 text-sm font-semibold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:border-[#dfe3df] disabled:bg-[#f4f5f4] disabled:text-[#9aa19c]"
+    className="flex h-[48px] min-w-0 flex-1 items-center justify-center gap-2 rounded-none border border-[#0a583b] bg-[#0a583b] px-3 text-sm font-semibold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:border-[#d1d5db] disabled:bg-[#e5e7eb] disabled:text-[#4b5563] disabled:hover:bg-[#e5e7eb] disabled:active:bg-[#e5e7eb]"
   >
     <ShoppingBag size={17} />
 
@@ -308,7 +308,7 @@ export default function ProductDetailsAddToCart({
           type="button"
           onClick={handleAdd}
           disabled={disabled}
-          className="flex min-h-[52px] min-w-0 items-center justify-center gap-2 rounded-none border border-[#0a583b] bg-[#0a583b] px-3 text-sm font-semibold text-white transition active:bg-[#073f2c] disabled:cursor-not-allowed disabled:border-[#dfe3df] disabled:bg-[#f4f5f4] disabled:text-[#9aa19c]"
+          className="flex min-h-[52px] min-w-0 items-center justify-center gap-2 rounded-none border border-[#0a583b] bg-[#0a583b] px-3 text-sm font-semibold text-white transition active:bg-[#073f2c] disabled:cursor-not-allowed disabled:border-[#d1d5db] disabled:bg-[#e5e7eb] disabled:text-[#4b5563] disabled:hover:bg-[#e5e7eb] disabled:active:bg-[#e5e7eb]"
         >
           <ShoppingBag size={17} />
 
