@@ -88,7 +88,7 @@ export default function MembershipBenefits() {
     <section
       aria-labelledby="membership-benefits-title"
       dir={isArabic ? "rtl" : "ltr"}
-      className="overflow-hidden bg-white pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pb-16 lg:pt-16"
+      className="overflow-hidden bg-white pb-4 pt-10 sm:pb-5 sm:pt-14 lg:pb-5 lg:pt-16"
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <h2 id="membership-benefits-title" className={`max-w-[760px] text-2xl font-extrabold leading-[1.25] text-[#142019] sm:text-3xl lg:text-[34px] ${isArabic ? "[font-family:var(--font-arabic)]" : "tracking-[-0.025em]"}`}>
@@ -99,7 +99,7 @@ export default function MembershipBenefits() {
         </p>
       </div>
 
-      <div className="kab-membership-viewport mt-7 sm:mt-8" role="region" aria-label={isArabic ? "مزايا الحساب" : "Account benefits"}>
+      <div dir="ltr" className="kab-membership-viewport mt-7 sm:mt-8" role="region" aria-label={isArabic ? "مزايا الحساب" : "Account benefits"}>
         <div className="kab-membership-track" data-direction={isArabic ? "rtl" : "ltr"} dir="ltr">
           {[0, 1].map((copy) => (
             <div className="kab-membership-group" key={copy} aria-hidden={copy === 1 ? true : undefined}>

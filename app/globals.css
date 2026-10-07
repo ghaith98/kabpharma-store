@@ -284,11 +284,14 @@ img {
   display: flex;
   width: max-content;
   animation: kab-membership-scroll 34s linear infinite;
+  animation-delay: -17s;
   will-change: transform;
 }
 .kab-membership-group {
   display: flex;
   flex-shrink: 0;
+  min-width: 100vw;
+  justify-content: space-around;
   align-items: stretch;
   gap: 16px;
   padding-right: 16px;
@@ -310,4 +313,16 @@ img {
   .kab-membership-viewport { overflow-x: auto; }
   .kab-membership-track { animation: none; transform: none; will-change: auto; }
   .kab-membership-group[aria-hidden="true"] { display: none; }
+}
+
+/* Offset only this campaign's copy; keep the main hero unchanged. */
+@media (min-width: 768px) {
+  .kab-brands-discovery-banner .pointer-events-auto {
+    transform: translateX(-32px);
+  }
+}
+@media (min-width: 1024px) {
+  .kab-brands-discovery-banner .pointer-events-auto {
+    transform: translateX(-88px);
+  }
 }
