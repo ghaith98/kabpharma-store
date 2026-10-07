@@ -114,14 +114,13 @@ export default function MembershipBenefits() {
         </div>
       </div>
 
-      <div className="mx-auto mt-7 flex max-w-[1440px] flex-col items-center gap-4 px-4 sm:mt-8 sm:gap-5 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-7 flex max-w-[1440px] flex-col items-center gap-2 px-4 sm:mt-8 sm:px-6 lg:px-8">
         <Link href="/signup" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#142019] bg-white px-6 py-2.5 text-sm font-medium text-[#142019] transition hover:bg-[#142019] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] focus-visible:ring-offset-4 sm:max-w-[340px]">
           {isArabic ? "إنشاء حسابي" : "Create My Account"}
         </Link>
-        <p className="text-center text-xs leading-6 text-[#647168] sm:text-[13px]">
-          {isArabic ? "لديك حساب بالفعل؟ " : "Already have an account? "}
-          <Link href="/login" className="underline underline-offset-4 transition hover:text-[#0a583b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b]">{isArabic ? "تسجيل الدخول" : "Log in"}</Link>
-        </p>
+        <Link href="/login" className="text-center text-xs leading-6 text-[#647168] underline underline-offset-4 transition hover:text-[#0a583b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] sm:text-[13px]">
+          {isArabic ? "لديك حساب بالفعل؟ تسجيل الدخول" : "Already have an account? Log in"}
+        </Link>
       </div>
     </section>
   );

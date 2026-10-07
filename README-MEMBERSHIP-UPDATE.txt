@@ -22,3 +22,5 @@ TypeScript and focused lint passed. Component tests passed for guest/member visi
 Changed files for this revision
 - app/MembershipBenefits.tsx
 - app/globals.css
+
+Account-link refinement: gap below signup button reduced to 8px on mobile/desktop; entire login sentence is underlined and clickable in both languages. No additional SQL.
