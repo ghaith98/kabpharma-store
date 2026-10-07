@@ -88,7 +88,7 @@ export default function MembershipBenefits() {
     <section
       aria-labelledby="membership-benefits-title"
       dir={isArabic ? "rtl" : "ltr"}
-      className="overflow-hidden bg-white pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pb-16 lg:pt-16"
+      className="overflow-hidden bg-white pb-4 pt-10 sm:pb-5 sm:pt-14 lg:pb-5 lg:pt-16"
     >
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <h2 id="membership-benefits-title" className={`max-w-[760px] text-2xl font-extrabold leading-[1.25] text-[#142019] sm:text-3xl lg:text-[34px] ${isArabic ? "[font-family:var(--font-arabic)]" : "tracking-[-0.025em]"}`}>
@@ -118,11 +118,7 @@ export default function MembershipBenefits() {
         <Link href="/signup" className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#142019] bg-white px-6 py-2.5 text-sm font-medium text-[#142019] transition hover:bg-[#142019] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] focus-visible:ring-offset-4 sm:max-w-[340px]">
           {isArabic ? "إنشاء حسابي" : "Create My Account"}
         </Link>
-        <Link href="/login" className="text-center text-xs leading-6 text-[#647168] underline underline-offset-2 transition hover:text-[#0a583b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] sm:text-[13px]"style={{
-  textDecoration: "underline",
-  textUnderlineOffset: "2px",
-  textDecorationThickness: "1px",
-}}>
+        <Link href="/login" style={{ textDecoration: "underline", textUnderlineOffset: "2px", textDecorationThickness: "1px" }} className="text-center text-xs leading-6 text-[#647168] underline underline-offset-4 transition hover:text-[#0a583b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a583b] sm:text-[13px]">
           {isArabic ? "لديك حساب بالفعل؟ تسجيل الدخول" : "Already have an account? Log in"}
         </Link>
       </div>

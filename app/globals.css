@@ -312,10 +312,4 @@ img {
   .kab-membership-group[aria-hidden="true"] { display: none; }
 }
 
-/* Blend the bottom campaign into the pure-white page without cropping it. */
-.kab-brands-discovery-image {
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 3%, #000 97%, transparent), linear-gradient(to right, transparent, #000 2%, #000 98%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 3%, #000 97%, transparent), linear-gradient(to right, transparent, #000 2%, #000 98%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-}
+
