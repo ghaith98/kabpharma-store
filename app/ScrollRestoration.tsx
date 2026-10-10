@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { createScrollSaveScheduler } from "@/lib/scroll-save-scheduler";
 import { useAppPathname } from "@/lib/use-app-pathname";
 import {
   currentPageKey,
@@ -51,7 +52,7 @@ export default function ScrollRestoration() {
       pendingRestore.current = null;
       restore(target);
     }
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   function endTraverseSoon() {
     if (traverseTimer.current !== null) {
@@ -121,20 +122,23 @@ export default function ScrollRestoration() {
     const previousSetting = window.history.scrollRestoration;
     window.history.scrollRestoration = "manual";
 
-    let saveFrame = 0;
+    const scrollSaver = createScrollSaveScheduler(saveScroll);
 
     function handleScroll() {
-      if (!savingEnabled.current || saveFrame) return;
+      if (savingEnabled.current) {
+        scrollSaver.schedule(window.scrollY, currentPageKey());
+      }
+    }
 
-      saveFrame = window.requestAnimationFrame(() => {
-        saveFrame = 0;
-        if (savingEnabled.current) {
-          saveScroll(window.scrollY);
-        }
-      });
+    function handlePageHide() {
+      if (savingEnabled.current) {
+        scrollSaver.schedule(window.scrollY, currentPageKey());
+      }
+      scrollSaver.flush();
     }
 
     function handlePopState() {
+      scrollSaver.flush();
       // Read the saved spot now, before anything can overwrite it.
       const target = readSavedScroll(currentPageKey());
       savingEnabled.current = false;
@@ -154,6 +158,10 @@ export default function ScrollRestoration() {
     function handleLinkClick(event: MouseEvent) {
       const anchor = (event.target as Element | null)?.closest?.("a[href]");
       if (anchor) {
+        if (savingEnabled.current) {
+          scrollSaver.schedule(window.scrollY, currentPageKey());
+        }
+        scrollSaver.flush();
         // A normal forward visit: sliders and lists start fresh.
         setRestoringNavigation(false);
       }
@@ -186,17 +194,19 @@ export default function ScrollRestoration() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("pagehide", handlePageHide);
     document.addEventListener("click", handleLinkClick, true);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("popstate", handlePopState);
       document.removeEventListener("click", handleLinkClick, true);
-      window.cancelAnimationFrame(saveFrame);
+      window.removeEventListener("pagehide", handlePageHide);
+      scrollSaver.flush();
       cancelRestore.current?.();
       window.history.scrollRestoration = previousSetting;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return null;
 }

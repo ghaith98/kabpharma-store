@@ -8,17 +8,18 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run test:scroll && npm run build",
+    "test:scroll": "node scripts/check-scroll-scheduler.mjs"
   },
   "dependencies": {
-    "@capacitor/android": "^8.4.0",
-    "@capacitor/core": "^8.4.0",
+    "@capacitor/android": "^8.4.3",
+    "@capacitor/core": "^8.4.3",
     "@supabase/supabase-js": "^2.107.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.24.0",
-    "next": "^16.2.12",
+    "next": "^16.3.8",
     "rc-slider": "^11.1.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -36,7 +37,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^16.2.12",
+    "eslint-config-next": "^16.3.8",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

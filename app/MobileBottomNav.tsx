@@ -122,6 +122,7 @@ export default function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={item.href === "/" || item.href === "/products" ? true : null}
               onClick={(event) =>
                 handleNavigation(
                   event,

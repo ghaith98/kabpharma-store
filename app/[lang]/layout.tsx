@@ -141,7 +141,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#0a583b",
-  colorScheme: "light",
+  colorScheme: "only light",
 };
 
 const structuredData = {

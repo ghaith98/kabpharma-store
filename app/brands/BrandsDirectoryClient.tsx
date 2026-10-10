@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
 
 export type BrandDirectoryItem = {
@@ -31,7 +32,7 @@ export default function BrandsDirectoryClient({ brands }: { brands: BrandDirecto
             const description = isArabic ? brand.description_ar || brand.description_en : brand.description_en || brand.description_ar;
 
             return <Link key={brand.id} href={isKabPharma ? "/" : `/brands/${brand.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-[#e2e9e4] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-              <div className="aspect-[4/3] bg-[#eaf1ed]">{brand.card_image_url ? <img src={brand.card_image_url} alt={title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#dbece1] to-[#f7f4e9] text-2xl font-extrabold text-[#0a583b]">{title}</div>}</div>
+              <div className="relative aspect-[4/3] bg-[#eaf1ed]">{brand.card_image_url ? <Image src={brand.card_image_url} fill sizes="(max-width: 767px) 100vw, 33vw" alt={title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#dbece1] to-[#f7f4e9] text-2xl font-extrabold text-[#0a583b]">{title}</div>}</div>
               <div className="flex flex-1 flex-col p-6"><h2 className="text-xl font-extrabold text-[#142019]">{title}</h2>{description && <p className="mt-4 text-sm leading-6 text-[#647168]">{description}</p>}<span className="mt-5 inline-flex text-sm font-extrabold text-[#0a583b] md:mt-auto md:pt-5">{isKabPharma ? (isArabic ? "زيارة المتجر ←" : "Visit main shop →") : (isArabic ? "اكتشف المجموعة ←" : "Explore collection →")}</span></div>
             </Link>;
           })}

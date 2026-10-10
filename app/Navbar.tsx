@@ -701,6 +701,7 @@ const [
       >
         <Link
           href="/products"
+          prefetch={true}
           onClick={(event) => {
             setDesktopProductsOpen(
               false
@@ -772,6 +773,7 @@ const [
           <div className="p-2">
             <Link
               href="/products"
+          prefetch={true}
               onClick={() => {
                 setDesktopProductsOpen(
                   false
@@ -830,6 +832,7 @@ const [
     <Link
       key={item.href}
       href={item.href}
+          prefetch={item.href === "/products" ? true : null}
       onClick={(event) =>
         handlePrimaryNavigation(
           event,
@@ -1181,6 +1184,7 @@ const [
         <Link
           key={item.href}
           href={item.href}
+          prefetch={item.href === "/products" ? true : null}
           onClick={(event) =>
             handlePrimaryNavigation(
               event,
@@ -1268,6 +1272,7 @@ const [
           {/* All products */}
           <Link
             href="/products"
+          prefetch={true}
             onClick={(event) =>
               handlePrimaryNavigation(
                 event,
@@ -1338,6 +1343,7 @@ const [
         <Link
           key={item.href}
           href={item.href}
+          prefetch={item.href === "/products" ? true : null}
           onClick={(event) =>
             handlePrimaryNavigation(
               event,

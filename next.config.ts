@@ -42,6 +42,11 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    // Reuse explicitly prefetched public pages briefly. Keep non-prefetched
+    // dynamic/account pages uncached, and align public freshness with ISR.
+    staleTimes: { dynamic: 0, static: 60 },
+  },
 
   async headers() {
     return [

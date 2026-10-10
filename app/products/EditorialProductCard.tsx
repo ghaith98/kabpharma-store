@@ -7,6 +7,7 @@ import {
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 import AddToCartButton from "./AddToCartButton";
@@ -55,6 +56,7 @@ type EditorialProductCardProps = {
   productHref?: string;
   headingLevel?: 2 | 3;
   imageSizes?: string;
+  eagerImage?: boolean;
 };
 
 function isVariantOutOfStock(_variant: EditorialProductVariant) { return false; }
@@ -91,7 +93,9 @@ export default function EditorialProductCard({
   productHref: productHrefOverride,
   headingLevel = 2,
   imageSizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
+  eagerImage = false,
 }: EditorialProductCardProps) {
+  const router = useRouter();
   const { lang } =
     useLanguage();
 
@@ -264,6 +268,9 @@ export default function EditorialProductCard({
         <Link
           href={productHref}
           prefetch={false}
+          onPointerEnter={() => router.prefetch(productHref)}
+          onFocus={() => router.prefetch(productHref)}
+          onTouchStart={() => router.prefetch(productHref)}
           aria-label={productName}
           className="absolute inset-0 flex items-center justify-center"
         >
@@ -273,6 +280,7 @@ export default function EditorialProductCard({
               alt={productName}
               fill
               sizes={imageSizes}
+              loading={eagerImage ? "eager" : "lazy"}
               className={`object-contain transition duration-500 group-hover:scale-[1.025] ${
                 isOutOfStock
                   ? "opacity-55 grayscale-[25%]"
@@ -338,6 +346,9 @@ export default function EditorialProductCard({
         <Link
           href={productHref}
           prefetch={false}
+          onPointerEnter={() => router.prefetch(productHref)}
+          onFocus={() => router.prefetch(productHref)}
+          onTouchStart={() => router.prefetch(productHref)}
           className={
             categoryName
               ? "mt-1.5 sm:mt-2"

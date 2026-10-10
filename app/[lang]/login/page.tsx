@@ -633,9 +633,9 @@ export default function LoginPage() {
   return (
     <main
       dir={isArabic ? "rtl" : "ltr"}
-      className="min-h-screen bg-[#f5f6f3] px-5 py-10 pb-28 text-[#142019] sm:px-6 lg:py-16 md:pb-12"
+      className="kab-auth-page min-h-[100svh] bg-[#f5f6f3] px-4 sm:px-5 py-10 pb-28 text-[#142019] sm:px-6 lg:py-16 md:pb-12"
     >
-      <div className="mx-auto grid max-w-[1120px] overflow-hidden border border-[#dfe4e0] bg-white lg:min-h-[650px] lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="mx-auto grid w-full min-w-0 max-w-[1120px] grid-cols-1 border border-[#dfe4e0] bg-white lg:min-h-[650px] lg:grid-cols-[0.9fr_1.1fr]">
 
         {/* Left panel */}
         <section className="relative hidden overflow-hidden bg-[#0a583b] p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
@@ -664,8 +664,8 @@ export default function LoginPage() {
         </section>
 
         {/* Right panel */}
-        <section className="flex items-center p-6 sm:p-10 lg:p-14 xl:p-20">
-          <div className="w-full">
+        <section className="flex min-w-0 items-center p-4 sm:p-10 lg:p-14 xl:p-20">
+          <div className="w-full min-w-0">
 
             {/* Icon */}
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e8f1eb] text-[#0a583b]">
@@ -759,7 +759,7 @@ export default function LoginPage() {
                           value={phonePassword}
                           onChange={(e) => { setPhonePassword(e.target.value); setErrorMessage(""); }}
                           placeholder="••••••••"
-                          className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                          className="min-h-[56px] min-w-0 w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                         />
                         <button
                           type="button"
@@ -843,7 +843,7 @@ export default function LoginPage() {
                             maxLength={PASSWORD_MAX_LENGTH}
                             onChange={(e) => { setPhonePassword(e.target.value); setErrorMessage(""); }}
                             placeholder="••••••••"
-                            className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                            className="min-h-[56px] min-w-0 w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                           />
                           <button
                             type="button"
@@ -928,7 +928,7 @@ export default function LoginPage() {
                     disabled={emailMode === "reset" && emailResetSent}
                     onChange={(e) => { setEmail(e.target.value); setErrorMessage(""); setNeedsVerification(false); }}
                     placeholder={t("you@example.com", "you@example.com")}
-                    className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                    className="min-h-[56px] min-w-0 w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                   />
                 </label>
 
@@ -943,7 +943,7 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setErrorMessage(""); }}
                         placeholder="••••••••"
-                        className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                        className="min-h-[56px] min-w-0 w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                       />
                       <button
                         type="button"
@@ -982,7 +982,7 @@ export default function LoginPage() {
                         value={emailCode}
                         onChange={(e) => { setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setErrorMessage(""); }}
                         placeholder="••••••"
-                        className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-center text-xl font-extrabold tracking-[0.4em] text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                        className="min-h-[56px] min-w-0 w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-center text-xl font-extrabold tracking-[0.4em] text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                       />
                     </label>
 
@@ -996,7 +996,7 @@ export default function LoginPage() {
                           maxLength={PASSWORD_MAX_LENGTH}
                           onChange={(e) => { setEmailNewPassword(e.target.value); setErrorMessage(""); }}
                           placeholder="••••••••"
-                          className="min-h-[56px] w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
+                          className="min-h-[56px] min-w-0 w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 pe-12 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
                         />
                         <button
                           type="button"

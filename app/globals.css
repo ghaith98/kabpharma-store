@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  /* The storefront has a deliberately light palette, including form controls. */
+  color-scheme: only light;
   --background: #faf9f6;
   --foreground: #142019;
 
@@ -326,3 +328,12 @@ img {
     transform: translateX(-88px);
   }
 }
+
+/* Intrinsic input/grid widths must not widen the mobile authentication panel. */
+.kab-auth-page form,
+.kab-auth-page input,
+.kab-auth-page button {
+  min-width: 0;
+}
+.kab-auth-page input { max-width: 100%; }
+.kab-auth-page svg { flex-shrink: 0; }

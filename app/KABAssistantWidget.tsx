@@ -502,12 +502,12 @@ export default function KABAssistantWidget({
                 )}
 
                 {message.needsSignup && (
-                  <a
+                  <Link
                     href="/signup"
                     className="mt-3 flex items-center justify-center rounded-xl bg-[#0a583b] px-3 py-2.5 text-xs font-bold text-white"
                   >
                     {t.signup}
-                  </a>
+                  </Link>
                 )}
 
                 {message.needsHuman && (
