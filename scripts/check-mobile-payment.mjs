@@ -30,6 +30,10 @@ assert.equal(nodes(tree,n=>n.props?.id==='payment-proof-form').length,1);
 const order=nodes(tree,n=>n.type==='aside'||n.type==='section'&&n.props?.className?.includes('order-1'));
 assert.equal(order[0].type,'section'); // payment and visible coupon precede the final order summary
 assert.ok(id(order[0],'checkout-coupon'));
+const flow=nodes(tree,n=>n.props?.id==='shamcash-transaction'||n.props?.id==='checkout-coupon'||n.type==='aside');
+assert.equal(flow[0].props.id,'shamcash-transaction');
+assert.equal(flow[1].props.id,'checkout-coupon');
+assert.equal(flow[2].type,'aside');
 assert.equal(id(nodes(tree,n=>n.type==='aside')[0],'checkout-coupon'),undefined);
 let toggle=nodes(tree,n=>n.props?.['aria-controls']==='order-summary-products order-summary-prices')[0];
 assert.equal(toggle.props['aria-expanded'],false);

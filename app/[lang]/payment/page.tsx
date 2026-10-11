@@ -521,45 +521,6 @@ export default function PaymentPage() {
           {/* Left: Payment */}
           <section className="order-1 min-w-0 overflow-hidden rounded-2xl lg:order-1 lg:rounded-[1.75rem] border border-[#dfe4e0] bg-white">
 
-            {/* Coupon stays visible before payment; the order summary follows below. */}
-            <section aria-labelledby="coupon-heading" className="border-b border-[#e7ebe8] px-4 py-3 lg:px-7 lg:py-4">
-              <div className="flex items-center gap-1.5 text-[#526057]">
-                <Tag size={14} strokeWidth={1.8} aria-hidden="true" />
-                <h3 id="coupon-heading" className="text-xs font-bold">{t("Discount code", "كود الخصم")}</h3>
-              </div>
-              {appliedCoupon ? (
-                <div role="status" className="mt-2 flex items-center gap-2 rounded-lg bg-[#edf5f0] px-3 py-2 text-[#0a583b]">
-                  <Check size={16} className="shrink-0" aria-hidden="true" />
-                  <div className="min-w-0 flex-1 text-xs leading-5">
-                    <bdi className="break-all font-bold">{appliedCoupon.code}</bdi>
-                    <span className="ms-2">{appliedCoupon.type === "free_delivery" ? t("Free delivery", "توصيل مجاني") : t(`You save ${formatPrice(couponDiscount)}`, `وفّرتِ ${formatPrice(couponDiscount)}`)}</span>
-                  </div>
-                  <button type="button" onClick={clearCoupon} className="min-h-8 shrink-0 px-1 text-xs font-bold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a583b]">{t("Remove", "إزالة")}</button>
-                </div>
-              ) : (
-                <>
-                  <p id="coupon-help" className="sr-only">{t("Enter your code to apply a discount.", "أدخلي كود الخصم لتطبيقه على طلبكِ.")}</p>
-                  <label htmlFor="checkout-coupon" className="sr-only">{t("Discount code", "كود الخصم")}</label>
-                  <div className="mt-2 flex min-w-0 gap-2">
-                    <input id="checkout-coupon" dir="ltr" value={couponInput} placeholder={t("Enter code", "أدخلي الكود")}
-                      autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={40}
-                      aria-invalid={Boolean(couponError)} aria-describedby={couponError ? "coupon-help coupon-error" : "coupon-help"}
-                      onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponInputError(""); if (requestedCoupon) setRequestedCoupon(null); }}
-                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (!checkingCoupon) applyCoupon(); } }}
-                      className={`h-10 min-w-0 flex-1 rounded-lg border bg-white px-3 text-base text-[#142019] outline-none transition placeholder:text-sm placeholder:text-[#88938c] focus:border-[#0a583b] focus:ring-2 focus:ring-[#0a583b]/10 ${couponError ? "border-red-400" : "border-[#d7dfd9]"}`} />
-                    <button type="button" disabled={checkingCoupon} onClick={applyCoupon} aria-busy={checkingCoupon}
-                      className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#0a583b] px-4 text-xs font-bold text-white transition hover:bg-[#073f2c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a583b] disabled:cursor-wait disabled:opacity-65">
-                      {checkingCoupon && <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />}
-                      {checkingCoupon ? t("Applying", "جارٍ التطبيق") : t("Apply", "تطبيق")}
-                    </button>
-                  </div>
-                  {couponError && <p id="coupon-error" role="alert" className="mt-2 text-xs leading-5 text-red-700">{couponError}</p>}
-                </>
-              )}
-            </section>
-
-
-
             {/* Payment method */}
             <div className="border-b border-[#e7ebe8] p-4 lg:p-7">
               <p className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${isArabic ? "tracking-normal" : "tracking-[0.15em]"}`}>{t("Payment method", "طريقة الدفع")}</p>
@@ -730,6 +691,43 @@ export default function PaymentPage() {
                 </form>
               </div>
             )}
+
+            {/* Coupon follows payment details and precedes the final order summary. */}
+            <section aria-labelledby="coupon-heading" className="border-t border-[#e7ebe8] px-4 py-3 lg:px-7 lg:py-4">
+              <div className="flex items-center gap-1.5 text-[#526057]">
+                <Tag size={14} strokeWidth={1.8} aria-hidden="true" />
+                <h3 id="coupon-heading" className="text-xs font-bold">{t("Discount code", "كود الخصم")}</h3>
+              </div>
+              {appliedCoupon ? (
+                <div role="status" className="mt-2 flex items-center gap-2 rounded-lg bg-[#edf5f0] px-3 py-2 text-[#0a583b]">
+                  <Check size={16} className="shrink-0" aria-hidden="true" />
+                  <div className="min-w-0 flex-1 text-xs leading-5">
+                    <bdi className="break-all font-bold">{appliedCoupon.code}</bdi>
+                    <span className="ms-2">{appliedCoupon.type === "free_delivery" ? t("Free delivery", "توصيل مجاني") : t(`You save ${formatPrice(couponDiscount)}`, `وفّرتِ ${formatPrice(couponDiscount)}`)}</span>
+                  </div>
+                  <button type="button" onClick={clearCoupon} className="min-h-8 shrink-0 px-1 text-xs font-bold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a583b]">{t("Remove", "إزالة")}</button>
+                </div>
+              ) : (
+                <>
+                  <p id="coupon-help" className="sr-only">{t("Enter your code to apply a discount.", "أدخلي كود الخصم لتطبيقه على طلبكِ.")}</p>
+                  <label htmlFor="checkout-coupon" className="sr-only">{t("Discount code", "كود الخصم")}</label>
+                  <div className="mt-2 flex min-w-0 gap-2">
+                    <input id="checkout-coupon" dir="ltr" value={couponInput} placeholder={t("Enter code", "أدخلي الكود")}
+                      autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={40}
+                      aria-invalid={Boolean(couponError)} aria-describedby={couponError ? "coupon-help coupon-error" : "coupon-help"}
+                      onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponInputError(""); if (requestedCoupon) setRequestedCoupon(null); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (!checkingCoupon) applyCoupon(); } }}
+                      className={`h-10 min-w-0 flex-1 rounded-lg border bg-white px-3 text-base text-[#142019] outline-none transition placeholder:text-sm placeholder:text-[#88938c] focus:border-[#0a583b] focus:ring-2 focus:ring-[#0a583b]/10 ${couponError ? "border-red-400" : "border-[#d7dfd9]"}`} />
+                    <button type="button" disabled={checkingCoupon} onClick={applyCoupon} aria-busy={checkingCoupon}
+                      className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#0a583b] px-4 text-xs font-bold text-white transition hover:bg-[#073f2c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a583b] disabled:cursor-wait disabled:opacity-65">
+                      {checkingCoupon && <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />}
+                      {checkingCoupon ? t("Applying", "جارٍ التطبيق") : t("Apply", "تطبيق")}
+                    </button>
+                  </div>
+                  {couponError && <p id="coupon-error" role="alert" className="mt-2 text-xs leading-5 text-red-700">{couponError}</p>}
+                </>
+              )}
+            </section>
           </section>
 
           {/* Order summary: last on mobile, sidebar on desktop. */}
