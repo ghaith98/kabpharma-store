@@ -1,8 +1,9 @@
 "use client";
 
+import { resetAuthForms } from "@/lib/auth-form-session";
 import { clearCheckoutSession } from "@/lib/checkout-session";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -90,10 +91,13 @@ export default function ProfilePage() {
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>(_cachedOrders ?? []);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
+  const profileRequest = useRef<AbortController | null>(null);
   const isArabic = lang === "ar";
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    profileRequest.current = controller;
 
     async function loadProfile() {
       try {
@@ -106,12 +110,13 @@ export default function ProfilePage() {
           setOrdersLoading(true);
         }
 
-        const mePromise = fetch("/api/customer/me", { credentials: "include", cache: "default" });
+        const mePromise = fetch("/api/customer/me", { credentials: "include", cache: "no-store", signal: controller.signal });
         const ordersPromise = ordersAreFresh
           ? Promise.resolve(null)
-          : fetch("/api/customer/orders?view=profile", { credentials: "include", cache: "default" });
+          : fetch("/api/customer/orders?view=profile", { credentials: "include", cache: "no-store", signal: controller.signal });
 
         const [meResponse, ordersResponse] = await Promise.all([mePromise, ordersPromise]);
+        if (cancelled || controller.signal.aborted) return;
 
         if (!meResponse.ok) {
           clearCheckoutSession();
@@ -124,6 +129,7 @@ export default function ProfilePage() {
         }
 
         const result = await meResponse.json();
+        if (cancelled || controller.signal.aborted) return;
 
         if (!result.authenticated || !result.user) {
           clearCheckoutSession();
@@ -146,22 +152,24 @@ export default function ProfilePage() {
 
         if (ordersResponse && ordersResponse.ok) {
           const ordersResult = await ordersResponse.json();
+          if (cancelled || controller.signal.aborted) return;
           const orders = Array.isArray(ordersResult.orders) ? ordersResult.orders : [];
           _cachedOrders = orders;
           _ordersTimestamp = Date.now();
           if (!cancelled) setRecentOrders(orders);
         }
       } catch {
-        if (!cancelled) { setUser(null); setRecentOrders([]); }
+        if (!cancelled && !controller.signal.aborted) { setUser(null); setRecentOrders([]); }
       } finally {
-        _pageWasReady = true;
-        if (!cancelled) { setOrdersLoading(false); setPageReady(true); }
+        if (!cancelled && !controller.signal.aborted) {
+          _pageWasReady = true; setOrdersLoading(false); setPageReady(true);
+        }
       }
     }
 
     void loadProfile();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, []);
 
   async function handleLogout() {
@@ -175,7 +183,9 @@ export default function ProfilePage() {
         throw new Error("Logout failed");
       }
 
+      profileRequest.current?.abort();
       clearCheckoutSession();
+      resetAuthForms();
       localStorage.removeItem("kab_user");
       _cachedUser = null;
       _pageWasReady = false;
@@ -183,6 +193,7 @@ export default function ProfilePage() {
       _ordersTimestamp = 0;
       setUser(null);
       setRecentOrders([]);
+      setOrdersLoading(false);
 
       window.dispatchEvent(new Event("cartUpdated"));
       window.dispatchEvent(new Event("wishlistUpdated"));

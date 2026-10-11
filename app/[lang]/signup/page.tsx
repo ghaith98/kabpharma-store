@@ -1,5 +1,7 @@
 "use client";
 
+import { resetAuthForms, useAuthFormGeneration, useAuthFetch } from "@/lib/auth-form-session";
+import { useAppPathname } from "@/lib/use-app-pathname";
 import { clearCheckoutSession } from "@/lib/checkout-session";
 
 import { useEffect, useRef, useState } from "react";
@@ -72,6 +74,13 @@ function withErrorCode(
 }
 
 export default function SignupPage() {
+  const generation = useAuthFormGeneration();
+  const pathname = useAppPathname();
+  return <SignupForm key={`${generation}:${pathname}`} />;
+}
+
+function SignupForm() {
+  const authFetch = useAuthFetch();
   const { lang } = useLanguage();
   const router = useRouter();
 
@@ -217,7 +226,7 @@ export default function SignupPage() {
     setErrorMessage("");
 
     try {
-      const res = await fetch("/api/send-otp", {
+      const res = await authFetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: fullPhone }),
@@ -275,7 +284,7 @@ export default function SignupPage() {
     setErrorMessage("");
 
     try {
-      const res = await fetch("/api/verify-otp", {
+      const res = await authFetch("/api/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -326,6 +335,7 @@ export default function SignupPage() {
       }
 
       clearCheckoutSession();
+      resetAuthForms();
       localStorage.setItem("kab_user", JSON.stringify({
         id: result.user.id,
         full_name: result.user.full_name,
@@ -372,7 +382,7 @@ export default function SignupPage() {
 
     try {
       const fullEmailPhone = `${selectedCountry.code}${emailPhone.trim()}`;
-      const res = await fetch("/api/customer/auth/email/register", {
+      const res = await authFetch("/api/customer/auth/email/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -430,7 +440,7 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/customer/auth/email/resend-otp", {
+      const res = await authFetch("/api/customer/auth/email/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
@@ -475,7 +485,7 @@ export default function SignupPage() {
     setErrorMessage("");
 
     try {
-      const res = await fetch("/api/customer/auth/email/verify-otp", {
+      const res = await authFetch("/api/customer/auth/email/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -509,6 +519,7 @@ export default function SignupPage() {
       }
 
       clearCheckoutSession();
+      resetAuthForms();
       localStorage.setItem("kab_user", JSON.stringify({
         id: result.user.id,
         full_name: result.user.full_name,
@@ -651,7 +662,7 @@ export default function SignupPage() {
 
             {/* ── Phone tab ──────────────────────────────────────────────────── */}
             {tab === "phone" && (
-              <form onSubmit={handlePhoneSubmit} className="mt-6">
+              <form autoComplete="off" onSubmit={handlePhoneSubmit} className="mt-6">
                 {!otpSent ? (
                   <div className="space-y-5">
                     <p className="text-sm leading-7 text-[#647168]">
@@ -664,7 +675,7 @@ export default function SignupPage() {
                       <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Full name", "الاسم الكامل")}</span>
                       <input
                         type="text"
-                        autoComplete="name"
+                        autoComplete="off"
                         value={fullName}
                         onChange={(e) => { setFullName(e.target.value); setErrorMessage(""); }}
                         className="min-h-[56px] min-w-0 w-full rounded-2xl border border-[#cfd6d1] bg-white px-4 text-base font-bold text-[#142019] outline-none transition placeholder:text-[#a2aaa4] focus:border-[#0a583b] focus:ring-4 focus:ring-[#e7f0ea]"
@@ -685,7 +696,7 @@ export default function SignupPage() {
                           onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setErrorMessage(""); }}
                           maxLength={9}
                           inputMode="numeric"
-                          autoComplete="tel-national"
+                          autoComplete="off"
                           className="min-w-0 flex-1 bg-transparent px-4 text-base font-bold text-[#142019] outline-none placeholder:text-[#a2aaa4]"
                         />
                       </div>
@@ -795,7 +806,7 @@ export default function SignupPage() {
 
             {/* ── Email tab ──────────────────────────────────────────────────── */}
             {tab === "email" && (
-              <form onSubmit={handleEmailSubmit} className="mt-6">
+              <form autoComplete="off" onSubmit={handleEmailSubmit} className="mt-6">
                 {!emailOtpSent ? (
                   <div className="space-y-4">
                     <p className="text-sm leading-7 text-[#647168]">
@@ -810,7 +821,7 @@ export default function SignupPage() {
                       <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Full name", "الاسم الكامل")}</span>
                       <input
                         type="text"
-                        autoComplete="name"
+                        autoComplete="off"
                         value={emailName}
                         onChange={(e) => { setEmailName(e.target.value); setErrorMessage(""); }}
                         placeholder={t("Enter your full name", "أدخل اسمك الكامل")}
@@ -823,7 +834,7 @@ export default function SignupPage() {
                       <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Email", "البريد الإلكتروني")}</span>
                       <input
                         type="email"
-                        autoComplete="email"
+                        autoComplete="off"
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setErrorMessage(""); }}
                         placeholder="you@example.com"
@@ -852,7 +863,7 @@ export default function SignupPage() {
                           value={emailPhone}
                           onChange={(e) => { setEmailPhone(e.target.value.replace(/\D/g, "")); setErrorMessage(""); }}
                           inputMode="numeric"
-                          autoComplete="tel-national"
+                          autoComplete="off"
                           className="min-w-0 flex-1 bg-transparent px-4 text-base font-bold text-[#142019] outline-none placeholder:text-[#a2aaa4]"
                         />
                       </div>

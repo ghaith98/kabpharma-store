@@ -1,5 +1,7 @@
 "use client";
 
+import { resetAuthForms, useAuthFormGeneration, useAuthFetch } from "@/lib/auth-form-session";
+import { useAppPathname } from "@/lib/use-app-pathname";
 import { clearCheckoutSession } from "@/lib/checkout-session";
 
 import { useEffect, useRef, useState } from "react";
@@ -57,6 +59,13 @@ function withErrorCode(
 }
 
 export default function LoginPage() {
+  const generation = useAuthFormGeneration();
+  const pathname = useAppPathname();
+  return <LoginForm key={`${generation}:${pathname}`} />;
+}
+
+function LoginForm() {
+  const authFetch = useAuthFetch();
   const { lang } = useLanguage();
   const router = useRouter();
 
@@ -151,7 +160,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/send-otp", {
+      const res = await authFetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: fullPhone }),
@@ -205,6 +214,7 @@ export default function LoginPage() {
     phone: string;
   }) {
     clearCheckoutSession();
+    resetAuthForms();
     localStorage.setItem("kab_user", JSON.stringify({
       id: user.id,
       full_name: user.full_name,
@@ -243,7 +253,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/customer/auth/phone/login", {
+      const res = await authFetch("/api/customer/auth/phone/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -322,7 +332,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/verify-otp", {
+      const res = await authFetch("/api/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -377,6 +387,7 @@ export default function LoginPage() {
       }
 
       clearCheckoutSession();
+      resetAuthForms();
       localStorage.setItem("kab_user", JSON.stringify({
         id: result.user.id,
         full_name: result.user.full_name,
@@ -409,7 +420,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/customer/auth/email/login", {
+      const res = await authFetch("/api/customer/auth/email/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -442,6 +453,7 @@ export default function LoginPage() {
       }
 
       clearCheckoutSession();
+      resetAuthForms();
       localStorage.setItem("kab_user", JSON.stringify({
         id: result.user.id,
         full_name: result.user.full_name,
@@ -485,7 +497,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/customer/auth/email/resend-otp", {
+      const res = await authFetch("/api/customer/auth/email/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, purpose: "reset" }),
@@ -546,7 +558,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/customer/auth/email/verify-otp", {
+      const res = await authFetch("/api/customer/auth/email/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -722,7 +734,7 @@ export default function LoginPage() {
 
             {/* ── Phone tab ──────────────────────────────────────────────────── */}
             {tab === "phone" && (
-              <form onSubmit={handlePhoneSubmit} className="mt-6">
+              <form autoComplete="off" onSubmit={handlePhoneSubmit} className="mt-6">
                 <p className="mb-4 text-sm leading-7 text-[#647168]">
                   {phoneMode === "password"
                     ? t("Sign in with your mobile number and password.", "سجّل دخولك برقم الموبايل وكلمة المرور.")
@@ -747,7 +759,7 @@ export default function LoginPage() {
                     onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setErrorMessage(""); }}
                     maxLength={9}
                     inputMode="numeric"
-                    autoComplete="tel-national"
+                    autoComplete="off"
                     className="min-w-0 flex-1 bg-transparent px-4 text-base font-bold text-[#142019] outline-none placeholder:text-[#a2aaa4] disabled:bg-[#f6f7f5]"
                   />
                 </div>
@@ -760,7 +772,7 @@ export default function LoginPage() {
                       <div className="relative">
                         <input
                           type={showPhonePassword ? "text" : "password"}
-                          autoComplete="current-password"
+                          autoComplete="off"
                           value={phonePassword}
                           onChange={(e) => { setPhonePassword(e.target.value); setErrorMessage(""); }}
                           placeholder="••••••••"
@@ -915,7 +927,7 @@ export default function LoginPage() {
 
             {/* ── Email tab ──────────────────────────────────────────────────── */}
             {tab === "email" && (
-              <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
+              <form autoComplete="off" onSubmit={handleEmailSubmit} className="mt-6 space-y-4">
                 <p className="text-sm leading-7 text-[#647168]">
                   {emailMode === "password"
                     ? t("Sign in with your email and password.", "سجّل دخولك باستخدام بريدك الإلكتروني وكلمة المرور.")
@@ -928,7 +940,7 @@ export default function LoginPage() {
                   <span className="mb-2 block text-xs font-extrabold text-[#26352d]">{t("Email", "البريد الإلكتروني")}</span>
                   <input
                     type="email"
-                    autoComplete="email"
+                    autoComplete="off"
                     value={email}
                     disabled={emailMode === "reset" && emailResetSent}
                     onChange={(e) => { setEmail(e.target.value); setErrorMessage(""); setNeedsVerification(false); }}
@@ -944,7 +956,7 @@ export default function LoginPage() {
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
+                        autoComplete="off"
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setErrorMessage(""); }}
                         placeholder="••••••••"
