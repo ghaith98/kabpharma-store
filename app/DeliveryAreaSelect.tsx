@@ -56,7 +56,7 @@ export default function DeliveryAreaSelect({
 
   return (
     <div className="min-w-0" dir={isArabic ? "rtl" : "ltr"}>
-      <label htmlFor={`${id}-input`} className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
+      <label htmlFor={`${id}-input`} className="mb-1.5 flex items-center gap-2 text-xs lg:mb-2 lg:text-sm font-extrabold text-[#142019]">
         <Truck size={15} className="text-[#0a583b]" />
         {t("Delivery area", "منطقة التوصيل")}
       </label>
@@ -116,7 +116,7 @@ export default function DeliveryAreaSelect({
                 setActiveIndex(event.key === "Home" ? 0 : Math.max(0, filtered.length - 1));
               }
             }}
-            className="w-full rounded-xl border border-[#dfe4e0] bg-white py-3.5 ps-11 pe-12 text-base text-[#142019] outline-none transition placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0] disabled:cursor-not-allowed disabled:bg-[#f7f8f6] disabled:text-[#9aa39d]"
+            className="w-full rounded-xl border border-[#dfe4e0] bg-white py-2.5 lg:py-3.5 ps-11 pe-12 text-base text-[#142019] outline-none transition placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0] disabled:cursor-not-allowed disabled:bg-[#f7f8f6] disabled:text-[#9aa39d]"
           />
           {value || query ? (
             <button

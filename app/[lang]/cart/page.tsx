@@ -447,11 +447,11 @@ export default function CartPage() {
           ? "rtl"
           : "ltr"
       }
-      className="min-h-screen bg-[#f7f8f6] px-4 py-8 pb-[calc(11rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-12 lg:pb-16"
+      className="min-h-screen bg-[#f7f8f6] px-4 py-4 pb-[calc(11rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-12 lg:pb-16"
     >
       <div className="mx-auto max-w-[1280px]">
         {/* Header */}
-        <header className="flex flex-col gap-6 border-b border-[#dfe4e0] pb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-10">
+        <header className="flex flex-col gap-2 border-b border-[#dfe4e0] pb-4 sm:gap-6 sm:flex-row sm:items-end sm:justify-between sm:pb-10">
           <div
             className={
               isArabic
@@ -460,7 +460,7 @@ export default function CartPage() {
             }
           >
             <p
-              className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+              className={`hidden sm:block text-[11px] font-extrabold uppercase text-[#0a583b] ${
                 isArabic
                   ? "tracking-normal"
                   : "tracking-[0.18em]"
@@ -470,10 +470,10 @@ export default function CartPage() {
             </p>
 
             <h1
-              className={`mt-3 font-extrabold text-[#142019] ${
+              className={`sm:mt-3 font-extrabold text-[#142019] ${
                 isArabic
-                  ? "text-4xl leading-tight [font-family:var(--font-arabic)] sm:text-5xl"
-                  : "text-4xl tracking-[-0.045em] sm:text-6xl"
+                  ? "text-2xl leading-tight [font-family:var(--font-arabic)] sm:text-5xl"
+                  : "text-2xl tracking-[-0.045em] sm:text-6xl"
               }`}
             >
               {isArabic
@@ -481,7 +481,7 @@ export default function CartPage() {
                 : "Shopping bag"}
             </h1>
 
-            <p className="mt-3 text-sm leading-7 text-[#647168] sm:text-base">
+            <p className="mt-1 text-xs leading-5 text-[#647168] sm:mt-3 sm:text-base sm:leading-7">
               {cart.length > 0
                 ? isArabic
                   ? `${displayedItemsCount.toLocaleString()} قطعة في سلتك`
@@ -498,7 +498,7 @@ export default function CartPage() {
 
           <Link
             href="/products"
-            className="group inline-flex w-fit items-center gap-2 border-b border-[#142019] pb-1 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
+            className="group inline-flex w-fit items-center gap-2 border-b border-[#142019] pb-1 text-xs font-extrabold sm:text-sm text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
           >
             <BackArrow
               size={16}
@@ -553,14 +553,14 @@ export default function CartPage() {
           </section>
         ) : (
           <>
-            <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
+            <div className="mt-4 grid gap-4 sm:mt-8 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10">
               <div className="min-w-0">
                 {/* Free delivery */}
                 {freeDeliveryTarget != null && (
-                  <section className="mb-5 rounded-[1.5rem] border border-[#dfe4e0] bg-white p-5 sm:p-6">
-                    <div className="flex items-start gap-4">
+                  <section className="mb-4 rounded-xl border border-[#dfe4e0] bg-white p-3 sm:mb-5 sm:rounded-[1.5rem] sm:p-6">
+                    <div className="flex items-start gap-2 sm:gap-4">
                       <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+                        className={`hidden sm:flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
                           hasFreeDelivery
                             ? "bg-[#0a583b] text-white"
                             : "bg-[#edf5f0] text-[#0a583b]"
@@ -584,9 +584,9 @@ export default function CartPage() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex flex-wrap items-start justify-between gap-1 sm:gap-3">
                           <div>
-                            <h2 className="text-sm font-extrabold text-[#142019]">
+                            <h2 className="text-xs font-extrabold text-[#142019] sm:text-sm">
                               {hasFreeDelivery
                                 ? isArabic
                                   ? "تم تفعيل التوصيل المجاني"
@@ -596,7 +596,7 @@ export default function CartPage() {
                                 : "You’re close to free delivery"}
                             </h2>
 
-                            <p className="mt-1 text-sm leading-6 text-[#647168]">
+                            <p className="mt-1 text-xs leading-5 text-[#647168] sm:text-sm sm:leading-6">
                               {hasFreeDelivery
                                 ? isArabic
                                   ? "طلبك مؤهل للحصول على توصيل مجاني."
@@ -619,7 +619,7 @@ export default function CartPage() {
                           </span>
                         </div>
 
-                        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#e7ebe8]">
+                        <div className="mt-2 sm:mt-4 h-1.5 overflow-hidden rounded-full bg-[#e7ebe8]">
                           <div
                             className="h-full rounded-full bg-[#0a583b] transition-all duration-500"
                             style={{
@@ -630,7 +630,7 @@ export default function CartPage() {
 
                         <div
                           dir="ltr"
-                          className="mt-2 flex items-center justify-between text-[11px] font-bold text-[#8a948d]"
+                          className="mt-2 hidden sm:flex items-center justify-between text-[11px] font-bold text-[#8a948d]"
                         >
                           <span>
                             {formatPrice(
@@ -683,7 +683,7 @@ export default function CartPage() {
                 </div>
 
                 {/* Products */}
-                <section className="overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white">
+                <section className="overflow-hidden rounded-2xl sm:rounded-[1.75rem] border border-[#dfe4e0] bg-white">
                   {pricedCart.map(
                     (item) => {
                       const itemKey =
@@ -765,7 +765,7 @@ export default function CartPage() {
                           key={
                             itemKey
                           }
-                          className="grid grid-cols-[104px_minmax(0,1fr)] gap-4 border-b border-[#e7ebe8] p-4 last:border-b-0 sm:grid-cols-[148px_minmax(0,1fr)] sm:gap-6 sm:p-6"
+                          className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 border-b border-[#e7ebe8] p-4 last:border-b-0 sm:grid-cols-[148px_minmax(0,1fr)] sm:gap-6 sm:p-6"
                         >
                           <Link
                             href={`/products/${item.id}`}
@@ -784,7 +784,7 @@ export default function CartPage() {
                                 }
                                 width={300}
                                 height={300}
-                                sizes="(max-width: 640px) 104px, 148px"
+                                sizes="(max-width: 640px) 72px, 148px"
                                 className="h-full w-full object-contain transition duration-500 hover:scale-105"
                               />
                             ) : (
@@ -802,7 +802,7 @@ export default function CartPage() {
                                   href={`/products/${item.id}`}
                                   className="transition hover:text-[#0a583b]"
                                 >
-                                  <h3 className="line-clamp-2 text-[15px] font-extrabold leading-6 text-[#142019] sm:text-lg">
+                                  <h3 className="line-clamp-2 text-sm font-extrabold leading-5 sm:leading-6 text-[#142019] sm:text-lg">
                                     {
                                       displayName
                                     }
@@ -846,7 +846,7 @@ export default function CartPage() {
                               </button>
                             </div>
 
-                            <div className="mt-4">
+                            <div className="mt-1 sm:mt-4">
                               <div className="flex flex-wrap items-baseline gap-2">
                                 <p
                                   className={`font-extrabold ${
@@ -871,17 +871,17 @@ export default function CartPage() {
                                 )}
                               </div>
 
-                              <p className="mt-1 text-xs text-[#8a948d]">
+                              <p className="mt-1 hidden text-xs text-[#8a948d] sm:block">
                                 {isArabic
                                   ? "سعر القطعة"
                                   : "Price per item"}
                               </p>
                             </div>
 
-                            <div className="mt-auto flex flex-col gap-4 pt-5 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 sm:mt-auto sm:gap-4 sm:pt-5 sm:flex-row sm:items-end sm:justify-between">
                               <div
                                 dir="ltr"
-                                className="flex h-11 w-fit items-center rounded-full border border-[#dfe4e0] bg-white p-1"
+                                className="flex h-10 w-fit items-center rounded-lg border border-[#dfe4e0] bg-white sm:h-11 sm:rounded-full sm:p-1"
                               >
                                 <button
                                   type="button"
@@ -910,7 +910,7 @@ export default function CartPage() {
                                   />
                                 </button>
 
-                                <span className="min-w-9 text-center text-sm font-extrabold text-[#142019]">
+                                <span className="min-w-6 sm:min-w-9 text-center text-sm font-extrabold text-[#142019]">
                                   {
                                     item.quantity
                                   }
@@ -943,11 +943,11 @@ export default function CartPage() {
                               <div
                                 className={
                                   isArabic
-                                    ? "text-right sm:text-left"
-                                    : "text-left sm:text-right"
+                                    ? "text-left"
+                                    : "text-right"
                                 }
                               >
-                                <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#8a948d]">
+                                <p className="hidden text-[11px] font-bold uppercase tracking-[0.08em] text-[#8a948d] sm:block">
                                   {isArabic
                                     ? "المجموع"
                                     : "Subtotal"}
@@ -1025,7 +1025,7 @@ export default function CartPage() {
               {/* Desktop summary */}
               <aside className="sticky top-6 hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white p-6 lg:block">
                 <p
-                  className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+                  className={`hidden sm:block text-[11px] font-extrabold uppercase text-[#0a583b] ${
                     isArabic
                       ? "tracking-normal"
                       : "tracking-[0.16em]"

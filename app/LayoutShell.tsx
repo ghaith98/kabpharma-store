@@ -66,7 +66,7 @@ export default function LayoutShell({
         {children}
       </div>
 
-      <div className={pathname === "/payment" ? "hidden lg:block" : undefined}><Footer /></div>
+      <div className={(pathname === "/payment" || pathname === "/checkout") ? "hidden lg:block" : undefined}><Footer /></div>
 
       <MobileBottomNav />
       <WelcomeOffer />

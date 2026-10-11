@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CircleAlert,
+  ChevronDown,
   LockKeyhole,
   MapPin,
   Package,
@@ -209,6 +210,8 @@ export default function CheckoutPage() {
     accountCheckError,
     setAccountCheckError,
   ] = useState("");
+
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   useCheckoutAccountGuard(profileId, () => {
     setName(""); setPhone(""); setAddress(""); setGovernorate(""); setDeliveryArea(""); setCart([]); setCheckingBan(true);
@@ -909,45 +912,20 @@ export default function CheckoutPage() {
           ? "rtl"
           : "ltr"
       }
-      className="min-h-screen bg-[#f7f8f6] px-4 pb-[calc(10rem+env(safe-area-inset-bottom))] pt-7 sm:px-6 sm:pt-10 lg:pb-16 lg:pt-12"
+      className="min-h-screen bg-[#f7f8f6] px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 lg:pb-16 lg:pt-12"
     >
       <div className="mx-auto max-w-[1180px]">
-        {/* Mobile progress */}
-        <div className="mx-auto mb-8 max-w-md lg:hidden">
-          <div
-            dir="ltr"
-            className="flex items-center"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0a583b] text-xs font-extrabold text-white">
-              1
-            </div>
-
-            <div className="h-px flex-1 bg-[#d5ddd7]" />
-
-            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d5ddd7] bg-white text-xs font-extrabold text-[#8a948d]">
-              2
-            </div>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between text-xs font-bold">
-            <span className="text-[#0a583b]">
-              {isArabic
-                ? "معلومات التوصيل"
-                : "Delivery"}
-            </span>
-
-            <span className="text-[#8a948d]">
-              {isArabic
-                ? "الدفع"
-                : "Payment"}
-            </span>
-          </div>
+        {/* Compact mobile step indicator, in reading order for both languages. */}
+        <div className="mb-3 flex items-center gap-2 text-[11px] font-bold lg:hidden">
+          <span className="rounded-full bg-[#edf5f0] px-2.5 py-1 text-[#0a583b]">{isArabic ? "١ · التوصيل" : "1 · Delivery"}</span>
+          <span className="h-px w-6 bg-[#d5ddd7]" aria-hidden="true" />
+          <span className="text-[#7a857e]">{isArabic ? "٢ · الدفع" : "2 · Payment"}</span>
         </div>
 
         {/* Header */}
-        <header className="mb-8 border-b border-[#dfe4e0] pb-8 sm:mb-10 sm:pb-10">
+        <header className="mb-4 border-b border-[#dfe4e0] pb-4 lg:mb-10 lg:pb-10">
           <p
-            className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
+            className={`hidden lg:block text-[11px] font-extrabold uppercase text-[#0a583b] ${
               isArabic
                 ? "tracking-normal"
                 : "tracking-[0.18em]"
@@ -956,10 +934,10 @@ export default function CheckoutPage() {
             KAB Pharma
           </p>
 
-          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 lg:mt-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1
-                className={`text-3xl font-extrabold text-[#142019] sm:text-4xl lg:text-[48px] ${
+                className={`text-2xl font-extrabold text-[#142019] lg:text-4xl lg:text-[48px] ${
                   isArabic
                     ? "leading-[1.25] tracking-normal [font-family:var(--font-arabic)]"
                     : "leading-[1.05] tracking-[-0.04em]"
@@ -970,14 +948,14 @@ export default function CheckoutPage() {
                   : "Delivery details"}
               </h1>
 
-              <p className="mt-3 max-w-xl text-sm leading-7 text-[#647168] sm:text-base">
+              <p className="mt-3 hidden max-w-xl text-sm leading-7 text-[#647168] lg:block lg:text-base">
                 {isArabic
                   ? "أدخل تفاصيل التوصيل، ثم انتقل إلى الدفع لإكمال طلبك."
                   : "Add your delivery information, then continue to payment to complete your order."}
               </p>
             </div>
 
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 py-2 text-xs font-bold text-[#526057]">
+            <div className="hidden w-fit items-center gap-2 rounded-full border border-[#dfe4e0] bg-white px-4 py-2 text-xs font-bold text-[#526057] lg:inline-flex">
               <LockKeyhole
                 size={14}
                 className="text-[#0a583b]"
@@ -1070,16 +1048,16 @@ export default function CheckoutPage() {
             </section>
           )}
 
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8">
+        <div className="grid items-start gap-4 lg:gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8">
           {/* Delivery form */}
           <form
             id="checkout-form"
             onSubmit={
               handleSubmit
             }
-            className="overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white"
+            className="overflow-hidden rounded-2xl lg:rounded-[1.75rem] border border-[#dfe4e0] bg-white"
           >
-            <div className="flex items-start gap-4 border-b border-[#e7ebe8] p-5 sm:p-7">
+            <div className="hidden items-start gap-4 border-b border-[#e7ebe8] p-7 lg:flex">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
                 <Truck
                   size={20}
@@ -1101,10 +1079,10 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="space-y-5 p-5 sm:p-7">
+            <div className="space-y-3.5 p-4 lg:space-y-5 lg:p-7">
               {/* Full name */}
               <label className="block">
-                <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
+                <span className="mb-1.5 flex items-center gap-2 text-xs lg:mb-2 lg:text-sm font-extrabold text-[#142019]">
                   <UserRound
                     size={15}
                     className="text-[#0a583b]"
@@ -1133,13 +1111,13 @@ export default function CheckoutPage() {
                   }
                   autoComplete="name"
                   required
-                  className="w-full rounded-xl border border-[#dfe4e0] bg-white px-4 py-3.5 text-base text-[#142019] outline-none transition placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
+                  className="w-full rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 lg:px-4 lg:py-3.5 text-base text-[#142019] outline-none transition placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
                 />
               </label>
 
               {/* Phone */}
               <label className="block">
-                <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
+                <span className="mb-1.5 flex items-center gap-2 text-xs lg:mb-2 lg:text-sm font-extrabold text-[#142019]">
                   <Phone
                     size={15}
                     className="text-[#0a583b]"
@@ -1165,10 +1143,10 @@ export default function CheckoutPage() {
                 </p>
               </label>
 
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-3.5 lg:gap-5 sm:grid-cols-2">
                 {/* Governorate */}
                 <label className="block">
-                  <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
+                  <span className="mb-1.5 flex items-center gap-2 text-xs lg:mb-2 lg:text-sm font-extrabold text-[#142019]">
                     <MapPin
                       size={15}
                       className="text-[#0a583b]"
@@ -1197,7 +1175,7 @@ export default function CheckoutPage() {
                       setUnlistedArea(false);
                     }}
                     required
-                    className="w-full rounded-xl border border-[#dfe4e0] bg-white px-4 py-3.5 text-base text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
+                    className="w-full rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 lg:px-4 lg:py-3.5 text-base text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
                   >
                     <option value="">
                       {isArabic
@@ -1264,7 +1242,7 @@ export default function CheckoutPage() {
 
               {/* Address */}
               <label className="block">
-                <span className="mb-2 flex items-center gap-2 text-sm font-extrabold text-[#142019]">
+                <span className="mb-1.5 flex items-center gap-2 text-xs lg:mb-2 lg:text-sm font-extrabold text-[#142019]">
                   <MapPin
                     size={15}
                     className="text-[#0a583b]"
@@ -1292,9 +1270,9 @@ export default function CheckoutPage() {
                   }
                   autoComplete="street-address"
                   required
-                  rows={4}
+                  rows={2}
                   maxLength={500}
-                  className="w-full resize-none rounded-xl border border-[#dfe4e0] bg-white px-4 py-3.5 text-base leading-7 text-[#142019] outline-none transition placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
+                  className="w-full h-24 lg:h-[142px] resize-none rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 lg:px-4 lg:py-3.5 text-base leading-7 text-[#142019] outline-none transition placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
                 />
 
                 <p className="mt-1.5 text-end text-xs text-[#9aa39d]">
@@ -1336,7 +1314,7 @@ export default function CheckoutPage() {
           </form>
 
           {/* Order summary */}
-          <aside className="h-fit min-w-0 rounded-[1.75rem] border border-[#dfe4e0] bg-white p-5 sm:p-6 lg:sticky lg:top-6">
+          <aside className="h-fit min-w-0 rounded-2xl lg:rounded-[1.75rem] border border-[#dfe4e0] bg-white p-4 lg:p-6 lg:sticky lg:top-6">
             <p
               className={`text-[11px] font-extrabold uppercase text-[#0a583b] ${
                 isArabic
@@ -1349,6 +1327,11 @@ export default function CheckoutPage() {
                 : "Order summary"}
             </p>
 
+            <button type="button" aria-expanded={summaryOpen || Boolean(unavailableItem)} aria-controls="delivery-order-details" onClick={() => setSummaryOpen(!summaryOpen)} className="mt-2 flex min-h-10 w-full items-center justify-between gap-3 text-sm lg:hidden">
+              <span className="text-start text-[#526057]">{isArabic ? `${displayedItemsCount} قطعة · تفاصيل الطلب` : `${displayedItemsCount} item${displayedItemsCount === 1 ? "" : "s"} · Order details`}</span>
+              <span className="flex items-center gap-2 font-bold text-[#0a583b]">{formatPrice(total)}<ChevronDown size={16} aria-hidden="true" className={summaryOpen || unavailableItem ? "rotate-180" : ""} /></span>
+            </button>
+            <div id="delivery-order-details" className={`${summaryOpen || unavailableItem ? "" : "hidden"} lg:block`}>
             <div className="mt-3 flex items-end justify-between gap-4">
               <h2 className="text-2xl font-extrabold tracking-tight text-[#142019]">
                 {isArabic
@@ -1655,6 +1638,7 @@ export default function CheckoutPage() {
                   : "Back to cart"}
               </span>
             </BackLink>
+            </div>
           </aside>
         </div>
       </div>
@@ -1667,7 +1651,7 @@ export default function CheckoutPage() {
               ? "rtl"
               : "ltr"
           }
-          className="fixed inset-x-0 bottom-16 z-50 border-t border-[#dfe4e0] bg-white/95 px-4 py-3 shadow-[0_-12px_30px_rgba(20,32,25,0.08)] backdrop-blur-xl lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-50 border-t border-[#dfe4e0] bg-white/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(20,32,25,0.08)] backdrop-blur-xl lg:hidden"
         >
           <div className="mx-auto flex max-w-3xl items-center gap-4">
             <div className="min-w-0 shrink-0">

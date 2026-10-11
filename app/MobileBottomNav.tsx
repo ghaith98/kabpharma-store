@@ -26,7 +26,7 @@ export default function MobileBottomNav() {
 
   const count = useCartCount();
 
-  if (pathname === "/payment") return null;
+  if (pathname === "/payment" || pathname === "/checkout") return null;
 
   const items = [
     {
