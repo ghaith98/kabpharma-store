@@ -26,6 +26,8 @@ export default function MobileBottomNav() {
 
   const count = useCartCount();
 
+  if (pathname === "/payment") return null;
+
   const items = [
     {
       href: "/",
