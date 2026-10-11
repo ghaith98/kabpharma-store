@@ -18,6 +18,7 @@ import {
   Copy,
   Hash,
   LockKeyhole,
+  LoaderCircle,
   Package,
   QrCode,
   ShieldCheck,
@@ -88,7 +89,6 @@ export default function PaymentPage() {
   // by the server together with the rest of the order (see `appliedCoupon`).
   const [requestedCoupon, setRequestedCoupon] = useState<string | null>(null);
   const [couponInputError, setCouponInputError] = useState("");
-  const [couponOpen, setCouponOpen] = useState(false);
 
   useCheckoutAccountGuard(profileId, () => {
     setCheckout({}); setCart([]); setPageReady(false); setCouponInput(""); setRequestedCoupon(null); setTransactionId("");
@@ -288,7 +288,7 @@ export default function PaymentPage() {
   }
 
   function clearCoupon() {
-    setCouponInput(""); setRequestedCoupon(null); setCouponInputError(""); setCouponOpen(false);
+    setCouponInput(""); setRequestedCoupon(null); setCouponInputError("");
     resetIdempotencyKeys();
   }
 
@@ -721,32 +721,53 @@ export default function PaymentPage() {
             </ul>
 
             {/* Coupon */}
-            <div className="border-b border-[#e7ebe8] py-4">
-              {!couponOpen && !appliedCoupon ? (
-                <button type="button" onClick={() => setCouponOpen(true)} className="flex w-full items-center justify-between gap-3 text-sm font-extrabold text-[#526057] transition hover:text-[#0a583b]">
-                  <span className="flex items-center gap-2"><Tag size={16} strokeWidth={2} />{t("Have a discount code?", "لديك كود خصم؟")}</span>
-                  <span className="text-xs font-bold">{t("Add", "إضافة")}</span>
-                </button>
-              ) : (
-                <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="flex items-center gap-2 text-sm font-extrabold text-[#142019]"><Tag size={16} strokeWidth={2} className="text-[#0a583b]" />{t("Discount code", "كود الخصم")}</p>
-                    {appliedCoupon && <button type="button" onClick={clearCoupon} className="text-xs font-extrabold text-[#647168] transition hover:text-red-600">{t("Remove", "إزالة")}</button>}
-                  </div>
-                  {appliedCoupon ? (
-                    <p className="mt-3 rounded-xl bg-[#edf5f0] px-3 py-2.5 text-xs font-extrabold text-[#0a583b]">{appliedCoupon.type === "free_delivery" ? t(`${appliedCoupon.code} applied: free delivery`, `تم تطبيق كود ${appliedCoupon.code}: توصيل مجاني`) : t(`${appliedCoupon.code} applied`, `تم تطبيق كود ${appliedCoupon.code}`)}</p>
-                  ) : (
-                    <>
-                      <div className="mt-3 flex gap-2" dir="ltr">
-                        <input value={couponInput} onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponInputError(""); if (requestedCoupon) setRequestedCoupon(null); }} maxLength={40} className="min-w-0 flex-1 rounded-xl border border-[#cbd3cd] bg-white px-3 py-2.5 text-sm font-bold uppercase text-[#142019] outline-none focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]" />
-                        <button type="button" disabled={checkingCoupon} onClick={applyCoupon} className="rounded-xl bg-[#0a583b] px-4 text-xs font-extrabold text-white transition hover:bg-[#073f2c] disabled:bg-[#b4bdb7]">{checkingCoupon ? "..." : t("Apply", "تطبيق")}</button>
-                      </div>
-                      {couponError && <p role="alert" className="mt-2 text-xs font-bold text-red-600">{couponError}</p>}
-                    </>
-                  )}
+            <section aria-labelledby="coupon-heading" className="border-b border-[#e7ebe8] py-5">
+              <div className="rounded-2xl border border-[#dfe7e1] bg-[#f7f9f6] p-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f0e9] text-[#0a583b]" aria-hidden="true"><Tag size={18} strokeWidth={1.8} /></span>
+                  <h3 id="coupon-heading" className="text-sm font-extrabold text-[#142019]">{t("Discount code", "كود الخصم")}</h3>
                 </div>
-              )}
-            </div>
+                {appliedCoupon ? (
+                  <div role="status" className="mt-3 rounded-xl border border-[#c9dfce] bg-[#edf5f0] p-3">
+                    <div className="flex items-start gap-2 text-[#0a583b]">
+                      <Check size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+                      <div className="min-w-0 flex-1">
+                        <p className="break-all text-sm font-extrabold"><bdi>{appliedCoupon.code}</bdi></p>
+                        <p className="mt-1 text-xs font-medium leading-5">{appliedCoupon.type === "free_delivery" ? t("Applied · Free delivery", "تم التطبيق · توصيل مجاني") : t(`Applied · You save ${formatPrice(couponDiscount)}`, `تم التطبيق · وفّرتِ ${formatPrice(couponDiscount)}`)}</p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={clearCoupon} className="mt-2 min-h-9 rounded-lg px-2 text-xs font-bold text-[#526057] underline underline-offset-4 transition hover:text-[#0a583b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a583b]">{t("Remove code", "إزالة الكود")}</button>
+                  </div>
+                ) : (
+                  <>
+                    <p id="coupon-help" className="mt-3 text-xs leading-5 text-[#647168]">{t("Have a code? Enter it below to apply your discount.", "لديكِ كود خصم؟ أدخليه هنا لتطبيق الخصم على طلبكِ.")}</p>
+                    <label htmlFor="checkout-coupon" className="sr-only">{t("Discount code", "كود الخصم")}</label>
+                    <div className="mt-3 flex min-w-0 gap-2">
+                      <input
+                        id="checkout-coupon"
+                        dir="ltr"
+                        value={couponInput}
+                        placeholder={t("Enter code", "أدخلي الكود")}
+                        autoComplete="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        aria-invalid={Boolean(couponError)}
+                        aria-describedby={couponError ? "coupon-help coupon-error" : "coupon-help"}
+                        onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponInputError(""); if (requestedCoupon) setRequestedCoupon(null); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (!checkingCoupon) applyCoupon(); } }}
+                        maxLength={40}
+                        className={`h-12 min-w-0 flex-1 rounded-xl border bg-white px-3 text-sm font-bold text-[#142019] outline-none transition placeholder:font-normal placeholder:text-[#7a857e] focus:border-[#0a583b] focus:ring-2 focus:ring-[#0a583b]/15 ${couponError ? "border-red-400" : "border-[#cbd3cd]"}`}
+                      />
+                      <button type="button" disabled={checkingCoupon} onClick={applyCoupon} aria-busy={checkingCoupon} className="flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#0a583b] px-4 text-sm font-extrabold text-white transition hover:bg-[#073f2c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a583b] disabled:cursor-wait disabled:opacity-65">
+                        {checkingCoupon && <LoaderCircle size={15} className="animate-spin" aria-hidden="true" />}
+                        {checkingCoupon ? t("Applying", "جارٍ التطبيق") : t("Apply", "تطبيق")}
+                      </button>
+                    </div>
+                    {couponError && <p id="coupon-error" role="alert" className="mt-2 text-xs font-medium leading-5 text-red-700">{couponError}</p>}
+                  </>
+                )}
+              </div>
+            </section>
 
             {/* The server could not be reached for the prices. */}
             {pricing.failed && (
