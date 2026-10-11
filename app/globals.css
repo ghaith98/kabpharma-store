@@ -337,3 +337,9 @@ img {
 }
 .kab-auth-page input { max-width: 100%; }
 .kab-auth-page svg { flex-shrink: 0; }
+
+/* Arabic letters must join naturally, including nested order-detail headings. */
+.kab-order-details[dir="rtl"],
+.kab-order-details[dir="rtl"] * {
+  letter-spacing: normal !important;
+}

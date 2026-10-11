@@ -162,9 +162,9 @@ export default function OrderDetailsLanguageClient({
     return (
       <main
         dir={isArabic ? "rtl" : "ltr"}
-        className="min-h-screen bg-[#f7f7f3] px-4 py-10 sm:px-6 sm:py-16"
+        className="kab-order-details min-h-screen bg-[#f7f7f3] px-4 py-10 sm:px-6 sm:py-16"
       >
-        <div className="mx-auto max-w-2xl overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white">
+        <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl sm:rounded-[1.75rem] border border-[#dfe4e0] bg-white">
           <div className="p-7 text-center sm:p-12">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
               <ReceiptText className="h-7 w-7" strokeWidth={1.7} />
@@ -186,7 +186,7 @@ export default function OrderDetailsLanguageClient({
             <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <Link
                 href="/orders"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
+                className="inline-flex min-h-11 sm:min-h-12 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
               >
                 {isArabic ? "الانتقال إلى طلباتي" : "Go to my orders"}
                 <DirectionArrow className="h-4 w-4" />
@@ -301,7 +301,7 @@ export default function OrderDetailsLanguageClient({
   return (
     <main
       dir={isArabic ? "rtl" : "ltr"}
-      className="min-h-screen bg-[#f7f7f3] px-4 pb-20 pt-7 sm:px-6 sm:pb-24 sm:pt-11 lg:px-8"
+      className="kab-order-details min-h-screen bg-[#f7f7f3] px-4 pb-20 pt-4 sm:px-6 sm:pb-24 sm:pt-11 lg:px-8"
     >
       <div className="mx-auto max-w-[1180px]">
         <BackLink
@@ -317,15 +317,15 @@ export default function OrderDetailsLanguageClient({
           {isArabic ? "العودة إلى طلباتي" : "Back to my orders"}
         </BackLink>
 
-        <header className="mt-7 flex flex-col gap-6 border-b border-[#dfe4e0] pb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-10">
+        <header className="mt-4 flex flex-col gap-3 border-b border-[#dfe4e0] pb-4 sm:mt-7 sm:gap-6 sm:flex-row sm:items-end sm:justify-between sm:pb-10">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#0a583b]">
               {isArabic ? "تفاصيل الطلب" : "Order details"}
             </p>
-            <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-[#142019] sm:text-5xl">
+            <h1 className="mt-1 text-2xl sm:mt-3 font-extrabold tracking-[-0.035em] text-[#142019] sm:text-5xl">
               {isArabic ? "شكراً لطلبك" : "Thank you for your order"}
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[#647168] sm:text-base">
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-[#647168] sm:mt-3 sm:text-base sm:leading-7">
               {isArabic
                 ? "يمكنك متابعة حالة طلبك ومراجعة معلومات التوصيل من هذه الصفحة."
                 : "Track your order and review your delivery information from this page."}
@@ -339,23 +339,23 @@ export default function OrderDetailsLanguageClient({
             <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#7b867e]">
               {isArabic ? "رقم الطلب" : "Order number"}
             </p>
-            <p className="mt-1 text-xl font-extrabold text-[#142019]">
+            <p className="mt-1 text-base sm:text-xl font-extrabold text-[#142019]">
               #{order.id}
             </p>
           </div>
         </header>
 
-        <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)] lg:items-start">
-          <div className="min-w-0 space-y-5">
+        <div className="mt-4 grid gap-3 sm:mt-7 sm:gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)] lg:items-start">
+          <div className="min-w-0 space-y-3 sm:space-y-5">
             <section
               aria-live="polite"
-              className="overflow-hidden rounded-[1.75rem] border border-[#dfe4e0] bg-white"
+              className="overflow-hidden rounded-2xl sm:rounded-[1.75rem] border border-[#dfe4e0] bg-white"
             >
-              <div className="p-6 sm:p-8">
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex items-start gap-4">
+              <div className="p-4 sm:p-8">
+                <div className="flex flex-col gap-3 sm:gap-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-3 sm:gap-4">
                     <div
-                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${style.icon}`}
+                      className={`flex h-10 w-10 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full ${style.icon}`}
                     >
                       <OrderStatusIcon status={order.status} />
                     </div>
@@ -363,14 +363,14 @@ export default function OrderDetailsLanguageClient({
                       <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#7b867e]">
                         {isArabic ? "الحالة الحالية" : "Current status"}
                       </p>
-                      <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[#142019]">
+                      <h2 className="mt-1 text-lg sm:mt-2 sm:text-2xl font-extrabold tracking-[-0.02em] text-[#142019]">
                         {status.label}
                       </h2>
                     </div>
                   </div>
 
                   <span
-                    className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-extrabold ${style.badge}`}
+                    className={`hidden sm:inline-flex w-fit items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-extrabold ${style.badge}`}
                   >
                     <OrderStatusIcon
                       status={order.status}
@@ -380,14 +380,14 @@ export default function OrderDetailsLanguageClient({
                   </span>
                 </div>
 
-                <p className="mt-6 max-w-2xl text-sm leading-7 text-[#526057] sm:text-base">
+                <p className="mt-3 max-w-2xl text-xs leading-5 text-[#526057] sm:mt-6 sm:text-base sm:leading-7">
                   {statusDescription}
                 </p>
 
                 {order.status === "pending" && (
-                  <div className="mt-6 flex items-start gap-3 rounded-2xl border border-[#dce9e1] bg-[#f4f8f5] p-4">
+                  <div className="mt-3 flex items-start gap-2 rounded-xl border border-[#dce9e1] bg-[#f4f8f5] p-3 sm:mt-6 sm:gap-3 sm:rounded-2xl sm:p-4">
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#0a583b]" />
-                    <p className="text-sm leading-6 text-[#425148]">
+                    <p className="text-xs sm:text-sm leading-6 text-[#425148]">
                       {isCashOnDelivery
                         ? isArabic
                           ? "تم تأكيد إرسال الطلب. سنحدّث حالته هنا بعد مراجعته."
@@ -401,13 +401,13 @@ export default function OrderDetailsLanguageClient({
               </div>
             </section>
 
-            <section className="rounded-[1.75rem] border border-[#dfe4e0] bg-white p-6 sm:p-8">
-              <div className="flex items-end justify-between gap-4 border-b border-[#edf0ed] pb-5">
+            <section className="rounded-2xl sm:rounded-[1.75rem] border border-[#dfe4e0] bg-white p-4 sm:p-8">
+              <div className="flex items-end justify-between gap-4 border-b border-[#edf0ed] pb-3 sm:pb-5">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#7b867e]">
                     {isArabic ? "محتويات الطلب" : "Order items"}
                   </p>
-                  <h2 className="mt-2 text-xl font-extrabold text-[#142019]">
+                  <h2 className="mt-1 text-base sm:mt-2 sm:text-xl font-extrabold text-[#142019]">
                     {isArabic ? "المنتجات التي طلبتها" : "Items in your order"}
                   </h2>
                 </div>
@@ -427,8 +427,8 @@ export default function OrderDetailsLanguageClient({
                     );
 
                     return (
-                      <article key={item.id} className="flex gap-4 py-5 first:pt-5 last:pb-0">
-                        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#e6ebe7] bg-[#fafbf9] p-2">
+                      <article key={item.id} className="flex gap-3 py-3 first:pt-3 last:pb-0 sm:gap-4 sm:py-5 sm:first:pt-5">
+                        <div className="flex h-14 w-14 sm:h-[72px] sm:w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#e6ebe7] bg-[#fafbf9] p-2">
                           {item.image_url ? (
                             <Image
                               src={item.image_url}
@@ -443,9 +443,9 @@ export default function OrderDetailsLanguageClient({
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+                          <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1 sm:gap-x-4 sm:gap-y-2">
                             <div className="min-w-0">
-                              <p className="break-words text-sm font-extrabold leading-6 text-[#142019]">
+                              <p className="break-words text-sm font-extrabold leading-5 sm:leading-6 text-[#142019]">
                                 {item.product_name || (isArabic ? "منتج KAB Pharma" : "KAB Pharma product")}
                               </p>
                               {variantLabel && (
@@ -503,13 +503,13 @@ export default function OrderDetailsLanguageClient({
             </section>
 
             {!isTerminal && (
-              <section className="rounded-[1.75rem] border border-[#dfe4e0] bg-white p-6 sm:p-8">
+              <section className="rounded-2xl sm:rounded-[1.75rem] border border-[#dfe4e0] bg-white p-4 sm:p-8">
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#7b867e]">
                       {isArabic ? "تتبّع مباشر" : "Live progress"}
                     </p>
-                    <h2 className="mt-2 text-xl font-extrabold text-[#142019]">
+                    <h2 className="mt-1 text-base sm:mt-2 sm:text-xl font-extrabold text-[#142019]">
                       {isArabic ? "مراحل الطلب" : "Order journey"}
                     </h2>
                   </div>
@@ -517,7 +517,7 @@ export default function OrderDetailsLanguageClient({
                 </div>
 
                 {timeline.length > 0 ? (
-                  <ol className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <ol className="mt-3 grid grid-cols-2 gap-2 sm:mt-7 sm:gap-3 xl:grid-cols-4">
                     {timeline.map((step, index) => {
                       const isCompleted =
                         currentStepIndex !== -1 && index <= currentStepIndex;
@@ -526,7 +526,7 @@ export default function OrderDetailsLanguageClient({
                       return (
                         <li
                           key={step.key}
-                          className={`relative rounded-2xl border p-4 ${
+                          className={`relative rounded-xl border p-3 sm:rounded-2xl sm:p-4 ${
                             isCurrent
                               ? "border-[#8fb5a0] bg-[#edf5f0]"
                               : isCompleted
@@ -548,7 +548,7 @@ export default function OrderDetailsLanguageClient({
                             )}
                           </div>
                           <p
-                            className={`mt-4 text-sm font-extrabold leading-5 ${
+                            className={`mt-2 text-xs sm:mt-4 sm:text-sm font-extrabold leading-5 ${
                               isCompleted ? "text-[#142019]" : "text-[#8b958e]"
                             }`}
                           >
@@ -574,7 +574,7 @@ export default function OrderDetailsLanguageClient({
                 {["pending", "accepted", "out_for_delivery"].includes(
                   order.status
                 ) && (
-                  <div className="mt-6 flex items-start gap-3 border-t border-[#edf0ed] pt-5">
+                  <div className="mt-3 flex items-start gap-2 border-t border-[#edf0ed] pt-3 sm:mt-6 sm:gap-3 sm:pt-5">
                     <Truck className="mt-0.5 h-5 w-5 shrink-0 text-[#0a583b]" />
                     <div>
                       <p className="text-sm font-extrabold text-[#142019]">
@@ -595,7 +595,7 @@ export default function OrderDetailsLanguageClient({
 
             {isTerminal && (
               <section
-                className={`rounded-[1.75rem] border p-6 sm:p-8 ${
+                className={`rounded-2xl sm:rounded-[1.75rem] border p-4 sm:p-8 ${
                   isRejected
                     ? "border-[#e8c7c2] bg-[#fff7f5]"
                     : "border-[#d8dcda] bg-white"
@@ -627,8 +627,8 @@ export default function OrderDetailsLanguageClient({
             )}
           </div>
 
-          <aside className="min-w-0 rounded-[1.75rem] border border-[#dfe4e0] bg-white p-5 sm:p-6 lg:sticky lg:top-6">
-            <div className="flex items-center gap-3 border-b border-[#edf0ed] pb-5">
+          <aside className="min-w-0 rounded-2xl sm:rounded-[1.75rem] border border-[#dfe4e0] bg-white p-4 sm:p-6 lg:sticky lg:top-6">
+            <div className="flex items-center gap-3 border-b border-[#edf0ed] pb-3 sm:pb-5">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#edf5f0] text-[#0a583b]">
                 <ReceiptText className="h-4.5 w-4.5" />
               </div>
@@ -647,7 +647,7 @@ export default function OrderDetailsLanguageClient({
               </div>
             </div>
 
-            <div className="space-y-3 border-b border-[#edf0ed] py-5 text-sm">
+            <div className="space-y-2.5 border-b border-[#edf0ed] py-3 sm:space-y-3 sm:py-5 text-sm">
               <div className="flex items-center justify-between gap-4 text-[#647168]">
                 <span>{isArabic ? "المنتجات" : "Products"}</span>
                 <span dir="ltr" className="font-bold text-[#142019]">
@@ -718,7 +718,7 @@ export default function OrderDetailsLanguageClient({
                 const Icon = item.icon;
 
                 return (
-                  <div key={item.label} className="flex gap-3 py-4">
+                  <div key={item.label} className="flex gap-2 py-3 sm:gap-3 sm:py-4">
                     <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#0a583b]" />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-[#7b867e]">
@@ -726,7 +726,7 @@ export default function OrderDetailsLanguageClient({
                       </p>
                       <p
                         dir={item.dir}
-                        className={`mt-1 break-words text-sm font-bold leading-6 text-[#142019] ${
+                        className={`mt-1 break-words text-sm font-medium sm:font-bold leading-5 sm:leading-6 text-[#142019] ${
                           item.dir === "ltr" && isArabic ? "text-right" : ""
                         }`}
                       >
@@ -742,17 +742,17 @@ export default function OrderDetailsLanguageClient({
               <CancelOrderClient orderId={order.id} />
             )}
 
-            <div className="mt-5 grid gap-2.5">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-1 sm:gap-2.5">
               <Link
                 href="/products"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-5 text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
+                className="inline-flex min-h-11 sm:min-h-12 items-center justify-center gap-2 rounded-full bg-[#0a583b] px-3 text-xs sm:px-5 sm:text-sm font-extrabold text-white transition hover:bg-[#073f2c]"
               >
                 <ShoppingBag className="h-4 w-4" />
                 {isArabic ? "متابعة التسوق" : "Continue shopping"}
               </Link>
               <Link
                 href="/"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#cbd3cd] px-5 text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
+                className="inline-flex min-h-11 sm:min-h-12 items-center justify-center gap-2 rounded-full border border-[#cbd3cd] px-3 text-xs sm:px-5 sm:text-sm font-extrabold text-[#142019] transition hover:border-[#0a583b] hover:text-[#0a583b]"
               >
                 <Home className="h-4 w-4" />
                 {isArabic ? "الصفحة الرئيسية" : "Home page"}
