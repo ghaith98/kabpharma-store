@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
-let lang='ar', index=0, states=[], issue=false, updating=false,deliveryAvailable=true;
+let lang='ar', index=0, states=[], issue=false, updating=false;
 const initial={0:'1',1:[{id:1,name:'Test product',price:380,quantity:1}],3:true,5:'payment-account',6:true,8:{governorate:'Damascus',delivery_area:'Area',address:'Address'}};
 const pageExports={};
 const storage=new Map();
@@ -16,7 +16,7 @@ const require=name=>{
  if(name==='@/lib/use-cart-quote')return {quoteIssueText:()=> 'Unavailable',useCartQuote:(cart,options)=>{
   const applied=options.couponCode==='SAVE10';
   return {fresh:!updating,updating,failed:false,lineFor:()=>null,issueFor:()=>issue?'out_of_stock':null,
-   quote:{deliveryAreaFound:deliveryAvailable,promotions:[],delivery:{fee:120},totals:{subtotal:380,couponDiscount:applied?38:0,total:500-(applied?38:0)+(options.paymentMethod==='cod'?50:0),codFee:options.paymentMethod==='cod'?50:0,freeItemsCount:0},coupon:applied?{code:'SAVE10',applied:true,type:'percentage'}:null}};
+   quote:{promotions:[],delivery:{fee:120},totals:{subtotal:380,couponDiscount:applied?38:0,total:500-(applied?38:0)+(options.paymentMethod==='cod'?50:0),codFee:options.paymentMethod==='cod'?50:0,freeItemsCount:0},coupon:applied?{code:'SAVE10',applied:true,type:'percentage'}:null}};
  }};
  return {};
 };
@@ -51,5 +51,3 @@ issue=true;tree=render();assert.equal(nodes(tree,n=>n.props?.form==='payment-pro
 issue=false;updating=true;tree=render();assert.equal(nodes(tree,n=>n.props?.form==='payment-proof-form')[0].props.disabled,true);
 lang='en';tree=render();assert.equal(tree.props.dir,'ltr');
 console.log('Mobile payment checks passed: single coupon/form, summary disclosure, coupon Enter, payment switching, unavailable items and updating totals prevent confirmation, Arabic/English rendering.');
-
-issue=false;updating=false;deliveryAvailable=false;tree=render();assert.equal(nodes(tree,n=>n.props?.form==='payment-proof-form')[0].props.disabled,true);assert.ok(nodes(tree,n=>n.props?.role==='alert').length);

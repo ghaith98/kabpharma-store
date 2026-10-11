@@ -1,6 +1,5 @@
 "use client";
 
-import { normalizeDeliveryLocation, type DeliveryLocation } from "@/lib/delivery-location";
 import { checkoutAccountId, clearCheckoutDraft, clearCheckoutSession, readCheckoutDraft } from "@/lib/checkout-session";
 import { useCheckoutAccountGuard } from "@/lib/use-checkout-account-guard";
 
@@ -52,9 +51,6 @@ type CartItemWithVariant = CartItem & {
 };
 
 type CheckoutData = {
-  delivery_location?: DeliveryLocation | null;
-  delivery_receipt?: string;
-  delivery_estimate?: { distanceMeters: number; expiresAt: number };
   name?: string;
   phone?: string;
   governorate?: string;
@@ -110,8 +106,6 @@ export default function PaymentPage() {
     couponCode: requestedCoupon,
     governorate: checkout.governorate || null,
     deliveryArea: checkout.delivery_area || null,
-    deliveryLocation: checkout.delivery_location || null,
-    deliveryReceipt: checkout.delivery_receipt || null,
     paymentMethod: paymentMethod === "cod" ? "cod" : "transfer",
     enabled: pageReady,
   });
@@ -220,7 +214,7 @@ export default function PaymentPage() {
   const codFee = paymentMethod === "cod" ? (quote ? quote.totals.codFee || COD_FEE : COD_FEE) : 0;
 
   // Only a fresh answer is shown as the amount to pay.
-  const totalReady = pricing.fresh && quote != null && quote.deliveryAreaFound === true;
+  const totalReady = pricing.fresh && quote != null;
   const total = quote ? quote.totals.total : 0;
   const totalText = totalReady ? formatPrice(total) : "…";
 
@@ -357,7 +351,7 @@ export default function PaymentPage() {
     }
 
     if (quote && pricing.fresh && quote.deliveryAreaFound === false) {
-      alert(t("This delivery area is no longer available. Please return to delivery details and recalculate the location.", "تسعيرة الموقع انتهت أو غير متاحة. يرجى العودة لمعلومات التوصيل وإعادة حساب الموقع."));
+      alert(t("This delivery area is no longer available. Please choose it again.", "منطقة التوصيل لم تعد متاحة. يرجى اختيارها من جديد."));
       router.replace("/checkout"); return;
     }
 
@@ -410,7 +404,7 @@ export default function PaymentPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             checkoutProfileId: profileId,
-            checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address, delivery_location: normalizeDeliveryLocation(checkout.delivery_location), delivery_receipt: checkout.delivery_receipt },
+            checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
             cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
             ...pricedOrder,
             idempotencyKey,
@@ -444,7 +438,7 @@ export default function PaymentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checkoutProfileId: profileId,
-          checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address, delivery_location: normalizeDeliveryLocation(checkout.delivery_location), delivery_receipt: checkout.delivery_receipt },
+          checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
           cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
           shamcashTransactionId: transactionId.trim(),
           ...pricedOrder,
@@ -791,7 +785,6 @@ export default function PaymentPage() {
             </div>
 
             {/* The server could not be reached for the prices. */}
-            {quote && pricing.fresh && quote.deliveryAreaFound === false && <div role="alert" className="order-4 mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 lg:order-none">{t("The location quote is missing or expired.", "تسعيرة الموقع غير موجودة أو انتهت صلاحيتها.")} <Link href="/checkout" className="underline">{t("Recalculate delivery", "إعادة حساب التوصيل")}</Link></div>}
             {pricing.failed && (
               <div role="alert" className="order-4 mt-3 flex items-center justify-between gap-3 rounded-xl bg-red-50 lg:order-none px-3 py-2.5 text-xs font-bold text-red-700">
                 <span>{t("The order total could not be calculated.", "تعذر حساب إجمالي الطلب.")}</span>
@@ -807,7 +800,7 @@ export default function PaymentPage() {
               {freePromotions.map((promotion) => <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">+{promotion.affectedQuantity} {t("free", "مجاناً")}</span></div>)}
               {paidPromotions.map((promotion) => <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">−{formatPrice(promotion.discountAmount)}</span></div>)}
               {appliedCoupon && couponDiscount > 0 && <div className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{t(`Coupon (${appliedCoupon.code})`, `كود الخصم (${appliedCoupon.code})`)}</span><span className="font-bold">−{formatPrice(couponDiscount)}</span></div>}
-              <div className="flex items-center justify-between gap-4 text-[#526057]"><span>{t("Delivery", "التوصيل")}{checkout.delivery_estimate && <small className="block text-xs">{(checkout.delivery_estimate.distanceMeters / 1000).toFixed(2)} {t("km by road", "كم بالطريق")}</small>}</span><span className="font-bold text-[#142019]">{deliveryFee > 0 ? formatPrice(deliveryFee) : t("Free", "مجاني")}</span></div>
+              <div className="flex items-center justify-between gap-4 text-[#526057]"><span>{t("Delivery", "التوصيل")}</span><span className="font-bold text-[#142019]">{deliveryFee > 0 ? formatPrice(deliveryFee) : t("Free", "مجاني")}</span></div>
               {paymentMethod === "cod" && <div className="flex items-center justify-between gap-4 text-[#526057]"><span className="text-[#0a583b]">{t("Cash on delivery fee", "رسوم الدفع عند الاستلام")}</span><span className="font-bold text-[#0a583b]">{formatPrice(codFee)}</span></div>}
             </div>
 

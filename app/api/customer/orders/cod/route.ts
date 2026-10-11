@@ -1,5 +1,3 @@
-import { deliveryPricingSnapshot } from "@/lib/delivery-route";
-import { normalizeDeliveryLocation } from "@/lib/delivery-location";
 import { couponRuleFailure } from "@/lib/coupon-policy";
 import { checkoutAccountId } from "@/lib/checkout-session";
 import { NextResponse } from "next/server";
@@ -22,8 +20,6 @@ type SubmittedCartItem = {
 };
 
 type CheckoutPayload = {
-  delivery_location?: unknown;
-  delivery_receipt?: unknown;
   name?: unknown;
   governorate?: unknown;
   delivery_area?: unknown;
@@ -150,10 +146,6 @@ export async function POST(request: Request) {
     150
   );
   const address = cleanText(checkout.address, 500);
-  const deliveryLocation = normalizeDeliveryLocation(checkout.delivery_location);
-  if (!deliveryLocation || !("latitude" in deliveryLocation)) {
-    return NextResponse.json({ success: false, error: "Invalid delivery location" }, { status: 400 });
-  }
 
   if (
     customerName.length < 2 ||
@@ -228,8 +220,6 @@ export async function POST(request: Request) {
     profileId: profile.id,
     governorate,
     deliveryAreaName,
-    deliveryLocation,
-    deliveryReceipt: checkout.delivery_receipt,
     paymentMethod: "cod",
     priceToken: body.priceToken,
     expectedTotal: body.expectedTotal,
@@ -255,15 +245,13 @@ export async function POST(request: Request) {
   // Atomic + idempotent creation. If items fail, the order rolls back.
   // If this idempotency key was already used, the existing order is returned.
   const { data: rpcData, error: rpcError } =
-    await supabaseAdmin.rpc("create_order_with_delivery_location", {
+    await supabaseAdmin.rpc("create_order_with_coupon_rules", {
       p_order: {
         customer_name: customerName,
         phone: profile.phone,
         governorate,
         delivery_area: quote.deliveryAreaName,
         address,
-        delivery_location: deliveryLocation,
-        delivery_pricing: quote.roadDelivery ? deliveryPricingSnapshot(quote.roadDelivery) : null,
         delivery_fee: deliveryFee,
         cod_fee: pricing.totals.codFee,
         total_price: orderTotal,

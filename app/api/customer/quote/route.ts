@@ -38,8 +38,6 @@ export async function POST(request: Request) {
     couponCode?: unknown;
     governorate?: unknown;
     deliveryArea?: unknown;
-    deliveryLocation?: unknown;
-    deliveryReceipt?: unknown;
     paymentMethod?: unknown;
   };
 
@@ -126,10 +124,6 @@ export async function POST(request: Request) {
       }
     }
 
-    if (body.deliveryLocation || body.deliveryReceipt || body.governorate) {
-      session = session || await getCustomerSession().catch(() => null);
-    }
-
     const couponSkipped =
       couponCode == null &&
       typeof body.couponCode === "string" &&
@@ -145,8 +139,6 @@ export async function POST(request: Request) {
         typeof body.governorate === "string" ? body.governorate : null,
       deliveryAreaName:
         typeof body.deliveryArea === "string" ? body.deliveryArea : null,
-      deliveryLocation: body.deliveryLocation,
-      deliveryReceipt: body.deliveryReceipt,
       paymentMethod: body.paymentMethod === "cod" ? "cod" : "transfer",
       nowMs,
     });

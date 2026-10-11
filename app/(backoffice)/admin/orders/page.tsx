@@ -1,7 +1,5 @@
 "use client";
 
-import { deliveryLocationUrl } from "@/lib/delivery-location";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,8 +48,6 @@ type AdminOrder = {
   governorate: string | null;
   delivery_area: string | null;
   address: string | null;
-  delivery_location?: unknown;
-  delivery_pricing?: {distanceMeters?: number; baseFee?: number; perKm?: number; quotedFee?: number} | null;
   delivery_fee: number | null;
   cod_fee: number | null;
   payment_method: string | null;
@@ -100,7 +96,6 @@ export default function AdminOrdersPage() {
         governorate,
         delivery_area,
         address,
-        delivery_location, delivery_pricing,
         delivery_fee,
         cod_fee,
         payment_method,
@@ -515,11 +510,6 @@ export default function AdminOrdersPage() {
                   <strong>Address:</strong>{" "}
                   {order.address}
                 </p>
-
-                {deliveryLocationUrl(order.delivery_location) && (
-                  <p><strong>Location:</strong>{" "}<a href={deliveryLocationUrl(order.delivery_location)!} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center font-bold text-[#0a583b] underline underline-offset-4">Open customer location on Google Maps ↗</a></p>
-                )}
-                    {order.delivery_pricing && typeof order.delivery_pricing.distanceMeters === "number" && <p className="mt-1 text-xs text-gray-500">Road: {(order.delivery_pricing.distanceMeters / 1000).toFixed(2)} km · {order.delivery_pricing.baseFee} + {order.delivery_pricing.perKm} SYP/km · Before offers: {order.delivery_pricing.quotedFee} SYP</p>}
 
                 <p>
                   <strong>Delivery Fee:</strong>{" "}
