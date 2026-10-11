@@ -101,15 +101,7 @@ export default function WelcomeOffer() {
           <p className="mt-5 text-sm leading-7 text-[#526058]">{ar ? "أنشئ حسابك واستمتع بخصم على طلبك الأول، واحفظ مفضلتك وتابع طلباتك بسهولة." : "Create your account and enjoy a discount on your first order. Keep your favorites close and follow your orders easily."}</p>
           <Link href="/signup" onClick={close} className="mt-6 flex min-h-12 items-center justify-center rounded-full border border-[#142019] px-5 text-sm font-medium transition hover:bg-[#142019] hover:text-white">{ar ? "إنشاء حساب" : "Create Account"}</Link>
           <p className="mt-3 text-xs leading-6 text-[#526058]">{ar ? "بعد إنشاء حسابك، استخدم الكود " : "After creating your account, use "}<strong className="font-semibold">{offer.code}</strong>{ar ? " عند الدفع." : " at checkout."}</p>
-          <details className="mt-3 text-xs leading-6 text-[#526058]">
-            <summary className="cursor-pointer underline underline-offset-2">{ar ? "تطبق الشروط والأحكام" : "T&Cs apply."}</summary>
-            <p className="mt-2">{ar ? `استخدم ${offer.code} عند الدفع. للطلب الأول فقط، مرة واحدة لكل حساب. الطلبات الملغية والمرفوضة لا تُحتسب. الطلب القائم يحجز حق الاستخدام.` : `Enter ${offer.code} at checkout. First order only, once per account. Cancelled and rejected orders do not count. An active order reserves eligibility.`}</p>
-            {offer.minimum > 0 && <p>{ar ? "الحد الأدنى للطلب: " : "Minimum order: "}{offer.minimum.toLocaleString(lang)} SYP</p>}
-            {offer.maximum > 0 && <p>{ar ? "الحد الأقصى للخصم: " : "Maximum discount: "}{offer.maximum.toLocaleString(lang)} SYP</p>}
-            {!offer.saleItems && <p>{ar ? "لا يشمل المنتجات المخفضة." : "Excludes items on sale."}</p>}
-            <p>{ar ? "العروض التلقائية لا تُجمع مع الكوبون إلا إذا سمحت شروطها." : "Automatic promotions combine with this coupon only when that promotion allows it."}</p>
-            {offer.expiresAt && <p>{ar ? "ينتهي: " : "Expires: "}{new Date(offer.expiresAt).toLocaleString(lang)}</p>}
-          </details>
+
           <p className="mt-7 text-xs text-[#526058]">{ar ? "لديك حساب بالفعل؟ " : "Already have an account? "}<Link href="/login" onClick={close} className="underline underline-offset-2">{ar ? "تسجيل الدخول" : "Log in"}</Link></p>
         </div>
       </div>

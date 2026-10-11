@@ -1,5 +1,8 @@
 "use client";
 
+import { checkoutAccountId, clearCheckoutSession, readCheckoutDraft, saveCheckoutDraft } from "@/lib/checkout-session";
+import { useCheckoutAccountGuard } from "@/lib/use-checkout-account-guard";
+
 import {
   useEffect,
   useEffectEvent,
@@ -56,6 +59,7 @@ type CartItemWithVariant =
   };
 
 type StoredUser = {
+  id?: number | string;
   full_name?: string;
   phone?: string;
 };
@@ -133,6 +137,9 @@ export default function CheckoutPage() {
     useLanguage();
   const router = useRouter();
 
+  const [profileId, setProfileId] = useState<string | null>(null);
+
+
   const isArabic =
     lang === "ar";
 
@@ -203,6 +210,10 @@ export default function CheckoutPage() {
     setAccountCheckError,
   ] = useState("");
 
+  useCheckoutAccountGuard(profileId, () => {
+    setName(""); setPhone(""); setAddress(""); setGovernorate(""); setDeliveryArea(""); setCart([]); setCheckingBan(true);
+  });
+
   const checkBanOnInitialization =
     useEffectEvent(
       (accountPhone: string) =>
@@ -215,10 +226,6 @@ export default function CheckoutPage() {
     let cancelled = false;
 
     async function initializeCheckout() {
-      setCart(
-        getCart() as CartItemWithVariant[]
-      );
-
       void loadDeliveryData();
 
       try {
@@ -231,6 +238,7 @@ export default function CheckoutPage() {
         );
 
         if (response.status === 401) {
+          clearCheckoutSession();
           localStorage.removeItem("kab_user");
           localStorage.setItem(
             "redirect_after_login",
@@ -254,37 +262,24 @@ export default function CheckoutPage() {
           user?.phone || ""
         ).trim();
 
-        if (!accountPhone || cancelled) return;
+        const verifiedId = checkoutAccountId(user?.id);
+        if (cancelled) return;
+        if (!accountPhone || !verifiedId) throw new Error("Account check failed");
+        setProfileId(verifiedId);
 
         localStorage.setItem(
           "kab_user",
           JSON.stringify(user)
         );
 
+        setCart(getCart() as CartItemWithVariant[]);
         setPhone(accountPhone);
 
-        const savedCheckout =
-          localStorage.getItem("checkout");
-
-        if (savedCheckout) {
-          try {
-            const checkout = JSON.parse(
-              savedCheckout
-            ) as StoredCheckout;
-            setName(
-              checkout.name || user?.full_name || ""
-            );
-            setGovernorate(
-              checkout.governorate || ""
-            );
-            setAddress(checkout.address || "");
-          } catch {
-            localStorage.removeItem("checkout");
-            setName(user?.full_name || "");
-          }
-        } else {
-          setName(user?.full_name || "");
-        }
+        const checkout = readCheckoutDraft<StoredCheckout>(localStorage, verifiedId);
+        setName(checkout?.name || user?.full_name || "");
+        setGovernorate(checkout?.governorate || "");
+        setAddress(checkout?.address || "");
+        setDeliveryArea("");
 
         await checkBanOnInitialization(accountPhone);
       } catch {
@@ -314,44 +309,11 @@ export default function CheckoutPage() {
   }, [isArabic, router]);
 
   useEffect(() => {
-    const savedCheckout =
-      localStorage.getItem(
-        "checkout"
-      );
-
-    if (
-      !savedCheckout ||
-      deliveryAreas.length === 0
-    ) {
-      return;
-    }
-
-    try {
-      const checkout =
-        JSON.parse(savedCheckout) as StoredCheckout;
-
-      const matchedArea =
-        deliveryAreas.find(
-          (area) =>
-            area.area_name ===
-              checkout.delivery_area &&
-            area.governorate ===
-              checkout.governorate
-        );
-
-      if (matchedArea) {
-        window.queueMicrotask(() => {
-          setDeliveryArea(
-            String(matchedArea.id)
-          );
-        });
-      }
-    } catch {
-      localStorage.removeItem(
-        "checkout"
-      );
-    }
-  }, [deliveryAreas]);
+    if (!profileId || deliveryAreas.length === 0) return;
+    const checkout = readCheckoutDraft<StoredCheckout>(localStorage, profileId);
+    const matchedArea = checkout && deliveryAreas.find(area => area.area_name === checkout.delivery_area && area.governorate === checkout.governorate);
+    if (matchedArea) window.queueMicrotask(() => setDeliveryArea(String(matchedArea.id)));
+  }, [deliveryAreas, profileId]);
 
   /*
     Every price on this page comes from the server (see useCartQuote),
@@ -820,6 +782,15 @@ export default function CheckoutPage() {
     setSubmitting(true);
 
     try {
+      const sessionResponse = await fetch("/api/customer/me", {cache:"no-store",credentials:"include"});
+      if (!sessionResponse.ok) throw new Error("Could not verify the current account. Please sign in again.");
+      const currentUser = (await sessionResponse.json()).user;
+      if (!profileId || checkoutAccountId(currentUser?.id) !== profileId) {
+        setName(""); setPhone(""); setAddress(""); setGovernorate(""); setDeliveryArea("");
+        alert(isArabic ? "تغيّر الحساب. يرجى إدخال بيانات التوصيل للحساب الحالي." : "Your account changed. Please enter delivery details for the current account.");
+        window.location.reload();
+        return;
+      }
       const banStatus =
         await checkCurrentUserBan(
           accountPhone
@@ -847,9 +818,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      localStorage.setItem(
-        "checkout",
-        JSON.stringify({
+      saveCheckoutDraft(localStorage, profileId, {
           name:
             normalizedName,
 
@@ -874,8 +843,7 @@ export default function CheckoutPage() {
 
           delivery_fee:
             deliveryFee,
-        })
-      );
+      });
 
       router.push("/payment");
     } catch (error) {

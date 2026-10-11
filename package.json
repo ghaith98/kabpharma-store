@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run test:scroll && npm run test:coupons && npm run test:availability && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run test:scroll && npm run test:coupons && npm run test:availability && npm run test:checkout && npm run build",
     "test:scroll": "node scripts/check-scroll-scheduler.mjs",
     "test:coupons": "node scripts/check-coupon-database.mjs && node scripts/check-welcome-visit.mjs",
-    "test:availability": "node scripts/check-cart-availability.mjs"
+    "test:availability": "node scripts/check-cart-availability.mjs",
+    "test:checkout": "node scripts/check-checkout-session.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.3",

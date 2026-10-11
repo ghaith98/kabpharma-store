@@ -1,5 +1,7 @@
 "use client";
 
+import { clearCheckoutSession } from "@/lib/checkout-session";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -323,6 +325,7 @@ export default function SignupPage() {
         return;
       }
 
+      clearCheckoutSession();
       localStorage.setItem("kab_user", JSON.stringify({
         id: result.user.id,
         full_name: result.user.full_name,
@@ -505,6 +508,7 @@ export default function SignupPage() {
         return;
       }
 
+      clearCheckoutSession();
       localStorage.setItem("kab_user", JSON.stringify({
         id: result.user.id,
         full_name: result.user.full_name,

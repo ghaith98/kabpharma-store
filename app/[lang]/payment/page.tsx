@@ -1,5 +1,8 @@
 "use client";
 
+import { checkoutAccountId, clearCheckoutDraft, clearCheckoutSession, readCheckoutDraft } from "@/lib/checkout-session";
+import { useCheckoutAccountGuard } from "@/lib/use-checkout-account-guard";
+
 import Link from "next/link";
 import BackLink from "@/app/BackLink";
 import Image from "next/image";
@@ -55,6 +58,7 @@ type CheckoutData = {
 };
 
 type StoredUser = {
+  id?: number | string;
   full_name?: string;
   phone?: string;
 };
@@ -63,6 +67,9 @@ export default function PaymentPage() {
   const { lang } = useLanguage();
   const router = useRouter();
   const isArabic = lang === "ar";
+
+  const [profileId, setProfileId] = useState<string | null>(null);
+
 
   const [cart, setCart] = useState<CartItemWithVariant[]>([]);
   const [loading, setLoading] = useState(false);
@@ -82,6 +89,10 @@ export default function PaymentPage() {
   const [requestedCoupon, setRequestedCoupon] = useState<string | null>(null);
   const [couponInputError, setCouponInputError] = useState("");
   const [couponOpen, setCouponOpen] = useState(false);
+
+  useCheckoutAccountGuard(profileId, () => {
+    setCheckout({}); setCart([]); setPageReady(false); setCouponInput(""); setRequestedCoupon(null); setTransactionId("");
+  });
 
   /*
     Every amount on this page comes from the server: prices, promotions,
@@ -118,6 +129,7 @@ export default function PaymentPage() {
       try {
         const response = await fetch("/api/customer/me", { credentials: "include", cache: "no-store" });
         if (response.status === 401) {
+          clearCheckoutSession();
           localStorage.removeItem("kab_user");
           localStorage.setItem("redirect_after_login", "/payment");
           router.replace("/profile?account_required=1");
@@ -125,11 +137,13 @@ export default function PaymentPage() {
         }
         if (!response.ok) throw new Error("Account check failed");
         const result = (await response.json()) as { user?: StoredUser };
-        localStorage.setItem("kab_user", JSON.stringify(result.user || {}));
-        const savedCheckout = localStorage.getItem("checkout");
-        if (!savedCheckout) { router.replace("/checkout"); return; }
-        const parsedCheckout = JSON.parse(savedCheckout) as CheckoutData;
         if (cancelled) return;
+        const verifiedId = checkoutAccountId(result.user?.id);
+        if (!verifiedId) throw new Error("Account check failed");
+        setProfileId(verifiedId);
+        localStorage.setItem("kab_user", JSON.stringify(result.user || {}));
+        const parsedCheckout = readCheckoutDraft<CheckoutData>(localStorage, verifiedId);
+        if (!parsedCheckout) { router.replace("/checkout"); return; }
         setCheckout(parsedCheckout);
         setCart(getCart() as CartItemWithVariant[]);
         setPageReady(true);
@@ -138,7 +152,6 @@ export default function PaymentPage() {
         await loadPaymentSettings();
       } catch (error) {
         console.error("Failed to initialize payment:", error);
-        localStorage.removeItem("checkout");
         router.replace("/checkout");
       }
     }
@@ -290,18 +303,24 @@ export default function PaymentPage() {
       setTransactionError("");
     }
 
-    const savedCheckout = localStorage.getItem("checkout");
-    if (!savedCheckout) {
-      alert(t("Checkout information is missing. Please enter it again.", "معلومات الطلب غير موجودة. يرجى إدخالها من جديد."));
-      router.replace("/checkout"); return;
-    }
-
-    let currentCheckout: CheckoutData;
+    let currentCheckout: CheckoutData | null;
     try {
-      currentCheckout = JSON.parse(savedCheckout) as CheckoutData;
+      const response = await fetch("/api/customer/me", {cache:"no-store",credentials:"include"});
+      if (!response.ok) throw new Error("Could not verify the current account. Please sign in again.");
+      const user = (await response.json()).user;
+      if (!profileId || checkoutAccountId(user?.id) !== profileId) {
+        setCheckout({}); setPageReady(false); resetIdempotencyKeys();
+        alert(t("Your account changed. Please review delivery details for the current account.", "تغيّر الحساب. يرجى مراجعة بيانات التوصيل للحساب الحالي."));
+        window.location.reload(); return;
+      }
+      currentCheckout = readCheckoutDraft<CheckoutData>(localStorage, profileId);
     } catch {
-      localStorage.removeItem("checkout");
-      alert(t("Checkout information could not be read. Please enter it again.", "تعذر قراءة معلومات الطلب. يرجى إدخالها من جديد."));
+      alert(t("Could not verify your account. Please try again.", "تعذر التحقق من حسابك. يرجى المحاولة مرة أخرى."));
+      return;
+    }
+    if (!currentCheckout) {
+      setCheckout({}); setPageReady(false);
+      alert(t("Checkout information is missing. Please enter it again.", "معلومات الطلب غير موجودة. يرجى إدخالها من جديد."));
       router.replace("/checkout"); return;
     }
 
@@ -382,6 +401,7 @@ export default function PaymentPage() {
           method: "POST", credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            checkoutProfileId: profileId,
             checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
             cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
             ...pricedOrder,
@@ -391,6 +411,7 @@ export default function PaymentPage() {
 
         const result = await response.json().catch(() => null);
         if (!response.ok || !result?.success) {
+          if (result?.code === "ACCOUNT_CHANGED") { setCheckout({}); setPageReady(false); resetIdempotencyKeys(); window.location.reload(); return; }
           if (handleTotalChanged(result)) return;
           if (response.status === 401) { localStorage.setItem("redirect_after_login", "/payment"); router.replace("/login"); return; }
           throw new Error(result?.error || result?.message || t("Could not place your cash-on-delivery order.", "تعذر تأكيد طلب الدفع عند الاستلام."));
@@ -399,7 +420,7 @@ export default function PaymentPage() {
         saveCart([]);
         trackPurchase();
         window.dispatchEvent(new Event("cartUpdated"));
-        localStorage.removeItem("checkout");
+        clearCheckoutDraft(localStorage, profileId);
         sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
         router.replace(`/orders/${result.orderId}`);
         return;
@@ -414,6 +435,7 @@ export default function PaymentPage() {
         method: "POST", credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          checkoutProfileId: profileId,
           checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
           cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
           shamcashTransactionId: transactionId.trim(),
@@ -424,6 +446,7 @@ export default function PaymentPage() {
 
       const result = await response.json().catch(() => null);
       if (!response.ok || !result?.success) {
+        if (result?.code === "ACCOUNT_CHANGED") { setCheckout({}); setPageReady(false); resetIdempotencyKeys(); window.location.reload(); return; }
         if (handleTotalChanged(result)) return;
         if (response.status === 401) { localStorage.setItem("redirect_after_login", "/payment"); router.replace("/login"); return; }
         throw new Error(result?.error || result?.message || t("The order could not be created.", "تعذر إنشاء الطلب."));
@@ -432,7 +455,7 @@ export default function PaymentPage() {
       saveCart([]);
       trackPurchase();
       window.dispatchEvent(new Event("cartUpdated"));
-      localStorage.removeItem("checkout");
+      clearCheckoutDraft(localStorage, profileId);
       sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
       router.replace(`/orders/${result.orderId}`);
     } catch (error: unknown) {

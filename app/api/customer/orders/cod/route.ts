@@ -1,4 +1,5 @@
 import { couponRuleFailure } from "@/lib/coupon-policy";
+import { checkoutAccountId } from "@/lib/checkout-session";
 import { NextResponse } from "next/server";
 import { getCustomerSession } from "@/lib/customer-session";
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
   }
 
   let body: {
+    checkoutProfileId?: unknown;
     checkout?: CheckoutPayload;
     cart?: SubmittedCartItem[];
     idempotencyKey?: unknown;
@@ -117,6 +119,9 @@ export async function POST(request: Request) {
   }
 
   // Idempotency key must be supplied by the client (one per checkout attempt).
+  if (checkoutAccountId(body.checkoutProfileId) !== checkoutAccountId(profile.id)) {
+    return NextResponse.json({success:false,code:"ACCOUNT_CHANGED",error:"Your account changed. Please enter delivery details again."}, {status:409,headers:{"Cache-Control":"no-store"}});
+  }
   const idempotencyKey = cleanText(body?.idempotencyKey, 100);
   if (idempotencyKey.length < 8) {
     return jsonError("Missing idempotency key", 400);

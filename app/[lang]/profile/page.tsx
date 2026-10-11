@@ -1,5 +1,7 @@
 "use client";
 
+import { clearCheckoutSession } from "@/lib/checkout-session";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -112,6 +114,7 @@ export default function ProfilePage() {
         const [meResponse, ordersResponse] = await Promise.all([mePromise, ordersPromise]);
 
         if (!meResponse.ok) {
+          clearCheckoutSession();
           localStorage.removeItem("kab_user");
           _cachedUser = null;
           _cachedOrders = null;
@@ -123,6 +126,7 @@ export default function ProfilePage() {
         const result = await meResponse.json();
 
         if (!result.authenticated || !result.user) {
+          clearCheckoutSession();
           localStorage.removeItem("kab_user");
           _cachedUser = null;
           _cachedOrders = null;
@@ -171,6 +175,7 @@ export default function ProfilePage() {
         throw new Error("Logout failed");
       }
 
+      clearCheckoutSession();
       localStorage.removeItem("kab_user");
       _cachedUser = null;
       _pageWasReady = false;

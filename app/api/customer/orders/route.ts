@@ -1,4 +1,5 @@
 import { couponRuleFailure } from "@/lib/coupon-policy";
+import { checkoutAccountId } from "@/lib/checkout-session";
 import { NextResponse } from "next/server";
 import { getCustomerSession } from "@/lib/customer-session";
 import {
@@ -158,6 +159,9 @@ export async function POST(request: Request) {
   }
 
   const checkoutValue = body.checkout;
+  if (checkoutAccountId(body.checkoutProfileId) !== checkoutAccountId(profile.id)) {
+    return NextResponse.json({success:false,code:"ACCOUNT_CHANGED",error:"Your account changed. Please enter delivery details again."}, {status:409,headers:{"Cache-Control":"no-store"}});
+  }
   const cartValue = body.cart;
   const idempotencyKeyValue = body.idempotencyKey;
   const submittedCouponCode = body.couponCode ?? null;
