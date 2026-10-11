@@ -28,6 +28,8 @@ type Coupon = {
   maximum_discount: number | null;
   minimum_order_amount: number | null;
   applies_to_sale_items: boolean | null;
+  first_order_only: boolean;
+  assigned_profile_id: number | null;
   one_use_per_customer: boolean;
   is_active: boolean;
   expires_at: string | null;
@@ -47,6 +49,8 @@ const initialForm = {
   maximum_discount: "",
   minimum_order_amount: "",
   expires_at: "",
+  first_order_only: false,
+  assigned_profile_id: "",
   one_use_per_customer: false,
   applies_to_sale_items: true,
 };
@@ -90,6 +94,39 @@ export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customers, setCustomers] = useState<Array<{id: number; full_name: string | null; phone: string | null; email: string | null}>>([]);
+  const [customerError, setCustomerError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      const search = customerSearch.trim().replace(/[,()%_\\]/g, "").slice(0,80);
+      if (search.length < 2) return;
+      const { data, error } = await supabase.from("profiles").select("id,full_name,phone,email")
+        .or(`full_name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`).limit(20);
+      if (!active) return;
+      setCustomerError(error ? "Could not search customers. Please try again." : "");
+      if (data) setCustomers(previous => [...previous.filter(p => String(p.id) === form.assigned_profile_id), ...data.filter(p => String(p.id) !== form.assigned_profile_id)]);
+    }, 300);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [customerSearch, form.assigned_profile_id]);
+
+  async function editCoupon(coupon: Coupon) {
+    setEditingId(coupon.id);
+    setForm({code: coupon.code, type: couponType(coupon), discount_percent: String(coupon.discount_percent ?? ""),
+      discount_amount: String(coupon.discount_amount ?? ""), maximum_discount: String(coupon.maximum_discount ?? ""),
+      minimum_order_amount: String(coupon.minimum_order_amount ?? ""),
+      expires_at: coupon.expires_at ? new Date(new Date(coupon.expires_at).getTime()-new Date(coupon.expires_at).getTimezoneOffset()*60000).toISOString().slice(0,16) : "",
+      one_use_per_customer: coupon.one_use_per_customer, applies_to_sale_items: coupon.applies_to_sale_items !== false,
+      first_order_only: coupon.first_order_only === true, assigned_profile_id: String(coupon.assigned_profile_id ?? "")});
+    if (coupon.assigned_profile_id) {
+      const { data } = await supabase.from("profiles").select("id,full_name,phone,email").eq("id",coupon.assigned_profile_id).maybeSingle();
+      if (data) setCustomers(previous => [...previous.filter(p=>p.id!==data.id),data]);
+    }
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
 
   const loadCoupons = useCallback(async () => {
     const { data, error } = await supabase
@@ -137,7 +174,7 @@ export default function CouponsPage() {
 
     setSaving(true);
 
-    const { error } = await supabase.from("coupons").insert({
+    const payload = {
       code,
       discount_type: form.type,
       discount_percent: form.type === "percent" ? percent : 0,
@@ -150,18 +187,24 @@ export default function CouponsPage() {
       expires_at: form.expires_at
         ? new Date(form.expires_at).toISOString()
         : null,
+      first_order_only: form.first_order_only,
+      assigned_profile_id: form.assigned_profile_id ? Number(form.assigned_profile_id) : null,
       one_use_per_customer: form.one_use_per_customer,
       // Free delivery is about the order, not about items.
       applies_to_sale_items:
         form.type === "free_delivery" ? true : form.applies_to_sale_items,
-      is_active: true,
-    });
+    };
+    const { error } = editingId
+      ? await supabase.from("coupons").update(payload).eq("id",editingId)
+      : await supabase.from("coupons").insert({...payload,is_active:true});
 
     setSaving(false);
 
     if (error) return alert(error.message);
 
     setForm(initialForm);
+    setEditingId(null);
+    setCustomerSearch("");
     void loadCoupons();
   }
 
@@ -238,6 +281,7 @@ export default function CouponsPage() {
           <label className="text-xs font-bold text-gray-700">
             Coupon code
             <input
+              readOnly={editingId !== null}
               value={form.code}
               onChange={(event) =>
                 setForm({ ...form, code: event.target.value })
@@ -332,7 +376,24 @@ export default function CouponsPage() {
           </label>
         </div>
 
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <label className="text-xs font-bold text-gray-700">Find customer (name, phone or email)
+            <input className={FIELD} value={customerSearch} onChange={e=>setCustomerSearch(e.target.value)} placeholder="Type at least 2 characters" />
+          </label>
+          <label className="text-xs font-bold text-gray-700">Available to
+            <select className={FIELD} value={form.assigned_profile_id} onChange={e=>setForm({...form,assigned_profile_id:e.target.value})}>
+              <option value="">All customers (default)</option>
+              {form.assigned_profile_id && !customers.some(p=>String(p.id)===form.assigned_profile_id) && <option value={form.assigned_profile_id}>Customer #{form.assigned_profile_id}</option>}
+              {customers.map(p=><option key={p.id} value={p.id}>{p.full_name || "Customer"} · {p.phone || p.email} · #{p.id}</option>)}
+            </select>
+          </label>
+          {customerError && <p role="alert" className="text-xs text-red-600">{customerError}</p>}
+        </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="flex items-start gap-3 rounded-xl border border-gray-300 p-3 text-sm font-bold text-gray-800">
+            <input type="checkbox" className="mt-1 h-4 w-4 accent-green-700" checked={form.first_order_only} onChange={e=>setForm({...form,first_order_only:e.target.checked})} />
+            <span>First order only<span className="block text-xs font-normal text-gray-500">Cancelled and rejected orders do not count. Pending orders reserve eligibility.</span></span>
+          </label>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-300 px-3 py-3 text-sm font-bold text-gray-800">
             <input
               checked={form.one_use_per_customer}
@@ -387,8 +448,9 @@ export default function CouponsPage() {
           disabled={saving}
           className="mt-5 w-full rounded-xl bg-green-700 px-4 py-3 text-sm font-extrabold text-white hover:bg-green-800 disabled:bg-gray-400"
         >
-          {saving ? "Saving…" : "Create coupon"}
+          {saving ? "Saving…" : editingId ? "Save changes" : "Create coupon"}
         </button>
+        {editingId && <button type="button" className="mt-3 text-sm underline" onClick={()=>{setEditingId(null);setForm(initialForm);}}>Cancel editing</button>}
       </form>
 
       <div className="mt-7 overflow-hidden rounded-3xl border border-gray-200 bg-white">
@@ -411,6 +473,8 @@ export default function CouponsPage() {
                     {couponSummary(coupon)}
                   </p>
                   <p className="mt-1 text-xs font-bold text-gray-500">
+                    {coupon.first_order_only ? "First order only · " : ""}
+                    {coupon.assigned_profile_id ? `Customer #${coupon.assigned_profile_id} · ` : "All customers · "}
                     {coupon.one_use_per_customer
                       ? "One use per customer"
                       : "Reusable on every order"}
@@ -425,6 +489,7 @@ export default function CouponsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={()=>void editCoupon(coupon)} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-extrabold text-gray-700">Edit</button>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-extrabold ${
                       coupon.is_active

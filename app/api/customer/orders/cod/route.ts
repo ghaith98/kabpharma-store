@@ -1,3 +1,4 @@
+import { couponRuleFailure } from "@/lib/coupon-policy";
 import { NextResponse } from "next/server";
 import { getCustomerSession } from "@/lib/customer-session";
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
@@ -239,7 +240,7 @@ export async function POST(request: Request) {
   // Atomic + idempotent creation. If items fail, the order rolls back.
   // If this idempotency key was already used, the existing order is returned.
   const { data: rpcData, error: rpcError } =
-    await supabaseAdmin.rpc("create_order_with_coupon_atomic", {
+    await supabaseAdmin.rpc("create_order_with_coupon_rules", {
       p_order: {
         customer_name: customerName,
         phone: profile.phone,
@@ -263,6 +264,8 @@ export async function POST(request: Request) {
     });
 
   if (rpcError) {
+    const couponFailure = couponRuleFailure(rpcError);
+    if (couponFailure) return jsonError(couponFailure, 409);
     console.error("COD order creation failed:", rpcError);
     return jsonError("Could not create order", 500);
   }

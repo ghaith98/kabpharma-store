@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 
 
+import WelcomeOffer from "./WelcomeOffer";
 import Navbar from "./Navbar";
 import Footer from "./FooterComponent";
 import MobileBottomNav from "./MobileBottomNav";
@@ -68,6 +69,7 @@ export default function LayoutShell({
       <Footer />
 
       <MobileBottomNav />
+      <WelcomeOffer />
     </>
   );
 }

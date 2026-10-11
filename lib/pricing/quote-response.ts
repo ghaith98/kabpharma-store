@@ -54,7 +54,7 @@ export type QuoteResponse = {
   issues: QuoteResponseIssue[];
   promotions: AppliedPromotion[];
   coupon: CouponOutcome | null;
-  couponError: "invalid" | "not_valid_now" | "already_used" | null;
+  couponError: "invalid" | "not_valid_now" | "already_used" | "not_assigned" | "first_order_only" | null;
   delivery: PricingResult["delivery"];
   deliveryAreaFound: boolean | null;
   totals: PricingResult["totals"];

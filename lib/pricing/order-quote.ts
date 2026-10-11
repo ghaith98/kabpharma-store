@@ -35,6 +35,8 @@ const ISSUE_MESSAGES = {
 const COUPON_MESSAGES = {
   invalid: "Invalid or inactive coupon",
   not_valid_now: "This coupon is not currently valid",
+  not_assigned: "This coupon is not available for your account",
+  first_order_only: "This coupon is available for your first order only",
   already_used: "This coupon has already been used on your account",
 } as const;
 

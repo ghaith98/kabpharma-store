@@ -241,6 +241,8 @@ export default function PaymentPage() {
   function couponProblemText() {
     if (!requestedCoupon || !pricing.fresh || !quote || appliedCoupon) return "";
 
+    if (quote.couponError === "not_assigned") return t("This coupon is not available for your account.", "هذا الكوبون غير مخصص لحسابك.");
+    if (quote.couponError === "first_order_only") return t("This coupon is for your first order only.", "هذا الكوبون متاح للطلب الأول فقط.");
     if (quote.couponError === "invalid") return t("This coupon code is not valid.", "كود الخصم غير صحيح أو غير مفعّل.");
     if (quote.couponError === "not_valid_now") return t("This coupon is not valid at the moment.", "هذا الكود غير صالح حالياً.");
     if (quote.couponError === "already_used") return t("This coupon has already been used on your account.", "تم استخدام هذا الكود سابقاً على حسابكِ.");

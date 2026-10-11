@@ -59,7 +59,9 @@ export type QuoteIssue = {
 export type CouponError =
   | "invalid"
   | "not_valid_now"
-  | "already_used";
+  | "already_used"
+  | "not_assigned"
+  | "first_order_only";
 
 export type QuoteLine = PricedLine & {
   /** Keys the browser may have used for this line (see lineKey). */
@@ -202,26 +204,14 @@ async function loadCoupon(
 
   const oneUsePerCustomer = data.one_use_per_customer === true;
 
-  if (oneUsePerCustomer && profileId) {
-    const { data: priorUse, error: usageError } = await supabaseAdmin
-      .from("coupon_usages")
-      .select("id")
-      .eq("coupon_id", data.id)
-      .eq("profile_id", profileId)
-      .limit(1);
-
-    if (usageError) {
-      console.error("Coupon usage lookup failed:", usageError);
-      throw new Error("Coupon could not be checked");
-    }
-
-    if (priorUse && priorUse.length > 0) {
-      return {
-        coupon: null,
-        error: "already_used",
-        oneUsePerCustomer,
-      };
-    }
+  const { data: eligibility, error: eligibilityError } = await supabaseAdmin.rpc(
+    "check_coupon_customer", { p_code: code, p_profile_id: profileId, p_exclude_order_id: null, p_exclude_idempotency_key: null }
+  );
+  if (eligibilityError) throw new Error("Coupon eligibility could not be checked");
+  if (eligibility) {
+    const reason: CouponError = ["invalid", "not_assigned", "first_order_only", "already_used"].includes(eligibility)
+      ? eligibility as CouponError : "invalid";
+    return { coupon: null, error: reason, oneUsePerCustomer };
   }
 
   const rawType = String(data.discount_type || "percent");

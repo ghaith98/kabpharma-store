@@ -1,3 +1,4 @@
+import { couponRuleFailure } from "@/lib/coupon-policy";
 import { NextResponse } from "next/server";
 import { getCustomerSession } from "@/lib/customer-session";
 import {
@@ -296,7 +297,7 @@ export async function POST(request: Request) {
   // Create order — payment verified
   try {
     const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
-      "create_order_with_coupon_atomic",
+      "create_order_with_coupon_rules",
       {
         p_order: {
           customer_name: customerName,
@@ -347,6 +348,8 @@ export async function POST(request: Request) {
       { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    const couponFailure = couponRuleFailure(error);
+    if (couponFailure) return jsonError(couponFailure, 409);
     // Unique violation from the used_shamcash_transactions ledger: the same
     // transaction number was submitted twice at the same time.
     if ((error as { code?: string } | null)?.code === "23505") {
