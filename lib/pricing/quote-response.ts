@@ -40,6 +40,7 @@ export type QuoteResponseIssue = {
   productId: number;
   variantId: number | null;
   reason:
+    | "product_missing"
     | "product_unavailable"
     | "option_invalid"
     | "option_unavailable"

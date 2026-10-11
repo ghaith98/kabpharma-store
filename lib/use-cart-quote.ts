@@ -216,6 +216,18 @@ export function quoteIssueText(
   issue: QuoteResponseIssue,
   isArabic: boolean
 ) {
+  if (issue.reason === "product_missing") {
+    return isArabic
+      ? "هذا المنتج لم يعد موجوداً في المتجر. يرجى إزالته من السلة."
+      : "This product is no longer listed in the store. Please remove it from your cart.";
+  }
+
+  if (issue.reason === "option_invalid") {
+    return isArabic
+      ? "الحجم المحفوظ في السلة لم يعد موجوداً. يرجى إعادة إضافة المنتج واختيار الحجم."
+      : "The size saved in your cart no longer exists. Please add the product again and choose a size.";
+  }
+
   if (issue.reason === "product_unavailable") {
     return isArabic
       ? "هذا المنتج غير متوفر حالياً. يرجى إزالته للمتابعة."

@@ -26,6 +26,7 @@ export type OrderQuoteResult =
     };
 
 const ISSUE_MESSAGES = {
+  product_missing: "A product is no longer listed in the store",
   product_unavailable: "A product is unavailable",
   option_invalid: "A product option is invalid",
   option_unavailable: "A product option is unavailable",

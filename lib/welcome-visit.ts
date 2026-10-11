@@ -1,4 +1,4 @@
-export const WELCOME_DELAY_MS = 40_000;
+export const WELCOME_DELAY_MS = 15_000;
 const VISIT_KEY = "kab_welcome_visit_v1";
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 export function welcomeVisit(storage: StorageLike, now: number) {

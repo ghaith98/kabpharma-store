@@ -94,6 +94,7 @@ export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
   const [customers, setCustomers] = useState<Array<{id: number; full_name: string | null; phone: string | null; email: string | null}>>([]);
@@ -206,6 +207,36 @@ export default function CouponsPage() {
     setEditingId(null);
     setCustomerSearch("");
     void loadCoupons();
+  }
+
+  async function deleteCoupon(coupon: Coupon) {
+    if (deletingId !== null || !window.confirm(`Delete coupon ${coupon.code}? This cannot be undone.`)) return;
+    setDeletingId(coupon.id);
+    try {
+      // Preserve discount history for coupons that have already been used.
+      const [usage, orders] = await Promise.all([
+        supabase.from("coupon_usages").select("id", { count: "exact", head: true }).eq("coupon_id", coupon.id),
+        supabase.from("orders").select("id", { count: "exact", head: true }).eq("coupon_code", coupon.code),
+      ]);
+      if (usage.error || orders.error) throw new Error(usage.error?.message || orders.error?.message);
+      if ((usage.count || 0) > 0 || (orders.count || 0) > 0) {
+        alert("This coupon is linked to orders or usage history. Disable it to stop future use while keeping that history.");
+        return;
+      }
+      const { data, error } = await supabase.from("coupons").delete().eq("id", coupon.id).select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("The coupon was not deleted. Check your admin permissions and reload.");
+      if (editingId === coupon.id) {
+        setEditingId(null);
+        setForm(initialForm);
+        setCustomerSearch("");
+      }
+      await loadCoupons();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Could not delete the coupon. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function toggleCoupon(coupon: Coupon) {
@@ -489,6 +520,7 @@ export default function CouponsPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" disabled={deletingId !== null} onClick={() => void deleteCoupon(coupon)} className="rounded-xl border border-red-200 px-3 py-2 text-xs font-extrabold text-red-700 hover:bg-red-50 disabled:opacity-50">{deletingId === coupon.id ? "Deleting…" : "Delete"}</button>
                   <button type="button" onClick={()=>void editCoupon(coupon)} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-extrabold text-gray-700">Edit</button>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-extrabold ${

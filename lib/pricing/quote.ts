@@ -43,6 +43,7 @@ export type QuoteItemInput = {
 };
 
 export type QuoteIssueReason =
+  | "product_missing"
   | "product_unavailable"
   | "option_invalid"
   | "option_unavailable"
@@ -108,12 +109,6 @@ function cleanText(value: unknown, maxLength: number) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, maxLength);
-}
-
-function isUnavailable(record: Row) {
-  if (record.is_out_of_stock === true) return true;
-  const stock = record.stock_quantity ?? record.stock;
-  return stock != null && Number(stock) <= 0;
 }
 
 function variantLabel(variant: Row, language: "ar" | "en") {
@@ -371,7 +366,14 @@ export async function buildQuote(options: {
 
     const product = products.get(item.productId);
 
-    if (!product || isUnavailable(product)) {
+    if (!product) {
+      issue("product_missing");
+      continue;
+    }
+
+    // The admin controls availability at product level. Sizes inherit it;
+    // legacy quantity columns are not an inventory system for this store.
+    if (product.is_out_of_stock === true) {
       issue("product_unavailable");
       continue;
     }
@@ -394,7 +396,6 @@ export async function buildQuote(options: {
       // products). With a main size, "no option" means the main size.
       variant =
         [...productVariants]
-          .filter((candidate) => !isUnavailable(candidate))
           .sort(
             (first, second) =>
               Number(first.price || 0) - Number(second.price || 0)
@@ -404,11 +405,6 @@ export async function buildQuote(options: {
         issue("option_unavailable");
         continue;
       }
-    }
-
-    if (variant && isUnavailable(variant)) {
-      issue("option_unavailable");
-      continue;
     }
 
     const basePrice = Number(variant?.price ?? product.price ?? 0);

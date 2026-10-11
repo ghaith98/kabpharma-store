@@ -92,8 +92,8 @@ export default function WelcomeOffer() {
       <div className="relative grid min-w-0 md:min-h-[540px] md:grid-cols-[1.15fr_1fr]">
         <button type="button" autoFocus onClick={close} aria-label={ar ? "إغلاق عرض الترحيب" : "Close welcome offer"}
           className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-2xl focus-visible:outline-2 focus-visible:outline-green-800">×</button>
-        <div className="relative h-[190px] min-w-0 bg-[#dfeef5] sm:h-[240px] md:h-auto">
-          <Image src="/images/kab-skin-consultation-hero.webp" alt="" fill sizes="(max-width:768px) 92vw, 520px" className="object-cover object-[78%_center]" />
+        <div className="relative h-[220px] min-w-0 bg-[#f5f3ed] sm:h-[280px] md:h-auto">
+          <Image src="/images/kab-welcome-skincare.webp" alt={ar ? "كريم وزيت للعناية بالبشرة" : "Skincare cream and botanical oil"} fill sizes="(max-width:768px) 92vw, 520px" className="object-contain p-3 md:p-0" />
         </div>
         <div dir={ar ? "rtl" : "ltr"} className="flex min-w-0 flex-col px-6 pb-7 pt-7 sm:px-10 sm:py-10 md:justify-center md:py-14">
           <p className="mb-4 text-[11px] font-semibold tracking-[.14em]">KAB PHARMA</p>
