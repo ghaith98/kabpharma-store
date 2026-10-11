@@ -38,6 +38,8 @@ export type CartQuoteOptions = {
   couponCode?: string | null;
   governorate?: string | null;
   deliveryArea?: string | null;
+  deliveryLocation?: unknown;
+  deliveryReceipt?: string | null;
   paymentMethod?: "cod" | "transfer";
   /** false = do not ask yet (page still loading its own data). */
   enabled?: boolean;
@@ -62,6 +64,8 @@ export function useCartQuote(
     couponCode = null,
     governorate = null,
     deliveryArea = null,
+    deliveryLocation = null,
+    deliveryReceipt = null,
     paymentMethod = "transfer",
     enabled = true,
   } = options;
@@ -85,9 +89,10 @@ export function useCartQuote(
       couponCode: couponCode || null,
       governorate: governorate || null,
       deliveryArea: deliveryArea || null,
+      deliveryLocation, deliveryReceipt,
       paymentMethod,
     }),
-    [cart, couponCode, governorate, deliveryArea, paymentMethod]
+    [cart, couponCode, governorate, deliveryArea, paymentMethod, deliveryLocation, deliveryReceipt]
   );
 
   // Everything that can change the answer, as one string.

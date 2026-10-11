@@ -1,4 +1,5 @@
 import "server-only";
+import { readDeliveryReceipt, type RoadDelivery } from "@/lib/delivery-route";
 
 import {
   COD_FEE_SYP,
@@ -97,6 +98,7 @@ export type Quote = {
   /** null when no area was asked for; false when it was not found. */
   deliveryAreaFound: boolean | null;
   deliveryAreaName: string | null;
+  roadDelivery: RoadDelivery | null;
   orderItems: QuoteOrderItem[];
 };
 
@@ -252,6 +254,8 @@ export async function buildQuote(options: {
   profileId?: number | null;
   governorate?: string | null;
   deliveryAreaName?: string | null;
+  deliveryLocation?: unknown;
+  deliveryReceipt?: unknown;
   paymentMethod?: "cod" | "transfer" | null;
   /** The moment to price at: now, or a held price's moment. */
   nowMs: number;
@@ -271,7 +275,8 @@ export async function buildQuote(options: {
   const productIds = [...new Set(items.map((item) => item.productId))];
   const governorate = cleanText(options.governorate, 100);
   const requestedArea = cleanText(options.deliveryAreaName, 150);
-  const wantsDelivery = Boolean(governorate && requestedArea);
+  const wantsDelivery = Boolean(governorate || options.deliveryLocation || options.deliveryReceipt);
+  const roadDelivery = readDeliveryReceipt(options.deliveryReceipt, options.deliveryLocation, options.profileId ?? null);
 
   const [
     productsResult,
@@ -309,10 +314,8 @@ export async function buildQuote(options: {
 
     wantsDelivery
       ? supabaseAdmin
-          .from("delivery_areas")
-          .select(
-            "id, governorate, area_name, area_name_ar, area_name_en, delivery_fee, is_active"
-          )
+          .from("delivery_fees")
+          .select("governorate, is_active")
           .eq("governorate", governorate)
           .eq("is_active", true)
       : Promise.resolve({ data: [] as Row[], error: null }),
@@ -454,7 +457,7 @@ export async function buildQuote(options: {
 
   const deliveryArea = wantsDelivery
     ? ((areaResult.data || []) as Row[]).find(
-        (area) => area.area_name === requestedArea
+        (area) => area.governorate === governorate
       ) || null
     : null;
 
@@ -463,7 +466,7 @@ export async function buildQuote(options: {
     promotions,
     coupon: couponResult.coupon,
     delivery: {
-      fee: deliveryArea ? Number(deliveryArea.delivery_fee || 0) : null,
+      fee: deliveryArea && roadDelivery ? roadDelivery.fee : null,
       freeShippingThreshold: Number(thresholdResult.data?.value || 0),
     },
     codFee: options.paymentMethod === "cod" ? COD_FEE_SYP : 0,
@@ -539,9 +542,10 @@ export async function buildQuote(options: {
     pricing,
     couponError: couponResult.error,
     couponOneUsePerCustomer: couponResult.oneUsePerCustomer,
-    deliveryAreaFound: wantsDelivery ? deliveryArea != null : null,
+    roadDelivery,
+    deliveryAreaFound: wantsDelivery ? deliveryArea != null && roadDelivery != null && Boolean(requestedArea) : null,
     deliveryAreaName: deliveryArea
-      ? String(deliveryArea.area_name)
+      ? requestedArea
       : null,
     orderItems,
   };

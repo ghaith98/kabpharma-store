@@ -47,6 +47,8 @@ export async function quoteOrder(options: {
   profileId: number;
   governorate: string;
   deliveryAreaName: string;
+  deliveryLocation: unknown;
+  deliveryReceipt: unknown;
   paymentMethod: "cod" | "transfer";
   /** From the payment page: holds the prices it showed for 30 minutes. */
   priceToken: unknown;
@@ -65,6 +67,8 @@ export async function quoteOrder(options: {
       profileId: options.profileId,
       governorate: options.governorate,
       deliveryAreaName: options.deliveryAreaName,
+      deliveryLocation: options.deliveryLocation,
+      deliveryReceipt: options.deliveryReceipt,
       paymentMethod: options.paymentMethod,
       nowMs,
     });
@@ -91,7 +95,7 @@ export async function quoteOrder(options: {
     return {
       ok: false,
       status: 409,
-      error: "Delivery area is unavailable",
+      error: "Delivery location or quote is missing, expired, or unavailable. Please return to delivery details and recalculate.",
     };
   }
 

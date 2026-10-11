@@ -4,13 +4,15 @@ import { checkoutAccountId, clearCheckoutSession, readCheckoutDraft, saveCheckou
 import { useCheckoutAccountGuard } from "@/lib/use-checkout-account-guard";
 
 import {
+  useCallback,
   useEffect,
   useEffectEvent,
   useState,
 } from "react";
 import Link from "next/link";
 import BackLink from "@/app/BackLink";
-import DeliveryAreaSelect from "@/app/DeliveryAreaSelect";
+import DeliveryLocationInput from "@/app/DeliveryLocationInput";
+import { normalizeDeliveryLocation, type DeliveryEstimate, type DeliveryLocation } from "@/lib/delivery-location";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -117,16 +119,9 @@ type Governorate = {
   governorate_en?: string | null;
 };
 
-type DeliveryArea = {
-  id: number | string;
-  governorate: string;
-  area_name: string;
-  area_name_ar?: string | null;
-  area_name_en?: string | null;
-  delivery_fee?: number | string | null;
-};
-
 type StoredCheckout = {
+  delivery_location?: unknown;
+  delivery_estimate?: DeliveryEstimate;
   name?: string;
   governorate?: string;
   delivery_area?: string;
@@ -160,11 +155,6 @@ export default function CheckoutPage() {
   ] = useState<Governorate[]>([]);
 
   const [
-    deliveryAreas,
-    setDeliveryAreas,
-  ] = useState<DeliveryArea[]>([]);
-
-  const [
     freeShippingThreshold,
     setFreeShippingThreshold,
   ] = useState(0);
@@ -186,7 +176,6 @@ export default function CheckoutPage() {
     setDeliveryArea,
   ] = useState("");
 
-  const [unlistedArea, setUnlistedArea] = useState(false);
 
   const [address, setAddress] =
     useState("");
@@ -212,9 +201,21 @@ export default function CheckoutPage() {
   ] = useState("");
 
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [deliveryLocation, setDeliveryLocation] = useState<DeliveryLocation | null>(null);
+
+  const [deliveryEstimate, setDeliveryEstimate] = useState<DeliveryEstimate | null>(null);
+  const onLocationResolved = useCallback((result: DeliveryEstimate | null) => {
+    setDeliveryEstimate(result);
+    if (!result) return;
+    if (result.area) setDeliveryArea(result.area);
+    const normalized = (name: string) => name.toLowerCase().replace(/governorate|محافظة|[\s،,_-]/g, "");
+    const detected = normalized(result.governorate);
+    const matched = governorates.find(g => [g.governorate, g.governorate_ar, g.governorate_en].some(label => label && normalized(label) === detected));
+    if (matched) setGovernorate(matched.governorate);
+  }, [governorates]);
 
   useCheckoutAccountGuard(profileId, () => {
-    setName(""); setPhone(""); setAddress(""); setGovernorate(""); setDeliveryArea(""); setCart([]); setCheckingBan(true);
+    setName(""); setPhone(""); setAddress(""); setDeliveryLocation(null); setDeliveryEstimate(null); setGovernorate(""); setDeliveryArea(""); setCart([]); setCheckingBan(true);
   });
 
   const checkBanOnInitialization =
@@ -282,7 +283,9 @@ export default function CheckoutPage() {
         setName(checkout?.name || user?.full_name || "");
         setGovernorate(checkout?.governorate || "");
         setAddress(checkout?.address || "");
-        setDeliveryArea("");
+        setDeliveryLocation(normalizeDeliveryLocation(checkout?.delivery_location));
+        setDeliveryArea(checkout?.delivery_area || "");
+        setDeliveryEstimate(checkout?.delivery_estimate || null);
 
         await checkBanOnInitialization(accountPhone);
       } catch {
@@ -311,25 +314,11 @@ export default function CheckoutPage() {
     };
   }, [isArabic, router]);
 
-  useEffect(() => {
-    if (!profileId || deliveryAreas.length === 0) return;
-    const checkout = readCheckoutDraft<StoredCheckout>(localStorage, profileId);
-    const matchedArea = checkout && deliveryAreas.find(area => area.area_name === checkout.delivery_area && area.governorate === checkout.governorate);
-    if (matchedArea) window.queueMicrotask(() => setDeliveryArea(String(matchedArea.id)));
-  }, [deliveryAreas, profileId]);
-
-  /*
-    Every price on this page comes from the server (see useCartQuote),
-    including the delivery fee for the chosen area and whether delivery
-    is free.
-  */
-  const selectedAreaForQuote = deliveryAreas.find(
-    (area) => String(area.id) === deliveryArea
-  );
-
   const pricing = useCartQuote(cart, {
-    governorate: selectedAreaForQuote ? governorate : null,
-    deliveryArea: selectedAreaForQuote?.area_name || null,
+    governorate: governorate || null,
+    deliveryArea: deliveryArea || null,
+    deliveryLocation,
+    deliveryReceipt: deliveryEstimate?.receipt || null,
   });
   const quote = pricing.quote;
 
@@ -440,26 +429,6 @@ export default function CheckoutPage() {
     }
 
     const {
-      data: areaData,
-      error: areaError,
-    } = await supabase
-      .from("delivery_areas")
-      .select("*")
-      .eq("is_active", true)
-      .order("area_name", {
-        ascending: true,
-      });
-
-    if (areaError) {
-      console.error(
-        "Failed to load delivery areas:",
-        areaError
-      );
-
-      return;
-    }
-
-    const {
       data: settingData,
     } = await supabase
       .from("settings")
@@ -472,10 +441,6 @@ export default function CheckoutPage() {
 
     setGovernorates(
       govData || []
-    );
-
-    setDeliveryAreas(
-      areaData || []
     );
 
     setFreeShippingThreshold(
@@ -627,25 +592,7 @@ export default function CheckoutPage() {
     (item) => pricing.issueFor(item) != null
   );
 
-  const areasForGovernorate =
-    deliveryAreas.filter(
-      (area) =>
-        area.governorate ===
-        governorate
-    );
-
-  const selectedArea =
-    deliveryAreas.find(
-      (area) =>
-        String(area.id) ===
-        deliveryArea
-    );
-
-  const rawDeliveryFee =
-    Number(
-      selectedArea?.delivery_fee ||
-        0
-    );
+  const rawDeliveryFee = deliveryEstimate?.fee || 0;
 
   // From the server when it has answered: the store's free-delivery
   // amount, a free-delivery promotion, or neither.
@@ -735,23 +682,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (
-      unlistedArea ||
-      !deliveryArea ||
-      !selectedArea ||
-      selectedArea.governorate !==
-        governorate
-    ) {
-      alert(
-        isArabic
-          ? unlistedArea
-            ? "يرجى التواصل معنا لتأكيد إمكانية التوصيل والتكلفة لمنطقتك قبل تقديم الطلب."
-            : "يرجى اختيار منطقة التوصيل من نتائج البحث"
-          : unlistedArea
-            ? "Please contact us to confirm delivery availability and the fee for your area before placing an order."
-            : "Please select a delivery area from the search results"
-      );
-
+    if (!deliveryArea.trim()) {
+      alert(isArabic ? "يرجى إدخال منطقة التوصيل" : "Please enter the delivery area");
+      return;
+    }
+    if (!deliveryLocation || !("latitude" in deliveryLocation) || !deliveryEstimate || deliveryEstimate.expiresAt <= Date.now() || !pricing.fresh || quote?.deliveryAreaFound !== true) {
+      alert(isArabic ? "حدد موقع التوصيل وانتظر حساب مسافة الطريق. إذا انتهت صلاحية التسعيرة، أعد حساب الموقع." : "Select the delivery location and wait for the road quote. Recalculate if the quote expired.");
       return;
     }
 
@@ -789,7 +725,7 @@ export default function CheckoutPage() {
       if (!sessionResponse.ok) throw new Error("Could not verify the current account. Please sign in again.");
       const currentUser = (await sessionResponse.json()).user;
       if (!profileId || checkoutAccountId(currentUser?.id) !== profileId) {
-        setName(""); setPhone(""); setAddress(""); setGovernorate(""); setDeliveryArea("");
+        setName(""); setPhone(""); setAddress(""); setDeliveryLocation(null); setDeliveryEstimate(null); setGovernorate(""); setDeliveryArea("");
         alert(isArabic ? "تغيّر الحساب. يرجى إدخال بيانات التوصيل للحساب الحالي." : "Your account changed. Please enter delivery details for the current account.");
         window.location.reload();
         return;
@@ -831,18 +767,22 @@ export default function CheckoutPage() {
           governorate,
 
           delivery_area:
-            selectedArea.area_name,
+            deliveryArea.trim(),
 
           delivery_area_ar:
-            selectedArea.area_name_ar ||
+            deliveryArea.trim() ||
             "",
 
           delivery_area_en:
-            selectedArea.area_name_en ||
+            deliveryArea.trim() ||
             "",
 
           address:
             normalizedAddress,
+
+          delivery_location: deliveryLocation,
+          delivery_receipt: deliveryEstimate.receipt,
+          delivery_estimate: deliveryEstimate,
 
           delivery_fee:
             deliveryFee,
@@ -873,7 +813,7 @@ export default function CheckoutPage() {
       accountCheckError
     ) ||
     cart.length === 0 ||
-    unlistedArea;
+    !deliveryEstimate || !pricing.fresh || quote?.deliveryAreaFound !== true;
 
   function getSubmitText() {
     if (submitting) {
@@ -1172,7 +1112,7 @@ export default function CheckoutPage() {
                       setDeliveryArea(
                         ""
                       );
-                      setUnlistedArea(false);
+
                     }}
                     required
                     className="w-full rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 lg:px-4 lg:py-3.5 text-base text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
@@ -1204,41 +1144,13 @@ export default function CheckoutPage() {
                   </select>
                 </label>
 
-                {/* Search in either language; retain the existing area ID and fee. */}
-                <DeliveryAreaSelect
-                  key={`${governorate}-${lang}`}
-                  areas={areasForGovernorate}
-                  value={deliveryArea}
-                  governorateLabel={(() => {
-                    const item = governorates.find((item) => item.governorate === governorate);
-                    return (isArabic ? item?.governorate_ar : item?.governorate_en) || governorate;
-                  })()}
-                  isArabic={isArabic}
-                  disabled={!governorate}
-                  onChange={setDeliveryArea}
-                  onUnlistedChange={setUnlistedArea}
-                />
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-extrabold text-[#142019] lg:text-sm">{isArabic ? "المنطقة / الحي" : "Area / neighbourhood"}</span>
+                  <input required maxLength={150} value={deliveryArea} onChange={event => setDeliveryArea(event.target.value)} className="w-full rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 text-base outline-none focus:border-[#0a583b]" placeholder={isArabic ? "يتعبّأ من الموقع، ويمكنك تعديله" : "Filled from location; you can edit it"} />
+                </label>
               </div>
 
-              {selectedArea && (
-                <div className="flex items-center justify-between gap-4 rounded-xl bg-[#f7f8f6] px-4 py-3 text-xs">
-                  <span className="font-bold text-[#647168]">
-                    {isArabic
-                      ? "رسوم التوصيل"
-                      : "Delivery fee"}
-                  </span>
-
-                  <span className="font-extrabold text-[#0a583b]">
-                    {hasFreeShipping
-                      ? isArabic
-                        ? "مجاني"
-                        : "Free"
-                      : formatPrice(
-                          rawDeliveryFee
-                        )}
-                  </span>
-                </div>
-              )}
+              {profileId && !checkingBan && !accountCheckError && <DeliveryLocationInput key={profileId} value={deliveryLocation} estimate={deliveryEstimate} onResolved={onLocationResolved} onChange={location => {setDeliveryEstimate(null); setDeliveryLocation(location);}} isArabic={isArabic} />}
 
               {/* Address */}
               <label className="block">
@@ -1592,7 +1504,7 @@ export default function CheckoutPage() {
                 </span>
 
                 <span className="font-bold text-[#142019]">
-                  {!selectedArea &&
+                  {!deliveryEstimate &&
                   !hasFreeShipping
                     ? "—"
                     : hasFreeShipping

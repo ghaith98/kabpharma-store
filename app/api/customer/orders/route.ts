@@ -1,3 +1,5 @@
+import { deliveryPricingSnapshot } from "@/lib/delivery-route";
+import { normalizeDeliveryLocation } from "@/lib/delivery-location";
 import { couponRuleFailure } from "@/lib/coupon-policy";
 import { checkoutAccountId } from "@/lib/checkout-session";
 import { NextResponse } from "next/server";
@@ -28,6 +30,8 @@ type SubmittedCartItem = {
 };
 
 type CheckoutPayload = {
+  delivery_location?: unknown;
+  delivery_receipt?: unknown;
   name?: unknown;
   governorate?: unknown;
   delivery_area?: unknown;
@@ -199,6 +203,10 @@ export async function POST(request: Request) {
   const governorate = cleanText(checkout.governorate, 100);
   const deliveryAreaName = cleanText(checkout.delivery_area, 150);
   const address = cleanText(checkout.address, 500);
+  const deliveryLocation = normalizeDeliveryLocation(checkout.delivery_location);
+  if (!deliveryLocation || !("latitude" in deliveryLocation)) {
+    return jsonError("Invalid delivery location", 400);
+  }
 
   if (customerName.length < 2 || !governorate || !deliveryAreaName || address.length < 5) {
     return jsonError("Checkout information is incomplete", 400);
@@ -265,6 +273,8 @@ export async function POST(request: Request) {
     profileId: profile.id,
     governorate,
     deliveryAreaName,
+    deliveryLocation,
+    deliveryReceipt: checkout.delivery_receipt,
     paymentMethod: "transfer",
     priceToken: body.priceToken,
     expectedTotal: body.expectedTotal,
@@ -301,7 +311,7 @@ export async function POST(request: Request) {
   // Create order — payment verified
   try {
     const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
-      "create_order_with_coupon_rules",
+      "create_order_with_delivery_location",
       {
         p_order: {
           customer_name: customerName,
@@ -309,6 +319,8 @@ export async function POST(request: Request) {
           governorate,
           delivery_area: quote.deliveryAreaName,
           address,
+        delivery_location: deliveryLocation,
+        delivery_pricing: quote.roadDelivery ? deliveryPricingSnapshot(quote.roadDelivery) : null,
           delivery_fee: deliveryFee,
           cod_fee: 0,
           total_price: orderTotal,

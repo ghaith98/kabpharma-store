@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import ts from 'typescript';
+import * as crypto from 'node:crypto';
 
 // Exercise the actual quote resolver and price calculator against database rows.
 let products = [], variants = [], failProducts = false;
@@ -25,6 +26,7 @@ function load(file) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS, target:ts.ScriptTarget.ES2022}}).outputText;
   const require = name => {
     if (name === 'server-only') return {};
+    if (name === 'node:crypto') return crypto;
     if (name === '@/lib/supabase-admin') return {supabaseAdmin:db};
     const target = name.startsWith('@/') ? name.slice(2) : path.resolve(path.dirname(file),name);
     return load(`${target}.ts`);
