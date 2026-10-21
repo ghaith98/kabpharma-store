@@ -68,7 +68,7 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value:
-              "camera=(), microphone=(), geolocation=()",
+              "camera=(), microphone=(), geolocation=(self)",
           },
           {
             key: "Strict-Transport-Security",
@@ -143,6 +143,7 @@ const nextConfig: NextConfig = {
   },
 
   images: {
+    minimumCacheTTL: 2678400, // 31 days
     formats: ["image/avif", "image/webp"],
     // Next.js 16 only serves qualities listed here; anything else is
     // clamped to the nearest value. 75 = product cards and thumbnails,
