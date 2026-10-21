@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { PRODUCT_GALLERY_SIZES } from "@/lib/image-sizes";
 import BackLink from "@/app/BackLink";
 
 import {
@@ -62,7 +63,7 @@ export default function ProductGallery({
             alt={productName}
             fill
             priority
-            sizes="(max-width: 1024px) 100vw, 56vw"
+            sizes={PRODUCT_GALLERY_SIZES}
             className="h-full w-full object-contain transition duration-500"
           />
         ) : (

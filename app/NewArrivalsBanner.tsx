@@ -335,6 +335,7 @@ export default function NewArrivalsBanner({
             srcSet={
               desktopSrcSet
             }
+            sizes="100vw"
           />
 
           <source
@@ -342,6 +343,7 @@ export default function NewArrivalsBanner({
             srcSet={
               mobileSrcSet
             }
+            sizes="100vw"
           />
 
           <img

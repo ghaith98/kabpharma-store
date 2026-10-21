@@ -23,6 +23,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 import { trackSearch } from "@/lib/analytics";
 import EditorialProductCard from "./EditorialProductCard";
+import { PRODUCT_GRID_FOUR_SIZES, PRODUCT_GRID_STANDARD_SIZES } from "@/lib/image-sizes";
 import NewArrivalsBanner from "../NewArrivalsBanner";
 import RoutineBanner from "./RoutineBanner";
 import {
@@ -1166,7 +1167,7 @@ export default function ProductsClient({
           productHref={`/products/${product.id}${productHrefSuffix}`}
           headingLevel={2}
           eagerImage={index < 4}
-          imageSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          imageSizes={standaloneNewArrivalsLayout ? PRODUCT_GRID_FOUR_SIZES : PRODUCT_GRID_STANDARD_SIZES}
         />
 
         {!standaloneCollection && index === 3 && (

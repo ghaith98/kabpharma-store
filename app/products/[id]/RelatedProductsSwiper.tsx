@@ -1,6 +1,7 @@
 "use client";
 
 import ProductSwiper from "../../ProductSwiper";
+import { RELATED_PRODUCT_SWIPER_SIZES } from "@/lib/image-sizes";
 import type {
   EditorialProduct,
 } from "../EditorialProductCard";
@@ -15,6 +16,6 @@ export default function RelatedProductsSwiper({
   }
 
   return (
-    <ProductSwiper products={products} />
+    <ProductSwiper products={products} imageSizes={RELATED_PRODUCT_SWIPER_SIZES} />
   );
 }

@@ -5,6 +5,7 @@ import type {
 } from "react";
 
 import Image from "next/image";
+import { PRODUCT_GRID_FOUR_SIZES } from "@/lib/image-sizes";
 import Link from "next/link";
 
 import AddToCartButton from "./AddToCartButton";
@@ -88,7 +89,7 @@ export default function ProductCard({
   product,
   variant = "standard",
   headingLevel = 2,
-  imageSizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
+  imageSizes = PRODUCT_GRID_FOUR_SIZES,
   className = "",
 }: ProductCardProps) {
   const { lang } =

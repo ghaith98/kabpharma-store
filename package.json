@@ -8,13 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run test:scroll && npm run test:coupons && npm run test:availability && npm run test:checkout && npm run test:auth-forms && npm run test:mobile-payment && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run test:scroll && npm run test:coupons && npm run test:availability && npm run test:checkout && npm run test:auth-forms && npm run test:mobile-payment && npm run test:responsive-images && npm run build",
     "test:scroll": "node scripts/check-scroll-scheduler.mjs",
     "test:coupons": "node scripts/check-coupon-database.mjs && node scripts/check-welcome-visit.mjs",
     "test:availability": "node scripts/check-cart-availability.mjs",
     "test:checkout": "node scripts/check-checkout-session.mjs",
     "test:auth-forms": "node scripts/check-auth-form-session.mjs",
-    "test:mobile-payment": "node scripts/check-mobile-payment.mjs"
+    "test:mobile-payment": "node scripts/check-mobile-payment.mjs",
+    "test:responsive-images": "node scripts/check-responsive-images.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.3",

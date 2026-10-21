@@ -9,6 +9,7 @@ import {
 
 import Link from "next/link";
 import { getImageProps } from "next/image";
+import { DISCOVERY_BANNER_SIZES } from "@/lib/image-sizes";
 
 import {
   FaSearch,
@@ -194,8 +195,7 @@ export function DiscoveryTile({
     alt: title,
     width: 1200,
     height: 576,
-    sizes:
-      "(max-width: 1023px) 100vw, 50vw",
+    sizes: DISCOVERY_BANNER_SIZES,
     quality: 90,
   });
 
@@ -208,7 +208,7 @@ export function DiscoveryTile({
     alt: title,
     width: 800,
     height: 1000,
-    sizes: "100vw",
+    sizes: DISCOVERY_BANNER_SIZES,
     quality: 90,
   });
 
@@ -232,11 +232,13 @@ export function DiscoveryTile({
             <source
               media="(max-width: 767px)"
               srcSet={mobileSrcSet}
+              sizes={DISCOVERY_BANNER_SIZES}
             />
 
             <source
               media="(min-width: 768px)"
               srcSet={desktopSrcSet}
+              sizes={DISCOVERY_BANNER_SIZES}
             />
 
             <img

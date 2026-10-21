@@ -23,6 +23,7 @@ import {
 import "swiper/css";
 
 import EditorialProductCard from "./products/EditorialProductCard";
+import { HOME_PRODUCT_SWIPER_SIZES } from "@/lib/image-sizes";
 import type {
   EditorialProduct,
 } from "./products/EditorialProductCard";
@@ -37,10 +38,12 @@ import {
 type ProductSwiperProps = {
   products: EditorialProduct[];
   bestSellerIds?: number[];
+  imageSizes?: string;
 };
 
 export default function ProductSwiper({
   products,
+  imageSizes = HOME_PRODUCT_SWIPER_SIZES,
 }: ProductSwiperProps) {
   const { lang } =
     useLanguage();
@@ -196,7 +199,7 @@ export default function ProductSwiper({
             <EditorialProductCard
               product={product}
               headingLevel={3}
-              imageSizes="(max-width: 640px) 65vw, (max-width: 1024px) 38vw, 25vw"
+              imageSizes={imageSizes}
             />
           </SwiperSlide>
         ))}

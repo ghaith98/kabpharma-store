@@ -452,11 +452,13 @@ export default function HomeBannerSwiper({
                   <source
                     media="(min-width: 768px)"
                     srcSet={desktopSrcSet}
+                    sizes="100vw"
                   />
 
                   <source
                     media="(max-width: 767px)"
                     srcSet={mobileSrcSet}
+                    sizes="100vw"
                   />
 
                   <img
