@@ -841,10 +841,9 @@ export default function AdminUsersPage() {
                         }
                       >
                         <td className="px-6 py-5">
-                          <p className="font-extrabold text-gray-900">
-                            {user.full_name ||
-                              "Unnamed user"}
-                          </p>
+                          <Link href={`/admin/users/${user.profile_id}`} className="font-extrabold text-gray-900 underline decoration-green-200 underline-offset-4 hover:text-green-700">
+                            {user.full_name || "Unnamed user"}
+                          </Link>
 
                           <p
                             dir="ltr"
@@ -913,6 +912,7 @@ export default function AdminUsersPage() {
 
                         <td className="px-6 py-5">
                           <div className="flex flex-col items-start gap-2">
+                            <Link href={`/admin/users/${user.profile_id}`} className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-bold text-green-800 hover:bg-green-100">View details</Link>
                           {user.is_banned ? (
                             <button
                               type="button"
@@ -980,8 +980,7 @@ export default function AdminUsersPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <h2 className="break-words text-xl font-extrabold text-gray-900">
-                      {user.full_name ||
-                        "Unnamed user"}
+                      <Link href={`/admin/users/${user.profile_id}`} className="underline decoration-green-200 underline-offset-4 hover:text-green-700">{user.full_name || "Unnamed user"}</Link>
                     </h2>
 
                     <p
@@ -1005,6 +1004,7 @@ export default function AdminUsersPage() {
                   </span>
                 </div>
 
+                <Link href={`/admin/users/${user.profile_id}`} className="mt-4 block rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-center text-sm font-bold text-green-800">View customer &amp; orders →</Link>
                 <div className="mt-5 grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-white/70 p-3">
                     <p className="text-xs font-bold text-gray-500">
