@@ -1,3 +1,4 @@
+import type { DeliveryHandler } from "./delivery-handler";
 import type { StoredPromotionDetail } from "./order-promotion-display";
 
 export type CustomerOrderItem = {
@@ -5,7 +6,7 @@ export type CustomerOrderItem = {
   product_name: string | null; variant_label_ar: string | null;
   variant_label_en: string | null; quantity: number; unit_price: number;
 };
-export type CustomerOrder = {
+export type CustomerOrder = DeliveryHandler & {
   id: number; archived: boolean; customer_name: string | null; phone: string | null;
   governorate: string | null; delivery_area: string | null; address: string | null;
   status: string | null; created_at: string | null; delivered_at: string | null;
@@ -30,7 +31,8 @@ export function presentCustomerOrder(raw: Record<string, unknown>, archived: boo
     "status", "created_at", "delivered_at", "finalized_at", "payment_method",
     "shamcash_transaction_id", "coupon_code", "promotion_name", "promotion_details",
     "products_subtotal", "delivery_fee", "cod_fee", "discount_amount",
-    "promotion_discount_amount", "total_price", "delivery_location"] as const;
+    "promotion_discount_amount", "total_price", "delivery_location", "driver_name", "delivery_handler_type",
+    "delivery_handler_id", "delivery_handler_name", "delivery_claimed_at"] as const;
   const result: Record<string, unknown> = { archived };
   for (const field of fields) result[field] = raw[field] ?? null;
   const itemFields = ["id", "product_id", "variant_id", "product_name", "variant_label_ar",

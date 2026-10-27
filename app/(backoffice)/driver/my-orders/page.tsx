@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useOrderFeed } from "@/lib/use-order-feed";
 import { useRouter } from "next/navigation";
 
 type DriverOrder = {
@@ -13,6 +14,8 @@ type DriverOrder = {
 
 export default function DriverMyOrdersPage() {
   const router = useRouter();
+  const loadAbort = useRef<AbortController | null>(null);
+  const changing = useRef(false);
   const [orders, setOrders] = useState<DriverOrder[]>([]);
   const [driverName, setDriverName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -21,18 +24,24 @@ export default function DriverMyOrdersPage() {
     useState<number | null>(null);
 
   const loadMyOrders = useCallback(async () => {
+    if (changing.current) return false;
+    loadAbort.current?.abort();
+    const controller = new AbortController();
+    loadAbort.current = controller;
     try {
       const response = await fetch(
         "/api/staff/driver/orders",
         {
           credentials: "include",
           cache: "no-store",
+          signal: controller.signal,
         }
       );
 
       if (response.status === 401) {
+        setOrders([]);
         router.replace("/driver/login");
-        return;
+        return false;
       }
 
       const result = (await response.json()) as {
@@ -41,22 +50,29 @@ export default function DriverMyOrdersPage() {
         myOrders?: DriverOrder[];
       };
 
+      if (controller.signal.aborted) return false;
       if (!response.ok) {
         setError(result.error || "تعذر تحميل الطلب");
-        return;
+        return false;
       }
 
       setError("");
       setDriverName(result.driver?.name || "");
       setOrders(result.myOrders || []);
+      return true;
     } catch {
-      setError("تعذر الاتصال بالخادم. حاول مجدداً.");
+      if (!controller.signal.aborted) setError("تعذر الاتصال بالخادم. حاول مجدداً.");
+      return false;
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [router]);
+  useOrderFeed(loadMyOrders);
 
   async function markDelivered(id: number) {
+    if (changing.current) return;
+    changing.current = true;
+    loadAbort.current?.abort();
     setLoadingOrderId(id);
     setError("");
 
@@ -95,7 +111,9 @@ export default function DriverMyOrdersPage() {
     } catch {
       setError("تعذر تأكيد التسليم. حاول مجدداً.");
     } finally {
+      changing.current = false;
       setLoadingOrderId(null);
+      void loadMyOrders();
     }
   }
 
@@ -105,14 +123,10 @@ export default function DriverMyOrdersPage() {
       0
     );
 
-    const interval = window.setInterval(
-      () => void loadMyOrders(),
-      30_000
-    );
 
     return () => {
       window.clearTimeout(initializationTimer);
-      window.clearInterval(interval);
+      loadAbort.current?.abort();
     };
   }, [loadMyOrders]);
 

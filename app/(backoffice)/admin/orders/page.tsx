@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { buildOrderItemPresentation,
   splitOrderDiscounts, type StoredPromotionDetail } from "@/lib/order-promotion-display";
+import { deliveryHandlerLabel, type DeliveryHandler } from "@/lib/delivery-handler";
+import { useOrderFeed } from "@/lib/use-order-feed";
 import PrintOrderButton from "./PrintOrderButton";
 
 
@@ -41,7 +43,7 @@ type OrderItem = {
   unit_price: number;
 };
 
-type AdminOrder = {
+type AdminOrder = DeliveryHandler & {
   id: number;
   customer_name: string | null;
   phone: string | null;
@@ -67,6 +69,10 @@ type AdminOrder = {
 
 export default function AdminOrdersPage() {
   const router = useRouter();
+  const loadAbort = useRef<AbortController | null>(null);
+  const changing = useRef(false);
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [selectedGovernorate, setSelectedGovernorate] =
@@ -86,7 +92,11 @@ export default function AdminOrdersPage() {
     string | null
   >(null);
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
+    if (changing.current) return false;
+    loadAbort.current?.abort();
+    const controller = new AbortController();
+    loadAbort.current = controller;
     const { data, error } = await supabase
       .from("orders")
       .select(`
@@ -110,6 +120,11 @@ export default function AdminOrdersPage() {
         created_at,
         delivered_at,
         shamcash_transaction_id,
+        driver_name,
+        delivery_handler_type,
+        delivery_handler_id,
+        delivery_handler_name,
+        delivery_claimed_at,
         order_items (
           id,
           product_id,
@@ -121,15 +136,22 @@ export default function AdminOrdersPage() {
           unit_price
         )
       `)
-      .order("id", { ascending: false });
+      .order("id", { ascending: false }).abortSignal(controller.signal);
 
+    if (controller.signal.aborted) return false;
     if (error) {
-      alert(error.message);
-      return;
+      setLoadError("Could not refresh orders. Please try again.");
+      return false;
     }
-
+    setLoadError("");
     setOrders((data || []) as AdminOrder[]);
-  }
+    return true;
+  }, []);
+  const feedAuthorization = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || "";
+  }, []);
+  useOrderFeed(loadOrders, "/api/admin/orders/order-feed", feedAuthorization);
 
   function matchesTimeFilter(order: AdminOrder) {
     if (selectedTimeFilter === "All") return true;
@@ -182,34 +204,31 @@ export default function AdminOrdersPage() {
     return parsedDate.toLocaleString();
   }
 
-  async function updateOrderStatus(
-    orderId: number,
-    status: string
-  ) {
-    setUpdatingOrderId(orderId);
-    setUpdatedStatus(status);
-
-    const { error } = await supabase
-      .from("orders")
-      .update({ status })
-      .eq("id", orderId)
-      .neq("status", "cancelled_by_customer");
-
-    if (error) {
-      alert(error.message);
+  async function updateOrderStatus(orderId: number, status: string) {
+    if (changing.current) return;
+    const order = orders.find(row => row.id === orderId);
+    if (!order) return;
+    changing.current = true;
+    setActionError("");
+    loadAbort.current?.abort();
+    setUpdatingOrderId(orderId); setUpdatedStatus(status);
+    try {
+      const token = await feedAuthorization();
+      const response = await fetch("/api/admin/orders/status", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId, status, previousStatus: order.status }),
+      });
+      const result = await response.json();
+      if (!response.ok) { setActionError(result.error || "Could not update order."); return; }
+      setUpdatedOrderId(orderId);
+      window.setTimeout(() => { setUpdatedOrderId(null); setUpdatedStatus(null); }, 1200);
+    } catch { setActionError("Could not update order. Please try again."); }
+    finally {
+      changing.current = false;
       setUpdatingOrderId(null);
-      setUpdatedStatus(null);
-      return;
+      // Reload after both success and conflict so a stale status is not reused.
+      await loadOrders();
     }
-
-    setUpdatedOrderId(orderId);
-    await loadOrders();
-    setUpdatingOrderId(null);
-
-    setTimeout(() => {
-      setUpdatedOrderId(null);
-      setUpdatedStatus(null);
-    }, 1200);
   }
 
   useEffect(() => {
@@ -227,7 +246,8 @@ export default function AdminOrdersPage() {
     }
 
     checkAdmin();
-  }, [router]);
+    return () => loadAbort.current?.abort();
+  }, [router, loadOrders]);
 
   const filteredOrders = orders.filter((order) => {
     const matchesGovernorate =
@@ -244,6 +264,7 @@ export default function AdminOrdersPage() {
       ${order.phone || ""}
       ${order.governorate || ""}
       ${order.delivery_area || ""}
+      ${order.delivery_handler_name || order.driver_name || ""}
     `.toLowerCase();
 
     const matchesSearch = searchText.includes(
@@ -405,6 +426,7 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
+      {(loadError || actionError) && <p role="alert" className="mx-auto mb-4 max-w-5xl rounded-xl bg-red-50 p-4 text-sm text-red-800">{actionError || loadError}</p>}
       {/* Orders */}
       <div className="mx-auto max-w-5xl space-y-4">
         {filteredOrders.length === 0 && (
@@ -471,6 +493,12 @@ export default function AdminOrdersPage() {
                 Order #{order.id}
               </h2>
 
+              {(order.status === "out_for_delivery" || order.delivery_handler_type || order.driver_name) && (
+                <div className="mb-4 rounded-xl border border-blue-100 bg-white/80 px-4 py-3 text-sm">
+                  <p><strong>جهة التوصيل:</strong> <span dir="auto">{deliveryHandlerLabel(order)}</span></p>
+                  {order.delivery_claimed_at && <p className="mt-1 text-xs text-gray-500">استلام الطلب: {formatDate(order.delivery_claimed_at)}</p>}
+                </div>
+              )}
               <div className="space-y-1 text-gray-800">
                 <p>
                   <strong>Name:</strong>{" "}

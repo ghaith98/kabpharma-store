@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useOrderFeed } from "@/lib/use-order-feed";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -79,6 +80,8 @@ const STATUS_CONFIG = {
 
 export default function DeliveryCompanyPage() {
   const router = useRouter();
+  const loadAbort = useRef<AbortController | null>(null);
+  const changing = useRef(false);
   const [company, setCompany] = useState<DeliveryCompany | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,16 +92,22 @@ export default function DeliveryCompanyPage() {
   const [areaFilter, setAreaFilter] = useState<string | null>(null);
 
   const loadOrders = useCallback(async (silent = false) => {
+    if (changing.current) return false;
+    loadAbort.current?.abort();
+    const controller = new AbortController();
+    loadAbort.current = controller;
     if (!silent) setLoading(true);
     try {
       const response = await fetch("/api/staff/delivery-company/orders", {
         credentials: "include",
         cache: "no-store",
+        signal: controller.signal,
       });
 
       if (response.status === 401) {
+        setCompany(null); setOrders([]);
         router.replace("/delivery-company/login");
-        return;
+        return false;
       }
 
       const result = (await response.json()) as {
@@ -107,20 +116,25 @@ export default function DeliveryCompanyPage() {
         orders?: Order[];
       };
 
+      if (controller.signal.aborted) return false;
       if (!response.ok) {
         setError(result.error || "تعذر تحميل الطلبات");
-        return;
+        return false;
       }
 
       setError("");
       setCompany(result.company || null);
       setOrders(result.orders || []);
+      return true;
     } catch {
-      setError("تعذر الاتصال بالخادم. حاول مجدداً.");
+      if (!controller.signal.aborted) setError("تعذر الاتصال بالخادم. حاول مجدداً.");
+      return false;
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, [router]);
+  const refreshFeed = useCallback(() => loadOrders(true), [loadOrders]);
+  useOrderFeed(refreshFeed);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -132,6 +146,9 @@ export default function DeliveryCompanyPage() {
     orderId: number,
     status: Exclude<OrderStatus, "accepted">
   ) {
+    if (changing.current) return;
+    changing.current = true;
+    loadAbort.current?.abort();
     setUpdatingId(orderId);
     setError("");
 
@@ -168,11 +185,16 @@ export default function DeliveryCompanyPage() {
     } catch {
       setError("تعذر تحديث الطلب. حاول مجدداً.");
     } finally {
+      changing.current = false;
       setUpdatingId(null);
+      void loadOrders(true);
     }
   }
 
   async function logout() {
+    changing.current = true;
+    loadAbort.current?.abort();
+    setOrders([]); setCompany(null);
     await fetch("/api/staff/logout", {
       method: "POST",
       credentials: "include",
@@ -183,10 +205,9 @@ export default function DeliveryCompanyPage() {
 
   useEffect(() => {
     const t = window.setTimeout(() => void loadOrders(), 0);
-    const interval = window.setInterval(() => void loadOrders(true), 30_000);
     return () => {
       window.clearTimeout(t);
-      window.clearInterval(interval);
+      loadAbort.current?.abort();
     };
   }, [loadOrders]);
 

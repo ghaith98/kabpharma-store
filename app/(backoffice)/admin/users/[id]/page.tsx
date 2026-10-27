@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { CustomerDetails, CustomerOrder } from "@/lib/admin-customer-details";
 import { buildOrderItemPresentation, splitOrderDiscounts } from "@/lib/order-promotion-display";
+import { deliveryHandlerLabel } from "@/lib/delivery-handler";
 import { deliveryLocationUrl } from "@/lib/delivery-location";
 
 function date(value: string | null) {
@@ -36,6 +37,8 @@ function OrderDetails({ order }: { order: CustomerOrder }) {
     </summary>
     <div className="space-y-5 border-t border-gray-100 p-4 sm:p-5">
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Field label="Delivery handled by">{deliveryHandlerLabel(order)}</Field>
+        <Field label="Collected at">{date(order.delivery_claimed_at || null)}</Field>
         <Field label="Recipient">{order.customer_name}</Field><Field label="Phone">{order.phone}</Field>
         <Field label="Governorate">{order.governorate}</Field><Field label="Area">{order.delivery_area}</Field>
         <Field label="Delivery address">{order.address}</Field>

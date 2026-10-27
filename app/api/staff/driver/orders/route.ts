@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
-import { getStaffSession } from "@/lib/staff-session";
+import { getActiveStaffAccount } from "@/lib/staff-account";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -18,22 +18,8 @@ const DRIVER_ORDER_FIELDS = `
 `;
 
 async function getActiveDriver() {
-  const session = await getStaffSession();
-
-  if (!session || session.role !== "driver") {
-    return null;
-  }
-
-  const { data } = await supabaseAdmin
-    .from("delivery_drivers")
-    .select("id, name, is_active")
-    .eq("id", session.accountId)
-    .eq("name", session.displayName)
-    .eq("is_active", true)
-    .is("deleted_at", null)
-    .maybeSingle();
-
-  return data || null;
+  const account = await getActiveStaffAccount();
+  return account?.role === "driver" ? account : null;
 }
 
 export async function GET() {
@@ -50,11 +36,13 @@ export async function GET() {
         .select(DRIVER_ORDER_FIELDS)
         .eq("status", "accepted")
         .is("driver_name", null)
+        .is("delivery_handler_type", null)
         .order("id", { ascending: false }),
       supabaseAdmin
         .from("orders")
         .select(DRIVER_ORDER_FIELDS)
-        .eq("driver_name", driver.name)
+        .eq("delivery_handler_type", "driver")
+        .eq("delivery_handler_id", driver.id)
         .eq("status", "out_for_delivery")
         .order("id", { ascending: false }),
     ]);
@@ -113,7 +101,8 @@ export async function POST(request: Request) {
       await supabaseAdmin
         .from("orders")
         .select("id")
-        .eq("driver_name", driver.name)
+        .eq("delivery_handler_type", "driver")
+        .eq("delivery_handler_id", driver.id)
         .eq("status", "out_for_delivery")
         .limit(1)
         .maybeSingle();
@@ -134,11 +123,16 @@ export async function POST(request: Request) {
       .update({
         status: "out_for_delivery",
         driver_name: driver.name,
+        delivery_handler_type: "driver",
+        delivery_handler_id: driver.id,
+        delivery_handler_name: driver.name,
+        delivery_claimed_at: new Date().toISOString(),
         accepted_at: new Date().toISOString(),
       })
       .eq("id", orderId)
       .eq("status", "accepted")
       .is("driver_name", null)
+      .is("delivery_handler_type", null)
       .select("id")
       .maybeSingle();
 
@@ -161,7 +155,8 @@ export async function POST(request: Request) {
       })
       .eq("id", orderId)
       .eq("status", "out_for_delivery")
-      .eq("driver_name", driver.name)
+      .eq("delivery_handler_type", "driver")
+        .eq("delivery_handler_id", driver.id)
       .select("id")
       .maybeSingle();
 

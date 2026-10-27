@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run test:scroll && npm run test:coupons && npm run test:availability && npm run test:checkout && npm run test:auth-forms && npm run test:mobile-payment && npm run test:responsive-images && npm run test:admin-customers && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run test:scroll && npm run test:coupons && npm run test:availability && npm run test:checkout && npm run test:auth-forms && npm run test:mobile-payment && npm run test:responsive-images && npm run test:admin-customers && npm run test:delivery-ownership && npm run build",
     "test:scroll": "node scripts/check-scroll-scheduler.mjs",
     "test:coupons": "node scripts/check-coupon-database.mjs && node scripts/check-welcome-visit.mjs",
     "test:availability": "node scripts/check-cart-availability.mjs && node scripts/check-variant-stock-database.mjs",
@@ -16,7 +16,8 @@
     "test:auth-forms": "node scripts/check-auth-form-session.mjs",
     "test:mobile-payment": "node scripts/check-mobile-payment.mjs",
     "test:responsive-images": "node scripts/check-responsive-images.mjs",
-    "test:admin-customers": "node scripts/check-admin-customer-details.mjs"
+    "test:admin-customers": "node scripts/check-admin-customer-details.mjs",
+    "test:delivery-ownership": "node scripts/check-delivery-ownership.mjs && node scripts/check-order-feed.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.3",

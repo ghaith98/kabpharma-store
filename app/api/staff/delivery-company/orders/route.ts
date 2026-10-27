@@ -1,27 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { hasTrustedOrigin, jsonError } from "@/lib/http";
-import { getStaffSession } from "@/lib/staff-session";
+import { getActiveStaffAccount } from "@/lib/staff-account";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
 async function getActiveCompany() {
-  const session = await getStaffSession();
-
-  if (!session || session.role !== "delivery_company") {
-    return null;
-  }
-
-  const { data } = await supabaseAdmin
-    .from("delivery_companies")
-    .select("id, company_name, is_active")
-    .eq("id", session.accountId)
-    .eq("company_name", session.displayName)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  return data || null;
+  const account = await getActiveStaffAccount();
+  return account?.role === "delivery_company" ? { ...account, company_name: account.name } : null;
 }
 
 export async function GET() {
@@ -56,6 +43,7 @@ export async function GET() {
         "out_for_delivery",
         "delivered",
       ])
+      .or(`and(status.eq.accepted,delivery_handler_type.is.null,driver_name.is.null),and(delivery_handler_type.eq.delivery_company,delivery_handler_id.eq.${company.id})`)
       .order("id", { ascending: false }),
     supabaseAdmin
       .from("delivery_companies")
@@ -125,15 +113,27 @@ export async function POST(request: Request) {
       ? { delivered_at: new Date().toISOString() }
       : { accepted_at: new Date().toISOString() };
 
-  const { data, error } = await supabaseAdmin
+  let updateQuery = supabaseAdmin
     .from("orders")
     .update({
       status: newStatus,
       ...timestamps,
+      ...(newStatus === "out_for_delivery" ? {
+        delivery_handler_type: "delivery_company",
+        delivery_handler_id: company.id,
+        delivery_handler_name: company.company_name,
+        delivery_claimed_at: new Date().toISOString(),
+        driver_name: null,
+      } : {}),
     })
     .eq("id", orderId)
-    .eq("status", currentStatus)
-    .select("id")
+    .eq("status", currentStatus);
+  if (newStatus === "out_for_delivery") {
+    updateQuery = updateQuery.is("delivery_handler_type", null).is("driver_name", null);
+  } else {
+    updateQuery = updateQuery.eq("delivery_handler_type", "delivery_company").eq("delivery_handler_id", company.id);
+  }
+  const { data, error } = await updateQuery.select("id")
     .maybeSingle();
 
   if (error) {
