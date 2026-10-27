@@ -1,5 +1,6 @@
 "use client";
 
+import { isProductOutOfStock } from "@/lib/product-availability";
 import {
   useEffect,
   useMemo,
@@ -529,8 +530,7 @@ export default function NewArrivalsCollection({
 
           const matchesStock =
             !inStockOnly ||
-            product.is_out_of_stock ===
-              false;
+            !isProductOutOfStock(product, product.product_variants);
 
           const matchesSale =
             !onSaleOnly ||

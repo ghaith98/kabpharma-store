@@ -48,11 +48,13 @@ export async function POST(request: Request) {
     name.length < 2 ||
     (role === "delivery_company" &&
       username.length < 2) ||
-    password.length < 1 ||
+    password.length < (role === "driver" ? 1 : 10) ||
     password.length > 200
   ) {
     return jsonError(
-      "Use a valid name and a password of at least 10 characters",
+      role === "driver"
+        ? "Use a name of at least 2 characters and a password (1–200 characters)"
+        : "Use a valid name, username and a password of at least 10 characters",
       400
     );
   }

@@ -4,6 +4,7 @@ import {
   COD_FEE_SYP,
   MAX_ITEM_QUANTITY,
 } from "@/lib/commerce-config";
+import { isVariantOutOfStock, isMainSizeOutOfStock } from "@/lib/product-availability";
 import { hasMainSize } from "@/lib/product-options";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -285,7 +286,7 @@ export async function buildQuote(options: {
       ? supabaseAdmin
           .from("products")
           .select(
-            "id, name, name_ar, name_en, price, sale_percent, size_ar, size_en, image_url, is_out_of_stock, category_id, brand_id"
+            "id, name, name_ar, name_en, price, sale_percent, size_ar, size_en, image_url, is_out_of_stock, is_main_size_out_of_stock, category_id, brand_id"
           )
           .in("id", productIds)
       : Promise.resolve({ data: [] as Row[], error: null }),
@@ -371,8 +372,7 @@ export async function buildQuote(options: {
       continue;
     }
 
-    // The admin controls availability at product level. Sizes inherit it;
-    // legacy quantity columns are not an inventory system for this store.
+    // The global flag disables every size. Individual flags are checked below.
     if (product.is_out_of_stock === true) {
       issue("product_unavailable");
       continue;
@@ -396,6 +396,7 @@ export async function buildQuote(options: {
       // products). With a main size, "no option" means the main size.
       variant =
         [...productVariants]
+          .filter(candidate => !isVariantOutOfStock(candidate))
           .sort(
             (first, second) =>
               Number(first.price || 0) - Number(second.price || 0)
@@ -405,6 +406,11 @@ export async function buildQuote(options: {
         issue("option_unavailable");
         continue;
       }
+    }
+
+    if (variant ? isVariantOutOfStock(variant) : isMainSizeOutOfStock(product)) {
+      issue("option_unavailable");
+      continue;
     }
 
     const basePrice = Number(variant?.price ?? product.price ?? 0);

@@ -157,7 +157,8 @@ export default function AdminDriversPage() {
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            minLength={10}
+            minLength={1}
+            maxLength={200}
             required
             className="mb-5 w-full rounded-xl border p-3 text-black"
           />

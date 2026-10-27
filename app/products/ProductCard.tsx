@@ -12,6 +12,8 @@ import AddToCartButton from "./AddToCartButton";
 import WishlistButton from "./WishlistButton";
 import ProductPromotionNotice from "./[id]/ProductPromotionNotice";
 
+import { isProductOutOfStock } from "@/lib/product-availability";
+
 import { useLanguage } from "../../context/LanguageContext";
 
 type ProductCategory = {
@@ -30,6 +32,7 @@ type ProductVariants =
   >;
 
 export type ProductCardProduct = {
+  is_main_size_out_of_stock?: boolean | null;
   id: number;
 
   name?: string | null;
@@ -169,10 +172,7 @@ export default function ProductCard({
             ?.name_ar
     ) || "";
 
-  const isOutOfStock =
-    Boolean(
-      product.is_out_of_stock
-    );
+  const isOutOfStock = isProductOutOfStock(product, product.product_variants);
 
   const Heading =
     headingLevel === 2

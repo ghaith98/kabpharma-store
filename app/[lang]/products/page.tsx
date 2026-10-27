@@ -1,3 +1,4 @@
+import { isProductOutOfStock } from "@/lib/product-availability";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -159,7 +160,7 @@ export default async function ProductsPage() {
       allProducts
         .filter(
           (product) =>
-            !product.is_out_of_stock
+            !isProductOutOfStock(product, product.product_variants)
         )
         .map((product) =>
           Number(product.id)

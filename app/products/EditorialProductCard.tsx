@@ -20,6 +20,7 @@ import type {
 } from "./ProductCard";
 
 import { useLanguage } from "../../context/LanguageContext";
+import { isVariantOutOfStock, isProductOutOfStock } from "@/lib/product-availability";
 import { buildMainOption, hasMainSize } from "@/lib/product-options";
 
 type BaseProductVariant =
@@ -60,7 +61,7 @@ type EditorialProductCardProps = {
   eagerImage?: boolean;
 };
 
-function isVariantOutOfStock(_variant: EditorialProductVariant) { return false; }
+
 
 function getVariantLabel(
   variant: EditorialProductVariant,
@@ -213,7 +214,7 @@ export default function EditorialProductCard({
         (1 - salePercent / 100)
       : originalPrice;
 
-  const allVariantsOutOfStock = false;
+  const allVariantsOutOfStock = isProductOutOfStock(product, product.product_variants);
 
   const isOutOfStock =
     Boolean(product.is_out_of_stock) ||

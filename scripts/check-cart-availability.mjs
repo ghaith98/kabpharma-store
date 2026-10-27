@@ -54,8 +54,33 @@ variants = [{id:2,product_id:1,price:150,stock_quantity:0},{id:3,product_id:1,pr
 result = await quote();
 assert.equal(result.issues.length,0);
 assert.equal(result.lines[0].variantId,3);
+// Availability belongs to each size, including the product's main size.
+products = [product];
+variants = [{id:2,product_id:1,price:150,is_out_of_stock:true}, {id:3,product_id:1,price:200,is_out_of_stock:false}];
+assert.equal((await quote(2)).issues[0].reason,'option_unavailable');
+assert.equal((await quote(3)).issues.length,0);
+assert.equal((await quote()).issues.length,0); // Main 100g remains available.
+products = [{...product,is_main_size_out_of_stock:true}];
+assert.equal((await quote()).issues[0].reason,'option_unavailable');
+assert.equal((await quote(3)).issues.length,0); // Extra size stays available.
+products = [{...product,size_en:null}];
+assert.equal((await quote()).lines[0].variantId,3); // Skip cheaper sold-out size.
+variants = variants.map(variant=>({...variant,is_out_of_stock:true}));
+assert.equal((await quote()).issues[0].reason,'option_unavailable');
+products = [{...product,is_out_of_stock:true}];
+assert.equal((await quote(3)).issues[0].reason,'product_unavailable');
+products = [{...product,is_main_size_out_of_stock:true}]; variants = [];
+assert.equal((await quote()).issues[0].reason,'option_unavailable');
+const {isProductOutOfStock, isVariantOutOfStock} = load('lib/product-availability.ts');
+const {buildMainOption} = load('lib/product-options.ts');
+assert.equal(isVariantOutOfStock({stock:0,stock_quantity:0}),false);
+assert.equal(isProductOutOfStock(product,[{is_out_of_stock:true}]),false);
+assert.equal(isProductOutOfStock({...product,size_en:null},[{is_out_of_stock:true}]),true);
+assert.equal(isProductOutOfStock({...product,is_main_size_out_of_stock:true},[{is_out_of_stock:false}]),false);
+assert.equal(isProductOutOfStock({...product,is_out_of_stock:true},[{is_out_of_stock:false}]),true);
+assert.equal(buildMainOption({...product,is_main_size_out_of_stock:true}).is_out_of_stock,true);
 products = [{...product,price:0}]; variants = [];
 assert.equal((await quote()).issues[0].reason,'price_invalid');
 failProducts = true;
 await assert.rejects(()=>quote(),/Quote lookup failed/);
-console.log('Cart availability checks passed: product flag, ignored legacy quantities, size selection, missing product/size, invalid price and lookup failure.');
+console.log('Cart and per-size availability checks passed: product flag, ignored legacy quantities, size selection, missing product/size, invalid price and lookup failure.');

@@ -18,6 +18,7 @@ import { useLanguage } from "../../../context/LanguageContext";
 import { trackProductView } from "@/lib/analytics";
 import type { FlashSaleFields } from "@/lib/pricing/flash";
 import { useLiveFlashSale } from "@/lib/use-live-flash-sales";
+import { isVariantOutOfStock, isProductOutOfStock } from "@/lib/product-availability";
 import { buildMainOption, hasMainSize, optionIdToNumber } from "@/lib/product-options";
 
 type ProductCategory = {
@@ -27,6 +28,7 @@ type ProductCategory = {
 };
 
 export type ProductDetail = {
+  is_main_size_out_of_stock?: boolean | null;
   id: number;
 
   name?: string | null;
@@ -55,6 +57,7 @@ export type ProductDetail = {
 } & FlashSaleFields;
 
 export type ProductDetailVariant = {
+  is_out_of_stock?: boolean | null;
   id: number | string;
   price: number | string;
 
@@ -70,7 +73,7 @@ export type ProductDetailVariant = {
 
 };
 
-function isVariantOutOfStock(_variant: ProductDetailVariant) { return false; }
+
 
 function getVariantLabel(
   variant: ProductDetailVariant,
@@ -317,9 +320,7 @@ export default function ProductDetailsClient({
     null;
 
   const isOutOfStock =
-    Boolean(
-      product.is_out_of_stock
-    ) ||
+    isProductOutOfStock(product, productVariants) ||
     Boolean(
       selectedVariant &&
         isVariantOutOfStock(

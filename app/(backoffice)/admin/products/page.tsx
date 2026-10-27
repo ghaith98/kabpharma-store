@@ -4,9 +4,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { isProductOutOfStock } from "@/lib/product-availability";
+import { hasMainSize } from "@/lib/product-options";
 import { supabase } from "@/lib/supabase";
 
 type VariantInput = {
+  is_out_of_stock?: boolean;
   label_ar: string;
   label_en: string;
   price: string;
@@ -15,6 +18,7 @@ type VariantInput = {
 };
 
 type AdminProduct = {
+  is_main_size_out_of_stock?: boolean | null;
   id: number;
   name?: string | null;
   name_ar?: string | null;
@@ -62,6 +66,7 @@ type ProductImage = {
 };
 
 type ProductVariant = {
+  is_out_of_stock?: boolean | null;
   id: number;
   product_id: number;
   label_ar?: string | null;
@@ -79,6 +84,7 @@ type ProductVariantImage = {
 };
 
 type UploadedVariant = {
+  is_out_of_stock: boolean;
   label_ar: string;
   label_en: string;
   price: number;
@@ -146,6 +152,10 @@ export default function AdminProductsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [variants, setVariants] = useState<VariantInput[]>([]);
+  const [stockProductId, setStockProductId] = useState<number | null>(null);
+  const [savingStock, setSavingStock] = useState(false);
+  const [stockError, setStockError] = useState("");
+  const stockProduct = products.find(product => product.id === stockProductId) || null;
 
   const [loading, setLoading] = useState(false);
 
@@ -208,10 +218,11 @@ export default function AdminProductsPage() {
         .join(" ")
         .toLocaleLowerCase();
       const matchesSearch = !search || searchableText.includes(search);
+      const outOfStock = isProductOutOfStock(product, productVariants.filter(variant => variant.product_id === product.id));
       const matchesStatus =
         catalogStatus === "all" ||
-        (catalogStatus === "available" && !product.is_out_of_stock) ||
-        (catalogStatus === "out-of-stock" && product.is_out_of_stock) ||
+        (catalogStatus === "available" && !outOfStock) ||
+        (catalogStatus === "out-of-stock" && outOfStock) ||
         (catalogStatus === "featured" && product.featured) ||
         (catalogStatus === "new" && product.is_new_arrival);
 
@@ -223,6 +234,7 @@ export default function AdminProductsPage() {
     catalogSearch,
     catalogStatus,
     products,
+    productVariants,
   ]);
 
   const getBrandName = (brandId?: number | null) => {
@@ -570,6 +582,7 @@ export default function AdminProductsPage() {
           }
 
           uploadedVariants.push({
+            is_out_of_stock: variant.is_out_of_stock === true,
             label_ar: variant.label_ar.trim(),
             label_en: variant.label_en.trim(),
             price: Number(variant.price),
@@ -633,6 +646,7 @@ export default function AdminProductsPage() {
             .from("product_variants")
             .insert({
               product_id: insertedProduct.id,
+              is_out_of_stock: variant.is_out_of_stock,
               label_ar: variant.label_ar,
               label_en: variant.label_en,
               price: variant.price,
@@ -726,6 +740,7 @@ export default function AdminProductsPage() {
       const imagesForVariant = getImagesForVariant(variant);
 
       return {
+        is_out_of_stock: variant.is_out_of_stock === true,
         label_ar: variant.label_ar || "",
         label_en: variant.label_en || "",
         price: String(variant.price || ""),
@@ -811,6 +826,7 @@ export default function AdminProductsPage() {
           const finalImageUrls = imageUrls.slice(0, 3);
 
           uploadedEditVariants.push({
+            is_out_of_stock: variant.is_out_of_stock === true,
             label_ar: variant.label_ar.trim(),
             label_en: variant.label_en.trim(),
             price: Number(variant.price),
@@ -888,6 +904,7 @@ export default function AdminProductsPage() {
               .from("product_variants")
               .insert({
                 product_id: editingId,
+                is_out_of_stock: variant.is_out_of_stock,
                 label_ar: variant.label_ar,
                 label_en: variant.label_en,
                 price: variant.price,
@@ -975,17 +992,42 @@ export default function AdminProductsPage() {
   }
 
   async function toggleStockStatus(product: AdminProduct) {
-    const { error } = await supabase
-      .from("products")
-      .update({ is_out_of_stock: !product.is_out_of_stock })
-      .eq("id", product.id);
-
-    if (error) {
-      alert(error.message);
+    if (getVariantsForProduct(product.id).length > 0) {
+      setStockError("");
+      setStockProductId(product.id);
       return;
     }
+    await saveStock(product, "single");
+  }
 
-    await loadProducts();
+  async function saveStock(product: AdminProduct, target: "all" | "main" | "single" | ProductVariant) {
+    if (savingStock) return;
+    setSavingStock(true);
+    setStockError("");
+    try {
+      const isVariant = typeof target === "object";
+      const field = target === "main" ? "is_main_size_out_of_stock" : "is_out_of_stock";
+      const current = isVariant ? target.is_out_of_stock : target === "main" ? product.is_main_size_out_of_stock : target === "single" ? isProductOutOfStock(product, []) : product.is_out_of_stock;
+      const changes = { [field]: !current, ...(target === "single" ? { is_main_size_out_of_stock: false } : {}) };
+      let query = supabase.from(isVariant ? "product_variants" : "products")
+        .update(changes).eq("id", isVariant ? target.id : product.id);
+      if (isVariant) query = query.eq("product_id", product.id);
+      const { data, error } = await query.select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("No availability was changed. Check your admin access and refresh.");
+      if (isVariant) {
+        setProductVariants(rows => rows.map(row => row.id === target.id ? { ...row, is_out_of_stock: !current } : row));
+      } else {
+        setProducts(rows => rows.map(row => row.id === product.id ? { ...row, ...changes } : row));
+      }
+    } catch (error) {
+      const message = (error as { message?: string }).message || "Could not update availability.";
+      const friendly = /is_main_size_out_of_stock|schema cache|column.*is_out_of_stock/i.test(message)
+        ? "Run 202610280001_variant_stock_and_driver_password.sql in Supabase first, then refresh."
+        : message;
+      setStockError(friendly);
+      if (!stockProductId) alert(friendly);
+    } finally { setSavingStock(false); }
   }
 
   async function deleteProduct(id: number) {
@@ -1536,7 +1578,7 @@ export default function AdminProductsPage() {
                         </span>
                       )}
 
-                      {product.is_out_of_stock && (
+                      {isProductOutOfStock(product, variantsForThisProduct) && (
                         <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-extrabold text-red-700">
                           Out of Stock
                         </span>
@@ -1617,14 +1659,14 @@ export default function AdminProductsPage() {
                         type="button"
                         onClick={() => toggleStockStatus(product)}
                         className={`rounded-2xl px-4 py-3 font-extrabold text-white transition ${
-                          product.is_out_of_stock
+                          isProductOutOfStock(product, variantsForThisProduct)
                             ? "bg-green-600 hover:bg-green-700"
                             : "bg-orange-500 hover:bg-orange-600"
                         }`}
                       >
-                        {product.is_out_of_stock
-                          ? "Mark Available"
-                          : "Mark Out of Stock"}
+                        {isProductOutOfStock(product, variantsForThisProduct)
+                          ? (variantsForThisProduct.length ? "Manage size availability · unavailable" : "Mark Available")
+                          : (variantsForThisProduct.length ? "Manage size availability" : "Mark Out of Stock")}
                       </button>
 
                       <button
@@ -1987,6 +2029,31 @@ export default function AdminProductsPage() {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {stockProduct && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="stock-title" onKeyDown={event => { if (event.key === "Escape" && !savingStock) setStockProductId(null); }}>
+          <div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div><h2 id="stock-title" className="text-xl font-bold text-gray-900">Size availability</h2><p className="mt-1 text-sm text-gray-600" dir="auto">{stockProduct.name_en || stockProduct.name_ar || stockProduct.name}</p></div>
+              <button type="button" autoFocus disabled={savingStock} aria-label="Close availability" onClick={() => setStockProductId(null)} className="rounded-lg border px-3 py-1 text-lg disabled:opacity-50">×</button>
+            </div>
+            <p className="mt-4 text-sm text-gray-600">Each size is controlled separately. Changes are saved immediately.</p>
+            {stockProduct.is_out_of_stock && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">All sizes are currently disabled by the product switch below. Enable the product to sell its available sizes.</p>}
+            {stockError && <p role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{stockError}</p>}
+            <div className="mt-4 space-y-3">
+              {hasMainSize(stockProduct) && <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
+                <div><p className="text-sm font-bold" dir="auto">{stockProduct.size_en || stockProduct.size_ar} <span className="text-xs font-normal text-gray-500">· Main size</span></p><p className={`mt-1 text-xs font-semibold ${stockProduct.is_main_size_out_of_stock ? "text-red-700" : "text-green-700"}`}>{stockProduct.is_main_size_out_of_stock ? "Out of stock" : "Available"}</p></div>
+                <button type="button" disabled={savingStock} onClick={() => void saveStock(stockProduct, "main")} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50">{stockProduct.is_main_size_out_of_stock ? "Mark available" : "Mark out of stock"}</button>
+              </div>}
+              {getVariantsForProduct(stockProduct.id).map(variant => <div key={variant.id} className="flex items-center justify-between gap-3 rounded-xl border p-3">
+                <div><p className="text-sm font-bold" dir="auto">{variant.label_en || variant.label_ar || `Option #${variant.id}`}</p><p className={`mt-1 text-xs font-semibold ${variant.is_out_of_stock ? "text-red-700" : "text-green-700"}`}>{variant.is_out_of_stock ? "Out of stock" : "Available"}</p></div>
+                <button type="button" disabled={savingStock} onClick={() => void saveStock(stockProduct, variant)} className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-50">{variant.is_out_of_stock ? "Mark available" : "Mark out of stock"}</button>
+              </div>)}
+            </div>
+            <div className="mt-5 border-t pt-4"><button type="button" disabled={savingStock} onClick={() => void saveStock(stockProduct, "all")} className={`w-full rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-50 ${stockProduct.is_out_of_stock ? "bg-green-700" : "bg-gray-800"}`}>{savingStock ? "Saving…" : stockProduct.is_out_of_stock ? "Enable product · keep individual size settings" : "Mark entire product out of stock"}</button></div>
+            <button type="button" disabled={savingStock} onClick={() => setStockProductId(null)} className="mt-3 w-full rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-50">Done</button>
           </div>
         </div>
       )}

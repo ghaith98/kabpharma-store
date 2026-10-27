@@ -23,9 +23,11 @@ import type {
 
 import { useLanguage } from "../../context/LanguageContext";
 import { trackAddToCart } from "@/lib/analytics";
+import { isVariantOutOfStock } from "@/lib/product-availability";
 import { optionIdToNumber } from "@/lib/product-options";
 
 type ProductVariant = {
+  is_out_of_stock?: boolean | null;
   id: number | string;
   price: number | string;
 
@@ -89,7 +91,7 @@ export default function AddToCartButton({
           : null;
 
       const fallbackVariant =
-        [...productVariants].sort(
+        [...productVariants].filter(variant => !isVariantOutOfStock(variant)).sort(
           (
             first,
             second
@@ -270,7 +272,7 @@ export default function AddToCartButton({
   }
 
   function handleAddOne() {
-    if (disabled) {
+    if (disabled || isVariantOutOfStock(finalVariant) || (productVariants.length > 0 && !finalVariant)) {
       return;
     }
 
@@ -291,7 +293,7 @@ export default function AddToCartButton({
   }
 
   function handleRemoveOne() {
-    if (disabled) {
+    if (disabled || isVariantOutOfStock(finalVariant) || (productVariants.length > 0 && !finalVariant)) {
       return;
     }
 
@@ -320,7 +322,7 @@ export default function AddToCartButton({
     notifyCartUpdated();
   }
 
-  if (disabled) {
+  if (disabled || isVariantOutOfStock(finalVariant) || (productVariants.length > 0 && !finalVariant)) {
     return (
       <button
         type="button"

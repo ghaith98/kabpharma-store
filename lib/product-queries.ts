@@ -29,6 +29,7 @@ export const PRODUCT_LIST_SELECT = `
   size_en,
   image_url,
   is_out_of_stock,
+  is_main_size_out_of_stock,
   category_id,
   brand_id,
   featured,

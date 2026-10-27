@@ -36,6 +36,7 @@ export function optionIdToNumber(id: unknown): number | null {
 
 /** The main size shaped like an option, for the size pickers. */
 export function buildMainOption(product: {
+  is_main_size_out_of_stock?: boolean | null;
   price?: number | string | null;
   image_url?: string | null;
   size_ar?: string | null;
@@ -43,6 +44,7 @@ export function buildMainOption(product: {
 }) {
   return {
     id: MAIN_OPTION_ID,
+    is_out_of_stock: product.is_main_size_out_of_stock === true,
     price: Number(product.price || 0),
     label_ar: product.size_ar || product.size_en || "",
     label_en: product.size_en || product.size_ar || "",

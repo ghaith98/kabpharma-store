@@ -1,5 +1,6 @@
 "use client";
 
+import { isProductOutOfStock } from "@/lib/product-availability";
 import {
   Fragment,
   useCallback,
@@ -708,8 +709,7 @@ export default function ProductsClient({
 
             const matchesStock =
               !inStockOnly ||
-              product.is_out_of_stock ===
-                false;
+              !isProductOutOfStock(product, product.product_variants);
 
             const matchesSale =
               !onSaleOnly ||

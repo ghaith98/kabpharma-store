@@ -1,3 +1,4 @@
+import { isProductOutOfStock } from "@/lib/product-availability";
 import { NextResponse } from "next/server";
 
 import { COD_FEE_SYP } from "@/lib/commerce-config";
@@ -419,7 +420,7 @@ function buildCatalogProduct(
     category: pick(category, "name", language, 80),
     needs,
     sizes,
-    inStock: product.is_out_of_stock !== true,
+    inStock: !isProductOutOfStock(product, Array.isArray(product.product_variants) ? product.product_variants : []),
     offer,
     about: pick(product, "description", language, 280),
     howToUse: pick(product, "how_to_use", language, 230),

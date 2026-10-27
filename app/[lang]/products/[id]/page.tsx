@@ -1,3 +1,5 @@
+import { hasMainSize } from "@/lib/product-options";
+import { isVariantOutOfStock, isMainSizeOutOfStock } from "@/lib/product-availability";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -625,7 +627,7 @@ export default async function ProductPage({
         variant.label ||
         variant.variant_label;
 
-      const variantIsOutOfStock = Boolean(product.is_out_of_stock);
+      const variantIsOutOfStock = Boolean(product.is_out_of_stock) || isVariantOutOfStock(variant);
 
       variantOffers.push(
         createOffer({
@@ -653,6 +655,15 @@ export default async function ProductPage({
       ),
       salePercent
     );
+
+  if (productVariants.length > 0 && hasMainSize(product) && baseProductPrice > 0) {
+    variantOffers.push(createOffer({
+      price: baseProductPrice,
+      isOutOfStock: Boolean(product.is_out_of_stock) || isMainSizeOutOfStock(product),
+      sku: `${product.id}-main`,
+      name: `${schemaProductName} - ${product.size_ar || product.size_en}`,
+    }));
+  }
 
   let productOffers:
     | Record<string, unknown>
@@ -733,7 +744,7 @@ export default async function ProductPage({
 
         isOutOfStock:
           Boolean(
-            product.is_out_of_stock
+            product.is_out_of_stock || isMainSizeOutOfStock(product)
           ),
 
         sku:
