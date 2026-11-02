@@ -4,6 +4,7 @@ import { checkoutAccountId, clearCheckoutDraft, clearCheckoutSession, readChecko
 import { useCheckoutAccountGuard } from "@/lib/use-checkout-account-guard";
 
 import Link from "next/link";
+import AvailableCoupons from "./AvailableCoupons";
 import BackLink from "@/app/BackLink";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -280,8 +281,8 @@ export default function PaymentPage() {
     sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);
   }
 
-  function applyCoupon() {
-    const code = couponInput.trim().toUpperCase().replace(/\s+/g, "");
+  function applyCoupon(selectedCode?: string) {
+    const code = (selectedCode ?? couponInput).trim().toUpperCase().replace(/\s+/g, "");
     if (!code) { setCouponInputError(t("Enter a coupon code.", "أدخلي كود الخصم.")); return; }
     setCouponInputError("");
     setCouponInput(code);
@@ -718,13 +719,14 @@ export default function PaymentPage() {
                       onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponInputError(""); if (requestedCoupon) setRequestedCoupon(null); }}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (!checkingCoupon) applyCoupon(); } }}
                       className={`h-10 min-w-0 flex-1 rounded-lg border bg-white px-3 text-base text-[#142019] outline-none transition placeholder:text-sm placeholder:text-[#88938c] focus:border-[#0a583b] focus:ring-2 focus:ring-[#0a583b]/10 ${couponError ? "border-red-400" : "border-[#d7dfd9]"}`} />
-                    <button type="button" disabled={checkingCoupon} onClick={applyCoupon} aria-busy={checkingCoupon}
+                    <button type="button" disabled={checkingCoupon} onClick={() => applyCoupon()} aria-busy={checkingCoupon}
                       className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#0a583b] px-4 text-xs font-bold text-white transition hover:bg-[#073f2c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a583b] disabled:cursor-wait disabled:opacity-65">
                       {checkingCoupon && <LoaderCircle size={14} className="animate-spin" aria-hidden="true" />}
                       {checkingCoupon ? t("Applying", "جارٍ التطبيق") : t("Apply", "تطبيق")}
                     </button>
                   </div>
                   {couponError && <p id="coupon-error" role="alert" className="mt-2 text-xs leading-5 text-red-700">{couponError}</p>}
+                  {pageReady && profileId && <AvailableCoupons key={profileId} profileId={profileId} isArabic={isArabic} disabled={checkingCoupon || loading} onApply={applyCoupon} />}
                 </>
               )}
             </section>
