@@ -15,9 +15,9 @@
   -------------------
   1. Sale price. An item's price is its base price minus the bigger of the
      product's own sale % and any live flash sale that covers it.
-  2. Item promotions (buy X get Y, quantity discount). Counted per product
-     and size. Items that are on sale are skipped. An item gets at most one
-     promotion: the one that saves the customer the most.
+  2. Item promotions. Evaluate same-size offers first, then compare a brand
+     Mix & Match bundle against the offers it would replace. Sale items
+     are skipped and participating lines cannot stack item promotions.
   3. Coupon. Discounts only the items that did not get a promotion (unless
      that promotion allows coupons), and skips sale items unless the coupon
      allows them.
@@ -311,6 +311,57 @@ function evaluateQuantityDiscount(
   };
 }
 
+type MixedAllocation = {
+  line: PricedLine;
+  qualifying: number;
+  free: number;
+};
+
+type MixedPlan = {
+  rule: PromotionRule;
+  allocations: MixedAllocation[];
+  savingsGain: number;
+};
+
+/** Cheapest eligible units are free; the two paid units per use come
+ * from the highest-priced remaining units. Work with counts, not copies. */
+function planMixedOffer(
+  rule: PromotionRule,
+  eligible: PricedLine[]
+): MixedPlan | null {
+  const units = eligible.reduce((sum, line) => sum + line.quantity, 0);
+  const uses = Math.min(Math.floor(units / 3), rule.maxUsesPerOrder ?? Infinity);
+  if (!uses) return null;
+
+  const allocations = eligible.map((line) => ({ line, qualifying: 0, free: 0 }));
+  let freeRemaining = uses;
+  let savings = 0;
+  for (const allocation of allocations) {
+    if (!freeRemaining) break;
+    allocation.free = Math.min(freeRemaining, allocation.line.quantity);
+    savings += allocation.free * allocation.line.unitPrice;
+    freeRemaining -= allocation.free;
+  }
+
+  let paidRemaining = uses * 2;
+  for (let index = allocations.length - 1; index >= 0 && paidRemaining; index--) {
+    const allocation = allocations[index];
+    allocation.qualifying = Math.min(
+      paidRemaining,
+      allocation.line.quantity - allocation.free
+    );
+    paidRemaining -= allocation.qualifying;
+  }
+
+  const participating = allocations.filter(({ qualifying, free }) => qualifying || free);
+  const displacedSavings = participating.reduce(
+    (sum, { line }) => sum + line.promotionDiscount + line.freeQuantity * line.unitPrice,
+    0
+  );
+
+  return { rule, allocations: participating, savingsGain: savings - displacedSavings };
+}
+
 export function priceCart(input: PricingInput): PricingResult {
   const livePromotions = input.promotions.filter((rule) =>
     isPromotionLive(rule, input.nowMs)
@@ -334,7 +385,11 @@ export function priceCart(input: PricingInput): PricingResult {
   );
 
   const lines: PricedLine[] = [];
-  const applied: AppliedPromotion[] = [];
+  const applied = new Map<PricedLine, AppliedPromotion[]>();
+  const mixedByBrand = new Map<number, PricedLine[]>();
+  const mixedBrands = new Set(itemPromotions.flatMap((rule) =>
+    rule.mixAndMatch && rule.brandId != null ? [rule.brandId] : []
+  ));
 
   for (const line of input.lines) {
     const quantity = Math.max(0, Math.trunc(Number(line.quantity) || 0));
@@ -379,7 +434,7 @@ export function priceCart(input: PricingInput): PricingResult {
 
     if (!onSale && unitPrice > 0) {
       for (const rule of itemPromotions) {
-        if (!promotionCovers(rule, target)) continue;
+        if (rule.mixAndMatch || !promotionCovers(rule, target)) continue;
 
         const evaluation =
           rule.kind === "buy_x_get_y"
@@ -433,7 +488,7 @@ export function priceCart(input: PricingInput): PricingResult {
     // when none applies yet, the closest matching one.
     const hint = best ? best.hint : hintFrom?.hint || null;
 
-    lines.push({
+    const pricedLine: PricedLine = {
       key: line.key,
       productId: line.productId,
       variantId: line.variantId,
@@ -454,9 +509,17 @@ export function priceCart(input: PricingInput): PricingResult {
       total: subtotal - promotionDiscount,
       promotion: linePromotion,
       hint,
-    });
+    };
+    lines.push(pricedLine);
+
+    if (!onSale && unitPrice > 0 && line.brandId != null && mixedBrands.has(line.brandId)) {
+      const brandLines = mixedByBrand.get(line.brandId) ?? [];
+      brandLines.push(pricedLine);
+      mixedByBrand.set(line.brandId, brandLines);
+    }
 
     if (best && linePromotion) {
+      const details: AppliedPromotion[] = [];
       const common = {
         promotionId: best.rule.id,
         promotionName: linePromotion.label.ar,
@@ -467,7 +530,7 @@ export function priceCart(input: PricingInput): PricingResult {
       };
 
       if (freeQuantity > 0) {
-        applied.push({
+        details.push({
           ...common,
           kind: "free_items",
           type: "buy_2_get_1",
@@ -477,13 +540,58 @@ export function priceCart(input: PricingInput): PricingResult {
       }
 
       if (promotionDiscount > 0) {
-        applied.push({
+        details.push({
           ...common,
           kind: "line_discount",
           type: "buy_1_second_50",
           affectedQuantity: best.discountedQuantity,
           discountAmount: promotionDiscount,
         });
+      }
+      applied.set(pricedLine, details);
+    }
+  }
+
+  const mixedParticipants = new Map<PricedLine, number>();
+  for (const [brandId, brandLines] of mixedByBrand) {
+    brandLines.sort((a, b) => a.unitPrice - b.unitPrice ||
+      (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+    let best: MixedPlan | null = null;
+
+    for (const rule of itemPromotions) {
+      if (!rule.mixAndMatch || rule.brandId !== brandId) continue;
+      const plan = planMixedOffer(rule, brandLines);
+      if (plan && plan.savingsGain > (best?.savingsGain ?? 0)) best = plan;
+    }
+
+    if (!best) continue;
+    const { rule } = best;
+    const label = { ar: promotionLabel(rule, "ar"), en: promotionLabel(rule, "en") };
+    for (const { line, qualifying, free } of best.allocations) {
+      mixedParticipants.set(line, qualifying + free);
+      // The customer already added these units. Store a line discount,
+      // so neither the order quantity nor the total counts the gift twice.
+      line.freeQuantity = 0;
+      line.promotionDiscount = free * line.unitPrice;
+      line.total = line.subtotal - line.promotionDiscount;
+      line.hint = null;
+      line.promotion = { id: rule.id, kind: "buy_x_get_y", label, allowWithCoupon: rule.allowWithCoupon };
+
+      if (free > 0) {
+        applied.set(line, [{
+          promotionId: rule.id,
+          promotionName: label.ar,
+          labelAr: label.ar,
+          labelEn: label.en,
+          kind: "line_discount",
+          type: "buy_1_second_50", // Legacy field; kind and discountAmount are authoritative.
+          productId: line.productId,
+          variantId: line.variantId,
+          affectedQuantity: free,
+          discountAmount: line.promotionDiscount,
+        }]);
+      } else {
+        applied.delete(line);
       }
     }
   }
@@ -526,13 +634,21 @@ export function priceCart(input: PricingInput): PricingResult {
     } else {
       const eligible = lines.reduce((sum, line) => {
         const blockedBySale = line.onSale && !source.appliesToSaleItems;
+        if (blockedBySale) return sum;
+        const mixedQuantity = mixedParticipants.get(line);
+        if (mixedQuantity != null) {
+          return sum + (line.promotion?.allowWithCoupon
+            ? line.total
+            : (line.quantity - mixedQuantity) * line.unitPrice);
+        }
+
         const promoted =
           line.promotion != null &&
           (line.promotionDiscount > 0 || line.freeQuantity > 0);
         const blockedByPromotion =
           promoted && !line.promotion?.allowWithCoupon;
 
-        return blockedBySale || blockedByPromotion
+        return blockedByPromotion
           ? sum
           : sum + line.total;
       }, 0);
@@ -626,7 +742,7 @@ export function priceCart(input: PricingInput): PricingResult {
 
   return {
     lines,
-    promotions: applied,
+    promotions: lines.flatMap((line) => applied.get(line) ?? []),
     coupon,
     delivery: {
       fee: configuredFee == null ? null : deliveryFee,

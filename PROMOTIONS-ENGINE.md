@@ -21,11 +21,15 @@ server (`lib/pricing/engine.ts`).
    the product's own sale % and any flash sale that is running on it. The
    two are never added together.
 2. **Automatic promotions** ("buy X get Y" and quantity discounts).
-   - Counted per product and per size. Sizes and products are never mixed.
+   - Counted per product and size unless a brand Buy 2, get 1 offer has
+     **Mix & Match** enabled.
    - Items with a sale or flash-sale price are skipped.
    - An item gets one promotion at a time: the one that saves the customer
      the most. On a tie, the narrower one wins (size, then product, then
      category, then brand, then all products).
+   - Mix & Match replaces overlapping same-size offers only if the bundle
+     saves more than the offers it replaces. Only one mixed offer can apply
+     per brand.
 3. **Coupon.**
    - Discounts only the items that did not get a promotion, unless that
      promotion has "a coupon can be used on top" switched on.
@@ -49,6 +53,26 @@ server (`lib/pricing/engine.ts`).
 
 Each of the first three can be for one product (all sizes or chosen
 sizes), a category, a brand, or all products.
+
+## Brand Mix & Match: Buy 2, get 1 free
+
+Before deploying this update, run
+`supabase/migrations/202611060001_brand_mix_and_match.sql` in the main
+Supabase project's SQL Editor. It expects the existing Promotions Engine
+schema (including brand scope). Existing offers keep their current behavior.
+
+In **Admin → Promotions**, edit or create a **Buy X, get Y** offer. Choose
+**A brand**, select **KAB Pharma**, and check **Mix & Match — cheapest item
+free**. Save the offer. Optionally set **At most** to 1 to limit the order to
+one free unit from this offer.
+
+The customer adds all three pieces. For example, at 300, 200 and 100 SYP,
+the 100 SYP piece is discounted and the products total 500 SYP before
+delivery. Different products or sizes and repeated units are allowed.
+Only non-sale items from the chosen brand qualify. Each full set of three
+earns a free unit, up to the configured limit. If there are multiple
+qualifying sets, the cheapest eligible units are free. Coupon stacking for
+the units in the offer follows its existing coupon switch.
 
 ## Coupon types (Admin > Coupons)
 

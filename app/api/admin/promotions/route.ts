@@ -219,6 +219,11 @@ async function buildPromotionRow(
     if (!brand) return { error: "This brand no longer exists." };
   }
 
+  const mixAndMatch = body.mixAndMatch === true;
+  if (mixAndMatch && (kind !== "buy_x_get_y" || scope !== "brand")) {
+    return { error: "Mix & Match requires a Buy X, get Y offer for one brand." };
+  }
+
   // ----- The offer -----
   let buyQuantity: number | null = null;
   let getQuantity: number | null = null;
@@ -231,6 +236,10 @@ async function buildPromotionRow(
     buyQuantity = positiveInt(body.buyQuantity);
     getQuantity = positiveInt(body.getQuantity);
     discountPercent = Number(body.discountPercent);
+
+    if (mixAndMatch && (buyQuantity !== 2 || getQuantity !== 1 || discountPercent !== 100)) {
+      return { error: "Mix & Match requires Buy 2, get 1 free." };
+    }
 
     if (!buyQuantity || buyQuantity > 50) {
       return { error: "\"Buy\" must be a whole number from 1 to 50." };
@@ -357,6 +366,7 @@ async function buildPromotionRow(
     all_sizes: allSizes,
     include_main_size: includeMainSize,
     variant_ids: variantIds,
+    mix_and_match: mixAndMatch,
     buy_quantity: buyQuantity,
     get_quantity: getQuantity,
     discount_percent: discountPercent,

@@ -72,6 +72,8 @@ type Draft = {
   allSizes: boolean;
   includeMainSize: boolean;
   variantIds: number[];
+  mixAndMatch: boolean;
+  isActive: boolean;
   buyQuantity: string;
   getQuantity: string;
   discountPercent: string;
@@ -174,6 +176,8 @@ function emptyDraft(): Draft {
     allSizes: true,
     includeMainSize: false,
     variantIds: [],
+    mixAndMatch: false,
+    isActive: true,
     buyQuantity: "2",
     getQuantity: "1",
     discountPercent: "100",
@@ -200,6 +204,8 @@ function draftFromRule(rule: PromotionRule): Draft {
     allSizes: rule.allSizes,
     includeMainSize: rule.includeMainSize,
     variantIds: rule.variantIds,
+    mixAndMatch: rule.mixAndMatch,
+    isActive: rule.isActive,
     buyQuantity: String(rule.buyQuantity || 2),
     getQuantity: String(rule.getQuantity || 1),
     discountPercent: rule.discountPercent
@@ -240,6 +246,8 @@ function draftPayload(draft: Draft) {
     allSizes: draft.kind === "flash_sale" ? true : draft.allSizes,
     includeMainSize: draft.includeMainSize,
     variantIds: draft.variantIds,
+    mixAndMatch: draft.mixAndMatch,
+    isActive: draft.isActive,
     buyQuantity: Number(draft.buyQuantity),
     getQuantity: Number(draft.getQuantity),
     discountPercent: Number(draft.discountPercent),
@@ -276,6 +284,7 @@ function draftRule(draft: Draft): PromotionRule | null {
     all_sizes: payload.allSizes,
     include_main_size: payload.includeMainSize,
     variant_ids: payload.variantIds,
+    mix_and_match: payload.mixAndMatch,
     buy_quantity: payload.buyQuantity,
     get_quantity: payload.getQuantity,
     discount_percent: payload.discountPercent,
@@ -438,6 +447,7 @@ export default function PromotionsPage() {
   function chooseKind(kind: PromotionKind) {
     update({
       kind,
+      mixAndMatch: kind === "buy_x_get_y" && draft.mixAndMatch,
       // Sensible starting numbers for each type.
       discountPercent:
         kind === "flash_sale"
@@ -687,7 +697,12 @@ export default function PromotionsPage() {
                     <button
                       key={option.scope}
                       type="button"
-                      onClick={() => update({ scope: option.scope })}
+                      onClick={() =>
+                        update({
+                          scope: option.scope,
+                          mixAndMatch: option.scope === "brand" && draft.mixAndMatch,
+                        })
+                      }
                       aria-pressed={draft.scope === option.scope}
                       className={`rounded-xl px-4 py-2.5 text-sm font-extrabold transition ${
                         draft.scope === option.scope
@@ -886,7 +901,28 @@ export default function PromotionsPage() {
                   </select>
                 )}
 
-                {isItemOffer && draft.scope !== "product" && (
+                {draft.kind === "buy_x_get_y" && draft.scope === "brand" && (
+                  <label className="mt-4 flex items-start gap-3 rounded-xl border border-[#d8eadc] bg-[#f3faf4] p-3">
+                    <input
+                      type="checkbox"
+                      checked={draft.mixAndMatch}
+                      onChange={(event) =>
+                        update(event.target.checked
+                          ? { mixAndMatch: true, buyQuantity: "2", getQuantity: "1", discountPercent: "100" }
+                          : { mixAndMatch: false })
+                      }
+                      className="mt-0.5 h-4 w-4 accent-[#0a583b]"
+                    />
+                    <span>
+                      <span className="block text-sm font-extrabold text-[#142019]">Mix &amp; Match — cheapest item free</span>
+                      <span className="text-xs leading-5 text-[#526057]">
+                        Let customers choose any 3 eligible items from this brand, including different products and sizes.
+                      </span>
+                    </span>
+                  </label>
+                )}
+
+                {isItemOffer && draft.scope !== "product" && !draft.mixAndMatch && (
                   <p className="mt-3 text-xs leading-5 text-[#647168]">
                     Each product and size is counted on its own: the customer
                     needs the quantity of one product in one size, not a mix.
@@ -903,77 +939,81 @@ export default function PromotionsPage() {
 
               {draft.kind === "buy_x_get_y" && (
                 <div className="mt-3 space-y-4">
-                  <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-[#142019]">
-                    <span>Buy</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      required
-                      aria-label="Buy quantity"
-                      value={draft.buyQuantity}
-                      onChange={(event) =>
-                        update({ buyQuantity: event.target.value })
-                      }
-                      className={NUMBER_FIELD}
-                    />
-                    <span>, get</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      required
-                      aria-label="Get quantity"
-                      value={draft.getQuantity}
-                      onChange={(event) =>
-                        update({ getQuantity: event.target.value })
-                      }
-                      className={NUMBER_FIELD}
-                    />
-                    <span>at</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      step="0.01"
-                      required
-                      aria-label="Discount percent on the extra items"
-                      value={draft.discountPercent}
-                      onChange={(event) =>
-                        update({ discountPercent: event.target.value })
-                      }
-                      className={NUMBER_FIELD}
-                    />
-                    <span>% off</span>
+                  {!draft.mixAndMatch && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-bold text-[#142019]">
+                      <span>Buy</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        required
+                        aria-label="Buy quantity"
+                        value={draft.buyQuantity}
+                        onChange={(event) =>
+                          update({ buyQuantity: event.target.value })
+                        }
+                        className={NUMBER_FIELD}
+                      />
+                      <span>, get</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        required
+                        aria-label="Get quantity"
+                        value={draft.getQuantity}
+                        onChange={(event) =>
+                          update({ getQuantity: event.target.value })
+                        }
+                        className={NUMBER_FIELD}
+                      />
+                      <span>at</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        step="0.01"
+                        required
+                        aria-label="Discount percent on the extra items"
+                        value={draft.discountPercent}
+                        onChange={(event) =>
+                          update({ discountPercent: event.target.value })
+                        }
+                        className={NUMBER_FIELD}
+                      />
+                      <span>% off</span>
 
-                    <span className="ms-1 flex gap-1.5">
-                      {[
-                        ["100", "Free"],
-                        ["50", "Half price"],
-                      ].map(([value, label]) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => update({ discountPercent: value })}
-                          className={`rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition ${
-                            Number(draft.discountPercent) === Number(value)
-                              ? "bg-[#0a583b] text-white"
-                              : "bg-[#f1f6f2] text-[#40614d]"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </span>
-                  </div>
+                      <span className="ms-1 flex gap-1.5">
+                        {[
+                          ["100", "Free"],
+                          ["50", "Half price"],
+                        ].map(([value, label]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => update({ discountPercent: value })}
+                            className={`rounded-lg px-2.5 py-1.5 text-xs font-extrabold transition ${
+                              Number(draft.discountPercent) === Number(value)
+                                ? "bg-[#0a583b] text-white"
+                                : "bg-[#f1f6f2] text-[#40614d]"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </span>
+                    </div>
+                  )}
 
                   <p className="rounded-xl bg-[#f5f8f5] px-4 py-3 text-xs leading-5 text-[#526057]">
-                    {Number(draft.discountPercent) >= 100
-                      ? `Free items are added to the order automatically: the customer puts ${draft.buyQuantity || "X"} in the cart and receives ${draft.getQuantity || "Y"} more for free.`
-                      : `The customer puts ${
-                          (Number(draft.buyQuantity) || 0) +
-                            (Number(draft.getQuantity) || 0) || "X + Y"
-                        } in the cart, and ${draft.getQuantity || "Y"} of them get the discount.`}
+                    {draft.mixAndMatch
+                      ? "Buy 2, get 1 free: the customer adds all 3 items. The cheapest is discounted automatically. Sale items do not count."
+                      : Number(draft.discountPercent) >= 100
+                        ? `Free items are added to the order automatically: the customer puts ${draft.buyQuantity || "X"} in the cart and receives ${draft.getQuantity || "Y"} more for free.`
+                        : `The customer puts ${
+                            (Number(draft.buyQuantity) || 0) +
+                              (Number(draft.getQuantity) || 0) || "X + Y"
+                          } in the cart, and ${draft.getQuantity || "Y"} of them get the discount.`}
                   </p>
 
                   <label className="flex flex-wrap items-center gap-2 text-sm font-bold text-[#142019]">
@@ -991,7 +1031,7 @@ export default function PromotionsPage() {
                       className={NUMBER_FIELD}
                     />
                     <span>
-                      times per product in one order
+                      {draft.mixAndMatch ? "times per order" : "times per product in one order"}
                       <span className="font-normal text-[#647168]">
                         {" "}
                         (empty = no limit)

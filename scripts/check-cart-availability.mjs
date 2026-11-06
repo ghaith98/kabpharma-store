@@ -5,13 +5,13 @@ import vm from 'node:vm';
 import ts from 'typescript';
 
 // Exercise the actual quote resolver and price calculator against database rows.
-let products = [], variants = [], failProducts = false;
+let products = [], variants = [], promotions = [], failProducts = false;
 const db = { from(table) {
   const query = {
     select() { return this; }, eq() { return this; }, in() { return this; },
     maybeSingle() { return Promise.resolve({ data: null, error: null }); },
     then(resolve, reject) {
-      return Promise.resolve({ data: table === 'products' ? products : table === 'product_variants' ? variants : [], error: table === 'products' && failProducts ? {message:'offline'} : null }).then(resolve, reject);
+      return Promise.resolve({ data: table === 'products' ? products : table === 'product_variants' ? variants : table === 'promotions' ? promotions : [], error: table === 'products' && failProducts ? {message:'offline'} : null }).then(resolve, reject);
     },
   };
   return query;
@@ -84,3 +84,74 @@ assert.equal((await quote()).issues[0].reason,'price_invalid');
 failProducts = true;
 await assert.rejects(()=>quote(),/Quote lookup failed/);
 console.log('Cart and per-size availability checks passed: product flag, ignored legacy quantities, size selection, missing product/size, invalid price and lookup failure.');
+
+// The quote uses actual product brands, prices and variants from the database.
+failProducts = false;
+const brandOffer = {
+  id: 'brand-offer', type: 'buy_x_get_y', scope: 'brand', brand_id: 7,
+  buy_quantity: 2, get_quantity: 1, discount_percent: 100, mix_and_match: true,
+};
+const stock = (id, price, brandId = 7) => ({ ...product, id, price, brand_id: brandId });
+products = [stock(1, 300), stock(2, 200), stock(3, 250), stock(4, 50, 8)];
+variants = [{ id: 10, product_id: 3, price: 100, label_en: '50g' }];
+promotions = [brandOffer];
+const item = (productId, quantity = 1, variantId = null) => ({ productId, variantId, quantity });
+const mixedQuote = (...items) => buildQuote({items, couponCode:'', paymentMethod:'transfer', nowMs: Date.UTC(2026, 10, 6)});
+const trio = [item(1), item(2), item(3, 1, 10)];
+result = await mixedQuote(...trio, item(4));
+assert.equal(result.pricing.totals.subtotal, 650);
+assert.equal(result.pricing.totals.goodsTotal, 550);
+assert.equal(result.pricing.order.promotionDiscountAmount, 100);
+assert.equal(result.pricing.promotions.length, 1);
+assert.equal(result.pricing.promotions[0].variantId, 10);
+assert.equal(result.pricing.promotions[0].kind, 'line_discount');
+assert.equal(result.orderItems.reduce((sum, line) => sum + line.quantity, 0), 4);
+assert.equal((await mixedQuote(item(1), item(2), item(4))).pricing.order.promotionDiscountAmount, 0);
+assert.equal((await mixedQuote(item(1), item(2))).orderItems.length, 2);
+assert.equal((await mixedQuote(item(1), item(2))).pricing.order.promotionDiscountAmount, 0);
+assert.equal((await mixedQuote(item(1, 3))).pricing.order.promotionDiscountAmount, 300);
+assert.equal((await mixedQuote(item(1, 3))).orderItems[0].quantity, 3);
+
+products[0].sale_percent = 10;
+assert.equal((await mixedQuote(...trio)).pricing.order.promotionDiscountAmount, 0);
+products[0].sale_percent = 0;
+variants[0].is_out_of_stock = true;
+assert.equal((await mixedQuote(...trio)).pricing.order.promotionDiscountAmount, 0);
+variants[0].is_out_of_stock = false;
+
+const sixItems = [item(1, 2), item(2, 2), item(3, 2, 10)];
+assert.equal((await mixedQuote(...sixItems)).pricing.order.promotionDiscountAmount, 200);
+promotions = [{ ...brandOffer, max_uses_per_order: 1 }];
+assert.equal((await mixedQuote(...sixItems)).pricing.order.promotionDiscountAmount, 100);
+promotions = [{ ...brandOffer, starts_at: '2099-01-01' }];
+assert.equal((await mixedQuote(...trio)).pricing.order.promotionDiscountAmount, 0);
+
+// The old mode still adds an extra item only for the same product and size.
+promotions = [{ ...brandOffer, mix_and_match: false }];
+assert.equal((await mixedQuote(...trio)).pricing.order.promotionDiscountAmount, 0);
+result = await mixedQuote(item(1, 2));
+assert.equal(result.orderItems[0].quantity, 3);
+assert.equal(result.pricing.order.promotionDiscountAmount, 300);
+promotions.push(brandOffer);
+result = await mixedQuote(item(1, 2), item(3, 1, 10));
+assert.equal(result.pricing.order.promotionDiscountAmount, 300);
+assert.equal(result.pricing.promotions.length, 1);
+assert.equal(result.pricing.promotions[0].kind, 'free_items');
+
+const {priceCart} = load('lib/pricing/engine.ts');
+const {normalizePromotionRow, toPublicPromotion, fromPublicPromotion, promotionDescription} = load('lib/pricing/rules.ts');
+const rule = normalizePromotionRow(brandOffer);
+assert.match(promotionDescription(fromPublicPromotion(toPublicPromotion(rule)), 'en'), /cheapest is free/);
+assert.equal(normalizePromotionRow({...brandOffer, scope:'all'}), null);
+const couponInput = {
+  lines: [300, 200, 100].map((basePrice, i) => ({
+    key: String(i), productId: i + 1, variantId: null, brandId: 7,
+    basePrice, quantity: i === 1 ? 2 : 1, categoryId: null, regularSalePercent: 0,
+  })),
+  coupon: {id: 1, code: 'TEST', type: 'percent', percent: 10, amount: 0,
+    maximumDiscount: 0, minimumOrderAmount: 0, appliesToSaleItems: false},
+  delivery: {fee: null, freeShippingThreshold: 0}, codFee: 0, nowMs: Date.now(),
+};
+assert.equal(priceCart({...couponInput, promotions:[rule]}).totals.couponDiscount, 20);
+assert.equal(priceCart({...couponInput, promotions:[{...rule, allowWithCoupon:true}]}).totals.couponDiscount, 70);
+console.log('Brand Mix & Match checks passed: three selected units, cheapest variant, brand and sale exclusions, repetitions and cap, competing offers, coupon stacking and legacy mode.');

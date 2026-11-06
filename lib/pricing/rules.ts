@@ -11,7 +11,7 @@
   buy_x_get_y        Buy X, get Y at P% off. P = 100 means "free": the free
                      items are added to the order automatically. Below 100
                      the customer puts all X + Y items in the cart.
-                     Always counted per product and size, never mixed.
+                     Counted per product and size unless Mix & Match is enabled.
   quantity_discount  Buy at least N of one product and size, get P% off each.
                      Several steps are allowed (2+ = 10%, 3+ = 15%).
   flash_sale         A sale price (P% off) between two dates.
@@ -48,6 +48,7 @@ export type PromotionRule = {
   includeMainSize: boolean;
   variantIds: number[];
 
+  mixAndMatch: boolean;
   buyQuantity: number;
   getQuantity: number;
   /** buy_x_get_y: discount on the "get" items. flash_sale: the sale. */
@@ -213,6 +214,13 @@ export function normalizePromotionRow(
     row.discount_percent ?? legacy?.percent ?? 0
   );
   const tiers = normalizeTiers(row.tiers);
+  const mixAndMatch = row.mix_and_match === true;
+
+  if (
+    mixAndMatch &&
+    (type !== "buy_x_get_y" || scope !== "brand" ||
+      buyQuantity !== 2 || getQuantity !== 1 || discountPercent !== 100)
+  ) return null;
 
   if (kind === "buy_x_get_y") {
     if (buyQuantity < 1 || getQuantity < 1 || discountPercent <= 0) {
@@ -236,6 +244,7 @@ export function normalizePromotionRow(
     allSizes,
     includeMainSize,
     variantIds,
+    mixAndMatch,
     buyQuantity,
     getQuantity,
     discountPercent,
@@ -344,6 +353,12 @@ export function promotionLabel(rule: PromotionRule, language: Language) {
   const arabic = language === "ar";
   const percent = trimPercent(rule.discountPercent);
 
+  if (rule.mixAndMatch) {
+    return arabic
+      ? "٣ قطع من نفس البراند، الأرخص مجاناً"
+      : "Mix & match 3 from this brand, cheapest free";
+  }
+
   if (rule.kind === "buy_x_get_y") {
     const buy = rule.buyQuantity;
     const get = rule.getQuantity;
@@ -396,6 +411,12 @@ export function promotionDescription(
 ) {
   const arabic = language === "ar";
   const percent = trimPercent(rule.discountPercent);
+
+  if (rule.mixAndMatch) {
+    return arabic
+      ? "ضيفي ٣ قطع مؤهلة من نفس البراند للسلة، ومنخصم سعر الأرخص تلقائياً. المنتجات المخفّضة ما بتدخل بالعرض."
+      : "Add 3 eligible items from this brand to your cart and the cheapest is free. Sale items are excluded.";
+  }
 
   if (rule.kind === "buy_x_get_y") {
     const buy = rule.buyQuantity;
@@ -454,6 +475,7 @@ export type PublicPromotion = Pick<
   | "allSizes"
   | "includeMainSize"
   | "variantIds"
+  | "mixAndMatch"
   | "buyQuantity"
   | "getQuantity"
   | "discountPercent"
@@ -476,6 +498,7 @@ export function toPublicPromotion(rule: PromotionRule): PublicPromotion {
     allSizes: rule.allSizes,
     includeMainSize: rule.includeMainSize,
     variantIds: rule.variantIds,
+    mixAndMatch: rule.mixAndMatch,
     buyQuantity: rule.buyQuantity,
     getQuantity: rule.getQuantity,
     discountPercent: rule.discountPercent,
