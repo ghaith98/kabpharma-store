@@ -6,7 +6,6 @@ import {
   fromPublicPromotion,
   promotionCovers,
   promotionCoversProduct,
-  promotionDescription,
   promotionLabel,
   promotionSpecificity,
   type PromotionRule,
@@ -166,9 +165,6 @@ export default function ProductPromotionNotice({
       className="mt-4 rounded-2xl border border-[#d8eadc] bg-[#f3faf4] px-4 py-3 text-start"
     >
       <p className="text-sm font-extrabold text-[#0a583b]">{label}</p>
-      <p className="mt-1 text-xs leading-5 text-[#40614d]">
-        {promotionDescription(promotion, language)}
-      </p>
     </div>
   );
 }

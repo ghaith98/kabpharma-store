@@ -14,12 +14,13 @@ import {
 import RelatedProductsSwiper from "./RelatedProductsSwiper";
 import ReviewsSection from "./ReviewsSection";
 import { useLanguage } from "../../../context/LanguageContext";
+import { resolveProductCopy, type VariantCopy } from "@/lib/product-copy";
 import { useLiveFlashSales } from "@/lib/use-live-flash-sales";
 import type {
   EditorialProduct,
 } from "../EditorialProductCard";
 
-type ProductExtra = {
+export type ProductExtra = {
   id: number;
   ingredients?: string | null;
   ingredients_ar?: string | null;
@@ -36,10 +37,12 @@ type ProductReviews = ComponentProps<
 
 export default function ProductExtraClient({
   product,
+  variant,
   relatedProducts: serverRelatedProducts,
   reviews = [],
 }: {
   product: ProductExtra;
+  variant: VariantCopy | null;
   relatedProducts: EditorialProduct[];
   reviews?: ProductReviews;
 }) {
@@ -49,13 +52,7 @@ export default function ProductExtraClient({
   // A flash-sale price goes back to normal the moment the sale ends.
   const relatedProducts = useLiveFlashSales(serverRelatedProducts);
 
-  const ingredients = isArabic
-    ? product.ingredients_ar ||
-      product.ingredients ||
-      product.ingredients_en
-    : product.ingredients_en ||
-      product.ingredients ||
-      product.ingredients_ar;
+  const ingredients = resolveProductCopy(product, variant, "ingredients", isArabic ? "ar" : "en");
 
   const howToUse = (
     isArabic ? product.how_to_use_ar : product.how_to_use_en

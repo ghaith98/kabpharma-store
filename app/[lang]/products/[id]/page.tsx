@@ -6,7 +6,6 @@ import { cache } from "react";
 import { supabase } from "@/lib/supabase";
 import { SITE_URL } from "@/lib/site";
 import { loadFlashSales } from "@/lib/pricing/storefront";
-import ProductExtraClient from "@/app/products/[id]/ProductExtraClient";
 import ProductDetailsClient from "@/app/products/[id]/ProductDetailsClient";
 
 const DEFAULT_SOCIAL_IMAGE =
@@ -841,10 +840,6 @@ export default async function ProductPage({
         }
         productVariants={productVariants}
         salePercent={salePercent}
-      />
-
-      <ProductExtraClient
-        product={product}
         relatedProducts={relatedProducts}
         reviews={reviews}
       />

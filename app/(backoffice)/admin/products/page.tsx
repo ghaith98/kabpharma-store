@@ -5,10 +5,12 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isProductOutOfStock } from "@/lib/product-availability";
+import { normalizeVariantCopy, type VariantCopy, type VariantCopyField } from "@/lib/product-copy";
 import { hasMainSize } from "@/lib/product-options";
 import { supabase } from "@/lib/supabase";
 
-type VariantInput = {
+type VariantInput = VariantCopy & {
+  id?: number;
   is_out_of_stock?: boolean;
   label_ar: string;
   label_en: string;
@@ -65,7 +67,7 @@ type ProductImage = {
   sort_order?: number | null;
 };
 
-type ProductVariant = {
+type ProductVariant = VariantCopy & {
   is_out_of_stock?: boolean | null;
   id: number;
   product_id: number;
@@ -83,7 +85,8 @@ type ProductVariantImage = {
   sort_order?: number | null;
 };
 
-type UploadedVariant = {
+type UploadedVariant = Record<VariantCopyField, string | null> & {
+  id?: number;
   is_out_of_stock: boolean;
   label_ar: string;
   label_en: string;
@@ -92,6 +95,46 @@ type UploadedVariant = {
   image_urls: string[];
   sort_order: number;
 };
+
+const variantCopyInputs = [
+  ["description_ar", "Description (Arabic)", "rtl"],
+  ["description_en", "Description (English)", "ltr"],
+  ["ingredients_ar", "Ingredients (Arabic)", "rtl"],
+  ["ingredients_en", "Ingredients (English)", "ltr"],
+] as const;
+
+function VariantCopyFields({
+  variant,
+  onChange,
+}: {
+  variant: VariantCopy;
+  onChange: (field: VariantCopyField, value: string) => void;
+}) {
+  return (
+    <details className="rounded-xl border border-gray-200 bg-gray-50 p-3 md:col-span-full">
+      <summary className="cursor-pointer text-sm font-bold text-gray-900">
+        Option description &amp; ingredients (optional)
+      </summary>
+      <p className="mb-3 mt-2 text-xs text-gray-600">
+        Leave a field blank to use the main product text for that language.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {variantCopyInputs.map(([field, label, direction]) => (
+          <label key={field} className="block min-w-0 text-sm font-medium text-gray-800">
+            {label}
+            <textarea
+              value={variant[field] ?? ""}
+              onChange={(event) => onChange(field, event.target.value)}
+              dir={direction}
+              rows={3}
+              className="mt-1 block w-full rounded-xl border border-gray-200 bg-white p-3 text-black outline-none focus:border-green-600"
+            />
+          </label>
+        ))}
+      </div>
+    </details>
+  );
+}
 
 type ProductUpdateData = {
   name: string;
@@ -395,7 +438,7 @@ export default function AdminProductsPage() {
 
   function updateVariantRow(
     index: number,
-    field: "label_ar" | "label_en" | "price",
+    field: "label_ar" | "label_en" | "price" | VariantCopyField,
     value: string
   ) {
     const copy = [...variants];
@@ -439,7 +482,7 @@ export default function AdminProductsPage() {
 
   function updateEditVariantRow(
     index: number,
-    field: "label_ar" | "label_en" | "price",
+    field: "label_ar" | "label_en" | "price" | VariantCopyField,
     value: string
   ) {
     const copy = [...editVariants];
@@ -521,6 +564,7 @@ export default function AdminProductsPage() {
         v.label_ar.trim() ||
         v.label_en.trim() ||
         v.price.trim() ||
+        Object.values(normalizeVariantCopy(v)).some(Boolean) ||
         v.imageFiles.length > 0
     );
 
@@ -582,6 +626,7 @@ export default function AdminProductsPage() {
           }
 
           uploadedVariants.push({
+            ...normalizeVariantCopy(variant),
             is_out_of_stock: variant.is_out_of_stock === true,
             label_ar: variant.label_ar.trim(),
             label_en: variant.label_en.trim(),
@@ -646,6 +691,7 @@ export default function AdminProductsPage() {
             .from("product_variants")
             .insert({
               product_id: insertedProduct.id,
+              ...normalizeVariantCopy(variant),
               is_out_of_stock: variant.is_out_of_stock,
               label_ar: variant.label_ar,
               label_en: variant.label_en,
@@ -740,6 +786,8 @@ export default function AdminProductsPage() {
       const imagesForVariant = getImagesForVariant(variant);
 
       return {
+        id: variant.id,
+        ...normalizeVariantCopy(variant),
         is_out_of_stock: variant.is_out_of_stock === true,
         label_ar: variant.label_ar || "",
         label_en: variant.label_en || "",
@@ -770,6 +818,7 @@ export default function AdminProductsPage() {
         v.label_ar.trim() ||
         v.label_en.trim() ||
         v.price.trim() ||
+        Object.values(normalizeVariantCopy(v)).some(Boolean) ||
         v.imageFiles.length > 0 ||
         (v.existingImageUrls || []).length > 0
     );
@@ -826,6 +875,8 @@ export default function AdminProductsPage() {
           const finalImageUrls = imageUrls.slice(0, 3);
 
           uploadedEditVariants.push({
+            id: variant.id,
+            ...normalizeVariantCopy(variant),
             is_out_of_stock: variant.is_out_of_stock === true,
             label_ar: variant.label_ar.trim(),
             label_en: variant.label_en.trim(),
@@ -888,53 +939,58 @@ export default function AdminProductsPage() {
         throw new Error(error.message);
       }
 
-      const { error: deleteVariantsError } = await supabase
-        .from("product_variants")
-        .delete()
-        .eq("product_id", editingId);
+      // Update retained options in place so their cart and promotion references survive.
+      const existingVariants = getVariantsForProduct(editingId);
+      const existingById = new Map(existingVariants.map((variant) => [variant.id, variant]));
+      const keptIds = new Set<number>();
 
-      if (deleteVariantsError) {
-        throw new Error(deleteVariantsError.message);
+      for (const variant of uploadedEditVariants) {
+        const { id, image_urls: imageUrls, ...fields } = variant;
+        const row = { product_id: editingId, ...fields };
+        const query = supabase.from("product_variants");
+        const { data: savedVariant, error: saveVariantError } = await (
+          id == null
+            ? query.insert(row)
+            : query.update(row).eq("id", id).eq("product_id", editingId)
+        ).select("id").single();
+
+        if (saveVariantError) throw new Error(saveVariantError.message);
+        keptIds.add(savedVariant.id);
+
+        const existing = id == null ? undefined : existingById.get(id);
+        if (existing) {
+          const oldUrls = getImagesForVariant(existing);
+          const sameImages = oldUrls.length === imageUrls.length &&
+            oldUrls.every((url, index) => url === imageUrls[index]);
+          if (sameImages) continue;
+
+          const { error: removeImagesError } = await supabase
+            .from("product_variant_images")
+            .delete()
+            .eq("product_id", editingId)
+            .eq("variant_id", savedVariant.id);
+          if (removeImagesError) throw new Error(removeImagesError.message);
+        }
+
+        const { error: insertImagesError } = await supabase
+          .from("product_variant_images")
+          .insert(imageUrls.map((imageUrl, index) => ({
+            product_id: editingId,
+            variant_id: savedVariant.id,
+            image_url: imageUrl,
+            sort_order: index,
+          })));
+        if (insertImagesError) throw new Error(insertImagesError.message);
       }
 
-      if (uploadedEditVariants.length > 0) {
-        for (const variant of uploadedEditVariants) {
-          const { data: insertedVariant, error: insertVariantError } =
-            await supabase
-              .from("product_variants")
-              .insert({
-                product_id: editingId,
-                is_out_of_stock: variant.is_out_of_stock,
-                label_ar: variant.label_ar,
-                label_en: variant.label_en,
-                price: variant.price,
-                image_url: variant.image_url,
-                sort_order: variant.sort_order,
-              })
-              .select("id")
-              .single();
-
-          if (insertVariantError) {
-            throw new Error(insertVariantError.message);
-          }
-
-          const { error: insertImagesError } = await supabase
-            .from("product_variant_images")
-            .insert(
-              variant.image_urls
-                .slice(0, 3)
-                .map((imageUrl: string, index: number) => ({
-                  product_id: editingId,
-                  variant_id: insertedVariant.id,
-                  image_url: imageUrl,
-                  sort_order: index,
-                }))
-            );
-
-          if (insertImagesError) {
-            throw new Error(insertImagesError.message);
-          }
-        }
+      const removedIds = existingVariants.map((variant) => variant.id).filter((id) => !keptIds.has(id));
+      if (removedIds.length > 0) {
+        const { error: deleteVariantsError } = await supabase
+          .from("product_variants")
+          .delete()
+          .eq("product_id", editingId)
+          .in("id", removedIds);
+        if (deleteVariantsError) throw new Error(deleteVariantsError.message);
       }
 
       setEditingId(null);
@@ -1321,6 +1377,11 @@ export default function AdminProductsPage() {
                     >
                       ×
                     </button>
+
+                    <VariantCopyFields
+                      variant={variant}
+                      onChange={(field, value) => updateVariantRow(index, field, value)}
+                    />
 
                     {variant.imageFiles.length > 0 && (
                       <p className="text-xs font-bold text-green-700 md:col-span-5">
@@ -1951,10 +2012,15 @@ export default function AdminProductsPage() {
                       /3 images
                     </p>
 
+                    <VariantCopyFields
+                      variant={variant}
+                      onChange={(field, value) => updateEditVariantRow(index, field, value)}
+                    />
+
                     <button
                       type="button"
                       onClick={() => removeEditVariantRow(index)}
-                      className="rounded-xl bg-red-600 px-4 py-2 font-extrabold text-white hover:bg-red-700"
+                      className="mt-3 rounded-xl bg-red-600 px-4 py-2 font-extrabold text-white hover:bg-red-700"
                     >
                       Remove Option
                     </button>

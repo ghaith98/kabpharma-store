@@ -4,9 +4,11 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ComponentProps,
 } from "react";
 import { useSearchParams } from "next/navigation";
 
+import ProductExtraClient, { type ProductExtra } from "./ProductExtraClient";
 import ProductDetailsAddToCart from "./ProductDetailsAddToCart";
 import ProductPromotionNotice from "./ProductPromotionNotice";
 import FlashSaleCountdown from "./FlashSaleCountdown";
@@ -19,6 +21,7 @@ import { trackProductView } from "@/lib/analytics";
 import type { FlashSaleFields } from "@/lib/pricing/flash";
 import { useLiveFlashSale } from "@/lib/use-live-flash-sales";
 import { isVariantOutOfStock, isProductOutOfStock } from "@/lib/product-availability";
+import { resolveProductCopy, type VariantCopy } from "@/lib/product-copy";
 import { buildMainOption, hasMainSize, optionIdToNumber } from "@/lib/product-options";
 
 type ProductCategory = {
@@ -27,9 +30,8 @@ type ProductCategory = {
   name_en?: string | null;
 };
 
-export type ProductDetail = {
+export type ProductDetail = ProductExtra & {
   is_main_size_out_of_stock?: boolean | null;
-  id: number;
 
   name?: string | null;
   name_ar?: string | null;
@@ -56,7 +58,7 @@ export type ProductDetail = {
     | null;
 } & FlashSaleFields;
 
-export type ProductDetailVariant = {
+export type ProductDetailVariant = VariantCopy & {
   is_out_of_stock?: boolean | null;
   id: number | string;
   price: number | string;
@@ -107,12 +109,14 @@ export default function ProductDetailsClient({
   normalGalleryImages,
   productVariants,
   salePercent: serverSalePercent,
+  relatedProducts,
+  reviews,
 }: {
   product: ProductDetail;
   normalGalleryImages: string[];
   productVariants: ProductDetailVariant[];
   salePercent: number;
-}) {
+} & Pick<ComponentProps<typeof ProductExtraClient>, "relatedProducts" | "reviews">) {
   const { lang } =
     useLanguage();
 
@@ -220,16 +224,12 @@ export default function ProductDetailsClient({
         : "KAB Pharma product"
     );
 
-  const productDescription =
-    (
-      isArabic
-        ? product.description_ar ||
-          product.description ||
-          product.description_en
-        : product.description_en ||
-          product.description ||
-          product.description_ar
-    ) || "";
+  const productDescription = resolveProductCopy(
+    product,
+    selectedVariant,
+    "description",
+    isArabic ? "ar" : "en"
+  );
 
   const categoryName =
     (
@@ -328,7 +328,7 @@ export default function ProductDetailsClient({
         )
     );
 
-  return (
+  const details = (
     <div className="grid items-start gap-2 sm:gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-12 xl:gap-16">
       {/* Gallery + mobile actions */}
       <div className="-mx-4 min-w-0 sm:-mx-6 md:mx-0">
@@ -642,5 +642,17 @@ export default function ProductDetailsClient({
         <ProductPromotionNotice productId={product.id} categoryId={product.category_id} brandId={product.brand_id} variantId={optionIdToNumber(selectedVariant?.id)} hidden={selectedVariantSalePercent > 0 || isOutOfStock} />
       </aside>
     </div>
+  );
+
+  return (
+    <>
+      {details}
+      <ProductExtraClient
+        product={product}
+        variant={selectedVariant}
+        relatedProducts={relatedProducts}
+        reviews={reviews}
+      />
+    </>
   );
 }
