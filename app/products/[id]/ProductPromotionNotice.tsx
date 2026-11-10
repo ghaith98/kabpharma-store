@@ -153,7 +153,10 @@ export default function ProductPromotionNotice({
 
   if (summary) {
     return (
-      <span className="inline-flex rounded-full border border-emerald-100 bg-white/95 px-2.5 py-1.5 text-[9px] font-extrabold text-[#0a583b] shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
+      <span
+        dir={language === "ar" ? "rtl" : "ltr"}
+        className="inline-block max-w-full rounded-full border border-emerald-100 bg-white/95 px-1.5 py-1 text-center align-top text-[8px] font-extrabold leading-[1.35] text-[#0a583b] shadow-sm backdrop-blur [overflow-wrap:anywhere] sm:px-3 sm:py-1.5 sm:text-[10px]"
+      >
         {label}
       </span>
     );

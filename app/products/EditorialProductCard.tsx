@@ -311,7 +311,7 @@ export default function EditorialProductCard({
           />
         </div>
 
-        <div className="absolute left-2.5 top-2.5 z-10 sm:left-3 sm:top-3">
+        <div className="pointer-events-none absolute left-2.5 right-11 top-2.5 z-10 sm:left-3 sm:right-[3.25rem] sm:top-3">
           {isOutOfStock ? (
             <span className="inline-flex bg-[#4b5563] px-2 py-1 text-[9px] font-semibold text-white shadow-sm sm:px-2.5 sm:py-1.5 sm:text-[10px]">
               {isArabic

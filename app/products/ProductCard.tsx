@@ -268,7 +268,7 @@ export default function ProductCard({
           />
         </div>
 
-        <div className="absolute left-3 top-3 z-10">
+        <div className="pointer-events-none absolute left-3 right-[3.75rem] top-3 z-10">
           {isOutOfStock ? (
             <span className="inline-flex rounded-full border border-[#4b5563] bg-[#4b5563] px-2.5 py-1.5 text-[9px] font-extrabold text-white shadow-sm backdrop-blur sm:px-3 sm:text-[10px]">
               {isArabic
