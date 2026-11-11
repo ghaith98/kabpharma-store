@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { buildOrderItemPresentation, splitOrderDiscounts, type StoredPromotionDetail } from "@/lib/order-promotion-display";
@@ -13,6 +13,9 @@ type PrintableOrder = {
   coupon_code: string | null; promotion_name?: string | null; promotion_details?: StoredPromotionDetail[] | null; promotion_discount_amount?: number | null; discount_amount: number | null; products_subtotal: number | null;
   total_price: number | null; status: string; created_at: string | null; order_items: OrderItem[];
 };
+
+// A5 is 210 mm high. Reserve 8 mm margins and 2 mm for rounding.
+const PRINT_HEIGHT_PX = (210 - 2 * 8 - 2) * 96 / 25.4;
 
 const money = (value: number | null | undefined) => `${Number(value || 0).toLocaleString()} SYP`;
 
@@ -36,6 +39,8 @@ function TotalRow({ label, value, strong = false }: { label: string; value: stri
 
 export default function PrintOrderPage() {
   const router = useRouter();
+  const frameRef = useRef<HTMLDivElement>(null);
+  const invoiceRef = useRef<HTMLElement>(null);
   const [order, setOrder] = useState<PrintableOrder | null>(null);
 
   useEffect(() => {
@@ -52,8 +57,43 @@ export default function PrintOrderPage() {
 
   useEffect(() => {
     if (!order) return;
-    const timeout = window.setTimeout(() => window.print(), 350);
-    return () => window.clearTimeout(timeout);
+    if (!frameRef.current || !invoiceRef.current) return;
+    const { current: frame } = frameRef;
+    const { current: invoice } = invoiceRef;
+
+    const resetFit = () => {
+      frame.classList.remove("invoice-fit", "invoice-scaled");
+      frame.style.removeProperty("--invoice-scale");
+      frame.style.removeProperty("--invoice-height");
+    };
+
+    const fitInvoice = () => {
+      resetFit();
+      frame.classList.add("invoice-fit");
+      const height = invoice.getBoundingClientRect().height;
+      if (height <= PRINT_HEIGHT_PX) return;
+      frame.style.setProperty("--invoice-scale", String(PRINT_HEIGHT_PX / height));
+      frame.style.setProperty("--invoice-height", `${PRINT_HEIGHT_PX}px`);
+      frame.classList.add("invoice-scaled");
+    };
+
+    window.addEventListener("beforeprint", fitInvoice);
+    window.addEventListener("afterprint", resetFit);
+
+    // Allow the invoice fonts to finish before opening the print dialog.
+    let cancelled = false;
+    const timeout = window.setTimeout(() => {
+      void document.fonts.ready.then(() => {
+        if (!cancelled) window.print();
+      });
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      window.removeEventListener("beforeprint", fitInvoice);
+      window.removeEventListener("afterprint", resetFit);
+      resetFit();
+    };
   }, [order]);
 
   if (!order) {
@@ -69,12 +109,13 @@ export default function PrintOrderPage() {
 
   return (
     <main dir="rtl" className="invoice-screen min-h-screen bg-[#f1f4f2] p-4 text-slate-900 sm:p-8">
-      <div className="no-print mx-auto mb-5 flex max-w-[210mm] justify-between gap-3">
+      <div className="no-print mx-auto mb-5 flex max-w-[148mm] justify-between gap-3">
         <button type="button" onClick={() => router.push("/admin/orders")} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700">العودة للطلبات</button>
         <button type="button" onClick={() => window.print()} className="rounded-xl bg-[#0a583b] px-4 py-2 text-sm font-bold text-white">طباعة أو حفظ PDF</button>
       </div>
 
-      <article className="invoice-page mx-auto w-full max-w-[210mm] rounded-[24px] bg-white p-6 shadow-[0_12px_40px_rgba(15,45,30,0.08)] sm:p-10">
+      <div ref={frameRef} className="invoice-frame mx-auto w-full max-w-[148mm]">
+      <article ref={invoiceRef} className="invoice-page mx-auto w-full rounded-[24px] bg-white p-6 shadow-[0_12px_40px_rgba(15,45,30,0.08)] sm:p-10">
         <header className="flex items-start justify-between gap-5 border-b border-[#d9e5dc] pb-5">
           <div className="text-right">
             <p className="text-xs font-bold tracking-[0.18em] text-[#0a583b]">KAB PHARMA</p>
@@ -142,15 +183,48 @@ export default function PrintOrderPage() {
 
         <footer className="mt-8 border-t border-[#d9e5dc] pt-4 text-center text-xs text-slate-500">شكراً لثقتكم بـ KAB Pharma — الجودة لحياة أكثر صحة</footer>
       </article>
+      </div>
 
       <style jsx global>{`
-        @page { size: A4; margin: 12mm; }
+        @page { size: A5 portrait; margin: 8mm; }
+
+        /* The same compact geometry is used for measuring and for printing. */
+        .invoice-fit .invoice-page {
+          width: 132mm; margin: 0; padding: 0; border-radius: 0; box-shadow: none;
+          font-family: var(--font-arabic), Tahoma, Arial, sans-serif;
+        }
+        .invoice-fit header { padding-bottom: 2mm; gap: 3mm; }
+        .invoice-fit header h1 { font-size: 18pt; line-height: 1.2; }
+        .invoice-fit header img { width: 24mm; height: 12mm; flex: none; }
+        .invoice-fit header h1 + div { margin-top: 1mm; }
+        .invoice-fit section { margin-top: 3mm; }
+        .invoice-fit section:first-of-type { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2mm; }
+        .invoice-fit section:first-of-type > div { padding: 2mm; }
+        .invoice-fit section:first-of-type h2 { margin-bottom: 1mm; }
+        .invoice-fit section:first-of-type p { line-height: 1.35; }
+        .invoice-fit .text-sm { font-size: 9pt; line-height: 1.35; }
+        .invoice-fit .text-xs { font-size: 8pt; line-height: 1.3; }
+        .invoice-fit .text-base { font-size: 11pt; line-height: 1.3; }
+        .invoice-fit th, .invoice-fit td { padding: 1.1mm 1.4mm; }
+        .invoice-fit th:not(:nth-child(2)), .invoice-fit td:not(:nth-child(2)) { width: auto; white-space: nowrap; }
+        .invoice-fit .py-2, .invoice-fit .py-3 { padding-block: 1.1mm; }
+        .invoice-fit footer { margin-top: 3mm; padding-top: 2mm; }
+
         @media print {
-          html, body { background: #fff !important; }
+          html, body {
+            display: block !important; height: auto !important; min-height: 0 !important;
+            background: #fff !important;
+          }
           .no-print { display: none !important; }
           .invoice-screen { min-height: 0 !important; padding: 0 !important; background: #fff !important; }
-          .invoice-page { max-width: none !important; border-radius: 0 !important; padding: 0 !important; box-shadow: none !important; }
-          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .invoice-frame { width: 132mm; max-width: 100%; }
+          .invoice-page { padding: 0; border-radius: 0; box-shadow: none; }
+          .invoice-scaled { position: relative; height: var(--invoice-height); overflow: hidden; }
+          .invoice-scaled .invoice-page {
+            position: absolute; inset-block-start: 0; inset-inline-start: 0;
+            transform: scale(var(--invoice-scale)); transform-origin: top right;
+          }
+          .invoice-page { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       `}</style>
     </main>
