@@ -930,7 +930,7 @@ export async function POST(request: Request) {
       .join(", ") || "none listed"
   }.
 - How to order: add products to the cart, open the cart, continue to checkout, choose the delivery area and address, then choose a payment method. An account (sign in) is required to place an order.
-- Payment methods: (1) Sham Cash transfer: the customer transfers the order total, enters the Sham Cash transaction number on the payment page, and the order is confirmed automatically. (2) Cash on delivery: pay when the order arrives, with an extra fee of ${COD_FEE_SYP} SYP.
+- Payment methods: (1) Sham Cash transfer: the customer transfers the order total, enters the Sham Cash transaction number on the payment page, and the order is confirmed automatically. (2) Cash on delivery: in Damascus, pay when the order arrives with an extra fee of ${COD_FEE_SYP} SYP. For supported areas outside Damascus, pay at the Qadmus pickup branch without an additional cash-on-delivery service fee; normal shipping fees may still apply.
 - Coupon codes are entered on the payment page.
 - Delivery fee depends on the delivery area${
     freeDeliveryText ? `. ${freeDeliveryText}` : ""

@@ -1,3 +1,4 @@
+import { hasThreePartName, isQadmusPickup } from "@/lib/shipping-checkout";
 import { couponRuleFailure } from "@/lib/coupon-policy";
 import { checkoutAccountId } from "@/lib/checkout-session";
 import { NextResponse } from "next/server";
@@ -24,6 +25,7 @@ type CheckoutPayload = {
   governorate?: unknown;
   delivery_area?: unknown;
   address?: unknown;
+  qadmus_branch?: unknown;
 };
 
 function cleanText(value: unknown, maxLength: number) {
@@ -145,13 +147,19 @@ export async function POST(request: Request) {
     checkout.delivery_area,
     150
   );
-  const address = cleanText(checkout.address, 500);
+  const qadmusPickup = isQadmusPickup(governorate);
+  const address = qadmusPickup
+    ? (typeof checkout.qadmus_branch === "string" ? cleanText(checkout.qadmus_branch, 150) : "")
+    : cleanText(checkout.address, 500);
+  const validRecipient = qadmusPickup
+    ? typeof checkout.name === "string" && hasThreePartName(customerName) && address.length > 0
+    : customerName.length >= 2 && address.length >= 5;
 
   if (
-    customerName.length < 2 ||
+    !validRecipient ||
     !governorate ||
     !deliveryAreaName ||
-    address.length < 5
+    !profile.phone?.trim()
   ) {
     return jsonError(
       "Checkout information is incomplete",

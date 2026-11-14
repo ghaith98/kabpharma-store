@@ -1,9 +1,9 @@
 import "server-only";
 
 import {
-  COD_FEE_SYP,
   MAX_ITEM_QUANTITY,
 } from "@/lib/commerce-config";
+import { cashOnDeliveryFee } from "@/lib/shipping-checkout";
 import { isVariantOutOfStock, isMainSizeOutOfStock } from "@/lib/product-availability";
 import { hasMainSize } from "@/lib/product-options";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -472,7 +472,7 @@ export async function buildQuote(options: {
       fee: deliveryArea ? Number(deliveryArea.delivery_fee || 0) : null,
       freeShippingThreshold: Number(thresholdResult.data?.value || 0),
     },
-    codFee: options.paymentMethod === "cod" ? COD_FEE_SYP : 0,
+    codFee: options.paymentMethod === "cod" && deliveryArea ? cashOnDeliveryFee(governorate) : 0,
     nowMs,
   });
 

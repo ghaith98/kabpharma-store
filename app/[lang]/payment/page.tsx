@@ -32,12 +32,11 @@ import { supabase } from "@/lib/supabase";
 import { CartItem, getCart, saveCart } from "@/lib/cart";
 import { useLanguage } from "@/context/LanguageContext";
 import { trackCheckoutStart, trackPurchase } from "@/lib/analytics";
-import { COD_FEE_SYP } from "@/lib/commerce-config";
+import { cashOnDeliveryFee, hasThreePartName, isQadmusPickup } from "@/lib/shipping-checkout";
 import { quoteIssueText, useCartQuote } from "@/lib/use-cart-quote";
 
 // Shown before the customer picks cash on delivery; the charged fee always
 // comes from the server.
-const COD_FEE = COD_FEE_SYP;
 const COD_IDEMPOTENCY_KEY = "kab_cod_idempotency_key";
 const TRANSFER_IDEMPOTENCY_KEY = "kab_transfer_idempotency_key";
 
@@ -57,6 +56,7 @@ type CheckoutData = {
   governorate?: string;
   delivery_area?: string;
   address?: string;
+  qadmus_branch?: string;
   delivery_fee?: number | string;
 };
 
@@ -146,7 +146,14 @@ export default function PaymentPage() {
         setProfileId(verifiedId);
         localStorage.setItem("kab_user", JSON.stringify(result.user || {}));
         const parsedCheckout = readCheckoutDraft<CheckoutData>(localStorage, verifiedId);
-        if (!parsedCheckout) { router.replace("/checkout"); return; }
+        if (!parsedCheckout?.governorate?.trim() || !parsedCheckout.delivery_area?.trim() ||
+            !String(result.user?.phone || "").trim() ||
+            (isQadmusPickup(parsedCheckout.governorate)
+              ? !hasThreePartName(parsedCheckout.name || "") || !parsedCheckout.qadmus_branch?.trim()
+              : (parsedCheckout.name?.trim().length ?? 0) < 2 || (parsedCheckout.address?.trim().length ?? 0) < 5)) {
+          router.replace("/checkout");
+          return;
+        }
         setCheckout(parsedCheckout);
         setCart(getCart() as CartItemWithVariant[]);
         setPageReady(true);
@@ -212,7 +219,12 @@ export default function PaymentPage() {
   const couponDiscount = quote ? quote.totals.couponDiscount : 0;
 
   const deliveryFee = quote && quote.delivery.fee != null ? quote.delivery.fee : Number(checkout.delivery_fee || 0);
-  const codFee = paymentMethod === "cod" ? (quote ? quote.totals.codFee || COD_FEE : COD_FEE) : 0;
+  const qadmusPickup = isQadmusPickup(checkout.governorate || "");
+  const codOptionFee = cashOnDeliveryFee(checkout.governorate || "");
+  const codFee = paymentMethod === "cod" ? (quote?.totals.codFee ?? codOptionFee) : 0;
+  const codTitle = qadmusPickup
+    ? t("Cash on pickup via Qadmus", "الدفع عند الاستلام عن طريق القدموس")
+    : t("Cash on delivery", "الدفع عند الاستلام");
 
   // Only a fresh answer is shown as the amount to pay.
   const totalReady = pricing.fresh && quote != null;
@@ -331,12 +343,16 @@ export default function PaymentPage() {
       name: String(currentCheckout.name || "").replace(/\s+/g, " ").trim(),
       governorate: String(currentCheckout.governorate || "").trim(),
       delivery_area: String(currentCheckout.delivery_area || "").trim(),
+      qadmus_branch: String(currentCheckout.qadmus_branch || "").replace(/\s+/g, " ").trim(),
       address: String(currentCheckout.address || "").replace(/\s+/g, " ").trim(),
     };
 
     const currentCart = getCart() as CartItemWithVariant[];
 
-    if (normalizedCheckout.name.length < 2 || !normalizedCheckout.governorate || !normalizedCheckout.delivery_area || normalizedCheckout.address.length < 5) {
+    if (!normalizedCheckout.governorate || !normalizedCheckout.delivery_area ||
+        (isQadmusPickup(normalizedCheckout.governorate)
+          ? !hasThreePartName(normalizedCheckout.name) || !normalizedCheckout.qadmus_branch
+          : normalizedCheckout.name.length < 2 || normalizedCheckout.address.length < 5)) {
       alert(t("Some delivery information is incomplete. Please review your name, governorate, area and address.", "بعض معلومات التوصيل غير مكتملة."));
       router.replace("/checkout"); return;
     }
@@ -405,7 +421,7 @@ export default function PaymentPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             checkoutProfileId: profileId,
-            checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
+            checkout: normalizedCheckout,
             cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
             ...pricedOrder,
             idempotencyKey,
@@ -439,7 +455,7 @@ export default function PaymentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checkoutProfileId: profileId,
-          checkout: { name: normalizedCheckout.name, governorate: normalizedCheckout.governorate, delivery_area: normalizedCheckout.delivery_area, address: normalizedCheckout.address },
+          checkout: normalizedCheckout,
           cart: currentCart.map((item) => ({ id: item.id, variant_id: item.variant_id ?? null, quantity: item.quantity })),
           shamcashTransactionId: transactionId.trim(),
           ...pricedOrder,
@@ -546,10 +562,10 @@ export default function PaymentPage() {
                   <input type="radio" name="payment-method" value="cod" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="peer sr-only" />
                   <span className={`block h-full min-h-[92px] rounded-xl border p-3 transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#0a583b] lg:min-h-[104px] lg:rounded-2xl lg:p-4 ${paymentMethod === "cod" ? "border-[#0a583b] bg-[#edf5f0]" : "border-[#dfe4e0] bg-white hover:border-[#8fb5a0]"}`}>
                     <span className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-extrabold leading-5 text-[#142019] lg:text-base">{t("Cash on delivery", "الدفع عند الاستلام")}</span>
+                      <span className="text-sm font-extrabold leading-5 text-[#142019] lg:text-base">{codTitle}</span>
                       <span className={`h-4 w-4 shrink-0 rounded-full border ${paymentMethod === "cod" ? "border-[5px] border-[#0a583b]" : "border-[#9aa39d]"}`} />
                     </span>
-                    <span className="mt-1.5 block text-xs leading-5 text-[#647168]">{t(`Additional service fee: ${formatPrice(COD_FEE)}`, `رسوم خدمة إضافية ${formatPrice(COD_FEE)}`)}</span>
+                    {codOptionFee > 0 && <span className="mt-1.5 block text-xs leading-5 text-[#647168]">{t(`Additional service fee: ${formatPrice(codOptionFee)}`, `رسوم خدمة إضافية ${formatPrice(codOptionFee)}`)}</span>}
                   </span>
                 </label>
               </div>
@@ -672,14 +688,14 @@ export default function PaymentPage() {
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#0a583b]"><Truck size={19} /></div>
                     <div>
-                      <h3 className="text-lg font-extrabold text-[#142019]">{t("Cash on delivery", "الدفع عند الاستلام")}</h3>
-                      <p className="mt-1 text-sm leading-6 text-[#526057]">{t("Pay the delivery representative when your order arrives. No payment proof is required.", "ادفع قيمة الطلب لمندوب التوصيل عند استلامه. لا تحتاج إلى رفع إثبات دفع.")}</p>
+                      <h3 className="text-lg font-extrabold text-[#142019]">{codTitle}</h3>
+                      <p className="mt-1 text-sm leading-6 text-[#526057]">{qadmusPickup ? t("Pay when you collect your order at the Qadmus branch.", "ادفع قيمة الطلب عند استلامه من فرع القدموس.") : t("Pay the delivery representative when your order arrives. No payment proof is required.", "ادفع قيمة الطلب لمندوب التوصيل عند استلامه. لا تحتاج إلى رفع إثبات دفع.")}</p>
                     </div>
                   </div>
-                  <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#b8d7c4] pt-4 text-sm">
+                  {codFee > 0 && <div className="mt-5 flex items-center justify-between gap-4 border-t border-[#b8d7c4] pt-4 text-sm">
                     <span className="font-bold text-[#0a583b]">{t("Cash on delivery service fee", "رسوم خدمة الدفع عند الاستلام")}</span>
-                    <span className="font-extrabold text-[#0a583b]">{formatPrice(COD_FEE)}</span>
-                  </div>
+                    <span className="font-extrabold text-[#0a583b]">{formatPrice(codFee)}</span>
+                  </div>}
                 </div>
                 <form id="payment-proof-form" onSubmit={handleSubmit} className="mt-3 lg:mt-5">
                   <button type="submit" disabled={loading || !totalReady} className="hidden min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0a583b] px-6 text-sm font-extrabold text-white transition hover:bg-[#073f2c] disabled:cursor-not-allowed disabled:bg-[#b4bdb7] lg:flex">
@@ -803,7 +819,7 @@ export default function PaymentPage() {
               {paidPromotions.map((promotion) => <div key={promotionKey(promotion)} className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{promotionDescription(promotion)}</span><span className="font-bold">−{formatPrice(promotion.discountAmount)}</span></div>)}
               {appliedCoupon && couponDiscount > 0 && <div className="flex items-center justify-between gap-4 text-[#0a583b]"><span>{t(`Coupon (${appliedCoupon.code})`, `كود الخصم (${appliedCoupon.code})`)}</span><span className="font-bold">−{formatPrice(couponDiscount)}</span></div>}
               <div className="flex items-center justify-between gap-4 text-[#526057]"><span>{t("Delivery", "التوصيل")}</span><span className="font-bold text-[#142019]">{deliveryFee > 0 ? formatPrice(deliveryFee) : t("Free", "مجاني")}</span></div>
-              {paymentMethod === "cod" && <div className="flex items-center justify-between gap-4 text-[#526057]"><span className="text-[#0a583b]">{t("Cash on delivery fee", "رسوم الدفع عند الاستلام")}</span><span className="font-bold text-[#0a583b]">{formatPrice(codFee)}</span></div>}
+              {paymentMethod === "cod" && codFee > 0 && <div className="flex items-center justify-between gap-4 text-[#526057]"><span className="text-[#0a583b]">{t("Cash on delivery fee", "رسوم الدفع عند الاستلام")}</span><span className="font-bold text-[#0a583b]">{formatPrice(codFee)}</span></div>}
             </div>
 
             <div className="my-5 h-px bg-[#dfe4e0]" />
@@ -818,7 +834,7 @@ export default function PaymentPage() {
                 <div className="min-w-0">
                   <p className="text-xs font-extrabold text-[#142019]">{t("Delivering to", "التوصيل إلى")}</p>
                   <p className="mt-1 text-xs leading-5 text-[#647168]">{deliveryLocation}</p>
-                  {checkout.address && <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#7a857e]">{checkout.address}</p>}
+                  {(qadmusPickup ? checkout.qadmus_branch : checkout.address) && <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#7a857e]">{qadmusPickup ? t(`Qadmus branch: ${checkout.qadmus_branch}`, `فرع القدموس: ${checkout.qadmus_branch}`) : checkout.address}</p>}
                 </div>
               </div>
             )}

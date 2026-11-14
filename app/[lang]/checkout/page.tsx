@@ -1,5 +1,8 @@
 "use client";
 
+import { hasThreePartName, isQadmusPickup } from "@/lib/shipping-checkout";
+
+
 import { checkoutAccountId, clearCheckoutSession, readCheckoutDraft, saveCheckoutDraft } from "@/lib/checkout-session";
 import { useCheckoutAccountGuard } from "@/lib/use-checkout-account-guard";
 
@@ -127,6 +130,7 @@ type DeliveryArea = {
 };
 
 type StoredCheckout = {
+  qadmus_branch?: string;
   name?: string;
   governorate?: string;
   delivery_area?: string;
@@ -186,6 +190,9 @@ export default function CheckoutPage() {
     setDeliveryArea,
   ] = useState("");
 
+  const [qadmusBranch, setQadmusBranch] = useState("");
+  const qadmusPickup = isQadmusPickup(governorate);
+
   const [unlistedArea, setUnlistedArea] = useState(false);
 
   const [address, setAddress] =
@@ -214,7 +221,7 @@ export default function CheckoutPage() {
   const [summaryOpen, setSummaryOpen] = useState(false);
 
   useCheckoutAccountGuard(profileId, () => {
-    setName(""); setPhone(""); setAddress(""); setGovernorate(""); setDeliveryArea(""); setCart([]); setCheckingBan(true);
+    setName(""); setPhone(""); setAddress(""); setQadmusBranch(""); setGovernorate(""); setDeliveryArea(""); setCart([]); setCheckingBan(true);
   });
 
   const checkBanOnInitialization =
@@ -282,6 +289,7 @@ export default function CheckoutPage() {
         setName(checkout?.name || user?.full_name || "");
         setGovernorate(checkout?.governorate || "");
         setAddress(checkout?.address || "");
+        setQadmusBranch(checkout?.qadmus_branch || "");
         setDeliveryArea("");
 
         await checkBanOnInitialization(accountPhone);
@@ -635,7 +643,7 @@ export default function CheckoutPage() {
     );
 
   const selectedArea =
-    deliveryAreas.find(
+    areasForGovernorate.find(
       (area) =>
         String(area.id) ===
         deliveryArea
@@ -712,6 +720,13 @@ export default function CheckoutPage() {
         .replace(/\s+/g, " ")
         .trim();
 
+    const normalizedBranch = qadmusBranch.replace(/\s+/g, " ").trim();
+
+    if (qadmusPickup && !hasThreePartName(normalizedName)) {
+      alert(isArabic ? "يرجى إدخال الاسم الثلاثي." : "Please enter your three-part name.");
+      return;
+    }
+
     if (
       normalizedName.length <
       2
@@ -756,7 +771,7 @@ export default function CheckoutPage() {
     }
 
     if (
-      normalizedAddress.length <
+      !qadmusPickup && normalizedAddress.length <
       5
     ) {
       alert(
@@ -765,6 +780,11 @@ export default function CheckoutPage() {
           : "Please enter a more detailed delivery address"
       );
 
+      return;
+    }
+
+    if (qadmusPickup && !normalizedBranch) {
+      alert(isArabic ? "يرجى إدخال اسم فرع القدموس." : "Please enter the Qadmus branch name.");
       return;
     }
 
@@ -789,7 +809,7 @@ export default function CheckoutPage() {
       if (!sessionResponse.ok) throw new Error("Could not verify the current account. Please sign in again.");
       const currentUser = (await sessionResponse.json()).user;
       if (!profileId || checkoutAccountId(currentUser?.id) !== profileId) {
-        setName(""); setPhone(""); setAddress(""); setGovernorate(""); setDeliveryArea("");
+        setName(""); setPhone(""); setAddress(""); setQadmusBranch(""); setGovernorate(""); setDeliveryArea("");
         alert(isArabic ? "تغيّر الحساب. يرجى إدخال بيانات التوصيل للحساب الحالي." : "Your account changed. Please enter delivery details for the current account.");
         window.location.reload();
         return;
@@ -842,7 +862,9 @@ export default function CheckoutPage() {
             "",
 
           address:
-            normalizedAddress,
+            qadmusPickup ? "" : normalizedAddress,
+
+          qadmus_branch: qadmusPickup ? normalizedBranch : undefined,
 
           delivery_fee:
             deliveryFee,
@@ -1066,9 +1088,9 @@ export default function CheckoutPage() {
 
               <div>
                 <h2 className="text-lg font-extrabold text-[#142019]">
-                  {isArabic
-                    ? "عنوان التوصيل"
-                    : "Delivery address"}
+                  {qadmusPickup
+                    ? (isArabic ? "بيانات الاستلام من القدموس" : "Qadmus pickup details")
+                    : (isArabic ? "عنوان التوصيل" : "Delivery address")}
                 </h2>
 
                 <p className="mt-1 text-sm leading-6 text-[#647168]">
@@ -1089,8 +1111,8 @@ export default function CheckoutPage() {
                   />
 
                   {isArabic
-                    ? "الاسم الكامل"
-                    : "Full name"}
+                    ? (qadmusPickup ? "الاسم الثلاثي" : "الاسم الكامل")
+                    : (qadmusPickup ? "Three-part name" : "Full name")}
                 </span>
 
                 <input
@@ -1106,9 +1128,10 @@ export default function CheckoutPage() {
                   }
                   placeholder={
                     isArabic
-                      ? "أدخل الاسم الكامل"
-                      : "Enter your full name"
+                      ? (qadmusPickup ? "أدخل الاسم الثلاثي" : "أدخل الاسم الكامل")
+                      : (qadmusPickup ? "Enter your three-part name" : "Enter your full name")
                   }
+                  maxLength={100}
                   autoComplete="name"
                   required
                   className="w-full rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 lg:px-4 lg:py-3.5 text-base text-[#142019] outline-none transition placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
@@ -1124,8 +1147,8 @@ export default function CheckoutPage() {
                   />
 
                   {isArabic
-                    ? "رقم الهاتف"
-                    : "Phone number"}
+                    ? (qadmusPickup ? "رقم الموبايل" : "رقم الهاتف")
+                    : (qadmusPickup ? "Mobile number" : "Phone number")}
                 </span>
 
                 <input
@@ -1173,6 +1196,7 @@ export default function CheckoutPage() {
                         ""
                       );
                       setUnlistedArea(false);
+                      setQadmusBranch("");
                     }}
                     required
                     className="w-full rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 lg:px-4 lg:py-3.5 text-base text-[#142019] outline-none transition focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0]"
@@ -1240,7 +1264,23 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Address */}
+              {qadmusPickup ? (
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-2 text-xs font-extrabold text-[#142019] lg:mb-2 lg:text-sm">
+                    <MapPin size={15} className="text-[#0a583b]" />
+                    {isArabic ? "اسم فرع القدموس" : "Qadmus branch name"}
+                  </span>
+                  <input
+                    type="text"
+                    value={qadmusBranch}
+                    onChange={(event) => setQadmusBranch(event.target.value)}
+                    placeholder={isArabic ? "أدخل اسم فرع القدموس" : "Enter the Qadmus branch name"}
+                    maxLength={150}
+                    required
+                    className="w-full rounded-xl border border-[#dfe4e0] bg-white px-3 py-2.5 text-base text-[#142019] outline-none placeholder:text-[#9aa39d] focus:border-[#0a583b] focus:ring-4 focus:ring-[#edf5f0] lg:px-4 lg:py-3.5"
+                  />
+                </label>
+              ) : (
               <label className="block">
                 <span className="mb-1.5 flex items-center gap-2 text-xs lg:mb-2 lg:text-sm font-extrabold text-[#142019]">
                   <MapPin
@@ -1279,6 +1319,8 @@ export default function CheckoutPage() {
                   {address.length}/500
                 </p>
               </label>
+
+              )}
 
               {/* Desktop submit */}
               <button

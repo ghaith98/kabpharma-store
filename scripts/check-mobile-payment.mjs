@@ -6,17 +6,24 @@ let lang='ar', index=0, states=[], issue=false, updating=false;
 const initial={0:'1',1:[{id:1,name:'Test product',price:380,quantity:1}],3:true,5:'payment-account',6:true,8:{governorate:'Damascus',delivery_area:'Area',address:'Address'}};
 const pageExports={};
 const storage=new Map();
+const shipping={};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync('lib/shipping-checkout.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{exports:shipping,require:()=>({COD_FEE_SYP:50})});
+assert.equal(shipping.hasThreePartName('أحمد محمد'),false);
+assert.equal(shipping.hasThreePartName(' أحمد  محمد علي '),true);
+assert.equal(shipping.cashOnDeliveryFee('دمشق'),50);
+assert.equal(shipping.cashOnDeliveryFee('Rif Dimashq'),0);
 const require=name=>{
  if(name==='react')return {useState:init=>{const i=index++;if(!(i in states))states[i]=i in initial?initial[i]:init;return [states[i],v=>{states[i]=typeof v==='function'?v(states[i]):v;}];},useEffect:()=>{}};
  if(name==='react/jsx-runtime')return {jsx:(type,props,key)=>({type,props,key}),jsxs:(type,props,key)=>({type,props,key})};
  if(name==='@/context/LanguageContext')return {useLanguage:()=>({lang})};
  if(name==='next/navigation')return {useRouter:()=>({})};
  if(name==='@/lib/use-checkout-account-guard')return {useCheckoutAccountGuard:()=>{}};
- if(name==='@/lib/commerce-config')return {COD_FEE_SYP:50};
+ if(name==='@/lib/shipping-checkout')return shipping;
  if(name==='@/lib/use-cart-quote')return {quoteIssueText:()=> 'Unavailable',useCartQuote:(cart,options)=>{
   const applied=options.couponCode==='SAVE10';
+  const codFee=options.paymentMethod==='cod'?shipping.cashOnDeliveryFee(options.governorate):0;
   return {fresh:!updating,updating,failed:false,lineFor:()=>null,issueFor:()=>issue?'out_of_stock':null,
-   quote:{promotions:[],delivery:{fee:120},totals:{subtotal:380,couponDiscount:applied?38:0,total:500-(applied?38:0)+(options.paymentMethod==='cod'?50:0),codFee:options.paymentMethod==='cod'?50:0,freeItemsCount:0},coupon:applied?{code:'SAVE10',applied:true,type:'percentage'}:null}};
+   quote:{promotions:[],delivery:{fee:120},totals:{subtotal:380,couponDiscount:applied?38:0,total:500-(applied?38:0) +codFee,codFee,freeItemsCount:0},coupon:applied?{code:'SAVE10',applied:true,type:'percentage'}:null}};
  }};
  return {};
 };
@@ -49,5 +56,14 @@ assert.equal(nodes(tree,n=>n.props?.form==='payment-proof-form')[0].props.disabl
 assert.equal(nodes(tree,n=>n.props?.id==='payment-proof-form').length,1);
 issue=true;tree=render();assert.equal(nodes(tree,n=>n.props?.form==='payment-proof-form')[0].props.disabled,true);assert.ok(nodes(tree,n=>n.props?.role==='alert').length);
 issue=false;updating=true;tree=render();assert.equal(nodes(tree,n=>n.props?.form==='payment-proof-form')[0].props.disabled,true);
+updating=false;
+const text = (value) => Array.isArray(value) ? value.map(text).join(' ') : typeof value === 'object' && value !== null ? text(value.props?.children) : typeof value === 'string' ? value : '';
+assert.match(text(render()), /رسوم خدمة إضافية/);
+states[8]={governorate:'Homs',delivery_area:'Homs city',qadmus_branch:'حمص الرئيسي'};
+tree=render();
+assert.match(text(tree), /الدفع عند الاستلام عن طريق القدموس/);
+assert.match(text(tree), /فرع القدموس: حمص الرئيسي/);
+assert.doesNotMatch(text(tree), /رسوم خدمة إضافية|رسوم الدفع عند الاستلام/);
+assert.match(text(tree), /462 SYP/); // 380 goods - 38 coupon + 120 shipping + 0 COD fee
 lang='en';tree=render();assert.equal(tree.props.dir,'ltr');
 console.log('Mobile payment checks passed: single coupon/form, summary disclosure, coupon Enter, payment switching, unavailable items and updating totals prevent confirmation, Arabic/English rendering.');
