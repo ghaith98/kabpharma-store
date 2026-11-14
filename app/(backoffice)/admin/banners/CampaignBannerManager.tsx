@@ -34,6 +34,7 @@ type BannerCropDraft = {
 };
 
 type BannerEditDraft = {
+  sortOrder: string;
   titleAr: string;
   titleEn: string;
   textAr: string;
@@ -246,6 +247,7 @@ function getBannerEditDraft(
   banner: BannerRecord
 ): BannerEditDraft {
   return {
+    sortOrder: String(banner.sort_order ?? ""),
     titleAr: banner.title_ar || "",
     titleEn: banner.title_en || banner.title || "",
     textAr: banner.text_ar || "",
@@ -714,7 +716,8 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
       )
       .order("sort_order", {
         ascending: true,
-      });
+      })
+      .order("id", { ascending: true });
 
     if (error) {
       alert(error.message);
@@ -1393,6 +1396,11 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
       editDrafts[bannerId] ||
       getBannerEditDraft(banner);
     const files = editFiles[bannerId];
+    const sortOrder = Number(draft.sortOrder);
+    if (!isBrandsBanner && draft.sortOrder !== "" && (!/^\d+$/.test(draft.sortOrder) || !Number.isInteger(sortOrder) || sortOrder > 2147483647)) {
+      alert("Enter a non-negative whole number for the display order.");
+      return;
+    }
 
     if (files?.mobile) {
       try {
@@ -1440,6 +1448,7 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
         .update({
           image_url: desktopUrl,
           image_url_mobile: mobileUrl,
+          ...(!isBrandsBanner && draft.sortOrder !== "" ? { sort_order: sortOrder } : {}),
           title: draft.titleEn.trim() || draft.titleAr.trim(),
           title_ar: draft.titleAr.trim(),
           title_en: draft.titleEn.trim(),
@@ -1647,7 +1656,7 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
           <div className="mt-7 grid gap-4 md:grid-cols-2">
             <input
               type="text"
-              placeholder="عنوان الإعلان بالعربي"
+              placeholder={isBrandsBanner ? "عنوان الإعلان بالعربي" : "عنوان الإعلان بالعربي (اختياري)"}
               value={titleAr}
               onChange={(event) =>
                 setTitleAr(
@@ -1655,20 +1664,20 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
                 )
               }
               dir="rtl"
-              required
+              required={isBrandsBanner}
               className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
             />
 
             <input
               type="text"
-              placeholder="Campaign title"
+              placeholder={isBrandsBanner ? "Campaign title" : "Campaign title (optional)"}
               value={titleEn}
               onChange={(event) =>
                 setTitleEn(
                   event.target.value
                 )
               }
-              required
+              required={isBrandsBanner}
               className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-black outline-none transition focus:border-[#0a583b] focus:bg-white"
             />
 
@@ -1988,7 +1997,7 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
                           </span>
 
                           <span className="rounded-full bg-[#edf5f0] px-3 py-1 text-xs font-extrabold text-[#0a583b]">
-                            Main homepage
+                            {isBrandsBanner ? "Brands discovery" : `Display order: ${banner.sort_order ?? "—"}`}
                           </span>
                         </div>
 
@@ -2163,10 +2172,28 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
                               Change any text, link, desktop image, or mobile image. Images are optional here—leave them empty to keep the current ones.
                             </p>
 
+                            {!isBrandsBanner && (
+                              <label className="mb-4 block text-sm font-bold text-[#142019]">
+                                Display order
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={2147483647}
+                                  step={1}
+                                  value={editDraft.sortOrder}
+                                  onChange={(event) => updateBannerEditDraft(banner, "sortOrder", event.target.value)}
+                                  className="mt-1 block w-36 rounded-xl border border-gray-200 bg-white px-3 py-2"
+                                />
+                                <span className="mt-1 block text-xs font-normal text-[#647168]">
+                                  Lower numbers show first. Use different numbers for active banners.
+                                </span>
+                              </label>
+                            )}
+
                             <div className="grid gap-4 md:grid-cols-2">
                               <input
                                 type="text"
-                                placeholder="عنوان الإعلان بالعربي"
+                                placeholder={isBrandsBanner ? "عنوان الإعلان بالعربي" : "عنوان الإعلان بالعربي (اختياري)"}
                                 value={editDraft.titleAr}
                                 onChange={(event) =>
                                   updateBannerEditDraft(
@@ -2181,7 +2208,7 @@ export default function CampaignBannerManager({ placement = "main" }: { placemen
 
                               <input
                                 type="text"
-                                placeholder="Campaign title"
+                                placeholder={isBrandsBanner ? "Campaign title" : "Campaign title (optional)"}
                                 value={editDraft.titleEn}
                                 onChange={(event) =>
                                   updateBannerEditDraft(

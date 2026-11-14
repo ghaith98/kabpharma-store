@@ -54,7 +54,8 @@ export default async function Home() {
       .from("home_banners")
       .select("*")
       .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
+      .order("sort_order", { ascending: true })
+      .order("id", { ascending: true }),
 
     supabase
       .from("concerns")

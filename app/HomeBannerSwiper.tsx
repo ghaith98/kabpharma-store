@@ -348,21 +348,13 @@ export default function HomeBannerSwiper({
           slide,
           index
         ) => {
-          const title =
-            (
-              isArabic
-                ? slide.title_ar ||
-                  slide.title ||
-                  slide.title_en
-                : slide.title_en ||
-                  slide.title ||
-                  slide.title_ar
-            ) ||
-            (
-              isArabic
-                ? "كاب فارما"
-                : "KAB Pharma"
-            );
+          const brandName = isArabic ? "كاب فارما" : "KAB Pharma";
+          const titles = isArabic
+            ? [slide.title_ar, slide.title, slide.title_en]
+            : [slide.title_en, slide.title, slide.title_ar];
+          const title = titles.find((value) => value?.trim())?.trim() ||
+            (headingLevel === 1 ? "" : brandName);
+          const imageAlt = title || brandName;
 
           const description =
             (
@@ -388,6 +380,8 @@ export default function HomeBannerSwiper({
           const showButton =
             slide.show_button !== false;
 
+          const showCopy = slide.show_text !== false && Boolean(title || description.trim());
+
           const mobileImage =
             slide.image_url_mobile ||
             slide.image_url;
@@ -410,7 +404,7 @@ export default function HomeBannerSwiper({
             },
           } = getImageProps({
             src: slide.image_url,
-            alt: title,
+            alt: imageAlt,
             width: 1600,
             height: 620,
             sizes: "100vw",
@@ -424,7 +418,7 @@ export default function HomeBannerSwiper({
             },
           } = getImageProps({
             src: mobileImage,
-            alt: title,
+            alt: imageAlt,
             width: 393,
             height: 680,
             sizes: "100vw",
@@ -463,10 +457,7 @@ export default function HomeBannerSwiper({
 
                   <img
                     {...responsiveImageProps}
-                    alt={
-                      title ||
-                      "KAB Pharma campaign"
-                    }
+                    alt={imageAlt}
                     loading={shouldPrioritize ? "eager" : "lazy"}
                     fetchPriority={shouldPrioritize ? "high" : "auto"}
                     decoding="async"
@@ -501,7 +492,7 @@ export default function HomeBannerSwiper({
 
                 {/* pointer-events-none lets clicks on the empty area reach the
                     picture link; the text block turns them back on. */}
-                <div className={`pointer-events-none relative z-10 mx-auto w-full max-w-[1440px] px-5 pb-7 pt-5 sm:px-8 sm:pb-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16 ${slide.show_text === false && !showButton ? "hidden md:flex" : "flex"}`}>
+                <div className={`pointer-events-none relative z-10 mx-auto w-full max-w-[1440px] px-5 pb-7 pt-5 sm:px-8 sm:pb-8 md:min-h-[560px] md:items-center md:px-12 md:py-10 lg:min-h-[620px] lg:px-16 ${!showCopy && !showButton ? "hidden md:flex" : "flex"}`}>
                   <div
                     dir={
                       isArabic
@@ -511,15 +502,15 @@ export default function HomeBannerSwiper({
                     className={`pointer-events-auto flex w-full max-w-[490px] flex-col md:ml-0 md:mr-auto md:min-h-0 md:w-[46%] md:block ${
                       showButton
                         ? "min-h-[220px]"
-                        : slide.show_text !== false ? "min-h-[140px]" : "hidden md:block"
+                        : showCopy ? "min-h-[140px]" : "hidden md:block"
                     } ${
                       isArabic
                         ? "text-right"
                         : "text-left"
                     }`}
                   >
-                    {slide.show_text !== false && <>
-                    <Heading
+                    {showCopy && <>
+                    {title && <Heading
                       className={`max-w-[440px] text-[30px] font-extrabold leading-[1.18] text-[#142019] sm:text-4xl md:text-[44px] lg:text-[52px] ${
                         isArabic
                           ? "tracking-normal [font-family:var(--font-arabic)]"
@@ -527,7 +518,7 @@ export default function HomeBannerSwiper({
                       }`}
                     >
                       {title}
-                    </Heading>
+                    </Heading>}
 
                     {description && (
                       <p className="mt-4 max-w-[430px] text-sm leading-7 text-[#526058] sm:text-base sm:leading-8">
