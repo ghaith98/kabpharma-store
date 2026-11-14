@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { filterDeliveryAreas, normalizeAreaSearch } from "@/lib/delivery-area-search";
 import { supabase } from "@/lib/supabase";
 
 type Governorate = {
@@ -29,7 +30,12 @@ export default function AdminDeliveryPage() {
 
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [areas, setAreas] = useState<DeliveryArea[]>([]);
-  const [selectedGovernorate, setSelectedGovernorate] = useState("Damascus");
+  const [selectedGovernorate, setSelectedGovernorate] = useState("");
+  const [governorateNameAr, setGovernorateNameAr] = useState("");
+  const [governorateNameEn, setGovernorateNameEn] = useState("");
+  const [areaGovernorateFilter, setAreaGovernorateFilter] = useState("");
+  const [areaSearch, setAreaSearch] = useState("");
+  const [addingGovernorate, setAddingGovernorate] = useState(false);
   const [areaFee, setAreaFee] = useState("");
   const [areaNameAr, setAreaNameAr] = useState("");
 const [areaNameEn, setAreaNameEn] = useState("");
@@ -103,6 +109,54 @@ const [areaNameEn, setAreaNameEn] = useState("");
 
     await loadAll();
   }, [loadAll, router]);
+
+  async function addGovernorate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (addingGovernorate) return;
+    const arabic = governorateNameAr.trim().replace(/\s+/g, " ");
+    const english = governorateNameEn.trim().replace(/\s+/g, " ");
+    if (!/\p{Script=Arabic}/u.test(arabic) || !/[a-z]/i.test(english)) {
+      alert("Enter the governorate name in both Arabic and English.");
+      return;
+    }
+
+    const key = arabic === "دمشق" || english.toLowerCase() === "damascus"
+      ? "Damascus"
+      : english;
+    const existing = governorates.some((item) =>
+      [item.governorate, item.governorate_ar, item.governorate_en].some((name) =>
+        name && [key, arabic, english].some((entered) =>
+          normalizeAreaSearch(entered) === normalizeAreaSearch(name),
+        ),
+      ),
+    );
+    if (existing) {
+      alert("This governorate already exists. Select it when adding a delivery area.");
+      return;
+    }
+
+    setAddingGovernorate(true);
+    try {
+      const { error } = await supabase.from("delivery_fees").insert({
+        governorate: key,
+        governorate_ar: arabic,
+        governorate_en: english,
+        is_active: true,
+      });
+      if (error) {
+        alert(error.code === "23505" ? "This governorate already exists." : error.message);
+        return;
+      }
+      setGovernorateNameAr("");
+      setGovernorateNameEn("");
+      await loadGovernorates();
+      setSelectedGovernorate(key);
+    } catch {
+      alert("Could not add the governorate. Please try again.");
+    } finally {
+      setAddingGovernorate(false);
+    }
+  }
 
   async function toggleGovernorateActive(item: Governorate) {
     setUpdatingId(item.id);
@@ -233,6 +287,20 @@ setAreaFee("");
     });
   }, [checkAdmin]);
 
+  const filteredAreas = filterDeliveryAreas(
+    areaGovernorateFilter ? areas.filter((area) => area.governorate === areaGovernorateFilter) : areas,
+    areaSearch,
+  );
+  const governorateKeys = [...new Set([
+    ...governorates.map((item) => item.governorate),
+    ...areas.map((area) => area.governorate),
+  ])];
+  const governorateLabel = (key: string) => {
+    const item = governorates.find((entry) => entry.governorate === key);
+    return [item?.governorate_en || key, item?.governorate_ar].filter(Boolean).join(" — ");
+  };
+  const fieldClass = "min-w-0 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600";
+
   return (
   <main className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-green-50 px-6 py-10">
     <div className="mx-auto max-w-5xl">
@@ -297,6 +365,19 @@ setAreaFee("");
           Governorates
         </h2>
 
+        <form onSubmit={addGovernorate} className="mb-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <input aria-label="Governorate name in Arabic" placeholder="اسم المحافظة بالعربي"
+            dir="rtl" required maxLength={100} value={governorateNameAr}
+            onChange={(event) => setGovernorateNameAr(event.target.value)} className={fieldClass} />
+          <input aria-label="Governorate name in English" placeholder="Governorate name in English"
+            dir="ltr" required maxLength={100} value={governorateNameEn}
+            onChange={(event) => setGovernorateNameEn(event.target.value)} className={fieldClass} />
+          <button type="submit" disabled={addingGovernorate}
+            className="rounded-2xl bg-gray-900 px-5 py-4 font-extrabold text-white hover:bg-black disabled:bg-gray-400">
+            {addingGovernorate ? "Adding..." : "Add Governorate"}
+          </button>
+        </form>
+
         <div className="grid gap-4 md:grid-cols-2">
           {governorates.map((item) => (
             <div
@@ -306,7 +387,7 @@ setAreaFee("");
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-extrabold text-gray-900">
-                    {item.governorate}
+                    {governorateLabel(item.governorate)}
                   </h3>
 
                   <p
@@ -344,13 +425,16 @@ setAreaFee("");
 
         <form onSubmit={addArea} className="grid gap-3 sm:grid-cols-5">
           <select
+            required
+            aria-label="Governorate for the new delivery area"
             value={selectedGovernorate}
             onChange={(e) => setSelectedGovernorate(e.target.value)}
             className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-black outline-none focus:border-green-600"
           >
+            <option value="">Select governorate</option>
             {governorates.map((item) => (
               <option key={item.id} value={item.governorate}>
-                {item.governorate}
+                {governorateLabel(item.governorate)}
               </option>
             ))}
           </select>
@@ -399,11 +483,25 @@ setAreaFee("");
           Delivery Areas
         </h2>
 
-        {areas.length === 0 ? (
-          <p className="text-gray-600">No areas added yet.</p>
+        <div className="mb-4 grid gap-3 sm:grid-cols-2">
+          <select aria-label="Filter delivery areas by governorate" value={areaGovernorateFilter}
+            onChange={(event) => setAreaGovernorateFilter(event.target.value)} className={fieldClass}>
+            <option value="">All governorates</option>
+            {governorateKeys.map((key) => <option key={key} value={key}>{governorateLabel(key)}</option>)}
+          </select>
+          <input type="search" aria-label="Search delivery areas" placeholder="Search by area name"
+            dir="auto" value={areaSearch} onChange={(event) => setAreaSearch(event.target.value)}
+            className={fieldClass} />
+        </div>
+        <p className="mb-4 text-sm text-gray-600" aria-live="polite">
+          {filteredAreas.length} of {areas.length} delivery areas
+        </p>
+
+        {filteredAreas.length === 0 ? (
+          <p className="text-gray-600">{areas.length ? "No areas match the filters." : "No areas added yet."}</p>
         ) : (
           <div className="space-y-4">
-            {areas.map((area) => (
+            {filteredAreas.map((area) => (
               <div
                 key={area.id}
                 className="rounded-3xl border border-gray-100 bg-gray-50 p-5"
