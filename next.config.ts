@@ -16,8 +16,8 @@ const supabaseWs = supabaseOrigin.replace(
 // during development so the dev server works; production stays strict.
 const isDev = process.env.NODE_ENV !== "production";
 const scriptSrc = isDev
-  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms"
-  : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms";
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms https://connect.facebook.net"
+  : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms https://connect.facebook.net";
 
 // Content-Security-Policy.
 // NOTE: script-src/style-src keep 'unsafe-inline' because Next.js injects
@@ -34,9 +34,9 @@ const csp = [
   scriptSrc,
   "style-src 'self' 'unsafe-inline'",
   // Clarity sends its measurements as tiny images (c.clarity.ms, c.bing.com).
-  `img-src 'self' data: blob: ${supabaseOrigin} https://*.clarity.ms https://c.bing.com`.trim(),
+  `img-src 'self' data: blob: ${supabaseOrigin} https://*.clarity.ms https://c.bing.com https://www.facebook.com`.trim(),
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://www.google-analytics.com https://region1.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com`.trim(),
+  `connect-src 'self' ${supabaseOrigin} ${supabaseWs} https://www.google-analytics.com https://region1.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://www.facebook.com`.trim(),
   "upgrade-insecure-requests",
 ].join("; ");
 
