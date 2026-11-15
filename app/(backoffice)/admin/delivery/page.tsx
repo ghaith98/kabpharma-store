@@ -35,6 +35,8 @@ export default function AdminDeliveryPage() {
   const [governorateNameEn, setGovernorateNameEn] = useState("");
   const [areaGovernorateFilter, setAreaGovernorateFilter] = useState("");
   const [areaSearch, setAreaSearch] = useState("");
+  const [editingGovernorate, setEditingGovernorate] = useState<Governorate | null>(null);
+  const [deletingGovernorateId, setDeletingGovernorateId] = useState<number | null>(null);
   const [addingGovernorate, setAddingGovernorate] = useState(false);
   const [areaFee, setAreaFee] = useState("");
   const [areaNameAr, setAreaNameAr] = useState("");
@@ -110,7 +112,13 @@ const [areaNameEn, setAreaNameEn] = useState("");
     await loadAll();
   }, [loadAll, router]);
 
-  async function addGovernorate(event: React.FormEvent<HTMLFormElement>) {
+  function resetGovernorateForm() {
+    setEditingGovernorate(null);
+    setGovernorateNameAr("");
+    setGovernorateNameEn("");
+  }
+
+  async function saveGovernorate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (addingGovernorate) return;
     const arabic = governorateNameAr.trim().replace(/\s+/g, " ");
@@ -120,11 +128,11 @@ const [areaNameEn, setAreaNameEn] = useState("");
       return;
     }
 
-    const key = arabic === "دمشق" || english.toLowerCase() === "damascus"
+    const key = editingGovernorate?.governorate ?? (arabic === "دمشق" || english.toLowerCase() === "damascus"
       ? "Damascus"
-      : english;
+      : english);
     const existing = governorates.some((item) =>
-      [item.governorate, item.governorate_ar, item.governorate_en].some((name) =>
+      item.id !== editingGovernorate?.id && [item.governorate, item.governorate_ar, item.governorate_en].some((name) =>
         name && [key, arabic, english].some((entered) =>
           normalizeAreaSearch(entered) === normalizeAreaSearch(name),
         ),
@@ -137,24 +145,57 @@ const [areaNameEn, setAreaNameEn] = useState("");
 
     setAddingGovernorate(true);
     try {
-      const { error } = await supabase.from("delivery_fees").insert({
-        governorate: key,
-        governorate_ar: arabic,
-        governorate_en: english,
-        is_active: true,
-      });
-      if (error) {
-        alert(error.code === "23505" ? "This governorate already exists." : error.message);
+      const names = { governorate_ar: arabic, governorate_en: english };
+      const table = supabase.from("delivery_fees");
+      // Keep the existing key: delivery areas and checkout rules use it.
+      const { data, error } = await (editingGovernorate
+        ? table.update(names).eq("id", editingGovernorate.id)
+        : table.insert({ ...names, governorate: key, is_active: true }))
+        .select("id").single();
+      if (error || !data) {
+        alert(error?.code === "23505" ? "This governorate already exists." : error?.message || "Could not save the governorate.");
         return;
       }
-      setGovernorateNameAr("");
-      setGovernorateNameEn("");
+      resetGovernorateForm();
       await loadGovernorates();
-      setSelectedGovernorate(key);
+      if (!editingGovernorate) setSelectedGovernorate(key);
     } catch {
-      alert("Could not add the governorate. Please try again.");
+      alert("Could not save the governorate. Please try again.");
     } finally {
       setAddingGovernorate(false);
+    }
+  }
+
+  async function deleteGovernorate(item: Governorate) {
+    if (deletingGovernorateId !== null || addingGovernorate) return;
+    if (!confirm(`Delete "${item.governorate_en || item.governorate}"? This cannot be undone.`)) return;
+
+    setDeletingGovernorateId(item.id);
+    try {
+      const { data: linkedAreas, error: lookupError } = await supabase
+        .from("delivery_areas").select("id").eq("governorate", item.governorate).limit(1);
+      if (lookupError) {
+        alert(lookupError.message);
+        return;
+      }
+      if (linkedAreas?.length) {
+        alert("This governorate still has delivery areas. Deactivate the governorate to hide it, or remove its areas before deleting it.");
+        return;
+      }
+      const { data, error } = await supabase.from("delivery_fees")
+        .delete().eq("id", item.id).select("id").single();
+      if (error || !data) {
+        alert(error?.message || "Could not delete the governorate.");
+        return;
+      }
+      if (editingGovernorate?.id === item.id) resetGovernorateForm();
+      setSelectedGovernorate((current) => current === item.governorate ? "" : current);
+      setAreaGovernorateFilter((current) => current === item.governorate ? "" : current);
+      await loadGovernorates();
+    } catch {
+      alert("Could not delete the governorate. Please try again.");
+    } finally {
+      setDeletingGovernorateId(null);
     }
   }
 
@@ -178,6 +219,8 @@ const [areaNameEn, setAreaNameEn] = useState("");
 
   async function addArea(e: React.FormEvent) {
     e.preventDefault();
+
+    if (deletingGovernorateId !== null) return;
 
   if (!selectedGovernorate || (!areaNameAr.trim() && !areaNameEn.trim())) {
   alert("Please choose governorate and enter area name");
@@ -365,17 +408,24 @@ setAreaFee("");
           Governorates
         </h2>
 
-        <form onSubmit={addGovernorate} className="mb-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+        {editingGovernorate && <p className="mb-2 font-semibold text-gray-700">
+          Editing {governorateLabel(editingGovernorate.governorate)}
+        </p>}
+        <form id="governorate-form" onSubmit={saveGovernorate} className="mb-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
           <input aria-label="Governorate name in Arabic" placeholder="اسم المحافظة بالعربي"
             dir="rtl" required maxLength={100} value={governorateNameAr}
             onChange={(event) => setGovernorateNameAr(event.target.value)} className={fieldClass} />
           <input aria-label="Governorate name in English" placeholder="Governorate name in English"
             dir="ltr" required maxLength={100} value={governorateNameEn}
             onChange={(event) => setGovernorateNameEn(event.target.value)} className={fieldClass} />
-          <button type="submit" disabled={addingGovernorate}
+          <button type="submit" disabled={addingGovernorate || deletingGovernorateId !== null}
             className="rounded-2xl bg-gray-900 px-5 py-4 font-extrabold text-white hover:bg-black disabled:bg-gray-400">
-            {addingGovernorate ? "Adding..." : "Add Governorate"}
+            {addingGovernorate ? "Saving..." : editingGovernorate ? "Save Changes" : "Add Governorate"}
           </button>
+          {editingGovernorate && <button type="button" disabled={addingGovernorate}
+            onClick={resetGovernorateForm} className="w-fit px-2 text-sm font-semibold text-gray-700 underline">
+            Cancel Edit
+          </button>}
         </form>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -411,6 +461,23 @@ setAreaFee("");
                   }`}
                 >
                   {item.is_active ? "Deactivate" : "Activate"}
+                </button>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" disabled={addingGovernorate || deletingGovernorateId !== null}
+                  onClick={() => {
+                    setEditingGovernorate(item);
+                    setGovernorateNameAr(item.governorate_ar || "");
+                    setGovernorateNameEn(item.governorate_en || item.governorate);
+                    document.getElementById("governorate-form")?.querySelector("input")?.focus();
+                  }}
+                  className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 disabled:opacity-50">
+                  Edit
+                </button>
+                <button type="button" disabled={addingGovernorate || loadingArea || deletingGovernorateId !== null}
+                  onClick={() => deleteGovernorate(item)}
+                  className="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-50">
+                  {deletingGovernorateId === item.id ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>
@@ -470,7 +537,7 @@ setAreaFee("");
 
           <button
             type="submit"
-            disabled={loadingArea}
+            disabled={loadingArea || deletingGovernorateId !== null}
             className="rounded-2xl bg-gray-900 px-5 py-4 font-extrabold text-white transition hover:bg-black disabled:bg-gray-400"
           >
             {loadingArea ? "Adding..." : "Add Area"}

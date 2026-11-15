@@ -1247,9 +1247,9 @@ export default function CheckoutPage() {
               {selectedArea && (
                 <div className="flex items-center justify-between gap-4 rounded-xl bg-[#f7f8f6] px-4 py-3 text-xs">
                   <span className="font-bold text-[#647168]">
-                    {isArabic
-                      ? "رسوم التوصيل"
-                      : "Delivery fee"}
+                    {qadmusPickup
+                      ? (isArabic ? "رسوم شحن القدموس" : "Qadmus shipping fee")
+                      : (isArabic ? "رسوم التوصيل" : "Delivery fee")}
                   </span>
 
                   <span className="font-extrabold text-[#0a583b]">
@@ -1628,9 +1628,9 @@ export default function CheckoutPage() {
 
               <div className="flex items-center justify-between gap-4 text-[#526057]">
                 <span>
-                  {isArabic
-                    ? "التوصيل"
-                    : "Delivery"}
+                  {qadmusPickup
+                    ? (isArabic ? "رسوم شحن القدموس" : "Qadmus shipping fee")
+                    : (isArabic ? "التوصيل" : "Delivery")}
                 </span>
 
                 <span className="font-bold text-[#142019]">

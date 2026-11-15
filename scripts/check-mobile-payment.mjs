@@ -59,10 +59,12 @@ issue=false;updating=true;tree=render();assert.equal(nodes(tree,n=>n.props?.form
 updating=false;
 const text = (value) => Array.isArray(value) ? value.map(text).join(' ') : typeof value === 'object' && value !== null ? text(value.props?.children) : typeof value === 'string' ? value : '';
 assert.match(text(render()), /رسوم خدمة إضافية/);
+assert.doesNotMatch(text(render()), /رسوم شحن القدموس/);
 states[8]={governorate:'Homs',delivery_area:'Homs city',qadmus_branch:'حمص الرئيسي'};
 tree=render();
 assert.match(text(tree), /الدفع عند الاستلام عن طريق القدموس/);
 assert.match(text(tree), /فرع القدموس: حمص الرئيسي/);
+assert.match(text(tree), /رسوم شحن القدموس/);
 assert.doesNotMatch(text(tree), /رسوم خدمة إضافية|رسوم الدفع عند الاستلام/);
 assert.match(text(tree), /462 SYP/); // 380 goods - 38 coupon + 120 shipping + 0 COD fee
 lang='en';tree=render();assert.equal(tree.props.dir,'ltr');
