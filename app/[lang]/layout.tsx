@@ -242,6 +242,8 @@ export default async function StorefrontLayout({
             'https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '1831985411332054');
             fbq('track', 'PageView');
+            window.kabMetaPixelReady = true;
+            window.dispatchEvent(new Event('kab-meta-pixel-ready'));
           `}
         </Script>
       </body>

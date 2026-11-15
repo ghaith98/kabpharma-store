@@ -437,7 +437,7 @@ export default function PaymentPage() {
         }
 
         saveCart([]);
-        trackPurchase();
+        trackPurchase(result.orderId, result.total);
         window.dispatchEvent(new Event("cartUpdated"));
         clearCheckoutDraft(localStorage, profileId);
         sessionStorage.removeItem(COD_IDEMPOTENCY_KEY);
@@ -472,7 +472,7 @@ export default function PaymentPage() {
       }
 
       saveCart([]);
-      trackPurchase();
+      trackPurchase(result.orderId, result.total);
       window.dispatchEvent(new Event("cartUpdated"));
       clearCheckoutDraft(localStorage, profileId);
       sessionStorage.removeItem(TRANSFER_IDEMPOTENCY_KEY);

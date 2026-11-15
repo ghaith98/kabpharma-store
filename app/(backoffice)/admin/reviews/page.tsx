@@ -20,6 +20,8 @@ export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
   async function loadReviews() {
     const { data, error } = await supabase
       .from("product_reviews")
@@ -42,17 +44,30 @@ export default function AdminReviewsPage() {
     const confirmDelete = confirm("Delete this review?");
     if (!confirmDelete) return;
 
-    const { error } = await supabase
-      .from("product_reviews")
-      .delete()
-      .eq("id", id);
+    setDeletingId(id);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (error || !token) {
+        alert("Please sign in again to delete a review.");
+        return;
+      }
 
-    if (error) {
-      alert(error.message);
-      return;
+      const response = await fetch(`/api/admin/reviews?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || result?.success !== true) {
+        alert(result?.error || "Could not delete the review.");
+        return;
+      }
+      setReviews((prev) => prev.filter((review) => review.id !== id));
+    } catch {
+      alert("Could not delete the review. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
-
-    setReviews((prev) => prev.filter((review) => review.id !== id));
   }
 
   useEffect(() => {
@@ -128,10 +143,11 @@ export default function AdminReviewsPage() {
 
                   <button
                     onClick={() => deleteReview(review.id)}
+                    disabled={deletingId !== null}
                     className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2 font-bold text-red-600 transition hover:bg-red-100"
                   >
                     <FaTrash />
-                    Delete
+                    {deletingId === review.id ? "Deleting…" : "Delete"}
                   </button>
                 </div>
 

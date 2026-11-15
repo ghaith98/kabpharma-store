@@ -1,5 +1,6 @@
 "use client";
 
+import { trackMetaCheckoutStart } from "@/lib/analytics";
 import { hasThreePartName, isQadmusPickup } from "@/lib/shipping-checkout";
 
 
@@ -9,6 +10,7 @@ import { useCheckoutAccountGuard } from "@/lib/use-checkout-account-guard";
 import {
   useEffect,
   useEffectEvent,
+  useRef,
   useState,
 } from "react";
 import Link from "next/link";
@@ -318,6 +320,13 @@ export default function CheckoutPage() {
       window.clearTimeout(initializationTimer);
     };
   }, [isArabic, router]);
+
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || !profileId || checkingBan || isBanned || accountCheckError || !cart.length) return;
+    checkoutTracked.current = true;
+    trackMetaCheckoutStart(cart.reduce((total, item) => total + Number(item.quantity || 0), 0));
+  }, [accountCheckError, cart, checkingBan, isBanned, profileId]);
 
   useEffect(() => {
     if (!profileId || deliveryAreas.length === 0) return;
