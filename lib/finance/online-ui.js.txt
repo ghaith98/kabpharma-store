@@ -79,6 +79,11 @@ function fS() {
   const [busy,setBusy]=Me.useState(false);
   const [error,setError]=Me.useState('');
   const [notice,setNotice]=Me.useState('');
+  Me.useEffect(()=>{
+    if(!notice.startsWith('تم '))return;
+    const timer=setTimeout(()=>setNotice(''),3500);
+    return()=>clearTimeout(timer);
+  },[notice]);
   async function boot(){
     setError('');setPhase('loading');
     try{
@@ -111,7 +116,7 @@ function fS() {
   }
   if(phase==='ready'&&transport)return kabH(Me.Fragment,null,
     kabH(Wi,{transport,onLock:()=>parent.postMessage({type:'kab-finance-close'},'*')}),
-    kabH('div',{role:'status',className:'local-save-status no-print'},notice||'المحاسبة السحابية — يتم الحفظ بعد نجاح كل عملية'));
+    notice&&kabH('div',{role:'status',className:'local-save-status no-print'},notice));
   const state=preview?.packet.state;
   return kabH('main',{className:'offline-landing'},
     kabH('header',{className:'offline-top'},kabH('div',{className:'offline-logo'},'KAB FINANCE')),

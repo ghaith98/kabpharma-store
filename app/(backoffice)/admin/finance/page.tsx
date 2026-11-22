@@ -54,14 +54,14 @@ export default function FinancePage() {
     });
     return()=>{active=false;window.removeEventListener("message",receive);listener.subscription.unsubscribe();controllers.forEach(controller=>controller.abort());};
   },[attempt]);
-  return <main className="flex min-h-[calc(100dvh-74px)] flex-col bg-[#f5f7f8]" dir="rtl">
-    <div className="flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3 text-sm">
+  return <main className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#f5f7f8]" dir="rtl">
+    <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-3 text-sm">
       <strong>محاسبة كاب فارما</strong><Link href="/admin" className="font-bold text-[#0a583b]">العودة إلى لوحة الإدارة</Link>
     </div>
     {error ? <div role="alert" className="m-auto max-w-xl space-y-4 p-8 text-center"><p>{error}</p><button onClick={()=>{setError("");setAttempt(value=>value+1);}} className="rounded-xl bg-[#0a583b] px-5 py-3 text-white">إعادة المحاولة</button></div>
       : html ? <iframe ref={frame} title="محاسبة كاب فارما" srcDoc={html}
           sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-popups"
-          referrerPolicy="no-referrer" className="min-h-[850px] w-full flex-1 border-0 lg:h-[calc(100dvh-126px)]" />
+          referrerPolicy="no-referrer" className="block min-h-0 w-full flex-1 border-0" />
         : <p role="status" className="p-10 text-center">جارٍ فتح المحاسبة…</p>}
   </main>;
 }
