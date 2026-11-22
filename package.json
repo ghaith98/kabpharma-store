@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "node scripts/build-finance-ui.mjs && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -17,7 +17,8 @@
     "test:mobile-payment": "node scripts/check-mobile-payment.mjs",
     "test:responsive-images": "node scripts/check-responsive-images.mjs",
     "test:admin-customers": "node scripts/check-admin-customer-details.mjs",
-    "test:delivery-ownership": "node scripts/check-delivery-ownership.mjs && node scripts/check-order-feed.mjs"
+    "test:delivery-ownership": "node scripts/check-delivery-ownership.mjs && node scripts/check-order-feed.mjs",
+    "test:finance": "node scripts/build-finance-ui.mjs && node scripts/check-finance.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.3",

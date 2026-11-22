@@ -6,7 +6,7 @@ import AdminShell from "./AdminShell";
 export default function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname === "/admin/orders/print") {
+  if (pathname === "/admin/orders/print" || pathname === "/admin/finance") {
     return <>{children}</>;
   }
 

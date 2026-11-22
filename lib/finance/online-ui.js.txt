@@ -1,0 +1,134 @@
+// No tokens or accounting data are embedded in the UI. The authenticated parent
+// performs a fixed set of API calls; the sandboxed frame can only send those RPCs.
+const kabPending = new Map();
+window.addEventListener('message', event => {
+  if (event.source !== parent || event.data?.type !== 'kab-finance-result') return;
+  const pending = kabPending.get(event.data.id);
+  if (!pending) return;
+  clearTimeout(pending.timer); kabPending.delete(event.data.id);
+  if (event.data.error) pending.reject(Object.assign(new Error(event.data.error), {code:event.data.code}));
+  else pending.resolve(event.data.result);
+});
+function kabRpc(method, body, mode) {
+  const id=crypto.randomUUID();
+  return new Promise((resolve,reject) => {
+    const timer=setTimeout(()=>{kabPending.delete(id);reject(new Error('انتهت مهلة الاتصال. لم يتم تأكيد الحفظ؛ حاول مجدداً بنفس البيانات.'));},65000);
+    kabPending.set(id,{resolve,reject,timer});
+    parent.postMessage({type:'kab-finance-request',id,method,body,mode},'*');
+  });
+}
+function kabDownload(packet) {
+  const url=URL.createObjectURL(new Blob([JSON.stringify(packet,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download='kab-finance-cloud-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+function kabCloudTransport(notify) {
+  let writing=false,version=-1,retry=null,records=new Map(),packet=null;
+  async function load(){
+    for(let attempt=0;attempt<3;attempt++){
+      try {
+        const fresh=new Map();let after='',expected;
+        do {
+          const page=await kabRpc('GET',{after,version:expected},'records');
+          if(!page.meta)throw Error('لم يتم استيراد بيانات الشركة.');
+          expected=page.meta.version;
+          for(const row of page.rows)fresh.set(row.key,row);
+          after=page.cursor;
+          if(!after){
+            const state=decodeState([...fresh.values()]);gd(state);
+            packet={format:'kab-finance-local',id:page.meta.packet_id,actor:page.meta.owner,version:expected,state};
+            records=fresh;version=expected;return packet;
+          }
+        }while(after);
+      }catch(error){if(error.code!=='LOAD_CONFLICT'||attempt===2)throw error;}
+    }
+  }
+  return {
+    isWriting:()=>writing,
+    load,
+    async save(expected,action){
+      if(writing)throw Error('انتظر انتهاء الحفظ السابق.');
+      writing=true;notify('جارٍ الحفظ على Cloudflare…');
+      const fingerprint=JSON.stringify([expected,action]);
+      if(!retry||retry.fingerprint!==fingerprint)retry={fingerprint,id:crypto.randomUUID()};
+      try {
+        const result=await kabRpc('POST',{operation:'action',version:expected,action,requestId:retry.id});
+        if(result.reload || !packet || packet.version!==expected) await load();
+        else {
+          for(const key of result.changes.remove)records.delete(key);
+          for(const row of result.changes.upsert)records.set(row.key,row);
+          packet={...packet,version:result.meta.version,state:decodeState([...records.values()])};
+          gd(packet.state);version=packet.version;
+        }
+        retry=null;notify('تم الحفظ على Cloudflare');return packet;
+      } catch(error){notify('لم يتم تأكيد الحفظ — '+error.message);throw error;}
+      finally{writing=false;}
+    },
+    async backup(){const latest=await load();kabDownload(latest);notify('تم تنزيل النسخة الاحتياطية');return 'download';},
+    async poll(){
+      if(writing||document.hidden)return;
+      try {const result=await kabRpc('GET',undefined,'status');if(result.workspace&&result.workspace.version>version)window.dispatchEvent(new Event('kab-finance-updated'));}
+      catch(error){notify('تعذّر التحقّق من آخر التحديثات. '+error.message);}
+    }
+  };
+}
+function fS() {
+  const [phase,setPhase]=Me.useState('loading');
+  const [transport,setTransport]=Me.useState(null);
+  const [preview,setPreview]=Me.useState(null);
+  const [busy,setBusy]=Me.useState(false);
+  const [error,setError]=Me.useState('');
+  const [notice,setNotice]=Me.useState('');
+  async function boot(){
+    setError('');setPhase('loading');
+    try{
+      const result=await kabRpc('GET',undefined,'status');
+      if(result.workspace){setTransport(kabCloudTransport(setNotice));setPhase('ready');}
+      else setPhase('import');
+    }catch(failure){setError(failure.message);setPhase(failure.code==='SCHEMA'?'setup':'error');}
+  }
+  Me.useEffect(()=>{boot();},[]);
+  Me.useEffect(()=>{
+    if(!transport)return;
+    const timer=setInterval(()=>transport.poll(),15000);
+    const protect=event=>{if(transport.isWriting()){event.preventDefault();event.returnValue='';}};
+    window.addEventListener('beforeunload',protect);
+    return()=>{clearInterval(timer);window.removeEventListener('beforeunload',protect);};
+  },[transport]);
+  async function setup(){setBusy(true);setError('');try{await kabRpc('POST',{operation:'setup'});await boot();}catch(failure){setError(failure.message);}finally{setBusy(false);}}
+  async function choose(event){
+    const file=event.target.files?.[0];setError('');setPreview(null);if(!file)return;
+    try{
+      if(file.size>1500000)throw Error('حجم ملف الاستيراد أكبر من الحد المدعوم في هذه النسخة. لم يتم تغيير أي بيانات.');
+      const raw=await file.text(),packet=kabLocalPacket(raw);
+      setPreview({raw,packet,name:file.name});
+    }catch(failure){setError(failure.message);}
+  }
+  async function startImport(){
+    if(!preview||busy)return;setBusy(true);setError('');
+    try{await kabRpc('POST',{operation:'import',raw:preview.raw});setPreview(null);await boot();}
+    catch(failure){setError(failure.message);}finally{setBusy(false);}
+  }
+  if(phase==='ready'&&transport)return kabH(Me.Fragment,null,
+    kabH(Wi,{transport,onLock:()=>parent.postMessage({type:'kab-finance-close'},'*')}),
+    kabH('div',{role:'status',className:'local-save-status no-print'},notice||'المحاسبة السحابية — يتم الحفظ بعد نجاح كل عملية'));
+  const state=preview?.packet.state;
+  return kabH('main',{className:'offline-landing'},
+    kabH('header',{className:'offline-top'},kabH('div',{className:'offline-logo'},'KAB FINANCE')),
+    kabH('div',{className:'offline-columns'},
+      kabH('section',{className:'offline-intro'},kabH('h1',null,'محاسبة كاب فارما'),kabH('p',null,'بيانات الشركة على Cloudflare، والدخول من حساب الإدارة.')),
+      kabH('section',{className:'offline-card'},
+        kabH('h2',null,phase==='setup'?'تهيئة قاعدة المحاسبة':phase==='import'?'استيراد بياناتك الحالية':'فتح المحاسبة'),
+        error&&kabH('div',{role:'alert',className:'error-banner'},error),
+        phase==='loading'&&kabH('p',null,'جارٍ التحقّق من الربط…'),
+        phase==='setup'&&kabH('button',{className:'btn primary choose-folder',disabled:busy,onClick:setup},busy?'جارٍ التهيئة…':'تهيئة قاعدة المحاسبة'),
+        phase==='error'&&kabH('button',{className:'btn primary choose-folder',onClick:boot},'إعادة المحاولة'),
+        phase==='import'&&kabH(Me.Fragment,null,
+          kabH('p',null,'اختر ملف kab-finance.local.json من مجلد Data. سيظهر ملخّص قبل الاستيراد، وسيبقى ملفك الأصلي كما هو.'),
+          kabH('input',{type:'file',accept:'.json,application/json',disabled:busy,onChange:choose,'aria-label':'اختيار ملف بيانات المحاسبة'}),
+          state&&kabH('div',{className:'cloud-import-preview'},
+            kabH('strong',null,preview.name),
+            kabH('p',null,'المنتجات: '+state.products.length+' · الحسابات: '+state.parties.length+' · المندوبون والموزّعون: '+state.reps.length),
+            kabH('p',null,'المستندات: '+state.docs.length+' · المحذوفة: '+(state.deletedDocs?.length||0)+' · سجل التدقيق: '+state.audit.length),
+            kabH('button',{className:'btn primary choose-folder',disabled:busy,onClick:startImport},busy?'جارٍ الاستيراد…':'استيراد البيانات وفتح المحاسبة'))))));
+}

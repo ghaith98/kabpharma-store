@@ -210,6 +210,10 @@ export default function AdminMobilePage() {
 
   const navigationGroups = [
     {
+      title: "Accounting",
+      links: [{href: "/admin/finance", title: "KAB Finance · المحاسبة", icon: "📒"}],
+    },
+    {
       title: "Orders",
       links: [
         { href: "/admin/orders?mobile=1", title: "Shop Orders", icon: "📦" },

@@ -414,6 +414,13 @@ export default function AdminDashboardPage() {
 
   const quickActions = [
     {
+      href: "/admin/finance",
+      title: "KAB Finance · المحاسبة",
+      description: "Pharmacies, invoices, receipts and accounting reports.",
+      icon: FiFileText,
+      classes: "bg-teal-50 text-teal-800 ring-teal-100",
+    },
+    {
       href: "/admin/orders",
       title: "Manage orders",
       description:

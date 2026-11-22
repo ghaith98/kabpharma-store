@@ -42,6 +42,10 @@ type NavigationGroup = {
 
 const navigationGroups: NavigationGroup[] = [
   {
+    title: "Accounting",
+    links: [{ href: "/admin/finance", label: "KAB Finance", icon: FiCreditCard }],
+  },
+  {
     title: "Orders",
     links: [
       {
