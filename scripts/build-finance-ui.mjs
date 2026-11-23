@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 const dir=new URL('../lib/finance/',import.meta.url);
 let html=fs.readFileSync(new URL('portable-template.html',dir),'utf8');
+const logo=fs.readFileSync(new URL('../public/logo.png',import.meta.url));
+html=html.replaceAll('__KAB_FINANCE_LOGO_DATA_URL__','data:image/png;base64,'+logo.toString('base64'));
 const start=html.indexOf('function fS()'),end=html.indexOf('\nvar tn=',start);
 if(start<0 || end<start)throw Error('Portable finance template changed. Review the online adapter before building.');
 const records=fs.readFileSync(new URL('records.mjs',dir),'utf8').replaceAll('export function','function');

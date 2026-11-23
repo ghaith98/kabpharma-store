@@ -106,37 +106,46 @@
 .k5-invoice-totals bdi{display:block;text-align:right}
 .k5-view-actions{margin-bottom:9px}
 .k5-view-sheet{background:#edf3ef;border:1px solid #dfeae3;border-radius:7px;padding:10px;overflow:auto}
-.k5-view-sheet .k5-paper{margin:0 auto;padding:8mm;background:white;width:min(100%,148mm)}
-.k5-paper{width:136mm;color:#142b23;display:flex;flex-direction:column;gap:2.3mm;font-family:Arial,Tahoma,sans-serif;font-size:9pt;line-height:1.25}
-.k5-paper-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:2mm;border-bottom:1px solid #39826b;gap:5mm}
-.k5-paper-header h2{font-size:12pt;margin:0 0 1mm}
-.k5-paper-brand{font-size:13pt;color:#146952;letter-spacing:1px;direction:ltr;display:block}
-.k5-paper-contact{display:grid;grid-template-columns:1fr 1fr;gap:1mm 3mm}
+.k5-view-sheet .k5-paper{width:136mm;color:#111;display:flex;flex-direction:column;gap:3mm;font-family:Arial,Tahoma,sans-serif;font-size:9pt;line-height:1.4}
+.k5-paper,.k5-paper *{color:#111!important}
+.k5-paper-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:3mm;border-bottom:1px solid #111;gap:5mm}
+.k5-paper-brand-block{flex:0 1 62mm;min-width:0;text-align:right}
+.k5-paper-logo{display:block;width:62mm;max-width:100%;height:auto;filter:grayscale(1);-webkit-filter:grayscale(1)}
+.k5-paper-company{margin-top:2mm;text-align:right;font-size:10pt}
+.k5-paper-heading{flex:0 1 62mm;min-width:0;text-align:left}
+.k5-paper-header h2{font-size:15pt;margin:0 0 2mm;color:#111}
+.k5-paper-heading bdi{font-size:9pt;white-space:nowrap}
+.k5-paper-contact{display:grid;grid-template-columns:1.2fr 1fr;gap:2mm 5mm;direction:rtl;text-align:right;padding:1mm 0}
 .k5-paper-contact>div:last-child{grid-column:1/-1}
-.k5-paper-table{width:100%;border-collapse:collapse;table-layout:fixed;text-align:right;font-size:8pt}
-.k5-paper-table th,.k5-paper-table td{border:1px solid #a8bcb2;padding:1mm .7mm;overflow-wrap:anywhere}
-.k5-paper-table th{background:#e7f2ec}
-.k5-paper-table th:first-child{width:5%}
+.k5-paper-table{width:100%;border-collapse:collapse;table-layout:fixed;text-align:center;font-size:8pt;line-height:1.4;color:#111}
+.k5-paper-table th,.k5-paper-table td{border:.5px solid #888;padding:1.7mm .8mm;overflow-wrap:anywhere;vertical-align:middle}
+.k5-paper-table th{background:#f2f2f2;color:#111;font-weight:bold}
+.k5-paper-table th:first-child{width:4%}
 .k5-paper-table th:nth-child(2){width:26%}
-.k5-paper-table th:nth-child(3){width:11%}
-.k5-paper-table th:nth-child(4),.k5-paper-table th:nth-child(5){width:7%}
+.k5-paper-table th:nth-child(3){width:8%}
+.k5-paper-table th:nth-child(4),.k5-paper-table th:nth-child(5){width:6%}
+.k5-paper-table td:nth-child(2){text-align:right;font-weight:600}
+.k5-paper-table td:not(:nth-child(2)){font-variant-numeric:tabular-nums}
+.k5-paper-currency{text-align:right;font-size:8pt;color:#333;margin-top:-1mm}
 .k5-inline-return{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;background:#fff9f5;border:1px solid #ead6ca;border-radius:9px}
 .k5-inline-return>strong{grid-column:1/-1}
 .k5-inline-return .k5-table input[type=checkbox]{width:16px;height:16px;accent-color:var(--k5-green)}
-.k5-paper-returns{display:grid;gap:1.3mm;padding:2mm;background:#fff9f5;border:1px solid #dfcbbd;border-radius:2mm}
-.k5-paper-returns h3{margin:0;font-size:10pt;color:#80513b}
-.k5-paper-return-ref{font-size:8pt;color:#715647}
-.k5-returns-table th{background:#f5e7df}
+.k5-paper-returns{display:grid;gap:1.3mm;padding:2mm;background:white;border:.5px solid #888;border-radius:0;color:#111}
+.k5-paper-returns h3{margin:0;font-size:10pt;color:#111}
+.k5-paper-return-ref{font-size:8pt;color:#333}
+.k5-returns-table th{background:#f2f2f2;color:#111}
 .k5-returns-table th:not(:first-child),.k5-returns-table td:not(:first-child){text-align:center;font-variant-numeric:tabular-nums}
 .k5-returns-table th:first-child{width:34%}
 .k5-returns-table th:nth-child(2){width:12%}
 .k5-returns-table th:nth-child(n+3){width:18%}
-.k5-paper-footer{display:grid;gap:1.2mm;margin-top:auto;white-space:pre-wrap}
-.k5-paper-totals{width:min(100%,67mm);margin-inline-start:auto}
-.k5-paper-totals>div{display:flex;justify-content:space-between;gap:2mm;border-bottom:1px solid #b5c9bf;padding:.8mm}
-.k5-paper-grand{background:#e3f1e8;font-weight:bold;font-size:10pt}
-.k5-paper-totals>.k5-paper-grand{display:flex;flex-direction:row;align-items:center;gap:2mm;padding:2mm}
+.k5-paper-footer{display:grid;gap:2mm;margin-top:2mm;white-space:pre-wrap;color:#111}
+.k5-paper-totals{width:min(100%,72mm);margin-right:auto;margin-left:0}
+.k5-paper-totals>div{display:flex;justify-content:space-between;align-items:center;gap:3mm;border-bottom:.5px solid #aaa;padding:1.4mm .8mm}
+.k5-paper-totals>div:has(+.k5-paper-grand){border-bottom:0}
+.k5-paper-totals>.k5-paper-grand{background:white;color:#111;font-weight:bold;font-size:11pt;border-top:1px solid #111;border-bottom:1px solid #111;padding:2.2mm .8mm;margin-top:.8mm}
 .k5-paper-grand bdi{display:block;max-width:100%;overflow-wrap:anywhere}
+.k5-paper-note{text-align:right}
+.k5-paper-thanks{text-align:center;border-top:.5px solid #aaa;padding-top:2mm;margin-top:4mm;font-size:9pt}
 #kab5-print-root{position:absolute;left:-20000px;top:0;width:148mm;height:209mm;padding:6mm;overflow:hidden;background:white}
 #kab5-print-root .k5-paper{transform-origin:top right}
 @page{size:A5 portrait;margin:0}
@@ -2159,9 +2168,14 @@ function kabInvoicePaper(doc, bill) {
   const paper = kabPrintNode("article", null, "k5-paper");
   paper.dir = "rtl";
   const top = kabPrintNode("header", null, "k5-paper-header");
-  const brand = kabPrintNode("div");
-  brand.append(kabPrintNode("strong", "KAB PHARMA", "k5-paper-brand"), kabPrintNode("div", doc.company?.company || ""));
-  const heading = kabPrintNode("div");
+  const brand = kabPrintNode("div", null, "k5-paper-brand-block");
+  const logo = kabPrintNode("img", null, "k5-paper-logo");
+  logo.src = "__KAB_FINANCE_LOGO_DATA_URL__";
+  logo.alt = "KAB PHARMA";
+  logo.width = 497;
+  logo.height = 119;
+  brand.append(logo, kabPrintNode("div", doc.company?.company || "شركة كاب فارما", "k5-paper-company"));
+  const heading = kabPrintNode("div", null, "k5-paper-heading");
   heading.append(kabPrintNode("h2", returning ? "مرتجع مبيعات" : "فاتورة مبيعات"));
   const number = kabPrintNode("bdi", doc.number + "  ·  " + kabDisplayDate(doc.date));
   heading.append(number);
@@ -2177,7 +2191,7 @@ function kabInvoicePaper(doc, bill) {
   }
   contact.append(
     line("الصيدلية:", doc.party?.name), line("المنطقة:", doc.party?.area),
-    line("مندوب:", doc.rep?.name), line("الهاتف:", doc.rep?.phone),
+    line("المندوب:", doc.rep?.name), line("الهاتف:", doc.rep?.phone),
     line("العنوان:", doc.party?.address)
   );
   paper.append(contact);
@@ -2206,7 +2220,7 @@ function kabInvoicePaper(doc, bill) {
     label.textContent = "مرتجع بقيمة";
     row.insertCell().textContent = kabFmt(doc.total);
   }
-  paper.append(table);
+  paper.append(table, kabPrintNode("div", "جميع المبالغ بالليرة السورية", "k5-paper-currency"));
 
   function returnDetails(parent, entry) {
     const returnsTable = kabPrintNode("table", null, "k5-paper-table k5-returns-table");
@@ -2258,7 +2272,6 @@ function kabInvoicePaper(doc, bill) {
   }
 
   const bottom = kabPrintNode("footer", null, "k5-paper-footer");
-  if (doc.note?.trim()) bottom.append(line("ملاحظة:", doc.note));
   const totals = kabPrintNode("div", null, "k5-paper-totals");
   const gross = doc.gross ?? doc.total + (doc.discount || 0);
   const prior = returning || doc.source?.includePreviousBalance === false ? 0
@@ -2277,7 +2290,12 @@ function kabInvoicePaper(doc, bill) {
   if (returnCredit > 0) amount("رصيد مرتجع مطبّق", returnCredit);
   amount("المجموع الكلي", doc.total - returned + prior - returnCredit, true);
   bottom.append(totals);
-  if (doc.company?.footer) bottom.append(kabPrintNode("small", doc.company.footer));
+  if (doc.note?.trim()) {
+    const note = line("ملاحظة:", doc.note);
+    note.className = "k5-paper-note";
+    bottom.append(note);
+  }
+  if (doc.company?.footer) bottom.append(kabPrintNode("small", doc.company.footer, "k5-paper-thanks"));
   paper.append(bottom);
   return paper;
 }
@@ -2295,6 +2313,7 @@ async function kabPreparePrint(doc, bill) {
   root.append(paper);
   document.body.append(root);
   if (document.fonts?.ready) await document.fonts.ready;
+  await Promise.all([...paper.querySelectorAll("img")].map(image => image.decode()));
   const usable = 197.5 * 96 / 25.4;
   const height = Math.max(paper.scrollHeight, paper.getBoundingClientRect().height);
   const scale = Math.min(1, usable / Math.max(1, height));
