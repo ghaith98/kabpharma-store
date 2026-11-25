@@ -100,3 +100,57 @@ assert.deepEqual(JSON.parse(JSON.stringify(await transport.save(testPacket.versi
 assert.ok(reads>readCount,'Idempotent retries can reload the committed revision');
 assert.equal(actionCalls,2);
 console.log('PASS: paged browser loading, incremental save response and lost-response recovery.');
+
+// Notes remain separate from all financial and personnel records, through edits,
+// deletion, persistence and multiple notes for a person with several roles.
+const financialBefore = structuredClone(state);
+let annotated = applyAction(state, {type:'rep_note',payload:{personId:distributor,text:'  ملاحظة أولى  '}}, 'test-admin');
+annotated = applyAction(annotated, {type:'rep_note',payload:{personId:distributor,text:'ملاحظة ثانية'}}, 'test-admin');
+assert.equal(annotated.repNotes.length, 2);
+assert.equal(annotated.repNotes[0].text, 'ملاحظة أولى');
+const firstNote=annotated.repNotes[0];
+annotated=applyAction(annotated,{type:'rep_note',payload:{...firstNote,text:'تم التعديل'}},'test-admin');
+assert.equal(annotated.repNotes[0].id,firstNote.id);
+assert.equal(annotated.repNotes[0].createdAt,firstNote.createdAt);
+assert.equal(annotated.repNotes[0].text,'تم التعديل');
+assert.deepEqual(JSON.parse(JSON.stringify(decodeState([...encodeState(annotated).values()]))),annotated);
+validateState(annotated);
+const noteChanges=stateDelta(encodeState(state),encodeState(annotated));
+assert.ok(noteChanges.upsert.every(record=>record.kind==='repNotes'));
+const {repNotes,...financialAfter}=annotated;
+assert.deepEqual(financialAfter,financialBefore,'Notes must not change amounts, personnel, docs or rates');
+assert.deepEqual(projectState(annotated),projectState(state));
+assert.throws(()=>applyAction(state,{type:'rep_note',payload:{personId:'missing',text:'x'}},'test-admin'));
+for(const text of ['', '  ', 'x'.repeat(10001)]) assert.throws(()=>applyAction(state,{type:'rep_note',payload:{personId:distributor,text}},'test-admin'));
+assert.throws(()=>applyAction(state,{type:'rep_note_delete',payload:{id:'missing'}},'test-admin'));
+assert.throws(()=>applyAction({...state,members:[...state.members,{email:'accountant',role:'accountant'}]},
+ {type:'rep_note',payload:{personId:distributor,text:'x'}},'accountant'));
+annotated=applyAction(annotated,{type:'rep_note_delete',payload:{id:firstNote.id}},'test-admin');
+assert.equal(annotated.repNotes.length,1);
+assert.notEqual(annotated.repNotes[0].id,firstNote.id);
+annotated=applyAction(annotated,{type:'rep_note_delete',payload:{id:annotated.repNotes[0].id}},'test-admin');
+assert.deepEqual(annotated.repNotes,[]);
+// Execute the actual invoice-row builder with partially paid and debt invoices.
+const invoiceRowsSource=ui.slice(ui.indexOf('  function invoiceRows('),ui.indexOf('  function invoices('));
+const fixtures=[
+ {party:'p1',remaining:100,net:900,paid:800,status:'partial',doc:{id:'a',number:'A',date:'2026-11-22',party:{name:'A'}}},
+ {party:'p2',remaining:300,net:300,paid:0,status:'credit',doc:{id:'b',number:'B',date:'2026-11-22',party:{name:'B'}}},
+ {party:'p1',remaining:0,net:500,paid:500,status:'settled',doc:{id:'c',number:'C',date:'2026-11-22',party:{name:'C'}}}
+];
+const context={bills:fixtures,invoiceQuery:'',statusFilter:[],repFilter:[],invoiceSort:'default',
+ kabFold:v=>String(v).toLowerCase(),kabDisplayedStatus:b=>b.status,kabPartyLabel:p=>p.name,
+ returnCredit:()=>0,kabDisplayDate:v=>v,kabFmt:v=>v,kabH:()=>null,KabBadge:()=>{},button:()=>null,busy:false};
+const invoiceRows=vm.runInNewContext('('+invoiceRowsSource.trim()+')',context);
+const ids=account=>Array.from(invoiceRows(account),row=>row[0]);
+assert.deepEqual(ids(),['c','b','a']);
+context.invoiceSort='high';assert.deepEqual(ids(),['b','a','c']);
+context.invoiceSort='low';assert.deepEqual(ids(),['c','a','b']);
+context.statusFilter=['partial','credit'];assert.deepEqual(ids(),['a','b']);
+context.invoiceSort='high';assert.deepEqual(ids('p1'),['a']);
+assert.deepEqual(fixtures.map(b=>b.remaining),[100,300,0]);
+// Keep the client and server note rules identical.
+const template=fs.readFileSync(new URL('../lib/finance/portable-template.html',import.meta.url),'utf8');
+const engineText=fs.readFileSync(new URL('../lib/finance/engine.mjs',import.meta.url),'utf8');
+const noteBranch=text=>text.slice(text.indexOf('  if (["rep_note", "rep_note_delete"]'),text.indexOf('  if (action.type === "exchange_note"'));
+assert.equal(noteBranch(template),noteBranch(engineText));
+console.log('PASS: note creation/edit/delete, authorization, persistence, financial isolation and remaining-balance sorting with combined filters.');

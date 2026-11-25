@@ -478,6 +478,13 @@ function kabRemoveOldExchanges(state) {
 
 function gd(state) {
   kabLegacyValidate(state);
+  if (state.repNotes != null) {
+    if (!Array.isArray(state.repNotes) || state.repNotes.some(note => !note || typeof note.id !== "string"
+      || typeof note.personId !== "string" || !state.reps.some(person => person.id === note.personId)
+      || typeof note.text !== "string" || !note.text.trim() || note.text.length > 10000)
+      || new Set(state.repNotes.map(note => note.id)).size !== state.repNotes.length) throw Error("بيانات الملاحظات غير صالحة.");
+  }
+
   if (state.deletedDocs != null && !Array.isArray(state.deletedDocs)) {
     throw Error("قائمة المستندات المحذوفة غير صالحة.");
   }
@@ -839,6 +846,23 @@ function Qi(state, action, actor, replay) {
   state = kabRemoveOldExchanges(state);
   const payload = action.payload || {};
   if (!state.members.some(person => person.email.toLowerCase() === actor.toLowerCase())) throw Error("لا توجد صلاحية.");
+  if (["rep_note", "rep_note_delete"].includes(action.type)) {
+    if (!state.members.some(person => person.email.toLowerCase() === actor.toLowerCase() && person.role === "admin")) throw Error("القسم خاص بالإدارة.");
+    const notes = state.repNotes || [];
+    const current = notes.find(note => note.id === payload.id);
+    if (payload.id && !current) throw Error("الملاحظة غير موجودة. حدّث القائمة.");
+    if (action.type === "rep_note_delete") {
+      if (!current) throw Error("اختر الملاحظة.");
+      return {...state, repNotes: notes.filter(note => note.id !== current.id)};
+    }
+    const person = state.reps.find(person => person.id === payload.personId && (!person.archived || person.id === current?.personId));
+    if (!person) throw Error("اختر الاسم من القائمة.");
+    const text = typeof payload.text === "string" ? payload.text.trim() : "";
+    if (!text || text.length > 10000) throw Error("اكتب الملاحظة بحد أقصى 10000 حرف.");
+    const note = {id: current?.id || crypto.randomUUID(), personId: person.id, text,
+      createdAt: current?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString()};
+    return {...state, repNotes: current ? notes.map(item => item.id === current.id ? note : item) : [...notes, note]};
+  }
   if (action.type === "exchange_note" || action.type === "exchange_note_delete") {
     if (!state.members.some(person => person.email.toLowerCase() === actor.toLowerCase() && person.role === "admin")) throw Error("القسم خاص بالإدارة.");
     const notes = state.exchangeNotes || [];
@@ -976,6 +1000,7 @@ const kabLineProduct = product => ({
   netPrice: kabProductNetPrice(product), useNet: false, netPriceTarget: "pharmacy"
 });
 const kabModalTitles = {
+  rep_note: "إضافة أو تعديل ملاحظة", rep_notes: "ملاحظات الشخص",
   product: "بيانات المنتج", party: "بيانات الحساب", rep: "بيانات المندوب والموزّع والمحصّل",
   sale: "فاتورة المبيعات", receipt: "تسجيل دفعة",
   sale_return: "إضافة مرتجع", exchange_note: "فاتورة تبديل", return_credit: "تطبيق رصيد مرتجع", expense: "بيانات المصروف", journal: "قيد يومية", settings: "إعدادات الشركة"
@@ -1209,6 +1234,7 @@ function Wi({transport, onLock}) {
   const [statusFilter, setStatusFilter] = Me.useState([]);
   const [repFilter, setRepFilter] = Me.useState([]);
   const [invoiceQuery, setInvoiceQuery] = Me.useState("");
+  const [invoiceSort, setInvoiceSort] = Me.useState("default");
   const [month, setMonth] = Me.useState(an().slice(0, 7));
   const [commissionMonth, setCommissionMonth] = Me.useState(an().slice(0, 7));
   const [rateDrafts, setRateDrafts] = Me.useState({});
@@ -1399,7 +1425,7 @@ function Wi({transport, onLock}) {
         action = {type, payload: {...details, governorate, kind: "customer"}};
       } else if (type === "rep") {
         action = {type, payload: {...form, repRate: kabPercent(form.repRate), distRate: kabPercent(form.distRate), collectorRate: kabPercent(form.collectorRate)}};
-      } else if (type === "exchange_note") {
+      } else if (type === "rep_note" || type === "exchange_note") {
         action = {type, payload: form};
       } else if (type === "settings") {
         action = {type, payload: {...form, closedThrough: form.closedThrough ? kabReadDate(form.closedThrough) : ""}};
@@ -1522,7 +1548,8 @@ function Wi({transport, onLock}) {
       if (statusFilter.length && !statusFilter.includes(kabDisplayedStatus(bill))) return false;
       if (repFilter.length && !repFilter.includes(doc.rep?.id)) return false;
       return !needle || kabFold([doc.number, kabPartyLabel(doc.party), doc.rep?.name, doc.distributor?.name, doc.collector?.name].join(" ")).includes(needle);
-    }).map(bill => {
+    }).sort((a, b) => invoiceSort === "high" ? b.remaining - a.remaining
+      : invoiceSort === "low" ? a.remaining - b.remaining : 0).map(bill => {
       const doc = bill.doc;
       return [doc.id,
         button(doc.number, () => { setError(""); setViewId(doc.id); }), kabDisplayDate(doc.date), kabPartyLabel(doc.party),
@@ -1543,6 +1570,8 @@ function Wi({transport, onLock}) {
           options: Object.entries(kabStatusLabels), placeholder: "كل الحالات"})),
         field("المندوب", kabH(KabSelect, {multiple: true, value: repFilter, onChange: setRepFilter,
           options: peopleOptions(state.reps, repFilter), placeholder: "كل المندوبين"})),
+        field("ترتيب حسب المتبقي", kabH(KabSelect, {value: invoiceSort, onChange: setInvoiceSort,
+          options: [["default", "الافتراضي"], ["high", "من الأعلى للأقل"], ["low", "من الأقل للأعلى"]]})),
         field("البحث", kabH(KabInput, {value: invoiceQuery, onChange: setInvoiceQuery}))),
       kabH(KabTable, {headers: ["الفاتورة", "التاريخ", "الصيدلية", "المندوب", "القيمة", "المسدّد", "المتبقي", "الحالة", ""],
         rows: invoiceRows(account), empty: "لا توجد فواتير مطابقة."}));
@@ -1647,16 +1676,25 @@ function Wi({transport, onLock}) {
     } catch (failure) { setError(failure.message); }
   }
 
+  function personNotes(personId) {
+    return (state.repNotes || []).filter(note => note.personId === personId);
+  }
+  async function deletePersonNote(note) {
+    if (!window.confirm("حذف هذه الملاحظة؟")) return;
+    await save({type: "rep_note_delete", payload: {id: note.id}}, "تم حذف الملاحظة");
+  }
   function commissionsPage() {
     const docsThroughMonth = state.docs.filter(doc => doc.date.slice(0, 7) <= commissionMonth);
     const closingBalances = docsThroughMonth.length === state.docs.length ? projected
       : kabProject({...state, docs: docsThroughMonth});
     const rows = kabCommissions(state, projected, commissionMonth, closingBalances.bills);
-    return kabH(KabSection, {title: "قسم المحاسبة للمندوبين", actions: field("الشهر", kabH(KabInput, {
-      type: "month", value: commissionMonth, onChange: value => setCommissionMonth(value || an().slice(0, 7))
-    }))},
+    return kabH(KabSection, {title: "قسم المحاسبة للمندوبين", actions: kabH("div", {className: "k5-actions"},
+      button("إضافة ملاحظة", () => open("rep_note", {personId: "", text: ""}), {primary: true}),
+      field("الشهر", kabH(KabInput, {
+        type: "month", value: commissionMonth, onChange: value => setCommissionMonth(value || an().slice(0, 7))
+      })))},
       kabH("p", {className: "k5-hint"}, "الفواتير والمتبقي حسب شهر إصدارها. المقبوض والعمولة حسب شهر القبض. لكل دور نسبة مستقلة."),
-      kabH(KabTable, {headers: ["الاسم", "الدور", "قيمة فواتير الشهر", "المقبوض في الشهر", "متبقي فواتير الشهر بنهايته", "النسبة %", "عمولة الشهر"],
+      kabH(KabTable, {headers: ["الاسم", "الدور", "قيمة فواتير الشهر", "المقبوض في الشهر", "متبقي فواتير الشهر بنهايته", "النسبة %", "الملاحظات", "عمولة الشهر"],
         rows: rows.map(row => {
           const value = rateDrafts[row.key] ?? row.rate;
           const rate = kabTryNumber(() => kabPercent(value));
@@ -1665,6 +1703,8 @@ function Wi({transport, onLock}) {
               kabH(KabInput, {value, inputMode: "decimal", dir: "ltr", "aria-label": "نسبة " + row.label + " " + row.person.name,
                 onChange: draft => setRateDrafts(current => ({...current, [row.key]: draft}))}),
               button("حفظ", () => saveRate(row, value), {disabled: busy || rate == null || rate === row.rate})),
+            personNotes(row.person.id).length ? button("عرض الملاحظات (" + personNotes(row.person.id).length + ")",
+              () => open("rep_notes", {personId: row.person.id})) : "—",
             rate == null ? "—" : kabFmt(Math.round(row.cashPaid * rate / 100))];
         })}));
   }
@@ -1995,6 +2035,21 @@ function Wi({transport, onLock}) {
 
   function modalContents() {
     const {type, form, doc} = modal;
+    if (type === "rep_notes") return kabH("div", {className: "k5-wide"},
+      kabH("h3", null, state.reps.find(person => person.id === form.personId)?.name),
+      personNotes(form.personId).length ? personNotes(form.personId).map(note => kabH("section", {
+        key: note.id, style: {borderBottom: "1px solid #ddd", padding: "12px 0"}},
+        kabH("p", {style: {whiteSpace: "pre-wrap", overflowWrap: "anywhere"}}, note.text),
+        kabH("div", {className: "k5-actions"},
+          button("تعديل", () => open("rep_note", {...note})),
+          button("حذف", () => deletePersonNote(note), {danger: true, disabled: busy}))))
+        : kabH("p", null, "لا توجد ملاحظات."),
+      button("إضافة ملاحظة", () => open("rep_note", {personId: form.personId, text: ""}), {primary: true}));
+    if (type === "rep_note") return kabH(Me.Fragment, null,
+      field("الاسم", select(form, "personId", peopleOptions(state.reps.filter(person => !person.archived), form.personId), "اختر الاسم", {required: true})),
+      field("الملاحظة", kabH(KabText, {value: form.text, required: true, maxLength: 10000,
+        onChange: text => update("text", text)})),
+      kabH("p", {className: "k5-hint k5-wide"}, "ملاحظة للرجوع إليها فقط، لا تؤثر على الأرصدة أو العمولات."));
     if (type === "product") return productForm(form);
     if (type === "sale") return saleForm(form, doc);
     if (type === "sale_return" && form.original) return returnForm(form, doc);
@@ -2133,7 +2188,7 @@ function Wi({transport, onLock}) {
     modal && kabH(KabModal, {title: confirming ? "تأكيد الحذف" : kabModalTitles[modal.type], close,
       wide: ["sale", "sale_return"].includes(modal.type)},
       error && kabH("div", {className: "k5-message k5-error", role: "alert"}, error),
-      confirming ? kabH(Me.Fragment, null,
+      modal.type === "rep_notes" ? modalContents() : confirming ? kabH(Me.Fragment, null,
         kabH("p", null, modal.type === "exchange_delete" ? "سيتم حذف فاتورة التبديل."
           : "سيُنقل " + (modal.doc?.number || modal.record?.name) + " إلى المحذوفات."),
         kabH("footer", null, button("تأكيد الحذف", confirmRemove, {danger: true, disabled: busy})))
